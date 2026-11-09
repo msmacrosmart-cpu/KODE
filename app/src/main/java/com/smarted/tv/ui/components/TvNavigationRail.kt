@@ -19,7 +19,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Movie
-import androidx.compose.material.icons.filled.Puzzle
+import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.Icon
@@ -53,7 +53,7 @@ fun TvNavigationRail(
         NavItem(1, "Canais", Icons.Default.LiveTv),
         NavItem(2, "Filmes", Icons.Default.Movie),
         NavItem(3, "Séries", Icons.Default.Tv),
-        NavItem(4, "Addons", Icons.Default.Puzzle),
+        NavItem(4, "Addons", Icons.Default.Extension),
         NavItem(5, "Pastas", Icons.Default.Folder),
         NavItem(6, "Config", Icons.Default.Settings),
         NavItem(7, "Sair", Icons.Default.Logout),
