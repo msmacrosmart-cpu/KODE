@@ -126,6 +126,23 @@ git tag v1.0.1 && git push origin v1.0.1
 
 ---
 
+---
+
+## Releases / download direto
+
+| O que | Aonde |
+|---|---|
+| APK mais recente (Release) | https://github.com/msmacrosmart-cpu/KODE/releases/latest/download/SmartED-TV-1.0.0.apk |
+| Página da release | https://github.com/msmacrosmart-cpu/KODE/releases/latest |
+| Artefatos de cada build (90 dias) | aba **Actions** → run → *Artifacts* |
+
+Release só é publicada quando você **empurra uma tag `v*`** ou roda o workflow manualmente com `create_release=true`:
+
+```bash
+git tag v1.0.1 && git push origin v1.0.1                       # publica release v1.0.1
+gh workflow run build.yml -f create_release=true -f version_name=1.0.2
+```
+
 ## Estrutura do projeto
 
 ```
