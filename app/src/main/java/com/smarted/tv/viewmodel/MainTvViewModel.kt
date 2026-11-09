@@ -132,10 +132,9 @@ class MainTvViewModel : ViewModel() {
                     Serie("s2", "Stranger Things", description = "Mistérios em Hawkins", year = 2016, genre = "Sci-Fi", seasons = 4),
                     Serie("s3", "The Mandalorian", description = "Star Wars universo", year = 2019, genre = "Ação", seasons = 3),
                 )
-                _files.value = listOf(
-                    MediaItem("f1", "Armazenamento interno", "Pastas e arquivos locais", isFolder = true),
-                    MediaItem("f2", "Downloads", "Arquivos baixados", isFolder = true),
-                )
+                // Arquivos: a lista vem do SAF em tempo real (FilesViewModel).
+                // Nenhuma pasta é inventada aqui.
+                _files.value = emptyList()
                 _addons.value = emptyList()
                 _programs.value = emptyList()
                 _music.value = emptyList()

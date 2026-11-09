@@ -14,9 +14,11 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.smarted.tv.ui.SmartedActions
 import com.smarted.tv.ui.SmartedApp
 import com.smarted.tv.ui.SmartedData
+import com.smarted.tv.data.source.Crumb
 import com.smarted.tv.ui.components.MediaItem
 import com.smarted.tv.ui.player.PlayerActivity
 import com.smarted.tv.ui.screens.SettingsInfo
+import com.smarted.tv.viewmodel.FilesViewModel
 import com.smarted.tv.viewmodel.MainTvViewModel
 
 /**
@@ -26,6 +28,7 @@ import com.smarted.tv.viewmodel.MainTvViewModel
 class MainActivity : ComponentActivity() {
 
     private val vm: MainTvViewModel by viewModels()
+    private val filesVm: FilesViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +46,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val data by vm.data.collectAsState()
+            val filesState by filesVm.state.collectAsState()
             SmartedApp(
                 data = data,
                 actions = SmartedActions(
@@ -52,6 +56,22 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     onSettingAction = { key -> vm.onSettingAction(key) },
+                    files = filesState,
+                    onFilesSource = { uri -> filesVm.open(Crumb(uri, filesVm.nameOf(uri))) },
+                    onFilesEntry = { entry ->
+                        if (entry.isArchive) filesVm.previewArchive(entry) else filesVm.openEntry(entry)
+                    },
+                    onFilesUp = filesVm::up,
+                    onFilesGoTo = filesVm::goTo,
+                    onFilesRefresh = filesVm::refresh,
+                    onFilesSort = filesVm::setSort,
+                    onFilesQuery = filesVm::setQuery,
+                    onFilesFavorite = filesVm::toggleFavorite,
+                    onFilesTreePicked = filesVm::onTreePicked,
+                    onFilesPlay = { entry -> startActivity(PlayerActivity.intent(this, entry.uri, entry.name)) },
+                    onFilesCloseArchive = filesVm::closeArchive,
+                    onFilesInfo = filesVm::showInfo,
+                    onFilesDismiss = filesVm::clearNotice,
                 ),
             )
         }

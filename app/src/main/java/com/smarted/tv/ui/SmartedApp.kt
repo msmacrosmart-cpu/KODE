@@ -19,6 +19,9 @@ import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.Star
+import com.smarted.tv.data.source.BrowseEntry
+import com.smarted.tv.data.source.FilesState
+import com.smarted.tv.data.source.SortKey
 import com.smarted.tv.ui.components.MediaItem
 import com.smarted.tv.ui.components.SmartedScaffold
 import com.smarted.tv.ui.screens.*
@@ -62,6 +65,21 @@ data class ClimateInfo(
 data class SmartedActions(
     val onOpenItem: (Screen, MediaItem) -> Unit = { _, _ -> },
     val onSettingAction: (String) -> Unit = {},
+    // ── navegador de arquivos (Fase C) ──
+    val files: FilesState = FilesState(),
+    val onFilesSource: (String) -> Unit = {},
+    val onFilesEntry: (BrowseEntry) -> Unit = {},
+    val onFilesUp: () -> Unit = {},
+    val onFilesGoTo: (Int) -> Unit = {},
+    val onFilesRefresh: () -> Unit = {},
+    val onFilesSort: (SortKey) -> Unit = {},
+    val onFilesQuery: (String) -> Unit = {},
+    val onFilesFavorite: () -> Unit = {},
+    val onFilesTreePicked: (String) -> Unit = {},
+    val onFilesPlay: (BrowseEntry) -> Unit = {},
+    val onFilesCloseArchive: () -> Unit = {},
+    val onFilesInfo: (BrowseEntry?) -> Unit = {},
+    val onFilesDismiss: () -> Unit = {},
 )
 
 @Composable
@@ -119,7 +137,22 @@ fun SmartedApp(data: SmartedData = SmartedData(), actions: SmartedActions = Smar
 
             // ── sistema ──
             Screen.ADDONS -> AddonsScreen(data.addons, open)
-            Screen.ARQUIVOS -> ArquivosScreen(data.files, open)
+            Screen.ARQUIVOS -> ArquivosScreen(
+                state = actions.files,
+                onOpenSource = actions.onFilesSource,
+                onOpenEntry = actions.onFilesEntry,
+                onUp = actions.onFilesUp,
+                onGoTo = actions.onFilesGoTo,
+                onRefresh = actions.onFilesRefresh,
+                onSort = actions.onFilesSort,
+                onQuery = actions.onFilesQuery,
+                onToggleFavorite = actions.onFilesFavorite,
+                onTreePicked = actions.onFilesTreePicked,
+                onPlay = actions.onFilesPlay,
+                onCloseArchive = actions.onFilesCloseArchive,
+                onShowInfo = actions.onFilesInfo,
+                onDismissMessage = actions.onFilesDismiss,
+            )
             Screen.CONFIGURACOES -> ConfiguracoesScreen(
                 info = data.settings,
                 onAction = actions.onSettingAction,

@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
@@ -39,6 +40,7 @@ class PlayerActivity : ComponentActivity() {
 
         val streamUrl = intent.getStringExtra(EXTRA_STREAM_URL).orEmpty()
         val title = intent.getStringExtra(EXTRA_TITLE) ?: "Reprodução"
+        val mimeHint = intent.getStringExtra(EXTRA_MIME)
 
         setContent {
             Box(
@@ -53,7 +55,7 @@ class PlayerActivity : ComponentActivity() {
                         modifier = Modifier.align(Alignment.Center),
                     )
                 } else {
-                    VideoPlayer(url = streamUrl)
+                    VideoPlayer(url = streamUrl, mimeHint = mimeHint)
                     Text(
                         text = title,
                         color = Color.White,
@@ -77,22 +79,34 @@ class PlayerActivity : ComponentActivity() {
     companion object {
         private const val EXTRA_STREAM_URL = "stream_url"
         private const val EXTRA_TITLE = "title"
+        private const val EXTRA_MIME = "mime"
 
-        fun intent(context: Context, streamUrl: String, title: String): Intent =
+        /**
+         * @param mimeHint MIME explícito (HLS/DASH). Necessário para streams sem
+         * extensão; sem ele o Media3 tenta inferir pela URI.
+         */
+        fun intent(context: Context, streamUrl: String, title: String, mimeHint: String? = null): Intent =
             Intent(context, PlayerActivity::class.java)
                 .putExtra(EXTRA_STREAM_URL, streamUrl)
                 .putExtra(EXTRA_TITLE, title)
+                .putExtra(EXTRA_MIME, mimeHint)
     }
 }
 
 @Composable
-private fun VideoPlayer(url: String) {
+private fun VideoPlayer(url: String, mimeHint: String?) {
     val context = LocalContext.current
     var isPlaying by remember { mutableStateOf(true) }
 
     val player = remember {
         ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(url))
+            // `content://` (SAF) e `file://` tocam direto; HLS/DASH precisam do MIME
+            // quando a URI não tem extensão (a URL original é preservada inteira,
+            // com query string — nada é truncado).
+            val item = MediaItem.Builder().setUri(url)
+            val mime = mimeHint ?: mimeFromUri(url)
+            if (mime != null) item.setMimeType(mime)
+            setMediaItem(item.build())
             prepare()
             playWhenReady = true
         }
@@ -121,4 +135,22 @@ private fun VideoPlayer(url: String) {
         },
         modifier = Modifier.fillMaxSize(),
     )
+}
+
+/** MIME pela extensão, só quando conhecido (nunca adivinha). */
+private fun mimeFromUri(uri: String): String? {
+    val path = uri.substringBefore('?').substringBefore('#').lowercase()
+    return when {
+        path.endsWith(".m3u8") -> MimeTypes.APPLICATION_M3U8
+        path.endsWith(".mpd") -> MimeTypes.APPLICATION_MPD
+        path.endsWith(".mp4") || path.endsWith(".m4v") -> MimeTypes.VIDEO_MP4
+        path.endsWith(".webm") -> MimeTypes.VIDEO_WEBM
+        path.endsWith(".mkv") -> "video/x-matroska"
+        path.endsWith(".ts") -> MimeTypes.VIDEO_MP2T
+        path.endsWith(".flac") -> "audio/flac"
+        path.endsWith(".mp3") -> MimeTypes.AUDIO_MPEG
+        path.endsWith(".m4a") || path.endsWith(".aac") -> MimeTypes.AUDIO_AAC
+        path.endsWith(".ogg") || path.endsWith(".opus") -> MimeTypes.AUDIO_OGG
+        else -> null
+    }
 }
