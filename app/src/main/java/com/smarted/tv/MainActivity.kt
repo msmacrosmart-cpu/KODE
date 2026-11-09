@@ -6,6 +6,7 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
@@ -18,7 +19,10 @@ import com.smarted.tv.data.source.Crumb
 import com.smarted.tv.ui.components.MediaItem
 import com.smarted.tv.ui.player.PlayerActivity
 import com.smarted.tv.ui.screens.SettingsInfo
+import com.smarted.tv.data.plugin.PluginTarget
+import com.smarted.tv.ui.player.MediaSourceSpec
 import com.smarted.tv.viewmodel.AddonsViewModel
+import com.smarted.tv.viewmodel.PluginViewModel
 import com.smarted.tv.viewmodel.FilesViewModel
 import com.smarted.tv.viewmodel.MainTvViewModel
 
@@ -31,6 +35,7 @@ class MainActivity : ComponentActivity() {
     private val vm: MainTvViewModel by viewModels()
     private val filesVm: FilesViewModel by viewModels()
     private val addonsVm: AddonsViewModel by viewModels()
+    private val pluginVm: PluginViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,6 +56,27 @@ class MainActivity : ComponentActivity() {
             val filesState by filesVm.state.collectAsState()
             val addonState by addonsVm.state.collectAsState()
             val repoState by addonsVm.repoState.collectAsState()
+            val pluginState by pluginVm.state.collectAsState()
+
+            // Mídia resolvida por um adaptador de plugin → player (com MIME/headers reais)
+            LaunchedEffect(pluginState.media) {
+                pluginState.media?.let { media ->
+                    startActivity(
+                        PlayerActivity.intent(
+                            this@MainActivity,
+                            MediaSourceSpec(
+                                uri = media.uri,
+                                mimeHint = media.mimeHint,
+                                headers = media.headers,
+                                title = media.title,
+                                isLive = media.isLive,
+                                subtitles = media.subtitles,
+                            ),
+                        )
+                    )
+                    pluginVm.consumeMedia()
+                }
+            }
             SmartedApp(
                 data = data,
                 actions = SmartedActions(
@@ -72,7 +98,16 @@ class MainActivity : ComponentActivity() {
                     onFilesQuery = filesVm::setQuery,
                     onFilesFavorite = filesVm::toggleFavorite,
                     onFilesTreePicked = filesVm::onTreePicked,
-                    onFilesPlay = { entry -> startActivity(PlayerActivity.intent(this, entry.uri, entry.name)) },
+                    onFilesPlay = { entry ->
+                        startActivity(
+                            PlayerActivity.intent(
+                                this,
+                                entry.uri,
+                                entry.name,
+                                mimeHint = com.smarted.tv.ui.player.MediaSourceSpec.mimeFromPath(entry.name),
+                            )
+                        )
+                    },
                     onFilesCloseArchive = filesVm::closeArchive,
                     onFilesInfo = filesVm::showInfo,
                     onFilesDismiss = filesVm::clearNotice,
@@ -94,6 +129,11 @@ class MainActivity : ComponentActivity() {
                     onRepoRemove = addonsVm::removeRepo,
                     onRepoSelectNode = addonsVm::selectRepoNode,
                     onAddonDismiss = addonsVm::clearMessage,
+                    plugin = pluginState,
+                    onPluginOpen = pluginVm::open,
+                    onPluginBack = { pluginVm.back() },
+                    onPluginActivate = pluginVm::activate,
+                    onPluginClose = pluginVm::clear,
                 ),
             )
         }

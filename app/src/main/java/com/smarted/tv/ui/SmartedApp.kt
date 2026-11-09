@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.Star
 import com.smarted.tv.data.addon.AddonInstaller
 import com.smarted.tv.data.addon.AddonKind
 import com.smarted.tv.data.addon.RepositoryNode
+import com.smarted.tv.data.plugin.PluginItem
 import com.smarted.tv.data.source.BrowseEntry
 import com.smarted.tv.data.source.FilesState
 import com.smarted.tv.data.source.SortKey
@@ -29,6 +30,7 @@ import com.smarted.tv.ui.components.MediaItem
 import com.smarted.tv.ui.components.SmartedScaffold
 import com.smarted.tv.ui.screens.*
 import com.smarted.tv.viewmodel.AddonsViewModel
+import com.smarted.tv.viewmodel.PluginViewModel
 import com.smarted.tv.viewmodel.RepositoriesViewModel
 
 /**
@@ -38,7 +40,7 @@ import com.smarted.tv.viewmodel.RepositoriesViewModel
 enum class Screen {
     CANAIS, FILMES, SERIES, NAVEGAR,          // menu lateral
     VIDEOS, MUSICA, PROGRAMAS, RADIO, JOGOS, IMAGENS, CLIMA, FAVORITOS, // menu Kodi
-    ADDONS, ARQUIVOS, CONFIGURACOES
+    ADDONS, ARQUIVOS, CONFIGURACOES, PLUGIN
 }
 
 private val sidebarScreens = listOf(Screen.CANAIS, Screen.FILMES, Screen.SERIES, Screen.NAVEGAR)
@@ -104,6 +106,12 @@ data class SmartedActions(
     val onRepoRemove: (String) -> Unit = {},
     val onRepoSelectNode: (RepositoryNode?) -> Unit = {},
     val onAddonDismiss: () -> Unit = {},
+    // ── plugin:// (Fase F) ──
+    val plugin: PluginViewModel.State = PluginViewModel.State(),
+    val onPluginOpen: (String) -> Unit = {},
+    val onPluginBack: () -> Unit = {},
+    val onPluginActivate: (PluginItem) -> Unit = {},
+    val onPluginClose: () -> Unit = {},
 )
 
 @Composable
@@ -160,6 +168,13 @@ fun SmartedApp(data: SmartedData = SmartedData(), actions: SmartedActions = Smar
             Screen.FAVORITOS -> ListScreen("Favoritos", data.favorites, "Nenhum favorito salvo", Icons.Rounded.Star, open)
 
             // ── sistema ──
+            Screen.PLUGIN -> PluginScreen(
+                state = actions.plugin,
+                onBack = actions.onPluginBack,
+                onActivate = actions.onPluginActivate,
+                onClose = actions.onPluginClose,
+            )
+
             Screen.ADDONS -> AddonsScreen(
                 addonState = actions.addons,
                 repoState = actions.repos,
