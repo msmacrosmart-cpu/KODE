@@ -1,0 +1,99 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugResValues
+> Task :app:checkDebugAarMetadata
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:mergeDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:parseDebugLocalResources
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebug
+> Task :app:processDebugManifestForPackage
+> Task :app:javaPreCompileDebugUnitTest
+> Task :app:buildKotlinToolingMetadata
+> Task :app:preReleaseBuild UP-TO-DATE
+> Task :app:generateReleaseResValues
+> Task :app:checkReleaseAarMetadata
+> Task :app:mapReleaseSourceSetPaths
+> Task :app:generateReleaseResources
+> Task :app:packageReleaseResources
+> Task :app:createReleaseCompatibleScreenManifests
+> Task :app:extractDeepLinksRelease
+> Task :app:processReleaseMainManifest
+> Task :app:processReleaseManifest
+> Task :app:processReleaseManifestForPackage
+> Task :app:parseReleaseLocalResources
+> Task :app:processDebugResources
+> Task :app:javaPreCompileRelease
+> Task :app:mergeReleaseResources
+> Task :app:preReleaseUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileReleaseUnitTest
+> Task :app:processReleaseResources
+
+> Task :app:compileReleaseKotlin FAILED
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/FileBrowser.kt:67:23 Unresolved reference 'ZipInspector'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/FileBrowser.kt:73:50 Unresolved reference 'it'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/FileBrowser.kt:74:46 Unresolved reference 'it'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/SafFileSystem.kt:80:71 Unresolved reference 'mimeType'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/SafFileSystem.kt:87:34 Unresolved reference 'mimeType'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/ui/screens/FilesScreen.kt:368:31 Unresolved reference 'InfoOutline'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/ui/screens/FilesScreen.kt:468:23 Argument type mismatch: actual type is 'kotlin.collections.List<ERROR CLASS: Symbol not found for ZipInspector.Entry>', but 'kotlin.Int' was expected.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/ui/screens/FilesScreen.kt:469:21 @Composable invocations can only happen from the context of a @Composable function
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/ui/screens/FilesScreen.kt:470:32 Unresolved reference 'isDirectory'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/ui/screens/FilesScreen.kt:470:65 Unresolved reference 'name'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/ui/screens/FilesScreen.kt:471:39 Unresolved reference 'isSafe'.
+
+> Task :app:compileDebugKotlin FAILED
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/FileBrowser.kt:67:23 Unresolved reference 'ZipInspector'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/FileBrowser.kt:73:50 Unresolved reference 'it'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/FileBrowser.kt:74:46 Unresolved reference 'it'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/SafFileSystem.kt:80:71 Unresolved reference 'mimeType'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/SafFileSystem.kt:87:34 Unresolved reference 'mimeType'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/ui/screens/FilesScreen.kt:368:31 Unresolved reference 'InfoOutline'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/ui/screens/FilesScreen.kt:468:23 Argument type mismatch: actual type is 'kotlin.collections.List<ERROR CLASS: Symbol not found for ZipInspector.Entry>', but 'kotlin.Int' was expected.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/ui/screens/FilesScreen.kt:469:21 @Composable invocations can only happen from the context of a @Composable function
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/ui/screens/FilesScreen.kt:470:32 Unresolved reference 'isDirectory'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/ui/screens/FilesScreen.kt:470:65 Unresolved reference 'name'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/ui/screens/FilesScreen.kt:471:39 Unresolved reference 'isSafe'.
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_4-1794229279231.json
+
+FAILURE: Build completed with 2 failures.
+
+1: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+==============================================================================
+
+2: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':app:compileReleaseKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+==============================================================================
+
+BUILD FAILED in 25s
+33 actionable tasks: 33 executed
