@@ -145,6 +145,8 @@ jobs:
             grep -E "^e: |FAILED" /tmp/build.log 2>/dev/null | head -60
             # bloco completo de erro do Gradle (causa raiz)
             grep -A 25 "What went wrong" /tmp/build.log 2>/dev/null | head -120
+            # causa raiz do empacotamento (APK): stack Caused by + mensagem
+            grep -E "Caused by:|^[A-Za-z0-9_.]+Exception|^[A-Za-z0-9_.]+Error" /tmp/build.log 2>/dev/null | sort -u | head -40
           } > ci-build.log || true
           # detalhes dos testes: XMLs do JUnit (message = erro esperado vs obtido)
           find app/build/test-results -name "*.xml" -print 2>/dev/null | while read -r x; do
