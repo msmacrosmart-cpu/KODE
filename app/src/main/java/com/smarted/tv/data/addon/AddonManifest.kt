@@ -66,10 +66,9 @@ data class CompatibilityReport(
  *  - REPOSITORY: compatível (é só XML/estrutura de download).
  *  - SKIN: parcial (a skin é XML/PNG, mas o motor de skin do Kodi não existe aqui).
  *  - METADATA/SUBTITLE: parcial (parser teria de ser implementado).
- *  - VIDEO/AUDIO/PROGRAM com `xbmc.python.*`: NÃO compatível hoje
- *    (ver `docs/LIMITACOES.md`), a menos que o plugin só produza URLs diretas
- *    reconhecidas por um adaptador — logo, COMPATIBLE_WITH_ADAPTATION quando há
- *    `plugin://` mapeável.
+ *  - VIDEO/AUDIO/PROGRAM com `xbmc.python.*`: COMPATIBLE_WITH_ADAPTATION —
+ *    só funciona com um adaptador (ponte xbmc*) escrito neste app; nunca é
+ *    apresentado como "executável" ao usuário.
  */
 object CompatibilityEvaluator {
 
@@ -110,7 +109,7 @@ object CompatibilityEvaluator {
                     CompatibilityReport(Compatibility.COMPATIBLE_WITH_ADAPTATION, reasons, missing)
                 } else {
                     reasons += "Tipo ${manifest.extensionPoint} pode ser descrito por metadados."
-                    CompletableOrPartial(reasons, missing)
+                    descriptionOnly(reasons, missing)
                 }
             }
 
@@ -128,7 +127,7 @@ object CompatibilityEvaluator {
         }
     }
 
-    private fun CompletableOrPartial(reasons: List<String>, missing: List<String>): CompatibilityReport {
+    private fun descriptionOnly(reasons: MutableList<String>, missing: MutableList<String>): CompatibilityReport {
         missing += "Contrato específico do ponto de extensão"
         return CompatibilityReport(Compatibility.PARTIAL, reasons, missing)
     }
