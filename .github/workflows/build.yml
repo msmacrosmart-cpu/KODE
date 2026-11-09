@@ -142,7 +142,9 @@ jobs:
         run: |
           set -e
           {
-            grep -E "^e: |error:|FAILED|What went wrong" /tmp/build.log 2>/dev/null | head -100
+            grep -E "^e: |FAILED" /tmp/build.log 2>/dev/null | head -60
+            # bloco completo de erro do Gradle (causa raiz)
+            grep -A 25 "What went wrong" /tmp/build.log 2>/dev/null | head -120
           } > ci-build.log || true
           # detalhes dos testes: XMLs do JUnit (message = erro esperado vs obtido)
           find app/build/test-results -name "*.xml" -print 2>/dev/null | while read -r x; do
