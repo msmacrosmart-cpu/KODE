@@ -146,7 +146,7 @@ object PlaylistParser {
                     initSegment = parseAttributes(line)["uri"]
                 }
                 line.startsWith("#EXT-X-KEY:") -> {
-                    encryption = parseAttributes(line)["METHOD"]
+                    encryption = parseAttributes(line)["method"]
                     if (encryption != null && encryption != "NONE") {
                         warnings += "Conteúdo HLS criptografado (METHOD=$encryption) — pode exigir chave/DRM"
                     }
@@ -157,11 +157,11 @@ object PlaylistParser {
                     if (pendingAttrs.isNotEmpty()) {
                         variants += StreamVariant(
                             uri = line,
-                            bandwidthBps = pendingAttrs["BANDWIDTH"]?.toLongOrNull(),
-                            width = pendingAttrs["RESOLUTION"]?.substringBefore('x')?.toIntOrNull(),
-                            height = pendingAttrs["RESOLUTION"]?.substringAfter('x')?.toIntOrNull(),
-                            codecs = pendingAttrs["CODECS"],
-                            audioGroup = pendingAttrs["AUDIO"],
+                            bandwidthBps = pendingAttrs["bandwidth"]?.toLongOrNull(),
+                            width = pendingAttrs["resolution"]?.substringBefore('x')?.toIntOrNull(),
+                            height = pendingAttrs["resolution"]?.substringAfter('x')?.toIntOrNull(),
+                            codecs = pendingAttrs["codecs"],
+                            audioGroup = pendingAttrs["audio"],
                         )
                         pendingAttrs = emptyMap()
                     } else if (isMedia) {
@@ -275,6 +275,7 @@ object PlaylistParser {
         var currentPerformer: String? = null
         var currentFile: String? = null
         var currentAlbum: String? = null
+        var albumPerformer: String? = null   // PERFORMER global (antes do 1o TRACK)
 
         text.lineSequence().forEach { raw ->
             val line = raw.trim()
@@ -291,13 +292,19 @@ object PlaylistParser {
                     if (currentFile != null && currentTitle == null) currentTitle = v else currentAlbum = v
                 }
                 line.startsWith("PERFORMER ", ignoreCase = true) -> {
-                    currentPerformer = line.substringAfter("PERFORMER").trim().trim('"')
+                    val value = line.substringAfter("PERFORMER").trim().trim('"')
+                    if (currentFile == null && currentTitle == null) {
+                        albumPerformer = value      // global: vale para todas as faixas
+                    } else {
+                        currentPerformer = value
+                    }
                 }
                 line.startsWith("INDEX ", ignoreCase = true) -> {
                     val file = currentFile
                     if (file != null) {
                         entries += PlaylistEntry(
-                            title = listOfNotNull(currentPerformer, currentTitle).joinToString(" - ")
+                            title = listOfNotNull(currentPerformer ?: albumPerformer, currentTitle)
+                                .joinToString(" - ")
                                 .ifBlank { file.substringAfterLast('/') },
                             url = file,
                             type = PlaylistEntryType.AUDIO,
