@@ -145,7 +145,7 @@ jobs:
             echo "| Package | com.smarted.tv |"
             echo
             echo '```'
-            "$BT"/aapt2 dump badging "$APK" 2>/dev/null | grep -E "^(package|application-label|sdkVersion|targetSdkVersion|launchable-activity)" || true
+            "$BT"/aapt2 dump badging "$APK" 2>/dev/null | grep -E "^(package|application-label:|sdkVersion|targetSdkVersion|launchable-activity)" || true
             echo '```'
             echo
             echo "**Instalação:** \`adb install -r SmartED-TV-$VERSION.apk\`"
