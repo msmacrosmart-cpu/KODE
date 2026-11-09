@@ -117,9 +117,10 @@ jobs:
           cp /tmp/build.log ci-build.log || true
           git config user.name  "SmartED CI"
           git config user.email "ci@smarted.local"
+          tail -c 200000 /tmp/build.log > ci-build.log || true
           git add -f ci-build.log
           git commit -m "ci: log do build (diagnóstico) [skip ci]" || true
-          git push origin "HEAD:${GITHUB_REF_NAME}" || true
+          git push -f origin "HEAD:refs/heads/ci-logs" || true
 
       # ─── ASSINATURA EXPLÍCITA + VERIFICAÇÃO ─────────────────────────
       - name: Limpar log de diagnóstico (build passou)
