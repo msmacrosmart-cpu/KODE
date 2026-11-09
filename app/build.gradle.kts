@@ -10,8 +10,9 @@ android {
 
     defaultConfig {
         applicationId = "com.smarted.tv"
-        minSdk = 23
-        targetSdk = 35
+        // 21 = instala em TV Box / Android TV mais antigos (KitKat/Lollipop em diante)
+        minSdk = 21
+        targetSdk = 34
         versionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
         versionName = System.getenv("VERSION_NAME") ?: "1.0"
     }
@@ -20,6 +21,10 @@ android {
     // e o keystore de release quando KEYSTORE_PATH existir (usado no CI/release).
     signingConfigs {
         create("release") {
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
+            enableV4Signing = false
             val ksPath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/release-keystore.jks"
             storeFile = file(ksPath)
             storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "smartedtv123"
@@ -43,7 +48,21 @@ android {
             }
         }
         debug {
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
+            enableV4Signing = false
             signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
+    // Gera também um APK universal e variantes por ABI (menores, para TV Boxes antigas)
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            isUniversalApk = true
         }
     }
 
@@ -58,6 +77,8 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // Gera também um APK universal (instala em qualquer TV Box) + variantes por ABI
 
     packaging {
         resources {
