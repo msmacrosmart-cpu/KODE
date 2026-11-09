@@ -29,7 +29,7 @@ import com.smarted.tv.viewmodel.MainTvViewModel
 
 /**
  * Activity principal — SEMPRE em paisagem (horizontal), tela cheia.
- * O layout é o do pacote de design (SmartedScaffold, referência 1672x941).
+ * O layout é o do pacote de design (SmartedScaffold, referência 1536x864 (SmartedTV_Kotlin_Recriacao)).
  */
 class MainActivity : ComponentActivity() {
 

@@ -26,12 +26,16 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.smarted.tv.ui.theme.Smarted
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 data class SidebarItem(val label: String, val icon: ImageVector)
 data class KodiOption(val label: String, val icon: ImageVector, val action: String)
@@ -39,7 +43,7 @@ data class KodiOption(val label: String, val icon: ImageVector, val action: Stri
 val sidebarItems = listOf(
     SidebarItem("Canais", Icons.Rounded.LiveTv),
     SidebarItem("Filmes", Icons.Rounded.Movie),
-    SidebarItem("Séries", Icons.Rounded.Theaters),
+    SidebarItem("Séries", Icons.Rounded.LocalMovies),
     SidebarItem("Navegar", Icons.Rounded.ShowChart),
 )
 
@@ -64,8 +68,18 @@ val kodiOptions = listOf(
 )
 
 /**
- * Casca do layout Smarted-TV: cabeçalho, menu lateral, área branca com curvas
- * e painel Kodi (hambúrguer / tecla MENU). Tudo escalado sobre a referência 1672x941.
+ * Casca do layout Smarted-TV — composição do pacote `SmartedTV_Kotlin_Recriacao`
+ * (docs/referencia-nova-tela.png).
+ *
+ * Estrutura da referência (1536 x 864):
+ *  - fundo grafite/preto com brilho diagonal e um painel inclinado;
+ *  - cápsula da marca (esquerda) e cápsula de relógio/data em português;
+ *  - trilho único de navegação com os 4 botões (Canais, Filmes, Séries, Navegar);
+ *  - área branca com curva grande no canto superior esquerdo + extensão inferior
+ *    que contorna o trilho, exatamente como na imagem.
+ *
+ * O conteúdo das telas é desenhado dentro da área branca, respeitando as margens
+ * da curva — sem cobrir o trilho nem a faixa de respiro.
  */
 @Composable
 fun SmartedScaffold(
@@ -79,114 +93,164 @@ fun SmartedScaffold(
     BackHandler(enabled = drawerOpen) { drawerOpen = false }
 
     BoxWithConstraints(
-        modifier.fillMaxSize().background(Smarted.Black).onPreviewKeyEvent {
-            if (it.key == Key.Menu && it.type == KeyEventType.KeyUp) { drawerOpen = !drawerOpen; true } else false
-        }
+        modifier
+            .fillMaxSize()
+            .background(Smarted.Black)
+            .onPreviewKeyEvent {
+                if (it.key == Key.Menu && it.type == KeyEventType.KeyUp) {
+                    drawerOpen = !drawerOpen
+                    true
+                } else false
+            }
     ) {
         val d = LocalDensity.current
-        // Layout HORIZONTAL (paisagem) desenhado na referência 1672 x 941.
-        // sx mantém proporções no eixo horizontal; sy acompanha a altura do aparelho.
+        // Escala da referência 1536 x 864, proporcional nos dois eixos.
         val sx = constraints.maxWidth / Smarted.RefW
         val sy = constraints.maxHeight / Smarted.RefH
         fun px(v: Float) = with(d) { (v * sx).toDp() }
         fun py(v: Float) = with(d) { (v * sy).toDp() }
         fun fs(v: Float) = with(d) { (v * sx).toSp() }
 
-        // Fundo + área branca com as curvas da referência
+        // ── Fundo: gradiente diagonal + painel grafite inclinado ──
         Box(Modifier.fillMaxSize().drawBehind {
             drawRect(
                 Brush.linearGradient(
-                    listOf(Color(0xFF2A2A2A), Smarted.Black, Smarted.Black),
-                    start = Offset(0f, 0f), end = Offset(size.width * 0.45f, size.height * 0.25f)
+                    colorStops = arrayOf(
+                        0f to Smarted.BackdropStart,
+                        0.38f to Smarted.BackdropMid,
+                        1f to Smarted.BackdropEnd,
+                    ),
+                    start = Offset(0f, 0f),
+                    end = Offset(size.width, size.height),
                 )
             )
-            drawPath(whitePath(size.width, size.height), Color.White)
+            // painel inclinado (o "brilho" diagonal da referência)
+            val panel = Path().apply {
+                moveTo(size.width * 0.36f, 0f)
+                lineTo(size.width * 0.55f, 0f)
+                lineTo(size.width * 0.44f, size.height * 0.34f)
+                lineTo(size.width * 0.30f, size.height * 0.34f)
+                close()
+            }
+            drawPath(panel, Color(0x16000000))
+            // área branca com as duas curvas da referência
+            drawPath(whitePath(size.width, size.height), Color(0xFFFEFEFE))
         })
 
-        // Cabeçalho
-        Capsule(Modifier.offset(px(242f), py(14f)).size(px(310f), py(80f))) {
-            Text("Smarted-TV", color = Color.White, fontWeight = FontWeight.Bold, fontSize = fs(40f), maxLines = 1)
+        // ── Cápsula da marca ──
+        Capsule(Modifier.offset(px(221f), py(12f)).size(px(287f), py(76f))) {
+            Text(
+                "Smarted-TV",
+                color = Color(0xFFF7F7F7),
+                fontWeight = FontWeight.Bold,
+                fontSize = fs(37f),
+                maxLines = 1,
+            )
         }
-        Capsule(Modifier.offset(px(970f), py(14f)).size(px(578f), py(80f))) {
-            val now by produceState(Date()) { while (true) { value = Date(); delay(1000) } }
+
+        // ── Cápsula de relógio e data (pt-BR, atualizados) ──
+        Capsule(Modifier.offset(px(890f), py(12f)).size(px(535f), py(76f))) {
+            val now by produceState(Date()) {
+                while (true) {
+                    value = Date()
+                    delay(15_000)
+                }
+            }
+            val locale = Locale("pt", "BR")
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    SimpleDateFormat("HH:mm", Locale.getDefault()).format(now),
-                    color = Color.White, fontWeight = FontWeight.Bold, fontSize = fs(42f), maxLines = 1
+                    SimpleDateFormat("HH:mm", locale).format(now),
+                    color = Color.White, fontWeight = FontWeight.Bold, fontSize = fs(38f), maxLines = 1,
                 )
-                Spacer(Modifier.width(px(24f)))
-                Box(Modifier.width(1.dp).height(py(36f)).background(Smarted.Border))
-                Spacer(Modifier.width(px(24f)))
+                Spacer(Modifier.width(px(23f)))
+                Box(Modifier.width(1.dp).height(py(38f)).background(Color(0xFF777777)))
+                Spacer(Modifier.width(px(23f)))
                 Text(
-                    SimpleDateFormat("EEEE, d 'de' MMMM", Locale("pt", "BR")).format(now)
-                        .replaceFirstChar { it.uppercase() },
-                    color = Smarted.TextLight, fontSize = fs(25f), maxLines = 1
+                    SimpleDateFormat("EEEE, d 'de' MMMM", locale).format(now)
+                        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() },
+                    color = Color(0xFFF0F0F0), fontSize = fs(22f), fontWeight = FontWeight.Medium,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
         }
 
-        // Menu lateral (peça única + 4 botões)
-        val menuShape = RoundedCornerShape(px(56f))
+        // ── Trilho único de navegação ──
+        val railShape = RoundedCornerShape(px(48f))
         Box(
-            Modifier.offset(px(24f), py(56f)).size(px(186f), py(716f)).clip(menuShape)
-                .background(Smarted.glassFrosted())
-                .border(1.dp, Smarted.Border, menuShape)
+            Modifier.offset(px(23f), py(52f))
+                .size(px(167f), py(648f))
+                .clip(railShape)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Smarted.RailTop, Smarted.RailMid, Smarted.RailBottom)
+                    )
+                )
+                .border(1.dp, Smarted.RailBorder, railShape)
         )
-        val tops = listOf(82f, 254f, 412f, 570f)
-        val heights = listOf(150f, 146f, 146f, 146f)
-        sidebarItems.forEachIndexed { i, item ->
-            MenuButton(
-                item, i == selected, { onSelect(i) },
-                Modifier.offset(px(40f), py(tops[i])).size(px(140f), py(heights[i]))
-            )
+        Column(
+            modifier = Modifier.offset(px(37f), py(87f)).width(px(122f)),
+            verticalArrangement = Arrangement.spacedBy(py(22f)),
+        ) {
+            sidebarItems.forEachIndexed { index, item ->
+                NavigationTile(
+                    item = item,
+                    selected = selected == index,
+                    onClick = { onSelect(index) },
+                    modifier = Modifier.size(px(122f), py(132f)),
+                    iconSize = fs(43f),
+                    labelSize = fs(23f),
+                )
+            }
         }
 
-        // Hambúrguer: no espaço preto acima do menu lateral
+        // ── Hambúrguer: abre o painel Kodi (tecla MENU também) ──
         Box(
-            Modifier.offset(px(94f), py(7f)).size(px(44f), py(44f)).clip(CircleShape)
-                .background(Smarted.glass()).border(1.dp, Smarted.Border, CircleShape)
+            Modifier.offset(px(1129f), py(96f)).size(px(40f), py(40f)).clip(CircleShape)
+                .background(Color(0x33000000)).border(1.dp, Color(0x33FFFFFF), CircleShape)
                 .focusable().clickable { drawerOpen = true },
-            contentAlignment = Alignment.Center
-        ) { Icon(Icons.Rounded.Menu, "Menu", tint = Color.White, modifier = Modifier.fillMaxSize(0.6f)) }
+            contentAlignment = Alignment.Center,
+        ) { Icon(Icons.Rounded.Menu, "Menu", tint = Smarted.InkOnWhite, modifier = Modifier.fillMaxSize(0.55f)) }
 
-        // Conteúdo das telas (dentro da área branca)
+        // ── Conteúdo das telas (área branca, respeitando a curva) ──
         Box(
-            Modifier.offset(px(318f), py(174f)).size(px(Smarted.RefW - 318f - 40f), py(Smarted.RefH - 174f - 30f)),
-            content = content
+            Modifier.offset(px(190f), py(107f))
+                .size(px(Smarted.RefW - 190f - 23f), py(Smarted.RefH - 107f - 23f))
+                .padding(start = px(44f), top = px(56f), end = px(40f), bottom = px(44f)),
+            content = content,
         )
 
-        // Painel Kodi
+        // ── Painel Kodi ──
         if (drawerOpen) {
             Box(Modifier.fillMaxSize().background(Color(0x99000000)).clickable { drawerOpen = false })
             val ps = RoundedCornerShape(px(40f))
             Column(
-                Modifier.offset(px(24f), py(56f)).width(px(440f)).height(px(830f)).clip(ps)
+                Modifier.offset(px(23f), py(52f)).width(px(440f)).height(px(760f)).clip(ps)
                     .background(Smarted.glassFrosted())
                     .border(1.dp, Smarted.Border, ps).padding(px(18f)),
-                verticalArrangement = Arrangement.spacedBy(py(10f))
+                verticalArrangement = Arrangement.spacedBy(py(9f)),
             ) {
                 Row(
-                    Modifier.fillMaxWidth().height(py(56f)).padding(horizontal = px(10f)),
-                    verticalAlignment = Alignment.CenterVertically
+                    Modifier.fillMaxWidth().height(py(52f)).padding(horizontal = px(10f)),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("Menu", color = Color.White, fontWeight = FontWeight.Bold, fontSize = fs(26f))
+                    Text("Menu", color = Color.White, fontWeight = FontWeight.Bold, fontSize = fs(24f))
                     Spacer(Modifier.width(px(12f)))
-                    Text("Kodi", color = Smarted.TextMuted, fontSize = fs(18f))
+                    Text("Kodi", color = Smarted.TextMuted, fontSize = fs(17f))
                 }
                 kodiOptions.forEach { opt ->
                     var f by remember { mutableStateOf(false) }
-                    val s = RoundedCornerShape(px(28f))
+                    val s = RoundedCornerShape(px(26f))
                     Row(
-                        Modifier.fillMaxWidth().height(py(62f)).clip(s).background(Smarted.glass())
+                        Modifier.fillMaxWidth().height(py(54f)).clip(s).background(Smarted.glass())
                             .border(if (f) 2.dp else 1.dp, if (f) Color.White else Smarted.Border, s)
                             .onFocusChanged { f = it.isFocused }
                             .clickable { drawerOpen = false; onKodiOption(opt.action) }
-                            .padding(horizontal = px(28f)),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(horizontal = px(26f)),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(opt.icon, null, tint = Color.White, modifier = Modifier.size(py(28f)))
-                        Spacer(Modifier.width(px(18f)))
-                        Text(opt.label, color = Smarted.TextLight, fontWeight = FontWeight.Medium, fontSize = fs(21f))
+                        Icon(opt.icon, null, tint = Color.White, modifier = Modifier.size(py(24f)))
+                        Spacer(Modifier.width(px(16f)))
+                        Text(opt.label, color = Smarted.TextLight, fontWeight = FontWeight.Medium, fontSize = fs(19f))
                     }
                 }
             }
@@ -194,24 +258,37 @@ fun SmartedScaffold(
     }
 }
 
+/**
+ * Área branca da referência: retângulo com canto superior esquerdo arredondado
+ * (58/1536 e 757/864) e, abaixo do trilho, a extensão que desce até o rodapé com
+ * canto de 62 — exatamente a silhueta da imagem.
+ */
 private fun whitePath(w: Float, h: Float): Path {
     val sx = w / Smarted.RefW
     val sy = h / Smarted.RefH
-    // Mais espaço entre o menu lateral e a área branca (respiro).
-    val left = 286f * sx; val top = 148f * sy
-    val r1x = 66f * sx; val r1y = 66f * sy
-    val menuBottom = 786f * sy
-    val lowLeft = 74f * sx
-    val r2x = 78f * sx; val r2y = 78f * sy
+    fun x(v: Float) = v * sx
+    fun y(v: Float) = v * sy
+
+    val mainLeft = x(190f)
+    val mainTop = y(107f)
+    val mainRadius = x(58f)
+
+    val lowLeft = x(57f)
+    val railBottom = y(704f)       // fim do trilho (52 + 648 + respiro)
+    val lowRadius = x(62f)
+
     return Path().apply {
-        moveTo(left + r1x, top)
-        lineTo(w, top); lineTo(w, h); lineTo(lowLeft, h)
-        lineTo(lowLeft, menuBottom + r2y)
-        quadraticBezierTo(lowLeft, menuBottom, lowLeft + r2x, menuBottom)
-        lineTo(left - 40f * sx, menuBottom)
-        quadraticBezierTo(left, menuBottom, left, menuBottom - 40f * sy)
-        lineTo(left, top + r1y)
-        quadraticBezierTo(left, top, left + r1x, top)
+        moveTo(w, h)
+        lineTo(lowLeft, h)
+        lineTo(lowLeft, railBottom + lowRadius)
+        quadraticBezierTo(lowLeft, railBottom, lowLeft + lowRadius, railBottom)
+        // degrau até a base da área principal
+        lineTo(mainLeft - x(10f), railBottom)
+        quadraticBezierTo(mainLeft, railBottom, mainLeft, railBottom - y(10f))
+        lineTo(mainLeft, mainTop + mainRadius)
+        quadraticBezierTo(mainLeft, mainTop, mainLeft + mainRadius, mainTop)
+        lineTo(w, mainTop)
+        lineTo(w, h)
         close()
     }
 }
@@ -221,33 +298,47 @@ private fun Capsule(modifier: Modifier, content: @Composable () -> Unit) {
     val shape = RoundedCornerShape(50)
     Box(
         modifier.clip(shape)
-            .background(Smarted.glassFrosted())
-            .border(1.dp, Smarted.Border, shape),
-        contentAlignment = Alignment.Center
+            .background(Brush.verticalGradient(listOf(Smarted.CapsuleTop, Smarted.CapsuleBottom)))
+            .border(1.5.dp, Smarted.CapsuleBorder, shape),
+        contentAlignment = Alignment.Center,
     ) { content() }
 }
 
 @Composable
-private fun MenuButton(item: SidebarItem, selected: Boolean, onClick: () -> Unit, modifier: Modifier) {
-    val shape = RoundedCornerShape(34.dp)
+private fun NavigationTile(
+    item: SidebarItem,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    iconSize: TextUnit,
+    labelSize: TextUnit,
+) {
     var focused by remember { mutableStateOf(false) }
-    val borderColor = when {
-        focused -> Color.White
-        selected -> Smarted.BorderSelected
-        else -> Smarted.Border
+    val shape = RoundedCornerShape(32.dp)
+    val fill = if (selected) {
+        Brush.verticalGradient(listOf(Smarted.TileTopSelected, Smarted.TileBottomSelected))
+    } else {
+        Brush.verticalGradient(listOf(Smarted.TileTop, Smarted.TileBottom))
     }
     Column(
-        modifier.clip(shape)
-            // glass preto FOSCO: base opaca + brilho no topo bem discreto
-            .background(Smarted.glassFrosted())
-            .border(if (focused) 2.dp else 1.dp, borderColor, shape)
+        modifier
+            .clip(shape)
+            .background(fill)
+            .border(if (focused) 2.dp else 1.5.dp, if (focused) Color.White else Smarted.TileBorder, shape)
             .onFocusChanged { focused = it.isFocused }
             .clickable(onClick = onClick),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(item.icon, null, tint = Color.White, modifier = Modifier.fillMaxWidth(0.46f).aspectRatio(1f))
-        Spacer(Modifier.height(8.dp))
-        Text(item.label, color = Smarted.TextLight, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, maxLines = 1)
+        Icon(item.icon, null, tint = Color.White, modifier = Modifier.size(iconSize.value.dp))
+        Spacer(Modifier.height(9.dp))
+        Text(
+            item.label,
+            color = Color.White,
+            fontSize = labelSize,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+        )
     }
 }
