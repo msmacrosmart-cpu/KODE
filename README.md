@@ -128,11 +128,23 @@ git tag v1.0.1 && git push origin v1.0.1
 
 ---
 
+## UI (layout enviado pelo usuário)
+
+O app usa o pacote de design `smarted-tv-layout` (Kotlin + Compose), sempre em **paisagem (horizontal)**,
+com referência de medidas **1672 x 941**:
+
+- `ui/components/SmartedScaffold.kt` — fundo preto em vidro, área branca com curvas (`whitePath`), menu lateral de vidro (4 botões), cápsulas de título/relógio e painel Kodi (hambúrguer ou tecla MENU)
+- `ui/components/Content.kt` — `MediaItem`, `FocusCard`, grades de pôsteres e listas com foco D-pad
+- `ui/screens/Screens.kt` — Canais, Filmes, Séries, Navegar, Addons, Arquivos, Configurações, diálogo Sair
+- `ui/theme/Smarted.kt` — tokens (preto, vidro, branco, tinta) e a referência 1672x941
+
+Para ajustar curvas/posições: `whitePath` (r1=55, r2=70) e `offset(94, 7)` do hambúrguer.
+
 ## Releases / download direto
 
 | O que | Aonde |
 |---|---|
-| **Download direto do APK (última versão)** | https://github.com/msmacrosmart-cpu/KODE/releases/latest/download/SmartED-TV-1.0.3-universal.apk |
+| **Download direto do APK (última versão)** | https://github.com/msmacrosmart-cpu/KODE/releases/latest/download/SmartED-TV-1.0.4-universal.apk |
 | Página de todas as releases | https://github.com/msmacrosmart-cpu/KODE/releases |
 | Artefatos de cada build (90 dias) | aba **Actions** → run → *Artifacts* |
 
