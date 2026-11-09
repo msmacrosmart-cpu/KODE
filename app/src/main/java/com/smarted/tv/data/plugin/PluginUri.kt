@@ -12,7 +12,7 @@ import java.net.URLEncoder
  *  └── addon id ──┘└─ caminho ─┘ └──── parâmetros ────┘
  * ```
  *
- * - `/**[/<segmentos>]`  → caminho virtual dentro do add-on
+ * - `/<segmentos>`        → caminho virtual dentro do add-on
  * - `?a=1&b=2`           → parâmetros (decodificados, ordem preservada)
  *
  * Nada aqui faz resposta de rede: é só o endereço virtual. Quem resolve é um
