@@ -21,6 +21,7 @@ android {
     // e o keystore de release quando KEYSTORE_PATH existir (usado no CI/release).
     signingConfigs {
         create("release") {
+            // v1 (JAR) é obrigatória em Android <= 6 e em várias TV Boxes antigas
             enableV1Signing = true
             enableV2Signing = true
             enableV3Signing = true
@@ -48,10 +49,6 @@ android {
             }
         }
         debug {
-            enableV1Signing = true
-            enableV2Signing = true
-            enableV3Signing = true
-            enableV4Signing = false
             signingConfig = signingConfigs.getByName("debug")
         }
     }

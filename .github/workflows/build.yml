@@ -122,6 +122,15 @@ jobs:
           git push origin "HEAD:${GITHUB_REF_NAME}" || true
 
       # ─── ASSINATURA EXPLÍCITA + VERIFICAÇÃO ─────────────────────────
+      - name: Limpar log de diagnóstico (build passou)
+        run: |
+          rm -f ci-build.log
+          git rm --cached -q ci-build.log 2>/dev/null || true
+          git config user.name  "SmartED CI"
+          git config user.email "ci@smarted.local"
+          git commit -m "ci: build OK, remove log de diagnóstico [skip ci]" >/dev/null 2>&1 || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" >/dev/null 2>&1 || true
+
       - name: Assinar (v1+v2+v3), verificar e renomear APKs
         run: |
           set -euo pipefail
