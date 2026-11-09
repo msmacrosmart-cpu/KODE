@@ -1,0 +1,25 @@
+> Task :app:compileDebugKotlin FAILED
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:85:31 Assignment type mismatch: actual type is 'kotlin.collections.Map<kotlin.String, kotlin.String>', but 'kotlin.collections.MutableMap<kotlin.String, kotlin.String>' was expected.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:241:84 Unresolved reference 'or'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:243:20 Unresolved reference 'findAll'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:243:44 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:244:25 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:244:27 Unresolved reference 'groupValues'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:245:69 Return type mismatch: expected 'ERROR CLASS: Cannot infer type variable TypeVariable(_L)', actual 'kotlin.Unit'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:246:83 Unresolved reference 'or'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:247:31 Unresolved reference 'groupValues'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:247:44 Cannot infer type for this parameter. Please specify it explicitly.
+> Task :app:compileReleaseKotlin FAILED
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:85:31 Assignment type mismatch: actual type is 'kotlin.collections.Map<kotlin.String, kotlin.String>', but 'kotlin.collections.MutableMap<kotlin.String, kotlin.String>' was expected.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:241:84 Unresolved reference 'or'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:243:20 Unresolved reference 'findAll'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:243:44 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:244:25 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:244:27 Unresolved reference 'groupValues'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:245:69 Return type mismatch: expected 'ERROR CLASS: Cannot infer type variable TypeVariable(_L)', actual 'kotlin.Unit'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:246:83 Unresolved reference 'or'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:247:31 Unresolved reference 'groupValues'.
+e: file:///home/runner/work/KODE/KODE/app/src/main/java/com/smarted/tv/data/source/PlaylistParser.kt:247:44 Cannot infer type for this parameter. Please specify it explicitly.
+* What went wrong:
+* What went wrong:
+BUILD FAILED in 17s
