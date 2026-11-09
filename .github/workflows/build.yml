@@ -81,8 +81,19 @@ jobs:
       # gradle-wrapper.jar, evitando falha de wrapper corrompido.
       - name: Build release APK
         run: |
-          set -euo pipefail
-          gradle --no-daemon --stacktrace assembleRelease
+          set -o pipefail
+          gradle --no-daemon --stacktrace --console=plain assembleRelease 2>&1 | tee /tmp/build.log
+
+      - name: Publicar log do build (só em falha, para diagnóstico)
+        if: failure()
+        run: |
+          set -e
+          cp /tmp/build.log ci-build.log || true
+          git config user.name  "SmartED CI"
+          git config user.email "ci@smarted.local"
+          git add -f ci-build.log
+          git commit -m "ci: log do build (diagnóstico) [skip ci]" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" || true
 
       # ─── ASSINATURA ─────────────────────────────────────────────────
       - name: Assinatura (apksigner) e verificação
