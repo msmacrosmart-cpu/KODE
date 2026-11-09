@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Image
@@ -60,7 +61,6 @@ data class ClimateInfo(
 
 data class SmartedActions(
     val onOpenItem: (Screen, MediaItem) -> Unit = { _, _ -> },
-    val onUpdateEpg: () -> Unit = {},
     val onSettingAction: (String) -> Unit = {},
 )
 
@@ -104,12 +104,12 @@ fun SmartedApp(data: SmartedData = SmartedData(), actions: SmartedActions = Smar
             Screen.NAVEGAR -> NavegarScreen(::handle)
 
             // ── opções estilo Kodi ──
-            Screen.VIDEOS -> PosterScreen("Vídeos", data.videos, "Nenhum vídeo na biblioteca", open)
+            Screen.VIDEOS -> PosterScreen("Vídeos", data.videos, "Nenhum vídeo na biblioteca", open, Icons.Rounded.Movie)
             Screen.MUSICA -> ListScreen("Música", data.music, "Nenhuma música na biblioteca", Icons.Rounded.LibraryMusic, open)
-            Screen.PROGRAMAS -> ListScreen("Programas", data.programs, "Nenhum programa instalado", Icons.Rounded.Movie, open)
+            Screen.PROGRAMAS -> ListScreen("Programas", data.programs, "Nenhum programa instalado", Icons.Rounded.Apps, open)
             Screen.RADIO -> ListScreen("Rádio", data.radio, "Nenhuma estação de rádio", Icons.Rounded.Radio, open)
-            Screen.JOGOS -> PosterScreen("Jogos", data.games, "Nenhum jogo instalado", open)
-            Screen.IMAGENS -> PosterScreen("Imagens", data.images, "Nenhuma imagem", open)
+            Screen.JOGOS -> PosterScreen("Jogos", data.games, "Nenhum jogo instalado", open, Icons.Rounded.SportsEsports)
+            Screen.IMAGENS -> PosterScreen("Imagens", data.images, "Nenhuma imagem na biblioteca", open, Icons.Rounded.Image)
             Screen.CLIMA -> ClimaScreen(
                 city = data.climate.city,
                 temp = data.climate.temperature,
@@ -122,7 +122,6 @@ fun SmartedApp(data: SmartedData = SmartedData(), actions: SmartedActions = Smar
             Screen.ARQUIVOS -> ArquivosScreen(data.files, open)
             Screen.CONFIGURACOES -> ConfiguracoesScreen(
                 info = data.settings,
-                onUpdateEpg = actions.onUpdateEpg,
                 onAction = actions.onSettingAction,
             )
         }

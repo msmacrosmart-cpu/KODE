@@ -78,13 +78,26 @@ fun ArquivosScreen(files: List<MediaItem>, onOpen: (MediaItem) -> Unit) = Column
     ListRows(files, "Nenhuma pasta ou arquivo", Icons.Rounded.Folder, onOpen)
 }
 
+/**
+ * Configurações no padrão Kodi (sem IPTV/Xtream):
+ * Interface · Player · Mídia · Sistema · Redes
+ */
 data class SettingsInfo(
-    val account: String = "—",
-    val server: String = "—",
-    val expiration: String = "—",
-    val epgStatus: String = "—",
-    val version: String = "1.0",
     val skin: String = "Smarted-TV",
+    val language: String = "Português (Brasil)",
+    val region: String = "Brasil",
+    val player: String = "ExoPlayer (Media3)",
+    val hardwareAccel: Boolean = true,
+    val audioOutput: String = "Auto (HDMI)",
+    val subtitles: String = "Português",
+    val mediaSources: Int = 2,
+    val libraryUpdate: String = "Nunca",
+    val cacheSize: String = "Normal",
+    val storage: String = "Interno",
+    val networkStatus: String = "Conectado",
+    val hostname: String = "smarted-tv",
+    val internetAccess: Boolean = true,
+    val version: String = "1.0.5",
 )
 
 /**
@@ -95,37 +108,48 @@ data class SettingsInfo(
 @Composable
 fun ConfiguracoesScreen(
     info: SettingsInfo,
-    onUpdateEpg: () -> Unit,
     onAction: (String) -> Unit = {},
 ) = Column(Modifier.fillMaxSize()) {
     ScreenTitle("Configurações")
     val rows = listOf(
-        MediaItem("profile", "Perfil e conta", info.account),
-        MediaItem("server", "Servidor / lista", info.server),
-        MediaItem("exp", "Assinatura", info.expiration),
-        MediaItem("appearance", "Aparência (skin)", info.skin),
-        MediaItem("player", "Player de vídeo", "ExoPlayer / Media3"),
-        MediaItem("epg", "EPG e programação", info.epgStatus),
-        MediaItem("parental", "Controle parental", "Desativado"),
-        MediaItem("language", "Idioma e região", "Português (Brasil)"),
-        MediaItem("storage", "Armazenamento", "Interno"),
-        MediaItem("network", "Rede e internet", "Conectado"),
-        MediaItem("about", "Sobre", "Smarted-TV ${info.version}"),
+        // Interface
+        MediaItem("interface", "Interface", "${info.skin} • ${info.language}"),
+        MediaItem("skin", "Aparência (skin)", info.skin),
+        MediaItem("language", "Idioma e região", "${info.language} • ${info.region}"),
+        // Player
+        MediaItem("player", "Player de vídeo", info.player),
+        MediaItem("accel", "Aceleração de hardware", if (info.hardwareAccel) "Ativada" else "Desativada"),
+        MediaItem("audio", "Saída de áudio", info.audioOutput),
+        MediaItem("subtitles", "Legendas", info.subtitles),
+        // Mídia
+        MediaItem("mediasources", "Fontes de mídia", "${info.mediaSources} fontes configuradas"),
+        MediaItem("library", "Atualizar biblioteca", info.libraryUpdate),
+        MediaItem("cache", "Cache de vídeo", info.cacheSize),
+        // Sistema
+        MediaItem("storage", "Armazenamento", info.storage),
+        MediaItem("about", "Sobre o SmartED-TV", "Versão ${info.version}"),
+        // Redes
+        MediaItem("network", "Rede e internet", info.networkStatus),
+        MediaItem("hostname", "Nome do dispositivo", info.hostname),
+        MediaItem("internet", "Acesso à internet", if (info.internetAccess) "Permitido" else "Bloqueado"),
     )
-    ListRows(rows, "", Icons.Rounded.Settings) { m ->
-        if (m.id == "epg") onUpdateEpg() else onAction("config:${m.id}")
-    }
+    ListRows(rows, "", Icons.Rounded.Settings) { m -> onAction("config:" + m.id) }
 }
 
 // ───────────────────────── Telas Kodi (mídia / add-ons) ─────────────────────────
 
 /** Grade de itens (filmes, séries, programas, imagens...). */
 @Composable
-fun PosterScreen(title: String, items: List<MediaItem>, empty: String, onOpen: (MediaItem) -> Unit) =
-    Column(Modifier.fillMaxSize()) {
-        ScreenTitle(title)
-        PosterGrid(items, empty, onOpen)
-    }
+fun PosterScreen(
+    title: String,
+    items: List<MediaItem>,
+    empty: String,
+    onOpen: (MediaItem) -> Unit,
+    emptyIcon: ImageVector = Icons.Rounded.Movie,
+) = Column(Modifier.fillMaxSize()) {
+    ScreenTitle(title)
+    PosterGrid(items, empty, onOpen, emptyIcon)
+}
 
 /** Lista de itens (canais, rádio, add-ons, arquivos, favoritos...). */
 @Composable

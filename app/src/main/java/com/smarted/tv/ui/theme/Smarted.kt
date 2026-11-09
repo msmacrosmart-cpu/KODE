@@ -10,12 +10,12 @@ object Smarted {
 
     val Black = Color(0xFF050505)
 
-    // ── Glass PRETO FOSCO (sem brilho): vidro escuro + leve textura ──
-    val GlassTop = Color(0xFF171717)      // antes 0xFF202020 (acinzentado/brilhante)
-    val GlassBottom = Color(0xFF0A0A0A)
-    val GlassFlat = Color(0xFF101010)     // fosco puro (base dos botões)
-    val Border = Color(0x2BFFFFFF)        // 17%
-    val BorderSelected = Color(0x8AFFFFFF)
+    // ── Glass PRETO FOSCO PURO (matte): sem gradiente glossy ──
+    val GlassTop = Color(0xFF121212)
+    val GlassBottom = Color(0xFF0E0E0E)
+    val GlassFlat = Color(0xFF101010)
+    val Border = Color(0x1FFFFFFF)        // 12% — contorno discreto
+    val BorderSelected = Color(0x66FFFFFF)
 
     val TextLight = Color(0xFFF2F2F2)
     val TextMuted = Color(0xFF8E8E93)
@@ -25,11 +25,12 @@ object Smarted {
     val InkMuted = Color(0xFF5A5A5A)
     val CardOnWhite = Color(0xFF161616)
 
-    /** Vidro fosco: gradiente quase imperceptível (não "molha" a tela). */
-    fun glass() = Brush.verticalGradient(listOf(Color(0xFF141414), Color(0xFF0B0B0B)))
+    /**
+     * Vidro fosco: preto fosco praticamente plano.
+     * Sem brilho/gloss — a textura vem só da borda 1dp e da sombra.
+     */
+    fun glass() = Brush.verticalGradient(listOf(GlassFlat, Color(0xFF0B0B0B)))
 
-    /** Vidro fosco com borda interna suave — usado nos botões da sidebar. */
-    fun glassFrosted() = Brush.verticalGradient(
-        listOf(Color(0xFF1B1B1B), Color(0xFF0E0E0E), Color(0xFF090909))
-    )
+    /** Superfície dos botões da sidebar (fosco, sem reflexo). */
+    fun glassFrosted() = Brush.verticalGradient(listOf(Color(0xFF141414), Color(0xFF101010)))
 }

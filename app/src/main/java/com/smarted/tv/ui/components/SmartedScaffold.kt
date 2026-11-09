@@ -151,7 +151,7 @@ fun SmartedScaffold(
 
         // Conteúdo das telas (dentro da área branca)
         Box(
-            Modifier.offset(px(292f), py(158f)).size(px(Smarted.RefW - 292f - 36f), py(Smarted.RefH - 158f - 26f)),
+            Modifier.offset(px(318f), py(174f)).size(px(Smarted.RefW - 318f - 40f), py(Smarted.RefH - 174f - 30f)),
             content = content
         )
 
@@ -198,8 +198,8 @@ private fun whitePath(w: Float, h: Float): Path {
     val sx = w / Smarted.RefW
     val sy = h / Smarted.RefH
     // Mais espaço entre o menu lateral e a área branca (respiro).
-    val left = 262f * sx; val top = 132f * sy
-    val r1x = 62f * sx; val r1y = 62f * sy
+    val left = 286f * sx; val top = 148f * sy
+    val r1x = 66f * sx; val r1y = 66f * sy
     val menuBottom = 786f * sy
     val lowLeft = 74f * sx
     val r2x = 78f * sx; val r2y = 78f * sy
@@ -240,7 +240,6 @@ private fun MenuButton(item: SidebarItem, selected: Boolean, onClick: () -> Unit
         modifier.clip(shape)
             // glass preto FOSCO: base opaca + brilho no topo bem discreto
             .background(Smarted.glassFrosted())
-            .background(Color(0x05000000))
             .border(if (focused) 2.dp else 1.dp, borderColor, shape)
             .onFocusChanged { focused = it.isFocused }
             .clickable(onClick = onClick),

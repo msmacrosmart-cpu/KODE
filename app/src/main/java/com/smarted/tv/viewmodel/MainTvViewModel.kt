@@ -98,23 +98,18 @@ class MainTvViewModel : ViewModel() {
         climate = ClimateInfo(),
     )
 
-    /** Clique em um item de Configurações. */
+    /** Clique em um item de Configurações — alterna valores reais do app. */
     fun onSettingAction(key: String) {
+        val s = _settings.value
         _settings.value = when (key) {
-            "config:epg" -> _settings.value.copy(epgStatus = "Sincronizando…")
-            else -> _settings.value
+            "config:accel" -> s.copy(hardwareAccel = !s.hardwareAccel)
+            "config:library" -> s.copy(libraryUpdate = if (s.libraryUpdate == "Nunca") "Ao iniciar" else "Nunca")
+            "config:internet" -> s.copy(internetAccess = !s.internetAccess)
+            "config:cache" -> s.copy(cacheSize = if (s.cacheSize == "Normal") "Grande" else "Normal")
+            "config:language" -> s.copy(language = if (s.language.startsWith("Português")) "English" else "Português (Brasil)")
+            else -> s
         }
         publish()
-    }
-
-    fun updateEpg() {
-        viewModelScope.launch {
-            _settings.value = _settings.value.copy(epgStatus = "Atualizando…")
-            publish()
-            // TODO: integrar download real do EPG (XMLTV)
-            _settings.value = _settings.value.copy(epgStatus = "EPG atualizado agora")
-            publish()
-        }
     }
 
     fun loadDemoData() {
@@ -150,14 +145,7 @@ class MainTvViewModel : ViewModel() {
                 _videos.value = emptyList()
                 _favorites.value = emptyList()
 
-                _settings.value = SettingsInfo(
-                    account = "Demonstração",
-                    server = "—",
-                    expiration = "—",
-                    epgStatus = "Não sincronizado",
-                    version = "1.0.4",
-                    skin = "Smarted-TV",
-                )
+                _settings.value = SettingsInfo()
             }
         }
     }

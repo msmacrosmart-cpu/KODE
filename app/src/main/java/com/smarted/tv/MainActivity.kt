@@ -51,7 +51,6 @@ class MainActivity : ComponentActivity() {
                             startActivity(PlayerActivity.intent(this, url, item.title))
                         }
                     },
-                    onUpdateEpg = { vm.updateEpg() },
                     onSettingAction = { key -> vm.onSettingAction(key) },
                 ),
             )
