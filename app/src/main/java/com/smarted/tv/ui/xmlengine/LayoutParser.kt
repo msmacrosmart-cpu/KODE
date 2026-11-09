@@ -6,7 +6,7 @@ import org.xmlpull.v1.XmlPullParser
 import java.io.InputStream
 
 /**
- * Lê o XML de layout (assets/layout/*.xml) e devolve um SmartLayout.
+ * Lê o XML de layout (assets/layout (arquivos .xml)) e devolve um SmartLayout.
  * Parser tolerante: tags desconhecidas são ignoradas (não quebram o app).
  */
 object LayoutParser {

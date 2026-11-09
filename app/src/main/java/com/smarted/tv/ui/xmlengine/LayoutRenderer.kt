@@ -96,8 +96,8 @@ fun SmartLayoutScreen(
                     .fillMaxHeight()
                     .padding(horizontal = 24.dp, vertical = 16.dp),
             ) {
-                screen.root?.let { root ->
-                    RenderNode(root, theme, onNavigate)
+                screen.root?.let { node ->
+                    RenderNode(node, theme, onNavigate)
                 }
             }
         }

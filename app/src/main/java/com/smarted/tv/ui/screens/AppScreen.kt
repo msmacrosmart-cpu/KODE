@@ -82,7 +82,7 @@ fun AppScreen(vm: MainTvViewModel) {
             ExitOverlay()
         }
     } else {
-        NativeFallbackScreen(vm = vm)
+        NativeFallbackScreen(vm = vm, layoutError = loaded.error, layoutSource = loaded.source)
     }
 }
 
@@ -112,7 +112,11 @@ private fun ExitOverlay() {
 // ═══════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun NativeFallbackScreen(vm: MainTvViewModel) {
+private fun NativeFallbackScreen(
+    vm: MainTvViewModel,
+    layoutError: String? = null,
+    layoutSource: String = "embutido",
+) {
     val context = LocalContext.current
     val selectedIndex by vm.selectedIndex.collectAsState()
     val channels by vm.channels.collectAsState()
@@ -172,10 +176,18 @@ private fun NativeFallbackScreen(vm: MainTvViewModel) {
                     else -> Column {
                         Text("Bem-vindo ao SmartED-TV", color = SmartEDColors.TextPrimary, style = MaterialTheme.typography.headlineMedium)
                         Text(
-                            "Layout XML não encontrado — usando tela nativa de segurança.",
+                            "Layout em XML indisponível (${layoutSource}) — usando tela nativa de segurança.",
                             color = SmartEDColors.TextSecondary,
                             modifier = Modifier.padding(top = 8.dp),
                         )
+                        if (layoutError != null) {
+                            Text(
+                                "Detalhe: $layoutError",
+                                color = SmartEDColors.TextSecondary,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
                     }
                 }
             }

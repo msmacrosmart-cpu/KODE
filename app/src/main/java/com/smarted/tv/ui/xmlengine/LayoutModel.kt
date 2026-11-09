@@ -5,7 +5,7 @@ import androidx.compose.ui.graphics.Color
 /**
  * Modelo do layout em XML (formato SmartED, inspirado no "skin" do Kodi).
  *
- * O app lê o arquivo de `app/src/main/assets/layout/*.xml` em tempo de execução.
+ * O app lê o arquivo de app/src/main/assets/layout (arquivos .xml) em tempo de execução.
  * Trocar o XML = trocar o layout, sem recompilar o Kotlin.
  *
  * Equivalências com o Kodi:
