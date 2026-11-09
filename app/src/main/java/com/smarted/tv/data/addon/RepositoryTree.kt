@@ -77,8 +77,26 @@ object RepositoryTree {
             .filterNot { it.lowercase().endsWith("addons.xml") || it.lowercase().endsWith("addons.xml.md5") }
             .distinct()
 
-        val extraNodes = extras.take(MAX_EXTRA).map { path ->
-            val isDir = !path.contains('.') || filePaths.any { it.startsWith("$path/") }
+        // Pastas-mãe reais dos arquivos extras (derivadas dos caminhos, não inventadas)
+        val extraDirs = extras
+            .flatMap { path ->
+                val parts = path.split('/')
+                (1 until parts.size).map { parts.take(it).joinToString("/") }
+            }
+            .distinct()
+
+        val extraNodes = (extraDirs.map { RepositoryNode(
+            id = "$repoId::extra::$it",
+            name = it.substringAfterLast('/'),
+            type = RepoNodeType.FOLDER,
+            path = it,
+            parentId = repoId,
+            metadata = mapOf("motivo" to "Pasta do repositório fora do catálogo de add-ons"),
+            capabilities = setOf(RepositoryNode.Capability.LOCAL_FILE),
+            source = source,
+            isDirectory = true,
+        ) } + extras.take(MAX_EXTRA).map { path ->
+            val isDir = extraDirs.contains(path)
             RepositoryNode(
                 id = "$repoId::extra::$path",
                 name = path.substringAfterLast('/'),
@@ -90,7 +108,7 @@ object RepositoryTree {
                 source = source,
                 isDirectory = isDir,
             )
-        }
+        }).sortedWith(compareByDescending<RepositoryNode> { it.isDirectory }.thenBy { it.path })
 
         return RepositoryNode(
             id = repoId,
