@@ -19,12 +19,17 @@ import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.Star
+import com.smarted.tv.data.addon.AddonInstaller
+import com.smarted.tv.data.addon.AddonKind
+import com.smarted.tv.data.addon.RepositoryNode
 import com.smarted.tv.data.source.BrowseEntry
 import com.smarted.tv.data.source.FilesState
 import com.smarted.tv.data.source.SortKey
 import com.smarted.tv.ui.components.MediaItem
 import com.smarted.tv.ui.components.SmartedScaffold
 import com.smarted.tv.ui.screens.*
+import com.smarted.tv.viewmodel.AddonsViewModel
+import com.smarted.tv.viewmodel.RepositoriesViewModel
 
 /**
  * Telas do app — inclui as do menu estilo Kodi.
@@ -80,6 +85,25 @@ data class SmartedActions(
     val onFilesCloseArchive: () -> Unit = {},
     val onFilesInfo: (BrowseEntry?) -> Unit = {},
     val onFilesDismiss: () -> Unit = {},
+    // ── add-ons e repositórios (Fases D/E) ──
+    val addons: AddonsViewModel.State = AddonsViewModel.State(),
+    val repos: RepositoriesViewModel.State = RepositoriesViewModel.State(),
+    val onAddonInstallZip: (String, String) -> Unit = { _, _ -> },
+    val onAddonConfirmInstall: (Boolean) -> Unit = {},
+    val onAddonCancelPending: () -> Unit = {},
+    val onAddonUninstall: (String) -> Unit = {},
+    val onAddonSelect: (AddonInstaller.Installed?) -> Unit = {},
+    val onAddonCategory: (AddonKind?) -> Unit = {},
+    val onAddonRefresh: () -> Unit = {},
+    val onRepoAdd: (String) -> Unit = {},
+    val onRepoLoad: (String) -> Unit = {},
+    val onRepoOpenNode: (RepositoryNode) -> Unit = {},
+    val onRepoUp: () -> Unit = {},
+    val onRepoNodeAt: (Int) -> Unit = {},
+    val onRepoToggle: (String, Boolean) -> Unit = { _, _ -> },
+    val onRepoRemove: (String) -> Unit = {},
+    val onRepoSelectNode: (RepositoryNode?) -> Unit = {},
+    val onAddonDismiss: () -> Unit = {},
 )
 
 @Composable
@@ -136,7 +160,26 @@ fun SmartedApp(data: SmartedData = SmartedData(), actions: SmartedActions = Smar
             Screen.FAVORITOS -> ListScreen("Favoritos", data.favorites, "Nenhum favorito salvo", Icons.Rounded.Star, open)
 
             // ── sistema ──
-            Screen.ADDONS -> AddonsScreen(data.addons, open)
+            Screen.ADDONS -> AddonsScreen(
+                addonState = actions.addons,
+                repoState = actions.repos,
+                onInstallZip = actions.onAddonInstallZip,
+                onConfirmInstall = actions.onAddonConfirmInstall,
+                onCancelPending = actions.onAddonCancelPending,
+                onUninstall = actions.onAddonUninstall,
+                onSelectAddon = actions.onAddonSelect,
+                onSetCategory = actions.onAddonCategory,
+                onRefreshAddons = actions.onAddonRefresh,
+                onAddRepo = actions.onRepoAdd,
+                onLoadRepo = actions.onRepoLoad,
+                onOpenRepoNode = actions.onRepoOpenNode,
+                onRepoUp = actions.onRepoUp,
+                onRepoNodeAt = actions.onRepoNodeAt,
+                onToggleRepo = actions.onRepoToggle,
+                onRemoveRepo = actions.onRepoRemove,
+                onSelectRepoNode = actions.onRepoSelectNode,
+                onDismissMessage = actions.onAddonDismiss,
+            )
             Screen.ARQUIVOS -> ArquivosScreen(
                 state = actions.files,
                 onOpenSource = actions.onFilesSource,

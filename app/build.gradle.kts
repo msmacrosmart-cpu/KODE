@@ -89,6 +89,8 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+        // Some org.json (usado no registro de add-ons/repositórios)
+        unitTests.isIncludeAndroidResources = false
     }
 }
 

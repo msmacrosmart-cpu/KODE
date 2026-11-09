@@ -18,6 +18,7 @@ import com.smarted.tv.data.source.Crumb
 import com.smarted.tv.ui.components.MediaItem
 import com.smarted.tv.ui.player.PlayerActivity
 import com.smarted.tv.ui.screens.SettingsInfo
+import com.smarted.tv.viewmodel.AddonsViewModel
 import com.smarted.tv.viewmodel.FilesViewModel
 import com.smarted.tv.viewmodel.MainTvViewModel
 
@@ -29,6 +30,7 @@ class MainActivity : ComponentActivity() {
 
     private val vm: MainTvViewModel by viewModels()
     private val filesVm: FilesViewModel by viewModels()
+    private val addonsVm: AddonsViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +49,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             val data by vm.data.collectAsState()
             val filesState by filesVm.state.collectAsState()
+            val addonState by addonsVm.state.collectAsState()
+            val repoState by addonsVm.repoState.collectAsState()
             SmartedApp(
                 data = data,
                 actions = SmartedActions(
@@ -72,6 +76,24 @@ class MainActivity : ComponentActivity() {
                     onFilesCloseArchive = filesVm::closeArchive,
                     onFilesInfo = filesVm::showInfo,
                     onFilesDismiss = filesVm::clearNotice,
+                    addons = addonState,
+                    repos = repoState,
+                    onAddonInstallZip = addonsVm::inspectAddonZip,
+                    onAddonConfirmInstall = addonsVm::confirmInstall,
+                    onAddonCancelPending = addonsVm::cancelPending,
+                    onAddonUninstall = addonsVm::uninstall,
+                    onAddonSelect = addonsVm::select,
+                    onAddonCategory = addonsVm::setCategory,
+                    onAddonRefresh = addonsVm::refresh,
+                    onRepoAdd = addonsVm::addRepoByUrl,
+                    onRepoLoad = addonsVm::loadRepo,
+                    onRepoOpenNode = addonsVm::openRepoNode,
+                    onRepoUp = addonsVm::repoUp,
+                    onRepoNodeAt = addonsVm::repoNodeAt,
+                    onRepoToggle = addonsVm::toggleRepo,
+                    onRepoRemove = addonsVm::removeRepo,
+                    onRepoSelectNode = addonsVm::selectRepoNode,
+                    onAddonDismiss = addonsVm::clearMessage,
                 ),
             )
         }
