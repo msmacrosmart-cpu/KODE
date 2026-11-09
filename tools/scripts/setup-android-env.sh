@@ -29,6 +29,7 @@ fi
 JDK_DIR="${JDK_HOME:-$PROJECT_DIR/.jdk17}"
 CMDLINE_TOOLS_VERSION="11076708"          # commandlinetools-linux-11076708
 COMPILE_SDK="35"
+
 BUILD_TOOLS="35.0.0"
 NO_SUDO=0
 [[ "${1:-}" == "--no-sudo" ]] && NO_SUDO=1
@@ -119,38 +120,47 @@ install_jdk() {
 install_android_sdk() {
   export ANDROID_HOME="$SDK_DIR"
   export ANDROID_SDK_ROOT="$SDK_DIR"
-
   mkdir -p "$SDK_DIR"
 
-  # SDK já provisionado (ex.: android-actions/setup-android no CI)?
-  if command -v sdkmanager >/dev/null 2>&1 && [[ -d "$SDK_DIR/build-tools" || -d "$SDK_DIR/platforms" ]]; then
-    say "Android SDK já presente em $SDK_DIR (sdkmanager no PATH) — instalando só pacotes faltantes"
-  elif [[ ! -d "$SDK_DIR/cmdline-tools/latest/bin" ]]; then
-    say "Baixando Android command-line tools ($CMDLINE_TOOLS_VERSION)"
-    mkdir -p "$SDK_DIR/cmdline-tools"
-    curl -fL --retry 3 -o /tmp/cmdline-tools.zip \
-      "https://dl.google.com/android/repository/commandlinetools-linux-${CMDLINE_TOOLS_VERSION}_latest.zip"
-    rm -rf /tmp/cmdline-tools-unz && mkdir -p /tmp/cmdline-tools-unz
-    unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-tools-unz
-    mv /tmp/cmdline-tools-unz/cmdline-tools "$SDK_DIR/cmdline-tools/latest"
-    rm -rf /tmp/cmdline-tools.zip /tmp/cmdline-tools-unz
-  else
-    say "Android cmdline-tools já presentes em $SDK_DIR"
+  # ── 1) Onde está o sdkmanager? ────────────────────────────────
+  if ! command -v sdkmanager >/dev/null 2>&1; then
+    if [[ -x "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" ]]; then
+      echo "[i] cmdline-tools já presentes em $SDK_DIR"
+    else
+      say "Baixando Android command-line tools ($CMDLINE_TOOLS_VERSION)"
+      mkdir -p "$SDK_DIR/cmdline-tools"
+      curl -fL --retry 3 -o /tmp/cmdline-tools.zip \
+        "https://dl.google.com/android/repository/commandlinetools-linux-${CMDLINE_TOOLS_VERSION}_latest.zip"
+      rm -rf /tmp/cmdline-tools-unz && mkdir -p /tmp/cmdline-tools-unz
+      unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-tools-unz
+      rm -rf "$SDK_DIR/cmdline-tools/latest"
+      mv /tmp/cmdline-tools-unz/cmdline-tools "$SDK_DIR/cmdline-tools/latest"
+      rm -rf /tmp/cmdline-tools.zip /tmp/cmdline-tools-unz
+    fi
   fi
 
   export PATH="$SDK_DIR/cmdline-tools/latest/bin:$SDK_DIR/platform-tools:$SDK_DIR/build-tools/$BUILD_TOOLS:$PATH"
 
-  say "Aceitando licenças do Android SDK"
-  yes | sdkmanager --licenses >/dev/null 2>&1 || true
+  # ── 2) Pacotes: instala só o que falta (nunca apaga o que existe) ──
+  local installed
+  installed="$(sdkmanager --list_installed 2>/dev/null || true)"
 
-  say "Instalando pacotes: platform-tools, platforms;android-$COMPILE_SDK, build-tools;$BUILD_TOOLS"
-  sdkmanager --install \
-    "platform-tools" \
-    "platforms;android-$COMPILE_SDK" \
-    "build-tools;$BUILD_TOOLS" >/dev/null
+  need_pkgs=()
+  grep -q "build-tools;$BUILD_TOOLS" <<< "$installed" || need_pkgs+=("build-tools;$BUILD_TOOLS")
+  grep -q "platforms;android-$COMPILE_SDK" <<< "$installed" || need_pkgs+=("platforms;android-$COMPILE_SDK")
+  grep -q "platform-tools" <<< "$installed" || need_pkgs+=("platform-tools")
+
+  if [[ ${#need_pkgs[@]} -eq 0 ]]; then
+    say "Android SDK completo (build-tools $BUILD_TOOLS, platform $COMPILE_SDK, platform-tools)"
+  else
+    say "Aceitando licenças do Android SDK"
+    yes | sdkmanager --licenses >/dev/null 2>&1 || true
+    say "Instalando pacotes faltantes: ${need_pkgs[*]}"
+    sdkmanager --install "${need_pkgs[@]}" >/dev/null
+  fi
 
   say "Componentes instalados:"
-  sdkmanager --list_installed | sed 's/^/    /'
+  sdkmanager --list_installed 2>/dev/null | sed 's/^/    /'
 }
 
 write_local_properties() {

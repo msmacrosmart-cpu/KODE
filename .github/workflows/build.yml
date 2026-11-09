@@ -13,7 +13,7 @@ on:
         type: boolean
         default: true
       version_name:
-        description: 'Versão (ex: 1.0.1). Vazio = usa o nome da tag/run number'
+        description: 'Versão (ex: 1.0.1). Vazio = usa o run number'
         required: false
         type: string
 
@@ -24,30 +24,36 @@ concurrency:
   group: android-build-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Android SDK pré-instalado no runner do GitHub Actions
+  ANDROID_HOME: /usr/local/lib/android/sdk
+  ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+  COMPILE_SDK: '35'
+  BUILD_TOOLS: '35.0.0'
+  GRADLE_VERSION: '8.10.2'
+
 jobs:
   build:
     name: Assemble Release APK
     runs-on: ubuntu-latest
-    timeout-minutes: 40
-
-    env:
-      # Android SDK pré-instalado no runner do GitHub Actions
-      ANDROID_HOME: /usr/local/lib/android/sdk
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ────────────────────────────────────────────────────────────────
-      # AMBIENTE: JDK 17 + Android SDK (platform 35 + build-tools 35)
-      # ────────────────────────────────────────────────────────────────
+      # ─── AMBIENTE ───────────────────────────────────────────────────
       - name: Setup Java 17 (Temurin)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
+
+      - name: Setup Gradle (com cache)
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+          cache-read-only: false
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -65,35 +71,49 @@ jobs:
           echo "JAVA_HOME=$JAVA_HOME"
           java -version
           echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          command -v gradle && gradle --version
           ls "$ANDROID_HOME/platforms" || true
           ls "$ANDROID_HOME/build-tools" || true
-          ./gradlew --version
 
+      # ─── BUILD ──────────────────────────────────────────────────────
+      # Usa o Gradle do runner (já instalado acima) — não depende do
+      # gradle-wrapper.jar, evitando falha de wrapper corrompido.
       - name: Build release APK
-        run: ./gradlew --no-daemon --stacktrace assembleRelease
+        run: |
+          set -euo pipefail
+          gradle --no-daemon --stacktrace assembleRelease
 
+      # ─── ASSINATURA ─────────────────────────────────────────────────
       - name: Assinatura (apksigner) e verificação
         run: |
-          set -e
-          APK=app/build/outputs/apk/release/app-release.apk
-          APK_UNSIGNED=app/build/outputs/apk/release/app-release-unsigned.apk
+          set -euo pipefail
+          OUT=app/build/outputs/apk/release
+          APK=$OUT/app-release.apk
+          UNSIGNED=$OUT/app-release-unsigned.apk
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           echo "[+] build-tools: $BT"
-          if [ ! -f "$APK" ] && [ -f "$APK_UNSIGNED" ]; then
-            echo "[+] Assinando APK manualmente (apksigner)..."
+
+          if [ ! -f "$APK" ] && [ -f "$UNSIGNED" ]; then
+            echo "[+] Assinando APK manualmente (zipalign + apksigner)"
             keytool -genkeypair -keystore release-keystore.jks -alias smartedtv \
               -keyalg RSA -keysize 2048 -validity 10000 \
               -storepass smartedtv123 -keypass smartedtv123 \
               -dname "CN=SmartED-TV, OU=SmartED, O=SmartED-TV, L=Sao Paulo, S=SP, C=BR"
-            "$BT"/zipalign -f -p 4 "$APK_UNSIGNED" app/build/outputs/apk/release/app-release.apk
+            "$BT"/zipalign -f -p 4 "$UNSIGNED" "$APK"
             "$BT"/apksigner sign --ks release-keystore.jks --ks-key-alias smartedtv \
               --ks-pass pass:smartedtv123 --key-pass pass:smartedtv123 \
-              --out app/build/outputs/apk/release/app-release.apk \
-              app/build/outputs/apk/release/app-release.apk
+              --in "$APK" --out "$APK.signed"
+            mv "$APK.signed" "$APK"
           fi
+
           test -f "$APK"
           "$BT"/apksigner verify --print-certs "$APK" || true
-          cp "$APK" "SmartED-TV-${VERSION_NAME:-build-${{ github.run_number }}}.apk"
+
+          VERSION="${{ github.event.inputs.version_name }}"
+          [ -z "$VERSION" ] && VERSION="build-${{ github.run_number }}"
+          cp "$APK" "SmartED-TV-$VERSION.apk"
+          echo "APK_NAME=SmartED-TV-$VERSION.apk" >> "$GITHUB_ENV"
           ls -lh *.apk
 
       - name: Upload APK (artifact)
@@ -104,6 +124,7 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+      # ─── RELEASE ────────────────────────────────────────────────────
       - name: Criar / atualizar GitHub Release
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.event.inputs.create_release != 'false')
         uses: softprops/action-gh-release@v2
@@ -116,6 +137,9 @@ jobs:
           body: |
             APK de release do **SmartED-TV** (Android TV / TV Box).
 
-            Download direto: veja o arquivo `.apk` em **Assets** abaixo.
+            **Download direto:** clique no arquivo `.apk` em **Assets** abaixo.
 
-            Instalação: `adb install -r SmartED-TV-*.apk`
+            Instalação no dispositivo:
+            ```
+            adb install -r SmartED-TV-*.apk
+            ```
