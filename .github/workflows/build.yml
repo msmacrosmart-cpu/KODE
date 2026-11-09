@@ -98,8 +98,18 @@ jobs:
       # ─── TESTES DE UNIDADE (JVM) ────────────────────────────────────
       - name: Testes de unidade (classificador + parsers + zip/addon)
         run: |
+          # Relatório HTML/XML legível (não só a saída do console)
           set -o pipefail
-          gradle --no-daemon --console=plain test 2>&1 | tee /tmp/test.log
+          gradle --no-daemon --console=plain test --continue 2>&1 | tee /tmp/test.log
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "::group::Falhas de teste"
+            for f in $(find app/build/test-results -name "TEST-*.xml"); do
+              echo "--- $f"
+              grep -oE '<testcase name="[^"]*"|<failure[^>]*message="[^"]*"' "$f" || true
+            done
+            echo "::endgroup::"
+            exit 1
+          fi
 
       - name: Publicar relatório de testes
         if: always()
@@ -133,9 +143,12 @@ jobs:
           set -e
           {
             grep -E "^e: |error:|FAILED|What went wrong" /tmp/build.log 2>/dev/null | head -100
-            grep -ho 'testcase name="[^"]*"' app/build/test-results/**/*.xml 2>/dev/null | head -60
-            grep -ho 'message="[^"]*"' app/build/test-results/**/*.xml 2>/dev/null | head -60
           } > ci-build.log || true
+          # detalhes dos testes: XMLs do JUnit (message = erro esperado vs obtido)
+          find app/build/test-results -name "*.xml" -print 2>/dev/null | while read -r x; do
+            echo "### $x"
+            grep -hoE 'testcase name="[^"]*"|<failure[^>]*message="[^"]*"' "$x" 2>/dev/null | head -80
+          done >> ci-build.log || true
           [ -s ci-build.log ] || tail -c 100000 /tmp/build.log > ci-build.log 2>/dev/null || true
           git config user.name  "SmartED CI"
           git config user.email "ci@smarted.local"
