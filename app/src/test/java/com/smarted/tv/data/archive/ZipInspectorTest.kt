@@ -43,7 +43,8 @@ class ZipInspectorTest {
         )
         val r = ZipInspector.inspect(f)
         assertTrue(r.isRepository)
-        assertEquals(listOf("addons.xml"), r.repoManifestPaths)
+        // `addons.xml` e o checksum `addons.xml.md5` são ambos parte do manifesto do repositório
+        assertEquals(listOf("addons.xml", "addons.xml.md5"), r.repoManifestPaths)
         assertFalse(r.hasAddonManifest)
         assertEquals(3, r.totalFiles)
         assertTrue(r.warnings.isEmpty())
