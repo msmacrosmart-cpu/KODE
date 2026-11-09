@@ -150,7 +150,7 @@ class EndToEndFlowTest {
         val classified = FileBrowser.classify("sem-extensao", "application/vnd.apple.mpegurl", master.toByteArray())
         assertEquals(FileKind.HLS, classified.kind)
 
-        val playlist = PlaylistParser.parse(master, "m3u8")
+        val playlist = PlaylistParser.parse(master, PlaylistFormat.HLS)
         assertEquals(PlaylistFormat.HLS, playlist.format)
         assertTrue(playlist.isMasterManifest)
         assertEquals(2, playlist.variants.size)
