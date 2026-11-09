@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">SmartED-TV</string>
+    <string name="nav_home">Início</string>
+    <string name="nav_channels">Canais</string>
+    <string name="nav_movies">Filmes</string>
+    <string name="nav_series">Séries</string>
+    <string name="nav_addons">Addons</string>
+    <string name="nav_tools">Ferramentas</string>
+    <string name="nav_settings">Configurações</string>
+    <string name="nav_exit">Sair</string>
+    <string name="menu_options">Menu de opções</string>
+    <string name="welcome">Bem-vindo ao SmartED-TV</string>
+    <string name="no_channels">Nenhum canal disponível</string>
+    <string name="no_movies">Nenhum filme disponível</string>
+    <string name="no_series">Nenhuma série disponível</string>
+    <string name="live_tv">Canais TV</string>
+    <string name="movies">Filmes</string>
+    <string name="series">Séries</string>
+    <string name="settings">Configurações</string>
+    <string name="addons">Addons</string>
+    <string name="tools">Ferramentas</string>
+    <string name="exit">Sair</string>
+</resources>
