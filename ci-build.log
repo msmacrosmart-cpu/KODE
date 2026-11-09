@@ -1,0 +1,6 @@
+PlaylistParserTest > hls criptografado avisa sobre DRM FAILED
+PlaylistParserTest > cue extrai faixas com artista FAILED
+PlaylistParserTest > hls master extrai variantes com resolucao e bitrate FAILED
+> Task :app:testDebugUnitTest FAILED
+* What went wrong:
+BUILD FAILED in 32s
