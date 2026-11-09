@@ -42,8 +42,9 @@ class FileBrowserTest {
     @Test
     fun `ordenar por tamanho respeita ordem pedida e mantem pastas na frente`() {
         val desc = FileBrowser.sort(amostra, SortKey.SIZE, ascending = false)
-        // tamanho decrescente: b.mkv (3000) > a.MP4 (1000) > c.srt (10); pastas na frente
-        assertEquals(listOf("alfa", "Zeta", "b.mkv", "a.MP4", "c.srt"), desc.map { it.name })
+        // decrescente: pastas primeiro (Zeta > alfa), depois arquivos por tamanho
+        // (b.mkv 3000 > a.MP4 1000 > c.srt 10)
+        assertEquals(listOf("Zeta", "alfa", "b.mkv", "a.MP4", "c.srt"), desc.map { it.name })
     }
 
     @Test
