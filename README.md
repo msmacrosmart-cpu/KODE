@@ -154,7 +154,7 @@ Rede e internet · Nome do dispositivo · Sobre.
 
 | O que | Aonde |
 |---|---|
-| **Download direto do APK (última versão)** | https://github.com/msmacrosmart-cpu/KODE/releases/latest/download/SmartED-TV-1.0.8-universal.apk |
+| **Download direto do APK (última versão)** | https://github.com/msmacrosmart-cpu/KODE/releases/latest/download/SmartED-TV-1.0.9-universal.apk |
 | Página de todas as releases | https://github.com/msmacrosmart-cpu/KODE/releases |
 | Artefatos de cada build (90 dias) | aba **Actions** → run → *Artifacts* |
 
