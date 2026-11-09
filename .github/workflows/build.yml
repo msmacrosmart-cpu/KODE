@@ -131,6 +131,26 @@ jobs:
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           cp "$APK" "SmartED-TV-$VERSION.apk"
           echo "APK_NAME=SmartED-TV-$VERSION.apk" >> "$GITHUB_ENV"
+
+          # Informações de verificação (vão para o corpo da release)
+          {
+            echo "APK de release do **SmartED-TV** (Android TV / TV Box)."
+            echo
+            echo "| Item | Valor |"
+            echo "|---|---|"
+            echo "| Arquivo | \`SmartED-TV-$VERSION.apk\` |"
+            echo "| Tamanho | $(du -h "SmartED-TV-$VERSION.apk" | cut -f1) |"
+            echo "| SHA-256 | \`$(sha256sum "SmartED-TV-$VERSION.apk" | cut -d' ' -f1)\` |"
+            echo "| Versão | $VERSION (versionCode ${{ github.run_number }}) |"
+            echo "| Package | com.smarted.tv |"
+            echo
+            echo '```'
+            "$BT"/aapt2 dump badging "$APK" 2>/dev/null | grep -E "^(package|application-label|sdkVersion|targetSdkVersion|launchable-activity)" || true
+            echo '```'
+            echo
+            echo "**Instalação:** \`adb install -r SmartED-TV-$VERSION.apk\`"
+          } > release-body.md
+          cat release-body.md
           ls -lh *.apk
 
       - name: Upload APK (artifact)
@@ -152,12 +172,4 @@ jobs:
           files: '*.apk'
           generate_release_notes: true
           make_latest: true
-          body: |
-            APK de release do **SmartED-TV** (Android TV / TV Box).
-
-            **Download direto:** clique no arquivo `.apk` em **Assets** abaixo.
-
-            Instalação no dispositivo:
-            ```
-            adb install -r SmartED-TV-*.apk
-            ```
+          body_path: release-body.md
