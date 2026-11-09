@@ -2,7 +2,6 @@ package com.smarted.tv.data.addon
 
 import org.w3c.dom.Element
 import org.w3c.dom.Node
-import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
 import java.io.ByteArrayInputStream
 
@@ -43,9 +42,10 @@ object AddonManifestParser {
                 runCatching { setFeature("http://apache.org/xml/features/disallow-doctype-decl", true) }
                 runCatching { setFeature("http://xml.org/sax/features/external-general-entities", false) }
                 runCatching { setFeature("http://xml.org/sax/features/external-parameter-entities", false) }
-                runCatching { setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true) }
-                runCatching { setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "") }
-                runCatching { setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "") }
+                runCatching { setFeature("http://javax.xml.XMLConstants/feature/secure-processing", true) }
+                // Strings literais: XMLConstants do Android não expõe ACCESS_EXTERNAL_*
+                runCatching { setAttribute("http://javax.xml.XMLConstants/property/accessExternalDTD", "") }
+                runCatching { setAttribute("http://javax.xml.XMLConstants/property/accessExternalSchema", "") }
             }
             val doc = factory.newDocumentBuilder()
                 .parse(ByteArrayInputStream(bytes))
