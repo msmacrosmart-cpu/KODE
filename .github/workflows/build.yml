@@ -131,10 +131,10 @@ jobs:
         if: failure()
         run: |
           set -e
-          cat /tmp/test.log /tmp/build.log 2>/dev/null > ci-build.log || true
+          { grep -E "^e: |error:|FAILED|What went wrong|Test.*FAILED|expected:|actual:" /tmp/test.log 2>/dev/null | head -200;             grep -E "^e: |error:|FAILED|What went wrong" /tmp/build.log 2>/dev/null | head -200; } > ci-build.log || true
+          [ -s ci-build.log ] || tail -c 100000 /tmp/build.log > ci-build.log 2>/dev/null || true
           git config user.name  "SmartED CI"
           git config user.email "ci@smarted.local"
-          tail -c 200000 /tmp/build.log > ci-build.log || true
           git add -f ci-build.log
           git commit -m "ci: log do build (diagnóstico) [skip ci]" || true
           # branch por execução (nunca conflita) + branch fixa para conveniência
