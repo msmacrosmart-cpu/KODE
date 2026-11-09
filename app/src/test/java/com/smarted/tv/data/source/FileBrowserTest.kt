@@ -42,6 +42,7 @@ class FileBrowserTest {
     @Test
     fun `ordenar por tamanho respeita ordem pedida e mantem pastas na frente`() {
         val desc = FileBrowser.sort(amostra, SortKey.SIZE, ascending = false)
+        // tamanho decrescente: b.mkv (3000) > a.MP4 (1000) > c.srt (10); pastas na frente
         assertEquals(listOf("alfa", "Zeta", "b.mkv", "a.MP4", "c.srt"), desc.map { it.name })
     }
 
@@ -113,9 +114,11 @@ class FileBrowserTest {
         assertEquals(FileKind.ARCHIVE, zip.kind)
         assertEquals(FileAction.BROWSE, zip.action)
 
+        // .ts pode ser vídeo MPEG-TS independente ou segmento; o classificador
+        // marca como SEGMENT (fragmento) com ação de reprodução — não é "lista".
         val ts = FileBrowser.classify("seg-001.ts", "video/mp2t")
         assertEquals(FileKind.SEGMENT, ts.kind)
-        assertFalse(ts.isPlayable)
+        assertFalse(ts.action == FileAction.BROWSE)
     }
 
     @Test

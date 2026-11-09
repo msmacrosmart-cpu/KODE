@@ -96,7 +96,10 @@ object FileBrowser {
             SortKey.SIZE -> compareBy<BrowseEntry> { if (it.isDirectory) -1L else it.size }
                 .thenBy { it.name.lowercase(Locale.ROOT) }
         }
-        val sorted = if (ascending) entries.sortedWith(cmp) else entries.sortedWith(cmp.reversed())
+        val ordered = if (ascending) entries.sortedWith(cmp) else entries.sortedWith(cmp).reversed()
+        // `reversed()` devolve a lista inteira ao contrário — então reaplicamos o
+        // agrupamento pastas-primeiro sobre a ordem já decidida.
+        val sorted = ordered
         // Pastas primeiro, preservando a ordem escolhida dentro de cada grupo.
         return sorted.filter { it.isDirectory } + sorted.filterNot { it.isDirectory }
     }
