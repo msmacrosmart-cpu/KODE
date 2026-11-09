@@ -9,55 +9,89 @@ import kotlinx.coroutines.launch
 import com.smarted.tv.data.model.LiveChannel
 import com.smarted.tv.data.model.Movie
 import com.smarted.tv.data.model.Serie
+import com.smarted.tv.ui.SmartedData
+import com.smarted.tv.ui.components.MediaItem
+import com.smarted.tv.ui.screens.SettingsInfo
 
 /**
- * Estado único da aplicação.
- *
- * IMPORTANTE: este ViewModel precisa ser obtido com `viewModel()` na Activity
- * (ver MainActivity). Se for instanciado direto no composable (`MainTvViewModel()`)
- * ele é recriado a cada recomposição, o estado é descartado e o app fica em tela preta.
+ * Estado da aplicação. Deve ser obtido via `by viewModels()` na Activity
+ * (nunca instanciado dentro do composable — era a causa da tela preta).
  */
 class MainTvViewModel : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SmartEdUiState())
-    val uiState: StateFlow<SmartEdUiState> = _uiState.asStateFlow()
-
-    // Compatibilidade com as telas atuais
-    val channels: StateFlow<List<LiveChannel>> get() = _channels
-    val movies: StateFlow<List<Movie>> get() = _movies
-    val series: StateFlow<List<Serie>> get() = _series
-    val selectedIndex: StateFlow<Int> get() = _selectedIndex
-
     private val _channels = MutableStateFlow<List<LiveChannel>>(emptyList())
+    val channels: StateFlow<List<LiveChannel>> = _channels.asStateFlow()
+
     private val _movies = MutableStateFlow<List<Movie>>(emptyList())
+    val movies: StateFlow<List<Movie>> = _movies.asStateFlow()
+
     private val _series = MutableStateFlow<List<Serie>>(emptyList())
-    private val _selectedIndex = MutableStateFlow(0)
+    val series: StateFlow<List<Serie>> = _series.asStateFlow()
+
+    private val _settings = MutableStateFlow(SettingsInfo())
+    val settings: StateFlow<SettingsInfo> = _settings.asStateFlow()
+
+    /** Dados já no formato do layout (observável — a tela atualiza sozinha). */
+    private val _data = MutableStateFlow(SmartedData())
+    val data: StateFlow<SmartedData> = _data.asStateFlow()
 
     init {
         loadDemoData()
     }
 
-    fun selectIndex(index: Int) {
-        _selectedIndex.value = index
-        _uiState.value = _uiState.value.copy(currentScreen = index)
+    /** Converte os modelos do app para os modelos do layout (MediaItem). */
+    private fun publish() {
+        _data.value = smartedData()
     }
 
-    fun setScreen(key: String) {
-        _uiState.value = _uiState.value.copy(currentScreenKey = key)
-    }
+    fun smartedData(): SmartedData = SmartedData(
+        channels = _channels.value.map {
+            MediaItem(
+                id = it.id,
+                title = "${it.number} • ${it.name}",
+                subtitle = it.category,
+                imageUrl = it.logoUrl,
+                url = it.streamUrl,
+            )
+        },
+        movies = _movies.value.map {
+            MediaItem(
+                id = it.id,
+                title = it.title,
+                subtitle = listOfNotNull(it.year.takeIf { y -> y > 0 }?.toString(), it.genre)
+                    .filter { p -> p.isNotBlank() }.joinToString(" • "),
+                imageUrl = it.posterUrl,
+                url = it.streamUrl,
+            )
+        },
+        series = _series.value.map {
+            MediaItem(
+                id = it.id,
+                title = it.title,
+                subtitle = listOfNotNull(it.year.takeIf { y -> y > 0 }?.toString(), "${it.seasons} temp.")
+                    .joinToString(" • "),
+                imageUrl = it.posterUrl,
+                url = it.streamUrl,
+            )
+        },
+        addons = emptyList(),
+        files = emptyList(),
+        settings = _settings.value,
+    )
 
-    fun setError(message: String?) {
-        _uiState.value = _uiState.value.copy(errorMessage = message)
-    }
-
-    fun setLayoutSource(source: String) {
-        _uiState.value = _uiState.value.copy(layoutSource = source)
+    fun updateEpg() {
+        viewModelScope.launch {
+            _settings.value = _settings.value.copy(epgStatus = "Atualizando…")
+            publish()
+            // TODO: integrar download real do EPG (XMLTV)
+            _settings.value = _settings.value.copy(epgStatus = "EPG atualizado agora")
+            publish()
+        }
     }
 
     fun loadDemoData() {
         viewModelScope.launch {
             runCatching {
-                // Catálogo de demonstração (substituído pela integração Xtream/M3U)
                 _channels.value = listOf(
                     LiveChannel("ch1", 1, "Globo News", null, "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", "Notícias"),
                     LiveChannel("ch2", 2, "Record TV", null, "https://test-streams.mux.dev/pts_shift/master.m3u8", "Entretenimento"),
@@ -75,17 +109,13 @@ class MainTvViewModel : ViewModel() {
                     Serie("s2", "Stranger Things", description = "Mistérios em Hawkins", year = 2016, genre = "Sci-Fi", seasons = 4),
                     Serie("s3", "The Mandalorian", description = "Star Wars universo", year = 2019, genre = "Ação", seasons = 3),
                 )
-            }.onFailure { e ->
-                setError("Falha ao carregar catálogo: ${e.message}")
+                _settings.value = SettingsInfo(
+                    account = "Demonstração",
+                    server = "—",
+                    expiration = "—",
+                    epgStatus = "Não sincronizado",
+                )
             }
         }
     }
 }
-
-/** Estado da UI (um único objeto — evita recomposições com estado divergente). */
-data class SmartEdUiState(
-    val currentScreen: Int = 0,
-    val currentScreenKey: String = "home",
-    val errorMessage: String? = null,
-    val layoutSource: String = "assets",
-)
