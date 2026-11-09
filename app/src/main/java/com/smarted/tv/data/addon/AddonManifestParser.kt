@@ -50,7 +50,18 @@ object AddonManifestParser {
             val doc = factory.newDocumentBuilder()
                 .parse(ByteArrayInputStream(bytes))
             val root = doc.documentElement ?: return Result(null, "addon.xml sem elemento raiz")
+            return fromElement(root)
+        } catch (e: Exception) {
+            Result(null, "addon.xml inválido: ${e.message ?: e::class.java.simpleName}")
+        }
+    }
 
+    /**
+     * Lê um elemento `<addon>` já parseado (usado também por `addons.xml`,
+     * que contém vários `<addon>`).
+     */
+    internal fun fromElement(root: Element): Result {
+        return try {
             if (root.tagName.lowercase() != "addon") {
                 return Result(null, "raiz <${root.tagName}> não é <addon>")
             }
