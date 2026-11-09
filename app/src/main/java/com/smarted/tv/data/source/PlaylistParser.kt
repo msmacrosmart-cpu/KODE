@@ -30,7 +30,7 @@ object PlaylistParser {
 
         val format = formatHint ?: detectFormat(text)
         return when (format) {
-            PlaylistFormat.HLS -> parseHls(text)
+            PlaylistFormat.HLS -> parseHls(text, baseUrl)
             PlaylistFormat.M3U -> parseM3u(text)
             PlaylistFormat.PLS -> parsePls(text)
             PlaylistFormat.XSPF -> parseXspf(text)
@@ -119,7 +119,7 @@ object PlaylistParser {
     }
 
     /** Master HLS: variantes + metadados de segmento. Não é lista de canais. */
-    private fun parseHls(text: String): Playlist {
+    private fun parseHls(text: String, baseUrl: String? = null): Playlist {
         val variants = mutableListOf<StreamVariant>()
         val warnings = mutableListOf<String>()
         var pendingAttrs: Map<String, String> = emptyMap()
@@ -177,7 +177,7 @@ object PlaylistParser {
                     append(it.height?.let { h -> "${h}p" } ?: "variante")
                     it.bandwidthBps?.let { b -> append(" • ${b / 1000} kbps") }
                 },
-                url = resolve(it.uri),
+                url = resolve(it.uri, baseUrl),
                 type = PlaylistEntryType.LIVE,
                 attributes = mapOfNotNull(
                     "bandwidth" to it.bandwidthBps?.toString(),
@@ -357,7 +357,18 @@ object PlaylistParser {
         }
     }
 
-    private fun resolve(uri: String): String = uri
+    /**
+     * Resolve uma URI relativa do manifesto contra a URL de origem.
+     * Sem isso, `720p/index.m3u8` nunca tocaria — e a URL original (com query
+     * string) é sempre preservada.
+     */
+    private fun resolve(uri: String, baseUrl: String?): String {
+        val target = uri.trim()
+        if (target.isEmpty()) return target
+        if (target.startsWith("http://") || target.startsWith("https://")) return target
+        if (baseUrl.isNullOrBlank()) return target
+        return runCatching { java.net.URI(baseUrl).resolve(target).toString() }.getOrDefault(target)
+    }
 
     private fun mapOfNotNull(vararg pairs: Pair<String, String?>): Map<String, String> =
         pairs.mapNotNull { (k, v) -> v?.let { k to it } }.toMap()

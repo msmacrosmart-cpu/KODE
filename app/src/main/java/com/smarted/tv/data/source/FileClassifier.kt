@@ -194,7 +194,7 @@ object FileClassifier {
                     "conteúdo: #EXTM3U (lista de canais/itens)")
             }
         }
-        if (text.startsWith("<?xml") || text.startsWith("<")) {
+        if ((text.startsWith("<?xml") || text.startsWith("<")) && text.looksLikeXmlDocument()) {
             val lower = text.lowercase()
             return when {
                 lower.contains("<mpd") ->
@@ -215,6 +215,16 @@ object FileClassifier {
             return Classification(FileKind.PLAYLIST, FileAction.BROWSE, "audio/x-scpls", true, 1f, "conteúdo: PLS")
         }
         return null
+    }
+
+    /**
+     * Um cabeçalho XML precisa de uma tag fechada perto do início. Isso evita
+     * classificar `.mkv`/`.mp4` (que têm "<" nos bytes binários) como XML —
+     * bug real detectado no teste de integração da Fase G.
+     */
+    private fun String.looksLikeXmlDocument(): Boolean {
+        val end = indexOf('>')
+        return end in 2..200
     }
 
     /** Classificação por extensão (usada para conteúdo ausente ou não reconhecido). */

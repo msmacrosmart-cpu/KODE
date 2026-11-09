@@ -137,4 +137,17 @@ class FileClassifierTest {
         assertTrue(MimeMap.looksLikeStreamUrl("http://host:8080/live/user/pass/123"))
         assertFalse(MimeMap.looksLikeStreamUrl("filme.mkv"))
     }
+
+    @Test
+    fun `binario contendo sinal de menor nao vira xml`() {
+        // regressão da Fase G: cabeçalho de .mkv/.mp4 tem "<" nos bytes
+        val head = ByteArray(64).also { it[3] = 0x3C } // '<' solto, sem tag fechada
+        val c = FileClassifier.classify("video.mkv", head)
+        assertEquals(FileKind.VIDEO, c.kind)
+        assertFalse(c.sniffed)
+
+        // XML real continua sendo reconhecido pelo conteúdo
+        val xml = "<addons><addon id=\"x\"/></addons>".toByteArray()
+        assertEquals(FileKind.REPO_MANIFEST, FileClassifier.classify("qualquer.bin", xml).kind)
+    }
 }
