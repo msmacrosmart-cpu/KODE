@@ -194,6 +194,11 @@ fun SmartedApp(data: SmartedData = SmartedData(), actions: SmartedActions = Smar
                 onRemoveRepo = actions.onRepoRemove,
                 onSelectRepoNode = actions.onRepoSelectNode,
                 onDismissMessage = actions.onAddonDismiss,
+                onOpenPlugin = { uri ->
+                    actions.onAddonSelect(null)
+                    actions.onPluginOpen(uri)
+                    screen = Screen.PLUGIN
+                },
             )
             Screen.ARQUIVOS -> ArquivosScreen(
                 state = actions.files,

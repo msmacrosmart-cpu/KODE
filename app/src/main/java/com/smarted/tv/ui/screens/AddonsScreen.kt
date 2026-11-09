@@ -69,6 +69,7 @@ fun AddonsScreen(
     onRemoveRepo: (String) -> Unit,
     onSelectRepoNode: (RepositoryNode?) -> Unit,
     onDismissMessage: () -> Unit,
+    onOpenPlugin: (String) -> Unit,
 ) {
     var tab by remember { mutableStateOf(Tab.INSTALLED) }
 
@@ -122,7 +123,13 @@ fun AddonsScreen(
         PendingDialog(pending, onConfirm = onConfirmInstall, onCancel = onCancelPending)
     }
     addonState.selected?.let { addon ->
-        AddonDetailDialog(addon, addonState.files, onClose = { onSelectAddon(null) }, onUninstall = onUninstall)
+        AddonDetailDialog(
+            addon = addon,
+            files = addonState.files,
+            onClose = { onSelectAddon(null) },
+            onUninstall = onUninstall,
+            onOpen = { onOpenPlugin("plugin://${addon.id}/") },
+        )
     }
 }
 
@@ -487,6 +494,7 @@ private fun AddonDetailDialog(
     files: List<String>,
     onClose: () -> Unit,
     onUninstall: (String) -> Unit,
+    onOpen: () -> Unit,
 ) {
     Dialog(onDismissRequest = onClose) {
         Column(
@@ -515,6 +523,11 @@ private fun AddonDetailDialog(
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 SmallAction(Icons.Rounded.Delete, "Desinstalar", { onUninstall(addon.id) })
+                if (addon.compatibility == Compatibility.COMPATIBLE ||
+                    addon.compatibility == Compatibility.COMPATIBLE_WITH_ADAPTATION
+                ) {
+                    SmallAction(Icons.Rounded.PlayArrow, "Abrir add-on", onOpen)
+                }
                 Spacer(Modifier.weight(1f))
                 SmallAction(Icons.Rounded.Close, "Fechar", onClose)
             }
