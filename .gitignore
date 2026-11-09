@@ -9,9 +9,12 @@ local.properties
 .android-sdk/
 .jdk17/
 
-# Assinatura (NUNCA comitar keystore)
+# Assinatura: por padrão NÃO comitar keystore.
+# Exceção única: a chave do projeto em tools/keystore/, necessária para que o
+# Android aceite atualizar o app por cima (mesma assinatura em todas as versões).
 *.jks
 *.keystore
+!tools/keystore/release-keystore.jks
 release-keystore.jks
 
 # IDE

@@ -189,3 +189,17 @@ KODE/
 - Layout base: MakroTV.XtreamYT
 - Configurações: TV Eminem
 - Arquitetura: IPTV-Native
+
+## Atualizar sem desinstalar
+
+Todas as versões são assinadas com a **mesma chave** (`tools/keystore/release-keystore.jks`),
+por isso o Android aceita instalar por cima:
+
+- **Pelo app:** Configurações › Atualizações › *Procurar atualização* › *Baixar e atualizar*.
+  O app consulta o manifest `update.json` da última release, baixa o APK universal, confere o
+  **SHA-256** e abre o instalador do sistema.
+- **Manual:** instale o `.apk` universal novo por cima do atual (`adb install -r`).
+
+Se algum dia o Android recusar com `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, a chave mudou — verifique
+`tools/keystore/release-keystore.jks` e o secret `ANDROID_KEYSTORE_BASE64`.
+

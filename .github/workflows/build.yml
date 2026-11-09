@@ -93,13 +93,11 @@ jobs:
             cp tools/keystore/release-keystore.jks release-keystore.jks
             STORE_PASS="smartedtv123"; KEY_PASS="smartedtv123"; ALIAS="smartedtv"
           else
-            # Ainda NÃO existe chave no repositório nem nos secrets. Para não
-            # travar o build, geramos uma e publicamos como artefato: baixe e
-            # configure ANDROID_KEYSTORE_BASE64 para que TODAS as versões
-            # seguintes tenham a MESMA assinatura (sem isso o Android exige
-            # desinstalar para atualizar).
-            echo "::warning::Nenhuma chave fixa encontrada — gerando uma temporária."
-            echo "::warning::Baixe o artefato signing-key e configure ANDROID_KEYSTORE_BASE64 para permitir atualização por cima."
+            # Ainda NÃO existe chave no repositório nem nos secrets.
+            # O Android só aceita atualizar um app cuja assinatura seja a MESMA.
+            # Então: geramos UMA chave e a comitamos em tools/keystore/, para que
+            # todos os builds seguintes (e todas as versões futuras) usem a mesma.
+            echo "::warning::Nenhuma chave fixa encontrada — gerando a chave do projeto (uma única vez)."
             keytool -genkeypair \
               -keystore release-keystore.jks \
               -alias smartedtv \
@@ -107,6 +105,12 @@ jobs:
               -storepass smartedtv123 -keypass smartedtv123 \
               -dname "CN=SmartED-TV, OU=SmartED, O=SmartED-TV, L=Sao Paulo, S=SP, C=BR"
             STORE_PASS="smartedtv123"; KEY_PASS="smartedtv123"; ALIAS="smartedtv"
+            mkdir -p tools/keystore
+            cp release-keystore.jks tools/keystore/release-keystore.jks
+            git add -f tools/keystore/release-keystore.jks
+            git -c user.name="SmartED CI" -c user.email="ci@smarted.local" \
+              commit -q -m "ci: chave de assinatura fixa do projeto (permite atualizar por cima) [skip ci]" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" || true
             KEEP_KEY="yes"
           fi
           printf 'STORE_PASS=%s\nKEY_PASS=%s\nALIAS=%s\n' "$STORE_PASS" "$KEY_PASS" "$ALIAS" >> "$GITHUB_ENV"
@@ -117,14 +121,6 @@ jobs:
             | grep -m1 "SHA256:" | sed 's/.*SHA256: //')
           echo "CERT_SHA256=$CERT_SHA256" >> "$GITHUB_ENV"
           echo "Assinatura (SHA-256 do certificado): $CERT_SHA256"
-
-      - name: Publicar chave gerada (apenas quando ainda não há chave fixa)
-        if: env.KEEP_KEY == 'yes'
-        uses: actions/upload-artifact@v4
-        with:
-          name: signing-key
-          path: release-keystore.jks
-          retention-days: 30
 
       - name: Checagem do ambiente
         run: |
