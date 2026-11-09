@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import com.smarted.tv.data.model.LiveChannel
 import com.smarted.tv.data.model.Movie
 import com.smarted.tv.data.model.Serie
+import com.smarted.tv.ui.ClimateInfo
 import com.smarted.tv.ui.SmartedData
 import com.smarted.tv.ui.components.MediaItem
 import com.smarted.tv.ui.screens.SettingsInfo
@@ -30,6 +31,16 @@ class MainTvViewModel : ViewModel() {
 
     private val _settings = MutableStateFlow(SettingsInfo())
     val settings: StateFlow<SettingsInfo> = _settings.asStateFlow()
+
+    private val _videos = MutableStateFlow<List<MediaItem>>(emptyList())
+    private val _music = MutableStateFlow<List<MediaItem>>(emptyList())
+    private val _programs = MutableStateFlow<List<MediaItem>>(emptyList())
+    private val _radio = MutableStateFlow<List<MediaItem>>(emptyList())
+    private val _games = MutableStateFlow<List<MediaItem>>(emptyList())
+    private val _images = MutableStateFlow<List<MediaItem>>(emptyList())
+    private val _addons = MutableStateFlow<List<MediaItem>>(emptyList())
+    private val _files = MutableStateFlow<List<MediaItem>>(emptyList())
+    private val _favorites = MutableStateFlow<List<MediaItem>>(emptyList())
 
     /** Dados já no formato do layout (observável — a tela atualiza sozinha). */
     private val _data = MutableStateFlow(SmartedData())
@@ -74,10 +85,27 @@ class MainTvViewModel : ViewModel() {
                 url = it.streamUrl,
             )
         },
-        addons = emptyList(),
-        files = emptyList(),
+        videos = _videos.value,
+        music = _music.value,
+        programs = _programs.value,
+        radio = _radio.value,
+        games = _games.value,
+        images = _images.value,
+        addons = _addons.value,
+        files = _files.value,
+        favorites = _favorites.value,
         settings = _settings.value,
+        climate = ClimateInfo(),
     )
+
+    /** Clique em um item de Configurações. */
+    fun onSettingAction(key: String) {
+        _settings.value = when (key) {
+            "config:epg" -> _settings.value.copy(epgStatus = "Sincronizando…")
+            else -> _settings.value
+        }
+        publish()
+    }
 
     fun updateEpg() {
         viewModelScope.launch {
@@ -109,11 +137,26 @@ class MainTvViewModel : ViewModel() {
                     Serie("s2", "Stranger Things", description = "Mistérios em Hawkins", year = 2016, genre = "Sci-Fi", seasons = 4),
                     Serie("s3", "The Mandalorian", description = "Star Wars universo", year = 2019, genre = "Ação", seasons = 3),
                 )
+                _files.value = listOf(
+                    MediaItem("f1", "Armazenamento interno", "Pastas e arquivos locais", isFolder = true),
+                    MediaItem("f2", "Downloads", "Arquivos baixados", isFolder = true),
+                )
+                _addons.value = emptyList()
+                _programs.value = emptyList()
+                _music.value = emptyList()
+                _radio.value = emptyList()
+                _games.value = emptyList()
+                _images.value = emptyList()
+                _videos.value = emptyList()
+                _favorites.value = emptyList()
+
                 _settings.value = SettingsInfo(
                     account = "Demonstração",
                     server = "—",
                     expiration = "—",
                     epgStatus = "Não sincronizado",
+                    version = "1.0.4",
+                    skin = "Smarted-TV",
                 )
             }
         }

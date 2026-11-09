@@ -52,6 +52,7 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     onUpdateEpg = { vm.updateEpg() },
+                    onSettingAction = { key -> vm.onSettingAction(key) },
                 ),
             )
         }

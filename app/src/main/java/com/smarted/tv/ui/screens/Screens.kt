@@ -83,19 +83,80 @@ data class SettingsInfo(
     val server: String = "—",
     val expiration: String = "—",
     val epgStatus: String = "—",
+    val version: String = "1.0",
+    val skin: String = "Smarted-TV",
 )
 
+/**
+ * Configurações no padrão Kodi:
+ *  Perfil e conta · Aparência · Player · EPG/Programação · Parental ·
+ *  Idioma e região · Armazenamento · Rede · Sobre
+ */
 @Composable
-fun ConfiguracoesScreen(info: SettingsInfo, onUpdateEpg: () -> Unit) = Column(Modifier.fillMaxSize()) {
+fun ConfiguracoesScreen(
+    info: SettingsInfo,
+    onUpdateEpg: () -> Unit,
+    onAction: (String) -> Unit = {},
+) = Column(Modifier.fillMaxSize()) {
     ScreenTitle("Configurações")
     val rows = listOf(
-        MediaItem("account", "Conta", info.account),
-        MediaItem("server", "Servidor", info.server),
-        MediaItem("exp", "Expiração", info.expiration),
-        MediaItem("epg", "Atualizar EPG", info.epgStatus),
+        MediaItem("profile", "Perfil e conta", info.account),
+        MediaItem("server", "Servidor / lista", info.server),
+        MediaItem("exp", "Assinatura", info.expiration),
+        MediaItem("appearance", "Aparência (skin)", info.skin),
+        MediaItem("player", "Player de vídeo", "ExoPlayer / Media3"),
+        MediaItem("epg", "EPG e programação", info.epgStatus),
+        MediaItem("parental", "Controle parental", "Desativado"),
+        MediaItem("language", "Idioma e região", "Português (Brasil)"),
+        MediaItem("storage", "Armazenamento", "Interno"),
+        MediaItem("network", "Rede e internet", "Conectado"),
+        MediaItem("about", "Sobre", "Smarted-TV ${info.version}"),
     )
-    ListRows(rows, "", Icons.Rounded.Settings) { if (it.id == "epg") onUpdateEpg() }
+    ListRows(rows, "", Icons.Rounded.Settings) { m ->
+        if (m.id == "epg") onUpdateEpg() else onAction("config:${m.id}")
+    }
 }
+
+// ───────────────────────── Telas Kodi (mídia / add-ons) ─────────────────────────
+
+/** Grade de itens (filmes, séries, programas, imagens...). */
+@Composable
+fun PosterScreen(title: String, items: List<MediaItem>, empty: String, onOpen: (MediaItem) -> Unit) =
+    Column(Modifier.fillMaxSize()) {
+        ScreenTitle(title)
+        PosterGrid(items, empty, onOpen)
+    }
+
+/** Lista de itens (canais, rádio, add-ons, arquivos, favoritos...). */
+@Composable
+fun ListScreen(
+    title: String,
+    items: List<MediaItem>,
+    empty: String,
+    icon: ImageVector,
+    onOpen: (MediaItem) -> Unit,
+) = Column(Modifier.fillMaxSize()) {
+    ScreenTitle(title)
+    ListRows(items, empty, icon, onOpen)
+}
+
+/** Clima — cartão simples (sem API externa por enquanto). */
+@Composable
+fun ClimaScreen(city: String = "—", temp: String = "—", desc: String = "Clima não configurado") =
+    Column(Modifier.fillMaxSize()) {
+        ScreenTitle("Clima")
+        FocusCard(Modifier.fillMaxWidth().height(180.dp), {}) {
+            Row(Modifier.fillMaxSize().padding(28.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.WbSunny, null, tint = Color.White, modifier = Modifier.size(64.dp))
+                Spacer(Modifier.width(24.dp))
+                Column {
+                    Text(city, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 30.sp)
+                    Text(temp, color = Color.White, fontSize = 40.sp, fontWeight = FontWeight.Bold)
+                    Text(desc, color = Smarted.TextLight, fontSize = 16.sp)
+                }
+            }
+        }
+    }
 
 @Composable
 fun SairDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
