@@ -86,6 +86,10 @@ android {
     lint {
         abortOnError = false
     }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -111,4 +115,10 @@ dependencies {
     // Rede e imagens
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
+
+    // Navegador de arquivos (SAF) — Fases C/D
+    implementation("androidx.documentfile:documentfile:1.0.1")
+
+    // Testes de unidade (JVM) — classificador, parsers, addon.xml, zip
+    testImplementation("junit:junit:4.13.2")
 }

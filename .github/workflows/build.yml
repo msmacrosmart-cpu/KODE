@@ -95,6 +95,23 @@ jobs:
           gradle --version
           ls "$ANDROID_HOME/platforms" "$ANDROID_HOME/build-tools"
 
+      # ─── TESTES DE UNIDADE (JVM) ────────────────────────────────────
+      - name: Testes de unidade (classificador + parsers + zip/addon)
+        run: |
+          set -o pipefail
+          gradle --no-daemon --console=plain test 2>&1 | tee /tmp/test.log
+
+      - name: Publicar relatório de testes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            app/build/reports/tests/**
+            app/build/test-results/**
+          if-no-files-found: ignore
+          retention-days: 30
+
       # ─── BUILD ──────────────────────────────────────────────────────
       # Usa o Gradle do runner (não depende do gradle-wrapper.jar do repo).
       - name: Build APK (release universal + ABI + debug de teste)
@@ -114,7 +131,7 @@ jobs:
         if: failure()
         run: |
           set -e
-          cp /tmp/build.log ci-build.log || true
+          cat /tmp/test.log /tmp/build.log 2>/dev/null > ci-build.log || true
           git config user.name  "SmartED CI"
           git config user.email "ci@smarted.local"
           tail -c 200000 /tmp/build.log > ci-build.log || true
