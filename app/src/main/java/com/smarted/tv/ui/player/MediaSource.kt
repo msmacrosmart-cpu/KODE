@@ -1,6 +1,5 @@
 package com.smarted.tv.ui.player
 
-import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.datasource.DataSource
@@ -30,7 +29,13 @@ data class MediaSourceSpec(
     val subtitles: List<String> = emptyList(),
 ) {
     /** Protocolo real, inferido da URI (nunca adivinhado do título). */
-    val scheme: String get() = Uri.parse(uri).scheme.orEmpty().lowercase()
+    val scheme: String
+        get() = when {
+            uri.startsWith("/") -> "file"
+            uri.contains("://") -> uri.substringBefore("://").lowercase()
+            uri.contains(":") -> uri.substringBefore(":").lowercase()
+            else -> ""
+        }
 
     val isLocal: Boolean
         get() = scheme == "content" || scheme == "file" || uri.startsWith("/")
@@ -52,7 +57,8 @@ data class MediaSourceSpec(
             return when {
                 path.endsWith(".m3u8") -> MimeTypes.APPLICATION_M3U8
                 path.endsWith(".mpd") -> MimeTypes.APPLICATION_MPD
-                path.endsWith(".ism") || path.endsWith(".isml") -> MimeTypes.APPLICATION_SS
+                path.endsWith(".ism") || path.endsWith(".isml") ||
+                    path.contains(".ism/") || path.contains(".isml/") -> MimeTypes.APPLICATION_SS
                 path.endsWith(".mp4") || path.endsWith(".m4v") -> MimeTypes.VIDEO_MP4
                 path.endsWith(".webm") -> MimeTypes.VIDEO_WEBM
                 path.endsWith(".mkv") -> "video/x-matroska"

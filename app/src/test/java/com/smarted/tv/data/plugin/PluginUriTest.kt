@@ -40,7 +40,8 @@ class PluginUriTest {
     fun `rebuild preserva parametros e adiciona novos`() {
         val p = PluginUri.parse("plugin://plugin.video.x/browse?page=2")!!
         val rebuilt = p.rebuild(mapOf("q" to "a b"))
-        assertEquals("plugin://plugin.video.x/browse?page=2&q=a%20b", rebuilt)
+        // URLEncoder usa "+" para espaço em query string — formato aceito em plugin://
+        assertEquals("plugin://plugin.video.x/browse?page=2&q=a+b", rebuilt)
         val again = PluginUri.parse(rebuilt)!!
         assertEquals("2", again.param("page"))
         assertEquals("a b", again.param("q"))
