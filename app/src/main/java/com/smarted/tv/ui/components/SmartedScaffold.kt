@@ -40,11 +40,15 @@ import java.util.Locale
 data class SidebarItem(val label: String, val icon: ImageVector)
 data class KodiOption(val label: String, val icon: ImageVector, val action: String)
 
+/**
+ * Navegação lateral — os 4 ícones são os mesmos do **modo TV** do app 3.0.0.200
+ * (`LiveTv`, `Movie`, `Theaters`, `Storage`), mantendo os rótulos desta tela.
+ */
 val sidebarItems = listOf(
     SidebarItem("Canais", Icons.Rounded.LiveTv),
     SidebarItem("Filmes", Icons.Rounded.Movie),
-    SidebarItem("Séries", Icons.Rounded.LocalMovies),
-    SidebarItem("Navegar", Icons.Rounded.ShowChart),
+    SidebarItem("Séries", Icons.Rounded.Theaters),
+    SidebarItem("Navegar", Icons.Rounded.Storage),
 )
 
 /**
@@ -68,18 +72,16 @@ val kodiOptions = listOf(
 )
 
 /**
- * Casca do layout Smarted-TV — composição do pacote `SmartedTV_Kotlin_Recriacao`
- * (docs/referencia-nova-tela.png).
+ * Casca do layout Smarted-TV.
  *
- * Estrutura da referência (1536 x 864):
- *  - fundo grafite/preto com brilho diagonal e um painel inclinado;
- *  - cápsula da marca (esquerda) e cápsula de relógio/data em português;
- *  - trilho único de navegação com os 4 botões (Canais, Filmes, Séries, Navegar);
- *  - área branca com curva grande no canto superior esquerdo + extensão inferior
- *    que contorna o trilho, exatamente como na imagem.
+ * Composição (referência 1536 x 864, docs/referencia-nova-tela.png):
+ *  - fundo **matte preto** da versão anterior (sem os gradientes grafite do pacote);
+ *  - cápsulas da marca e do relógio, trilho único com os 4 botões;
+ *  - área branca com a curva grande no canto superior esquerdo.
  *
- * O conteúdo das telas é desenhado dentro da área branca, respeitando as margens
- * da curva — sem cobrir o trilho nem a faixa de respiro.
+ * **Parte escura:** a coluna da esquerda desce até o rodapé — o recorte branco
+ * abaixo do trilho existia antes e foi removido. As bordas superior e direita do
+ * branco continuam exatamente as mesmas; só a parte escura cresceu para baixo.
  */
 @Composable
 fun SmartedScaffold(
@@ -104,37 +106,16 @@ fun SmartedScaffold(
             }
     ) {
         val d = LocalDensity.current
-        // Escala da referência 1536 x 864, proporcional nos dois eixos.
         val sx = constraints.maxWidth / Smarted.RefW
         val sy = constraints.maxHeight / Smarted.RefH
         fun px(v: Float) = with(d) { (v * sx).toDp() }
         fun py(v: Float) = with(d) { (v * sy).toDp() }
         fun fs(v: Float) = with(d) { (v * sx).toSp() }
 
-        // ── Fundo: gradiente diagonal + painel grafite inclinado ──
+        // ── Fundo matte (versão anterior) + área branca com a curva ──
         Box(Modifier.fillMaxSize().drawBehind {
-            drawRect(
-                Brush.linearGradient(
-                    colorStops = arrayOf(
-                        0f to Smarted.BackdropStart,
-                        0.38f to Smarted.BackdropMid,
-                        1f to Smarted.BackdropEnd,
-                    ),
-                    start = Offset(0f, 0f),
-                    end = Offset(size.width, size.height),
-                )
-            )
-            // painel inclinado (o "brilho" diagonal da referência)
-            val panel = Path().apply {
-                moveTo(size.width * 0.36f, 0f)
-                lineTo(size.width * 0.55f, 0f)
-                lineTo(size.width * 0.44f, size.height * 0.34f)
-                lineTo(size.width * 0.30f, size.height * 0.34f)
-                close()
-            }
-            drawPath(panel, Color(0x16000000))
-            // área branca com as duas curvas da referência
-            drawPath(whitePath(size.width, size.height), Color(0xFFFEFEFE))
+            drawRect(Smarted.Black)
+            drawPath(whitePath(size.width, size.height), Color.White)
         })
 
         // ── Cápsula da marca ──
@@ -163,12 +144,12 @@ fun SmartedScaffold(
                     color = Color.White, fontWeight = FontWeight.Bold, fontSize = fs(38f), maxLines = 1,
                 )
                 Spacer(Modifier.width(px(23f)))
-                Box(Modifier.width(1.dp).height(py(38f)).background(Color(0xFF777777)))
+                Box(Modifier.width(1.dp).height(py(38f)).background(Smarted.Border))
                 Spacer(Modifier.width(px(23f)))
                 Text(
                     SimpleDateFormat("EEEE, d 'de' MMMM", locale).format(now)
                         .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() },
-                    color = Color(0xFFF0F0F0), fontSize = fs(22f), fontWeight = FontWeight.Medium,
+                    color = Smarted.TextLight, fontSize = fs(22f), fontWeight = FontWeight.Medium,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
@@ -180,12 +161,8 @@ fun SmartedScaffold(
             Modifier.offset(px(23f), py(52f))
                 .size(px(167f), py(648f))
                 .clip(railShape)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Smarted.RailTop, Smarted.RailMid, Smarted.RailBottom)
-                    )
-                )
-                .border(1.dp, Smarted.RailBorder, railShape)
+                .background(Smarted.glassFrosted())
+                .border(1.dp, Smarted.Border, railShape)
         )
         Column(
             modifier = Modifier.offset(px(37f), py(87f)).width(px(122f)),
@@ -206,10 +183,10 @@ fun SmartedScaffold(
         // ── Hambúrguer: abre o painel Kodi (tecla MENU também) ──
         Box(
             Modifier.offset(px(1129f), py(96f)).size(px(40f), py(40f)).clip(CircleShape)
-                .background(Color(0x33000000)).border(1.dp, Color(0x33FFFFFF), CircleShape)
+                .background(Smarted.glassFrosted()).border(1.dp, Smarted.Border, CircleShape)
                 .focusable().clickable { drawerOpen = true },
             contentAlignment = Alignment.Center,
-        ) { Icon(Icons.Rounded.Menu, "Menu", tint = Smarted.InkOnWhite, modifier = Modifier.fillMaxSize(0.55f)) }
+        ) { Icon(Icons.Rounded.Menu, "Menu", tint = Color.White, modifier = Modifier.fillMaxSize(0.55f)) }
 
         // ── Conteúdo das telas (área branca, respeitando a curva) ──
         Box(
@@ -259,9 +236,9 @@ fun SmartedScaffold(
 }
 
 /**
- * Área branca da referência: retângulo com canto superior esquerdo arredondado
- * (58/1536 e 757/864) e, abaixo do trilho, a extensão que desce até o rodapé com
- * canto de 62 — exatamente a silhueta da imagem.
+ * Área branca: canto superior esquerdo arredondado (58) e borda inferior reta
+ * até o rodapé. A **coluna escura da esquerda vai até o fim da tela** — não há
+ * mais o degrau/recorte branco embaixo do trilho.
  */
 private fun whitePath(w: Float, h: Float): Path {
     val sx = w / Smarted.RefW
@@ -269,25 +246,16 @@ private fun whitePath(w: Float, h: Float): Path {
     fun x(v: Float) = v * sx
     fun y(v: Float) = v * sy
 
-    val mainLeft = x(190f)
-    val mainTop = y(107f)
-    val mainRadius = x(58f)
-
-    val lowLeft = x(57f)
-    val railBottom = y(704f)       // fim do trilho (52 + 648 + respiro)
-    val lowRadius = x(62f)
+    val left = x(190f)
+    val top = y(107f)
+    val radius = x(62f)
 
     return Path().apply {
         moveTo(w, h)
-        lineTo(lowLeft, h)
-        lineTo(lowLeft, railBottom + lowRadius)
-        quadraticBezierTo(lowLeft, railBottom, lowLeft + lowRadius, railBottom)
-        // degrau até a base da área principal
-        lineTo(mainLeft - x(10f), railBottom)
-        quadraticBezierTo(mainLeft, railBottom, mainLeft, railBottom - y(10f))
-        lineTo(mainLeft, mainTop + mainRadius)
-        quadraticBezierTo(mainLeft, mainTop, mainLeft + mainRadius, mainTop)
-        lineTo(w, mainTop)
+        lineTo(left, h)
+        lineTo(left, top + radius)
+        quadraticBezierTo(left, top, left + radius, top)
+        lineTo(w, top)
         lineTo(w, h)
         close()
     }
@@ -298,8 +266,8 @@ private fun Capsule(modifier: Modifier, content: @Composable () -> Unit) {
     val shape = RoundedCornerShape(50)
     Box(
         modifier.clip(shape)
-            .background(Brush.verticalGradient(listOf(Smarted.CapsuleTop, Smarted.CapsuleBottom)))
-            .border(1.5.dp, Smarted.CapsuleBorder, shape),
+            .background(Smarted.glassFrosted())
+            .border(1.dp, Smarted.Border, shape),
         contentAlignment = Alignment.Center,
     ) { content() }
 }
@@ -315,16 +283,16 @@ private fun NavigationTile(
 ) {
     var focused by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(32.dp)
-    val fill = if (selected) {
-        Brush.verticalGradient(listOf(Smarted.TileTopSelected, Smarted.TileBottomSelected))
-    } else {
-        Brush.verticalGradient(listOf(Smarted.TileTop, Smarted.TileBottom))
+    val borderColor = when {
+        focused -> Color.White
+        selected -> Smarted.BorderSelected
+        else -> Smarted.Border
     }
     Column(
         modifier
             .clip(shape)
-            .background(fill)
-            .border(if (focused) 2.dp else 1.5.dp, if (focused) Color.White else Smarted.TileBorder, shape)
+            .background(Smarted.glassFrosted())
+            .border(if (focused) 2.dp else 1.dp, borderColor, shape)
             .onFocusChanged { focused = it.isFocused }
             .clickable(onClick = onClick),
         verticalArrangement = Arrangement.Center,
@@ -334,7 +302,7 @@ private fun NavigationTile(
         Spacer(Modifier.height(9.dp))
         Text(
             item.label,
-            color = Color.White,
+            color = Smarted.TextLight,
             fontSize = labelSize,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
