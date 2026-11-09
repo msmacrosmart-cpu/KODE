@@ -1,142 +1,152 @@
-# SmartED-TV - KODE
+# SmartED-TV — KODE
 
-Aplicativo de IPTV para Android TV / TV Box com layout baseado no **MakroTV.XtreamYT** (sem YouTube) e menu de Configurações com todas as opções do **TV Eminem**.
+App de IPTV para **Android TV / TV Box** (layout MakroTV) com menu de Configurações completo (TV Eminem) e player Media3/ExoPlayer.
 
-## Layout Implementado (baseado no MakroTV.XtreamYT)
+- Kotlin + Jetpack Compose · minSdk 23 · targetSdk 35
+- APK release gerado automaticamente pelo GitHub Actions a cada push/tag.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│ [Logo] SmartED-TV                          [Hamburguer] │  ← Header fixo
-├──────────┬───────────────────────────────────────────────┤
-│          │                                               │
-│  [Ícone] │   Dashboard / Canais / Filmes / Séries        │
-│  Início  │                                               │
-│          │                                               │
-│  [Ícone] │   Cards com ícones coloridos                  │
-│  Canais  │   • Canais TV (Coral)                         │
-│          │   • Filmes (Laranja)                          │
-│  [Ícone] │   • Séries (Amarelo)                          │
-│  Filmes  │                                               │
-│          │                                               │
-│  [Ícone] │   Configurações (menu TV Eminem):             │
-│  Séries  │   • Conta e Perfil                            │
-│          │   • Rede e Internet                           │
-│  [Ícone] │   • Player de Vídeo                           │
-│  Addons  │   • EPG e Programa                            │
-│          │   • Parental Controls                         │
-│  [Ícone] │   • Aparência e Tema                          │
-│  Navegar │   • Idioma e Região                           │
-│  Pastas  │   • Armazenamento                             │
-│          │   • Sobre o Aplicativo                        │
-│  [Ícone] │                                               │
-│  Config  │                                               │
-│  [Ícone] │                                               │
-│  Sair    │                                               │
-│          │                                               │
-└──────────┴───────────────────────────────────────────────┘
-```
+---
 
-### Principais características
-- **Botão hambúrguer** ao lado do logo "SmartED-TV" (abre todas as opções estilo Kodi)
-- **Sem YouTube** (removido conforme solicitado)
-- **Navigation Rail lateral** com: Início, Canais, Filmes, Séries, Addons, Navegar Pastas, Configurações, Sair
-- **Cards rápidos** no Dashboard com contadores
-- **Configurações** com menu completo do TV Eminem (9 itens)
-- Suporte Android TV / TV Box (leanback, D-pad, modo paisagem)
-- Tema escuro com destaques coral/laranja/amarelo
+## 1) Instalar o ambiente de build (1 comando)
 
-## Estrutura do Projeto
+O ambiente necessário é: **JDK 17** + **Android SDK** (`platform-tools`, `platforms;android-35`, `build-tools;35.0.0` — que trazem `aapt2`, `apksigner`, `zipalign`) + `curl/unzip/git`.
 
-```
-KODE/
-├── app/
-│   ├── build.gradle.kts
-│   ├── proguard-rules.pro
-│   └── src/main/
-│       ├── AndroidManifest.xml
-│       ├── java/com/smarted/tv/
-│       │   ├── SmartEDApp.kt
-│       │   ├── MainActivity.kt
-│       │   ├── ui/
-│       │   │   ├── screens/
-│       │   │   │   ├── AppScreen.kt        # Layout principal (Header + Rail + Conteúdo)
-│       │   │   │   ├── DashboardScreen.kt
-│       │   │   │   ├── LiveTvScreen.kt     # Canais (sem YouTube)
-│       │   │   │   ├── VodScreen.kt        # Filmes
-│       │   │   │   ├── SeriesScreen.kt     # Séries
-│       │   │   │   ├── AddonsScreen.kt
-│       │   │   │   ├── ToolsScreen.kt      # Navegar Pastas
-│       │   │   │   ├── SettingsScreen.kt   # Configurações (menu TV Eminem)
-│       │   │   │   └── ExitScreen.kt
-│       │   │   ├── components/
-│       │   │   │   ├── TvNavigationRail.kt # Menu lateral (8 itens, sem YouTube)
-│       │   │   │   ├── SmartEDFocusable.kt
-│       │   │   │   ├── GlassPanel.kt
-│       │   │   │   └── ScreenHeader.kt
-│       │   │   ├── player/                 # PlayerActivity (Media3 ExoPlayer)
-│       │   │   └── theme/                  # Theme.kt, Color.kt
-│       │   ├── viewmodel/
-│       │   │   └── MainTvViewModel.kt
-│       │   └── data/
-│       │       └── model/Models.kt
-│       └── res/
-│           ├── values/ (strings, colors, themes)
-│           ├── drawable/ (icones vetoriais)
-│           ├── mipmap-anydpi-v26/ (icone adaptativo)
-│           └── xml/network_security_config.xml
-├── build.gradle.kts
-├── settings.gradle.kts
-├── gradle.properties
-├── gradle/wrapper/
-├── gradlew
-├── tools/
-│   ├── scripts/
-│   │   ├── install-deps.sh    # Instala Java 17, apktool, apksigner, aapt
-│   │   └── build-release.sh   # Gera APK assinado para release
-│   └── apktool-src/           # Fonte do apktool (clonado)
-└── reference/
-    └── iptv-native/           # Projeto de referência IPTV-Native (clonado)
-```
-
-## Tecnologias
-- Kotlin + Jetpack Compose
-- Android Gradle Plugin 8.7.3, Kotlin 2.1.0
-- Media3 ExoPlayer (vídeo)
-- Coil (imagens), OkHttp (rede)
-
-## Como Gerar o APK Release
+### Linux / WSL / container (recomendado)
 
 ```bash
-# 1. Instale dependências (ambiente com internet completa)
-chmod +x tools/scripts/install-deps.sh
-sudo ./tools/scripts/install-deps.sh
+git clone https://github.com/msmacrosmart-cpu/KODE.git && cd KODE
 
-# 2. Verifique as ferramentas
-java -version
-apktool --version
-apksigner --version
+# instala TUDO que falta (idempotente: pode rodar quantas vezes quiser)
+sudo bash tools/scripts/setup-android-env.sh
 
-# 3. Gere o APK release
-chmod +x gradlew tools/scripts/build-release.sh
+# (sem root / dentro de CI/container, onde o SDK já existe)
+bash tools/scripts/setup-android-env.sh --no-sudo
+```
+
+O script:
+1. instala pacotes base (`curl`, `unzip`, `git`, `ca-certificates`);
+2. garante **JDK 17** (usa o do sistema se já houver ≥17; senão tenta `apt/dnf/yum/pacman`; se falhar, baixa o **Temurin 17 portátil** em `.jdk17/`);
+3. instala o **Android SDK** em `$ANDROID_HOME` (ou `.android-sdk/`): `cmdline-tools`, `platform-tools`, `platforms;android-35`, `build-tools;35.0.0`, aceitando as licenças;
+4. grava o **`local.properties`** com `sdk.dir=...`;
+5. imprime os `export` prontos e, em CI, exporta via `$GITHUB_ENV`.
+
+### Exports para adicionar no `~/.bashrc` (sessão atual)
+
+```bash
+export JAVA_HOME="$HOME/.jdk17"                                  # ou o JDK 17 do sistema
+export ANDROID_HOME="$PWD/.android-sdk"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
+export PATH="$JAVA_HOME/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/35.0.0:$PATH"
+```
+
+### macOS (Homebrew)
+
+```bash
+brew install --cask temurin@17 android-commandlinetools
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+sdkmanager --licenses
+sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+echo "sdk.dir=$ANDROID_HOME" > local.properties
+```
+
+### Windows (PowerShell, sem WSL)
+
+```powershell
+winget install EclipseAdoptium.Temurin.17.JDK
+winget install Google.AndroidStudio           # ou apenas cmdline-tools
+# depois, no "cmdline-tools\bin":
+sdkmanager --licenses
+sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+" sdk.dir=$env:LOCALAPPDATA\Android\Sdk" -replace '^ ' | Out-File -Encoding ascii local.properties
+```
+
+### Verificar / testar o ambiente
+
+```bash
+java -version                 # deve dizer 17.x
+sdkmanager --list_installed   # deve listar platforms;android-35 e build-tools;35.0.0
+./gradlew --version           # Gradle 8.10.2 + JVM 17
+```
+
+---
+
+## 2) Gerar o APK
+
+```bash
+# build + assinatura (gera release-keystore.jks se não existir)
 ./tools/scripts/build-release.sh
 
-# 4. APK assinado em:
-app/build/outputs/apk/release/app-release.apk
+# atalho equivalente
+./gradlew assembleRelease
+```
 
-# 5. Instale no dispositivo
+Saída: `app/build/outputs/apk/release/app-release.apk`
+
+Instalar no dispositivo:
+
+```bash
+adb connect 192.168.0.10:5555     # TV Box
 adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
-## ⚠️ Limitação deste sandbox
+Keystore/versão customizados (opcional):
 
-Este ambiente tem rede restrita (apenas github.com, api.github.com, codeload.github.com, registry.npmjs.org, pypi.org, files.pythonhosted.org). Não foi possível baixar:
-- OpenJDK 17 (repos Debian bloqueados)
-- apktool / apksigner / aapt (assets do GitHub bloqueados)
-- O APK MakroTV.XtreamYT (release assets bloqueados)
+```bash
+export KEYSTORE_PATH=/caminho/release-keystore.jks
+export KEYSTORE_PASSWORD=... KEY_ALIAS=smartedtv KEY_PASSWORD=...
+export VERSION_CODE=2 VERSION_NAME=1.0.1
+./tools/scripts/build-release.sh
+```
 
-Execute os scripts de build em um ambiente com internet completa para gerar o APK release.
+---
+
+## 3) CI: `.github/workflows/build.yml` (builda sempre)
+
+O workflow `Build APK (SmartED-TV)` roda em **push** (`main`, `arena/**`), **tags `v*`**, **pull request** e **workflow_dispatch**, e:
+
+1. `actions/setup-java` → Temurin 17 (com cache Gradle);
+2. `android-actions/setup-android` → `platforms;android-35`, `build-tools;35.0.0`;
+3. `tools/scripts/setup-android-env.sh --no-sudo` → completa o que faltar (mesmo script do ambiente local);
+4. `./gradlew assembleRelease` → gera o APK;
+5. `apksigner`/`zipalign` → assina e verifica;
+6. **artifact** `SmartED-TV-apk` (90 dias) + **GitHub Release** `v<run_number>` com o `.apk` anexado (download direto).
+
+Disparar manualmente:
+
+```bash
+gh workflow run build.yml -f create_release=true -f version_name=1.0.1
+gh run watch                    # acompanhar
+```
+
+Criar uma release versionada (tag):
+
+```bash
+git tag v1.0.1 && git push origin v1.0.1
+```
+
+---
+
+## Estrutura do projeto
+
+```
+KODE/
+├── .github/workflows/build.yml        # CI: build + assinatura + release
+├── app/src/main/java/com/smarted/tv/
+│   ├── MainActivity.kt
+│   ├── data/model/Models.kt
+│   ├── ui/screens/AppScreen.kt        # Dashboard, Canais, Filmes, Séries, Addons, Pastas, Config, Sair
+│   ├── ui/components/                 # TvNavigationRail, SmartEDFocusable, GlassPanel, ScreenHeader
+│   ├── ui/player/PlayerActivity.kt    # ExoPlayer (HLS/MP4)
+│   ├── ui/theme/                      # Color.kt, Theme.kt
+│   └── viewmodel/MainTvViewModel.kt
+├── tools/scripts/
+│   ├── setup-android-env.sh           # instala JDK 17 + Android SDK (usado local e no CI)
+│   ├── install-deps.sh                # atalho compatível → setup-android-env.sh
+│   └── build-release.sh               # build + assinatura do APK
+└── gradle/wrapper/                    # Gradle 8.10.2
+```
 
 ## Referências
-- Layout base: MakroTV.XtreamYT (https://github.com/smartmacro77-gif/apps/releases/tag/v1.0)
-- Configurações: TV Eminem (menu completo de configurações)
-- Arquitetura: IPTV-Native (https://github.com/msmacrosmart-cpu/IPTV-Native)
+- Layout base: MakroTV.XtreamYT
+- Configurações: TV Eminem
+- Arquitetura: IPTV-Native

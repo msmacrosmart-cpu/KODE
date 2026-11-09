@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">example.com</domain>
-        <domain includeSubdomains="true">via.placeholder.com</domain>
-    </domain-config>
+    <!-- IPTV costuma usar HTTP puro: libera cleartext para todos os destinos.
+         Se quiser restringir, troque base-config por domain-config com seus hosts. -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
 </network-security-config>

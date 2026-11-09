@@ -1,0 +1,121 @@
+name: Build APK (SmartED-TV)
+
+on:
+  push:
+    branches: [main, 'arena/**']
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Criar GitHub Release com o APK'
+        type: boolean
+        default: true
+      version_name:
+        description: 'Versão (ex: 1.0.1). Vazio = usa o nome da tag/run number'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Assemble Release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    env:
+      # Android SDK pré-instalado no runner do GitHub Actions
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ────────────────────────────────────────────────────────────────
+      # AMBIENTE: JDK 17 + Android SDK (platform 35 + build-tools 35)
+      # ────────────────────────────────────────────────────────────────
+      - name: Setup Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+          log-accepted-android-sdk-licenses: true
+
+      - name: Ambiente via script do repo (instala tudo que faltar)
+        run: |
+          chmod +x tools/scripts/*.sh gradlew
+          bash tools/scripts/setup-android-env.sh --no-sudo
+
+      - name: Checagem do ambiente
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME"
+          java -version
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "$ANDROID_HOME/platforms" || true
+          ls "$ANDROID_HOME/build-tools" || true
+          ./gradlew --version
+
+      - name: Build release APK
+        run: ./gradlew --no-daemon --stacktrace assembleRelease
+
+      - name: Assinatura (apksigner) e verificação
+        run: |
+          set -e
+          APK=app/build/outputs/apk/release/app-release.apk
+          APK_UNSIGNED=app/build/outputs/apk/release/app-release-unsigned.apk
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          echo "[+] build-tools: $BT"
+          if [ ! -f "$APK" ] && [ -f "$APK_UNSIGNED" ]; then
+            echo "[+] Assinando APK manualmente (apksigner)..."
+            keytool -genkeypair -keystore release-keystore.jks -alias smartedtv \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass smartedtv123 -keypass smartedtv123 \
+              -dname "CN=SmartED-TV, OU=SmartED, O=SmartED-TV, L=Sao Paulo, S=SP, C=BR"
+            "$BT"/zipalign -f -p 4 "$APK_UNSIGNED" app/build/outputs/apk/release/app-release.apk
+            "$BT"/apksigner sign --ks release-keystore.jks --ks-key-alias smartedtv \
+              --ks-pass pass:smartedtv123 --key-pass pass:smartedtv123 \
+              --out app/build/outputs/apk/release/app-release.apk \
+              app/build/outputs/apk/release/app-release.apk
+          fi
+          test -f "$APK"
+          "$BT"/apksigner verify --print-certs "$APK" || true
+          cp "$APK" "SmartED-TV-${VERSION_NAME:-build-${{ github.run_number }}}.apk"
+          ls -lh *.apk
+
+      - name: Upload APK (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartED-TV-apk
+          path: '*.apk'
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Criar / atualizar GitHub Release
+        if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.event.inputs.create_release != 'false')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v{0}', github.run_number) }}
+          name: SmartED-TV ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('build {0}', github.run_number) }}
+          files: '*.apk'
+          generate_release_notes: true
+          make_latest: true
+          body: |
+            APK de release do **SmartED-TV** (Android TV / TV Box).
+
+            Download direto: veja o arquivo `.apk` em **Assets** abaixo.
+
+            Instalação: `adb install -r SmartED-TV-*.apk`

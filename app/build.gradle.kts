@@ -12,21 +12,38 @@ android {
         applicationId = "com.smarted.tv"
         minSdk = 23
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
+        versionName = System.getenv("VERSION_NAME") ?: "1.0"
+    }
+
+    // Assinatura: usa o keystore de debug (gerado automaticamente pelo AGP) por padrão
+    // e o keystore de release quando KEYSTORE_PATH existir (usado no CI/release).
+    signingConfigs {
+        create("release") {
+            val ksPath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/release-keystore.jks"
+            storeFile = file(ksPath)
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "smartedtv123"
+            keyAlias = System.getenv("KEY_ALIAS") ?: "smartedtv"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: "smartedtv123"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.release
+            signingConfig = if (file(System.getenv("KEYSTORE_PATH") ?: "${rootDir}/release-keystore.jks").exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
         debug {
-            signingConfig = signingConfigs.debug
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
@@ -42,14 +59,14 @@ android {
         compose = true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "2.1.0"
-    }
-
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+
+    lint {
+        abortOnError = false
     }
 }
 
@@ -58,6 +75,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
 

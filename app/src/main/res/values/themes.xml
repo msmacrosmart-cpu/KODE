@@ -1,8 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.SmartEDTV" parent="android:Theme.Leanback">
+    <!-- Base escura sem ActionBar. Compose cuida do restante da UI. -->
+    <style name="Theme.SmartEDTV" parent="@android:style/Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/smarted_background</item>
         <item name="android:colorPrimary">@color/smarted_coral</item>
         <item name="android:colorPrimaryDark">#000000</item>
         <item name="android:colorAccent">@color/smarted_orange</item>
+        <item name="android:windowNoTitle">true</item>
     </style>
 </resources>

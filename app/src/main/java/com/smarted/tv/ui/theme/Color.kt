@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.Color
 object SmartEDColors {
     val Background = Color(0xFF0E0E10)
     val Surface = Color(0xFF1A1A1D)
+    val SurfaceHigh = Color(0xFF232327)
     val GlassTop = Color(0x26FFFFFF)
     val GlassBottom = Color(0x0AFFFFFF)
     val Coral = Color(0xFFEF5350)
@@ -19,4 +20,7 @@ object SmartEDColors {
     val Danger = Color(0xFFFF5252)
 
     val Sunset: Brush get() = Brush.linearGradient(listOf(Pink, Orange, Yellow))
+
+    /** Cores de destaque usadas nos cards (ciclo por índice). */
+    val Accents: List<Color> = listOf(Coral, Orange, Yellow, Success)
 }

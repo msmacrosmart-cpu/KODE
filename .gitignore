@@ -1,0 +1,28 @@
+# Gradle / build
+.gradle/
+build/
+app/build/
+local.properties
+*.hprof
+
+# Android SDK / JDK portáteis instalados pelo setup-android-env.sh
+.android-sdk/
+.jdk17/
+
+# Assinatura (NUNCA comitar keystore)
+*.jks
+*.keystore
+release-keystore.jks
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# SO
+.DS_Store
+Thumbs.db
+
+# Artefatos gerados
+*.apk
+*.aab
