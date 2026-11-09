@@ -9,6 +9,7 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -52,7 +53,12 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            val data by vm.data.collectAsState()
+            // versão real do APK (nunca um número fixo na tela)
+            val versionName = remember {
+                runCatching { packageManager.getPackageInfo(packageName, 0).versionName }.getOrNull() ?: ""
+            }
+            val base by vm.data.collectAsState()
+            val data = base.copy(settings = base.settings.copy(version = versionName))
             val filesState by filesVm.state.collectAsState()
             val addonState by addonsVm.state.collectAsState()
             val repoState by addonsVm.repoState.collectAsState()
