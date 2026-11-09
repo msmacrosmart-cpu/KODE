@@ -127,6 +127,7 @@ fun ConfiguracoesScreen(
         MediaItem("cache", "Cache de vídeo", info.cacheSize),
         // Sistema
         MediaItem("storage", "Armazenamento", info.storage),
+        MediaItem("update", "Atualizações", "Instalar por cima · versão ${info.version}"),
         MediaItem("about", "Sobre o SmartED-TV", "Versão ${info.version}"),
         // Redes
         MediaItem("network", "Rede e internet", info.networkStatus),

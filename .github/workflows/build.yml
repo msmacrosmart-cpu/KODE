@@ -67,26 +67,44 @@ jobs:
           chmod +x tools/scripts/*.sh gradlew
           bash tools/scripts/setup-android-env.sh --no-sudo
 
-      # ─── CHAVE DE ASSINATURA (uma só para debug e release) ──────────
-      # Garante que a assinatura seja sempre a mesma:
-      #  • v1 (JAR) habilitada → instala em Android 4.4–6 / TV Boxes antigas
-      #  • v2 + v3 habilitadas → Android 7+
-      - name: Gerar keystore e chave de assinatura
+      # ─── CHAVE DE ASSINATURA (fixa) ─────────────────────────────────
+      # v1 (JAR) habilitada → instala em Android 4.4–6 / TV Boxes antigas
+      # v2 + v3 habilitadas → Android 7+
+      # Por que isto importa: o Android recusa atualizar um app cuja assinatura
+      # difere da instalada (INSTALL_FAILED_UPDATE_INCOMPATIBLE) — era o motivo de
+      # precisar desinstalar a cada versão. Aqui a chave é SEMPRE a mesma:
+      #   1. secret ANDROID_KEYSTORE_BASE64 (recomendado);
+      #   2. senão, release-keystore.jks em tools/keystore/ (chave do projeto);
+      #   3. só se nada existir, gera uma nova (e falha alto, porque quebraria updates).
+      - name: Preparar chave de assinatura fixa
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
           set -euo pipefail
-          if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
-            echo "[+] Usando keystore dos secrets"
-            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > release-keystore.jks
+          if [ -n "${KS_B64:-}" ]; then
+            echo "[+] Keystore vindo do secret ANDROID_KEYSTORE_BASE64"
+            echo "$KS_B64" | base64 -d > release-keystore.jks
+            STORE_PASS="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}"
+            KEY_PASS="${{ secrets.ANDROID_KEY_PASSWORD }}"
+            ALIAS="${{ secrets.ANDROID_KEY_ALIAS }}"
+            STORE_PASS="${STORE_PASS:-smartedtv123}"; KEY_PASS="${KEY_PASS:-$STORE_PASS}"; ALIAS="${ALIAS:-smartedtv}"
+          elif [ -f tools/keystore/release-keystore.jks ]; then
+            echo "[+] Keystore do projeto (tools/keystore/release-keystore.jks)"
+            cp tools/keystore/release-keystore.jks release-keystore.jks
+            STORE_PASS="smartedtv123"; KEY_PASS="smartedtv123"; ALIAS="smartedtv"
           else
-            echo "[+] Gerando keystore (RSA 2048, validade 30 anos)"
-            keytool -genkeypair \
-              -keystore release-keystore.jks \
-              -alias smartedtv \
-              -keyalg RSA -keysize 2048 -validity 10950 \
-              -storepass smartedtv123 -keypass smartedtv123 \
-              -dname "CN=SmartED-TV, OU=SmartED, O=SmartED-TV, L=Sao Paulo, S=SP, C=BR"
+            echo "::error::Nenhuma chave de assinatura encontrada."
+            echo "::error::Gerar uma chave nova faria o Android recusar a atualização do app já instalado."
+            echo "::error::Configure o secret ANDROID_KEYSTORE_BASE64 ou comite tools/keystore/release-keystore.jks."
+            exit 1
           fi
-          keytool -list -v -keystore release-keystore.jks -storepass smartedtv123 | grep -E "Alias|Valid|Signature algorithm|SHA256" || true
+          printf 'STORE_PASS=%s\nKEY_PASS=%s\nALIAS=%s\n' "$STORE_PASS" "$KEY_PASS" "$ALIAS" >> "$GITHUB_ENV"
+          keytool -list -v -keystore release-keystore.jks -storepass "$STORE_PASS" \
+            | grep -E "Alias|Valid|Signature algorithm|SHA256" || true
+          CERT_SHA256=$(keytool -list -v -keystore release-keystore.jks -storepass "$STORE_PASS" \
+            | grep -m1 "SHA256:" | sed 's/.*SHA256: //')
+          echo "CERT_SHA256=$CERT_SHA256" >> "$GITHUB_ENV"
+          echo "Assinatura (SHA-256 do certificado): $CERT_SHA256"
 
       - name: Checagem do ambiente
         run: |
@@ -191,8 +209,8 @@ jobs:
             local in="$1" out="dist/$2"
             "$BT"/zipalign -f -p 4 "$in" /tmp/aligned.apk
             "$BT"/apksigner sign \
-              --ks release-keystore.jks --ks-key-alias smartedtv \
-              --ks-pass pass:smartedtv123 --key-pass pass:smartedtv123 \
+              --ks release-keystore.jks --ks-key-alias "$ALIAS" \
+              --ks-pass "pass:$STORE_PASS" --key-pass "pass:$KEY_PASS" \
               --min-sdk-version "$MIN_SDK" \
               --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
               --out "$out" /tmp/aligned.apk
@@ -218,8 +236,16 @@ jobs:
             fi
           done
 
-          # Corpo da release
+          # Corpo da release + manifesto de atualização consultado pelo próprio app
+          # (Configurações › Atualizações). O universal é o primeiro a ser assinado.
           UNI="dist/SmartED-TV-$VERSION-universal.apk"
+
+          # Manifesto de atualização
+          printf '{"version":"%s","versionCode":%s,"apk":"SmartED-TV-%s-universal.apk","apkUrl":"https://github.com/msmacrosmart-cpu/KODE/releases/latest/download/SmartED-TV-%s-universal.apk","sha256":"%s","certSha256":"%s","notes":"https://github.com/msmacrosmart-cpu/KODE/releases/tag/%s"}\n' \
+            "$VERSION" "${GITHUB_RUN_NUMBER}" "$VERSION" "$VERSION" \
+            "$(sha256sum "$UNI" | cut -d' ' -f1)" "${CERT_SHA256:-}" "${GITHUB_REF_NAME}" \
+            > dist/update.json
+
           {
             echo "APK do **SmartED-TV** (Android TV / TV Box) — versão \`$VERSION\` (versionCode ${{ github.run_number }})."
             echo
@@ -238,11 +264,15 @@ jobs:
             echo "| Tamanho (universal) | $(du -h "$UNI" | cut -f1) |"
             echo "| SHA-256 (universal) | \`$(sha256sum "$UNI" | cut -d' ' -f1)\` |"
             echo "| minSdk / targetSdk | $MIN_SDK / 34 |"
+            echo "| Assinatura (certificado SHA-256) | \`${CERT_SHA256}\` |"
             echo "| Assinatura | v1 (JAR) + v2 + v3 |"
             echo
             echo '```'
             { "$BT"/aapt2 dump badging "$UNI" 2>/dev/null || "$BT"/aapt dump badging "$UNI" 2>/dev/null; } | grep -E "^(package|sdkVersion|targetSdkVersion|launchable-activity|native-code)" || true
             echo '```'
+            echo
+            echo "**Atualizar sem desinstalar:** instale por cima o mesmo universal (mesma chave de assinatura)."
+            echo "Ou pelo app: Configurações › Atualizações › Procurar atualização."
             echo
             echo "**Instalar:** \`adb install -r SmartED-TV-$VERSION-universal.apk\`"
           } > release-body.md
@@ -254,7 +284,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: SmartED-TV-apk
-          path: dist/*.apk
+          path: |
+            dist/*.apk
+            dist/update.json
           if-no-files-found: error
           retention-days: 90
 
@@ -266,7 +298,9 @@ jobs:
         with:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || (github.event.inputs.version_name != '' && format('v{0}', github.event.inputs.version_name) || format('v{0}', github.run_number)) }}
           name: SmartED-TV ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || (github.event.inputs.version_name != '' && format('v{0}', github.event.inputs.version_name) || format('build {0}', github.run_number)) }}
-          files: 'dist/*.apk'
+          files: |
+            dist/*.apk
+            dist/update.json
           generate_release_notes: true
           make_latest: true
           body_path: release-body.md

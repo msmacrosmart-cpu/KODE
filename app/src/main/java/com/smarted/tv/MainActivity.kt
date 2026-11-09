@@ -24,6 +24,7 @@ import com.smarted.tv.data.plugin.PluginTarget
 import com.smarted.tv.ui.player.MediaSourceSpec
 import com.smarted.tv.viewmodel.AddonsViewModel
 import com.smarted.tv.viewmodel.PluginViewModel
+import com.smarted.tv.viewmodel.UpdateViewModel
 import com.smarted.tv.viewmodel.FilesViewModel
 import com.smarted.tv.viewmodel.MainTvViewModel
 
@@ -37,6 +38,7 @@ class MainActivity : ComponentActivity() {
     private val filesVm: FilesViewModel by viewModels()
     private val addonsVm: AddonsViewModel by viewModels()
     private val pluginVm: PluginViewModel by viewModels()
+    private val updateVm: UpdateViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,6 +65,7 @@ class MainActivity : ComponentActivity() {
             val addonState by addonsVm.state.collectAsState()
             val repoState by addonsVm.repoState.collectAsState()
             val pluginState by pluginVm.state.collectAsState()
+            val updateState by updateVm.state.collectAsState()
 
             // Mídia resolvida por um adaptador de plugin → player (com MIME/headers reais)
             LaunchedEffect(pluginState.media) {
@@ -140,9 +143,20 @@ class MainActivity : ComponentActivity() {
                     onPluginBack = { pluginVm.back() },
                     onPluginActivate = pluginVm::activate,
                     onPluginClose = pluginVm::clear,
+                    update = updateState,
+                    onUpdateCheck = updateVm::check,
+                    onUpdateDownload = updateVm::downloadAndInstall,
+                    onUpdatePermission = updateVm::openInstallPermission,
+                    onUpdateDismiss = updateVm::clearMessage,
                 ),
             )
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // o usuário pode ter liberado "instalar apps desconhecidos" enquanto estava fora
+        updateVm.refreshLocal()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

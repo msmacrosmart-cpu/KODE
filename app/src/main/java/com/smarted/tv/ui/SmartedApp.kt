@@ -31,6 +31,7 @@ import com.smarted.tv.ui.components.SmartedScaffold
 import com.smarted.tv.ui.screens.*
 import com.smarted.tv.viewmodel.AddonsViewModel
 import com.smarted.tv.viewmodel.PluginViewModel
+import com.smarted.tv.viewmodel.UpdateViewModel
 import com.smarted.tv.viewmodel.RepositoriesViewModel
 
 /**
@@ -40,7 +41,7 @@ import com.smarted.tv.viewmodel.RepositoriesViewModel
 enum class Screen {
     CANAIS, FILMES, SERIES, NAVEGAR,          // menu lateral
     VIDEOS, MUSICA, PROGRAMAS, RADIO, JOGOS, IMAGENS, CLIMA, FAVORITOS, // menu Kodi
-    ADDONS, ARQUIVOS, CONFIGURACOES, PLUGIN
+    ADDONS, ARQUIVOS, CONFIGURACOES, PLUGIN, ATUALIZACOES
 }
 
 private val sidebarScreens = listOf(Screen.CANAIS, Screen.FILMES, Screen.SERIES, Screen.NAVEGAR)
@@ -112,6 +113,12 @@ data class SmartedActions(
     val onPluginBack: () -> Unit = {},
     val onPluginActivate: (PluginItem) -> Unit = {},
     val onPluginClose: () -> Unit = {},
+    // ── atualização do app ──
+    val update: UpdateViewModel.State = UpdateViewModel.State(),
+    val onUpdateCheck: () -> Unit = {},
+    val onUpdateDownload: () -> Unit = {},
+    val onUpdatePermission: () -> Unit = {},
+    val onUpdateDismiss: () -> Unit = {},
 )
 
 @Composable
@@ -135,6 +142,7 @@ fun SmartedApp(data: SmartedData = SmartedData(), actions: SmartedActions = Smar
         "screen:addons" -> screen = Screen.ADDONS
         "screen:arquivos" -> screen = Screen.ARQUIVOS
         "screen:configuracoes" -> screen = Screen.CONFIGURACOES
+        "screen:atualizacoes" -> screen = Screen.ATUALIZACOES
         "screen:canais" -> screen = Screen.CANAIS
         "exit" -> confirmExit = true
         else -> Unit
@@ -218,7 +226,18 @@ fun SmartedApp(data: SmartedData = SmartedData(), actions: SmartedActions = Smar
             )
             Screen.CONFIGURACOES -> ConfiguracoesScreen(
                 info = data.settings,
-                onAction = actions.onSettingAction,
+                onAction = { key ->
+                    if (key == "config:update") screen = Screen.ATUALIZACOES
+                    else actions.onSettingAction(key)
+                },
+            )
+
+            Screen.ATUALIZACOES -> UpdateScreen(
+                state = actions.update,
+                onCheck = actions.onUpdateCheck,
+                onDownload = actions.onUpdateDownload,
+                onOpenPermission = actions.onUpdatePermission,
+                onDismiss = actions.onUpdateDismiss,
             )
         }
     }
