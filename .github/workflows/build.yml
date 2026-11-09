@@ -149,7 +149,9 @@ jobs:
             echo "### $x"
             grep -hoE 'testcase name="[^"]*"|<failure[^>]*message="[^"]*"' "$x" 2>/dev/null | head -80
           done >> ci-build.log || true
-          [ -s ci-build.log ] || tail -c 100000 /tmp/build.log > ci-build.log 2>/dev/null || true
+          if [ ! -s ci-build.log ]; then
+            { tail -c 60000 /tmp/test.log 2>/dev/null; tail -c 60000 /tmp/build.log 2>/dev/null; } > ci-build.log || true
+          fi
           git config user.name  "SmartED CI"
           git config user.email "ci@smarted.local"
           git add -f ci-build.log
