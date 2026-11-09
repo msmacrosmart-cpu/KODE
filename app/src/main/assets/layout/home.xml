@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ============================================================================
+  SmartED-TV — LAYOUT PRINCIPAL (equivalente ao skin.xml do Kodi)
+  ----------------------------------------------------------------------------
+  Este arquivo é lido pelo app em tempo de execução.
+  Para mudar o visual NÃO precisa recompilar o Kotlin:
+     1. edite este XML
+     2. rode ./tools/scripts/build-release.sh  (ou copie para
+        Android/data/com.smarted.tv/files/layout/home.xml no aparelho)
+
+  TAG RAIZ: <smarted>
+  ----------------------------------------------------------------------------
+  IMAGENS/TEXTURAS
+    <image src="TV_LOGO.png" />          -> arquivo em assets/layout/images/
+  ----------------------------------------------------------------------------
+  AÇÕES (action="...")
+    screen:home | screen:canais | screen:filmes | screen:series
+    screen:addons | screen:pastas | screen:configuracoes
+    play:<url>            -> abre o player
+    exit                  -> fecha o app
+    noop                  -> não faz nada
+  ============================================================================
+-->
+<smarted version="1">
+
+    <!-- ══════════ TEMA (cores/fontes — equivalente ao <defaults> do Kodi) ══════════ -->
+    <theme
+        bg="#0E0E10"
+        surface="#1A1A1D"
+        accent="#EF5350"
+        accent2="#FF8A00"
+        text="#F2F2F2"
+        text2="#A8A8AD"
+        titleSize="30"
+        textSize="15" />
+
+    <!-- ══════════════════════════ TELA: INÍCIO ══════════════════════════ -->
+    <screen id="home" title="SmartED-TV" subtitle="Seu centro de entretenimento IPTV" header="true" sidebar="true">
+
+        <!-- MENU LATERAL (equivalente ao controle lista do Kodi) -->
+        <sidebar>
+            <item label="Início"  icon="home"     action="screen:home" />
+            <item label="Canais"  icon="live_tv"  action="screen:canais" />
+            <item label="Filmes"  icon="movie"    action="screen:filmes" />
+            <item label="Séries"  icon="tv"       action="screen:series" />
+            <item label="Addons"  icon="addon"    action="screen:addons" />
+            <item label="Pastas"  icon="folder"   action="screen:pastas" />
+            <item label="Config"  icon="settings" action="screen:configuracoes" />
+            <item label="Sair"    icon="logout"   action="exit" />
+        </sidebar>
+
+        <!-- CONTEÚDO -->
+        <column padding="0" gap="16">
+
+            <banner title="Bem-vindo ao SmartED-TV"
+                    subtitle="Ao vivo, filmes e séries — layout editável por XML"
+                    height="150" />
+
+            <text text="Acesso rápido" size="20" bold="true" />
+
+            <row gap="16" padding="0">
+                <card title="Canais TV" subtitle="Ao vivo" icon="live_tv" action="screen:canais" height="120" fullWidth="true" />
+                <card title="Filmes"    subtitle="VOD"     icon="movie"   action="screen:filmes" height="120" fullWidth="true" />
+                <card title="Séries"    subtitle="Temporadas" icon="tv"   action="screen:series" height="120" fullWidth="true" />
+            </row>
+
+            <text text="Atalhos" size="20" bold="true" />
+
+            <row gap="16" padding="0">
+                <card title="Configurações" subtitle="Conta, rede, player, EPG" icon="settings" action="screen:configuracoes" height="96" fullWidth="true" />
+                <card title="Navegar Pastas" subtitle="Arquivos locais" icon="folder" action="screen:pastas" height="96" fullWidth="true" />
+            </row>
+
+        </column>
+    </screen>
+
+    <!-- ══════════════════════════ TELA: CANAIS ══════════════════════════ -->
+    <screen id="canais" title="Canais TV" subtitle="Ao vivo" sidebar="true">
+        <sidebar>
+            <item label="Início"  icon="home"     action="screen:home" />
+            <item label="Canais"  icon="live_tv"  action="screen:canais" />
+            <item label="Filmes"  icon="movie"    action="screen:filmes" />
+            <item label="Séries"  icon="tv"       action="screen:series" />
+            <item label="Config"  icon="settings" action="screen:configuracoes" />
+            <item label="Sair"    icon="logout"   action="exit" />
+        </sidebar>
+        <column padding="0" gap="10">
+            <text text="Canais ao vivo" size="24" bold="true" />
+            <!-- Items preenchidos pelo app em tempo de execução (lista de canais) -->
+            <list id="channels" itemHeight="72" />
+        </column>
+    </screen>
+
+    <!-- ══════════════════════════ TELA: FILMES ══════════════════════════ -->
+    <screen id="filmes" title="Filmes" subtitle="Catálogo VOD" sidebar="true">
+        <sidebar>
+            <item label="Início"  icon="home"     action="screen:home" />
+            <item label="Canais"  icon="live_tv"  action="screen:canais" />
+            <item label="Filmes"  icon="movie"    action="screen:filmes" />
+            <item label="Séries"  icon="tv"       action="screen:series" />
+            <item label="Config"  icon="settings" action="screen:configuracoes" />
+            <item label="Sair"    icon="logout"   action="exit" />
+        </sidebar>
+        <column padding="0" gap="10">
+            <text text="Filmes" size="24" bold="true" />
+            <grid id="movies" columns="4" />
+        </column>
+    </screen>
+
+    <!-- ══════════════════════════ TELA: SÉRIES ══════════════════════════ -->
+    <screen id="series" title="Séries" subtitle="Catálogo VOD" sidebar="true">
+        <sidebar>
+            <item label="Início"  icon="home"     action="screen:home" />
+            <item label="Canais"  icon="live_tv"  action="screen:canais" />
+            <item label="Filmes"  icon="movie"    action="screen:filmes" />
+            <item label="Séries"  icon="tv"       action="screen:series" />
+            <item label="Config"  icon="settings" action="screen:configuracoes" />
+            <item label="Sair"    icon="logout"   action="exit" />
+        </sidebar>
+        <column padding="0" gap="10">
+            <text text="Séries" size="24" bold="true" />
+            <grid id="series" columns="4" />
+        </column>
+    </screen>
+
+    <!-- ═══════════════════════ TELA: CONFIGURAÇÕES ═══════════════════════ -->
+    <!-- Menu completo (referência TV Eminem) -->
+    <screen id="configuracoes" title="Configurações" subtitle="Menu completo" sidebar="true">
+        <sidebar>
+            <item label="Início"  icon="home"     action="screen:home" />
+            <item label="Canais"  icon="live_tv"  action="screen:canais" />
+            <item label="Config"  icon="settings" action="screen:configuracoes" />
+            <item label="Sair"    icon="logout"   action="exit" />
+        </sidebar>
+        <list gap="8">
+            <card title="Conta e Perfil"      icon="home"     action="noop" height="72" fullWidth="true" />
+            <card title="Rede e Internet"     icon="live_tv"  action="noop" height="72" fullWidth="true" />
+            <card title="Player de Vídeo"     icon="movie"    action="noop" height="72" fullWidth="true" />
+            <card title="EPG e Programa"      icon="tv"       action="noop" height="72" fullWidth="true" />
+            <card title="Parental Controls"   icon="addon"    action="noop" height="72" fullWidth="true" />
+            <card title="Aparência e Tema"    icon="settings" action="noop" height="72" fullWidth="true" />
+            <card title="Idioma e Região"     icon="folder"   action="noop" height="72" fullWidth="true" />
+            <card title="Armazenamento"       icon="folder"   action="noop" height="72" fullWidth="true" />
+            <card title="Sobre o Aplicativo"  icon="info"     action="noop" height="72" fullWidth="true" />
+        </list>
+    </screen>
+
+    <!-- ══════════════════════════ TELA: ADDONS ══════════════════════════ -->
+    <screen id="addons" title="Addons" subtitle="Extensões" sidebar="true">
+        <sidebar>
+            <item label="Início" icon="home"    action="screen:home" />
+            <item label="Addons" icon="addon"   action="screen:addons" />
+            <item label="Sair"   icon="logout"  action="exit" />
+        </sidebar>
+        <column padding="0" gap="8">
+            <text text="Addons instalados" size="24" bold="true" />
+            <text text="Nenhum addon instalado ainda." size="15" color="#A8A8AD" />
+        </column>
+    </screen>
+
+    <!-- ══════════════════════════ TELA: PASTAS ══════════════════════════ -->
+    <screen id="pastas" title="Navegar Pastas" subtitle="Arquivos locais" sidebar="true">
+        <sidebar>
+            <item label="Início" icon="home"   action="screen:home" />
+            <item label="Pastas" icon="folder" action="screen:pastas" />
+            <item label="Sair"   icon="logout" action="exit" />
+        </sidebar>
+        <list gap="8">
+            <card title="Armazenamento interno" subtitle="Navegar por arquivos" icon="folder" action="noop" height="72" fullWidth="true" />
+        </list>
+    </screen>
+
+</smarted>
