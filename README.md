@@ -140,11 +140,21 @@ com referência de medidas **1672 x 941**:
 
 Para ajustar curvas/posições: `whitePath` (r1=55, r2=70) e `offset(94, 7)` do hambúrguer.
 
+## Escopo: app focado em Kodi (não IPTV)
+
+Menu completo (hambúrguer ☰ / tecla MENU), com roteamento para todas as 12 seções:
+Vídeos · Música · Programas · Rádio · Jogos · Imagens · Clima · Favoritos · Add-ons · Arquivos · Configurações · Sair
+
+Configurações seguem o padrão do Kodi — **sem** conta/servidor/expiração de IPTV:
+Interface · Aparência (skin) · Idioma e região · Player de vídeo · Aceleração de hardware ·
+Saída de áudio · Legendas · Fontes de mídia · Atualizar biblioteca · Cache · Armazenamento ·
+Rede e internet · Nome do dispositivo · Sobre.
+
 ## Releases / download direto
 
 | O que | Aonde |
 |---|---|
-| **Download direto do APK (última versão)** | https://github.com/msmacrosmart-cpu/KODE/releases/latest/download/SmartED-TV-1.0.4-universal.apk |
+| **Download direto do APK (última versão)** | https://github.com/msmacrosmart-cpu/KODE/releases/latest/download/SmartED-TV-1.0.6-universal.apk |
 | Página de todas as releases | https://github.com/msmacrosmart-cpu/KODE/releases |
 | Artefatos de cada build (90 dias) | aba **Actions** → run → *Artifacts* |
 
