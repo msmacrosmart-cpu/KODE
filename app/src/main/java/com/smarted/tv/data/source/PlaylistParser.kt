@@ -82,7 +82,7 @@ object PlaylistParser {
             when {
                 line.startsWith("#EXTINF:") -> {
                     val attrs = parseAttributes(line)
-                    pending = attrs
+                    pending = attrs.toMutableMap()
                     pendingGroup = attrs["group-title"]
                     pendingLogo = attrs["tvg-logo"]
                     pendingTvg = attrs["tvg-id"]
@@ -238,12 +238,12 @@ object PlaylistParser {
     // ─────────────────────────────── ASX ───────────────────────────────
     private fun parseAsx(text: String): Playlist {
         val refRegex = Regex("<ref\\s+href=\"([^\"]+)\"\\s*/?>", RegexOption.IGNORE_CASE)
-        val entryRegex = Regex("<entry>(.*?)</entry>", RegexOption.DOT_MATCHES_ALL or RegexOption.IGNORE_CASE)
+        val entryRegex = Regex("<entry>(.*?)</entry>", setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE))
         val entries = mutableListOf<PlaylistEntry>()
         entryRegex.findAll(text).forEach { m ->
             val block = m.groupValues[1]
             val href = refRegex.find(block)?.groupValues?.get(1) ?: return@forEach
-            val title = Regex("<title>(.*?)</title>", RegexOption.DOT_MATCHES_ALL or RegexOption.IGNORE_CASE)
+            val title = Regex("<title>(.*?)</title>", setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE))
                 .find(block)?.groupValues?.get(1)?.trim()
             entries += PlaylistEntry(title ?: href.substringAfterLast('/'), href, PlaylistEntryType.UNKNOWN)
         }
