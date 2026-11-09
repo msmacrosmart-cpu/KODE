@@ -1,5 +1,6 @@
 package com.smarted.tv.data.source
 
+import com.smarted.tv.data.archive.ZipInspector
 import java.text.Normalizer
 import java.text.SimpleDateFormat
 import java.util.Date

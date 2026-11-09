@@ -77,14 +77,14 @@ class SafFileSystem(private val context: Context) {
             .map { child ->
                 val name = child.name ?: "(sem nome)"
                 val isDir = child.isDirectory
-                val classification = FileBrowser.classify(name, child.mimeType)
+                val classification = FileBrowser.classify(name, child.type)
                 BrowseEntry(
                     uri = child.uri.toString(),
                     name = name,
                     isDirectory = isDir,
                     size = if (isDir) 0L else child.length(),
                     lastModified = child.lastModified(),
-                    mime = child.mimeType,
+                    mime = child.type,
                     kind = if (isDir) FileKind.UNKNOWN else classification.kind,
                     action = if (isDir) FileAction.BROWSE else classification.action,
                     reason = if (isDir) "pasta" else classification.reason,

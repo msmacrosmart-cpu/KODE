@@ -365,7 +365,7 @@ private fun FileRow(
                 Spacer(Modifier.width(12.dp))
             }
             Icon(
-                Icons.Rounded.InfoOutline, "Informações", tint = Smarted.TextLight,
+                Icons.Rounded.Info, "Informações", tint = Smarted.TextLight,
                 modifier = Modifier.size(20.dp).clickableNoRipple(onInfo),
             )
         }
