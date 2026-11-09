@@ -131,7 +131,11 @@ jobs:
         if: failure()
         run: |
           set -e
-          { grep -E "^e: |error:|FAILED|What went wrong|Test.*FAILED|expected:|actual:" /tmp/test.log 2>/dev/null | head -200;             grep -E "^e: |error:|FAILED|What went wrong" /tmp/build.log 2>/dev/null | head -200; } > ci-build.log || true
+          {
+            grep -E "^e: |error:|FAILED|What went wrong" /tmp/build.log 2>/dev/null | head -100
+            grep -ho 'testcase name="[^"]*"' app/build/test-results/**/*.xml 2>/dev/null | head -60
+            grep -ho 'message="[^"]*"' app/build/test-results/**/*.xml 2>/dev/null | head -60
+          } > ci-build.log || true
           [ -s ci-build.log ] || tail -c 100000 /tmp/build.log > ci-build.log 2>/dev/null || true
           git config user.name  "SmartED CI"
           git config user.email "ci@smarted.local"
