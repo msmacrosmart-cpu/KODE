@@ -45,8 +45,6 @@ jobs:
             adb shell am start -n org.xbmc.kodi/.Splash
             sleep 30
             adb shell input keyevent 66
-            sleep 10
-            adb shell input keyevent 66
             sleep 120
             adb logcat -d -v brief > "$RUNNER_TEMP/logcat.txt"
             adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' | tr '\n' ' ' | sed 's/^/::notice title=Janela em foco::/'
@@ -55,11 +53,25 @@ jobs:
             python3 -c "import os; from pathlib import Path; t=(Path(os.environ['RUNNER_TEMP'])/'screen.txt').read_text(errors='replace'); print('::notice title=Texto na tela::'+t[-2000:].replace('%','%25').replace('\\n','%0A'))"
             grep -E -i 'org.xbmc.kodi|kodi|FATAL EXCEPTION|UnsatisfiedLinkError|NoClassDefFoundError|native bridge' "$RUNNER_TEMP/logcat.txt" | head -35 > "$RUNNER_TEMP/kodi-log.txt" || true
             python3 -c "import os; from pathlib import Path; t=(Path(os.environ['RUNNER_TEMP'])/'kodi-log.txt').read_text(errors='replace'); print('::notice title=Log Kodi::'+t[-3500:].replace('%','%25').replace('\\n','%0A'))"
-            PID=$(adb shell pidof org.xbmc.kodi | tr -d '\r')
-            echo "::notice title=Resultado da inicialização::PID do aplicativo: ${PID:-ausente}"
+            adb shell ps -A | grep -i kodi | tr '\n' ' ' | sed 's/^/::notice title=Processos Kodi::/' || true
+            python3 -c "import os,struct; p=os.environ['RUNNER_TEMP']+'/screen.png'; w,h=struct.unpack('>II',open(p,'rb').read(24)[16:24]); print(w,h); open(os.environ['RUNNER_TEMP']+'/tap.txt','w').write(str(int(w*0.18))+' '+str(int(h*0.14)))"
+            adb shell input tap $(cat "$RUNNER_TEMP/tap.txt")
+            sleep 5
+            adb exec-out screencap -p > "$RUNNER_TEMP/search.png"
+            tesseract "$RUNNER_TEMP/search.png" stdout 2>/dev/null > "$RUNNER_TEMP/search.txt" || true
+            python3 -c "import os; from pathlib import Path; t=(Path(os.environ['RUNNER_TEMP'])/'search.txt').read_text(errors='replace'); print('::notice title=Tela após busca::'+t[-2000:].replace('%','%25').replace('\n','%0A'))"
+            adb shell input keyevent 20
+            adb shell input keyevent 66
+            sleep 12
+            adb shell uiautomator dump /sdcard/window.xml >/dev/null || true
+            adb shell cat /sdcard/window.xml > "$RUNNER_TEMP/window.xml" || true
+            python3 -c "import os; from pathlib import Path; t=(Path(os.environ['RUNNER_TEMP'])/'window.xml').read_text(errors='replace'); print('::notice title=Hierarquia de entrada::'+t[-3500:].replace('%','%25').replace('\n','%0A'))"
+            adb logcat -d -v brief | grep -E 'XBMCNativeKeyboard|FATAL EXCEPTION|UnsatisfiedLinkError|NoClassDefFoundError' | tail -25 > "$RUNNER_TEMP/keyboard-log.txt" || true
+            python3 -c "import os; from pathlib import Path; t=(Path(os.environ['RUNNER_TEMP'])/'keyboard-log.txt').read_text(errors='replace'); print('::notice title=Log do teclado::'+t[-3500:].replace('%','%25').replace('\n','%0A'))"
             grep -E -i 'FATAL EXCEPTION|UnsatisfiedLinkError|NoClassDefFoundError|AndroidRuntime|XBMCNativeKeyboard' "$RUNNER_TEMP/logcat.txt" | tail -20 > "$RUNNER_TEMP/errors.txt" || true
             python3 -c "import os; from pathlib import Path; p=Path(os.environ['RUNNER_TEMP'])/'errors.txt'; t=p.read_text(errors='replace') or 'Nenhuma falha JNI/Java encontrada no log filtrado.'; print('::notice title=Log filtrado::'+t[-3500:].replace('%','%25').replace('\\n','%0A'))"
-            test -n "$PID"
+            grep -q "XBMCNativeKeyboard.show" "$RUNNER_TEMP/keyboard-log.txt"
+            grep -q "android.widget.EditText" "$RUNNER_TEMP/window.xml"
       - name: Diagnóstico do emulador
         if: failure()
         run: echo '::notice title=Diagnóstico::O emulador não validou o aplicativo. Verifique ABI, inicialização e logs antes de criar uma atualização.'
