@@ -30,6 +30,8 @@ jobs:
               if not p.exists(): continue
               lines = p.read_text(errors='replace').splitlines()
               if name == 'logcat.txt':
+                  relevant = [s for s in lines if re.search(r'Home.xml|Loading skin|special://|kodi.log|skin.novatv|ERROR.*skin|Texture|Window Init', s, re.I)]
+                  print('::notice title=Inicializacao Kodi::' + ('\n'.join(relevant[-110:]) or '(nenhuma)').replace('%','%25').replace('\r','%0D').replace('\n','%0A')[-25000:])
                   lines = [s for s in lines if re.search(r'org\.xbmc|\bkodi\b|native.?bridge|fatal exception|permission denied|UnsatisfiedLinkError', s, re.I)]
               text = '\n'.join(lines[-65:]) or '(vazio)'
               print('::notice title=' + name + '::' + text[-18000:].replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
