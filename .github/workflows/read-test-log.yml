@@ -1,0 +1,22 @@
+name: Diagnóstico do último teste Android
+on:
+  push:
+    branches: [arena/03cbbc5b-kode]
+    paths: [.github/workflows/read-test-log.yml]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  log:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Ler final do log
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run view 42800708889 --repo "$GITHUB_REPOSITORY" --log-failed > log.txt 2>&1 || true
+          python3 - <<'PY'
+          from pathlib import Path
+          t = Path('log.txt').read_text(errors='replace')[-3500:]
+          print('::notice title=Último log do teste::'+t.replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
+          PY
