@@ -26,7 +26,7 @@ jobs:
               p = Path('diagnostics') / name
               if not p.exists(): continue
               relevant = [line for line in p.read_text(errors='replace').splitlines()
-                  if re.search(r'SMARTED_TEST|plugin.video.smarted|BrazucaPlay|python|ERROR|exception|Keyboard|search-series|MyVideoNav', line, re.I)]
+                  if re.search(r'SMARTED_TEST|DialogYesNo|DialogConfirm|plugin.video.smarted|BrazucaPlay|python|ERROR|exception|Keyboard|search-series|MyVideoNav', line, re.I)]
               text = '\n'.join(relevant[-80:])[-20000:] or '(none)'
               print('::notice title=' + name + '::' + text.replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
           PY
