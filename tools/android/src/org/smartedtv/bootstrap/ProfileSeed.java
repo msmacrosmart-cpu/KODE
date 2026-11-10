@@ -164,7 +164,7 @@ public final class ProfileSeed {
         return relative;
     }
 
-    private static void setDefaultSkin(File settings) throws IOException {
+    static void setDefaultSkin(File settings) throws IOException {
         if (!settings.isFile() || settings.length() > 5L * 1024L * 1024L) throw new IOException("Profile settings missing or too large");
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         try (FileInputStream in = new FileInputStream(settings)) {

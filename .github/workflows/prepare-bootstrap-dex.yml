@@ -2,7 +2,7 @@ name: Compilar bootstrap Android
 on:
   push:
     branches: [arena/03cbbc5b-kode]
-    paths: [.github/workflows/prepare-bootstrap-dex.yml]
+    paths: [.github/workflows/prepare-bootstrap-dex.yml, 'tools/android/src/org/smartedtv/bootstrap/**']
 permissions:
   contents: write
 jobs:
