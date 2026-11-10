@@ -42,6 +42,9 @@ jobs:
             adb install -g "$RUNNER_TEMP/debug.apk"
             adb logcat -c
             adb shell appops set org.xbmc.kodi MANAGE_EXTERNAL_STORAGE allow || true
+            printf '%s\n' '<keymap><global><keyboard><f4>ActivateWindow(addonbrowser,addons://search/,return)</f4></keyboard></global></keymap>' > "$RUNNER_TEMP/test-keymap.xml"
+            adb shell mkdir -p /sdcard/Android/data/org.xbmc.kodi/files/.kodi/userdata/keymaps
+            adb push "$RUNNER_TEMP/test-keymap.xml" /sdcard/Android/data/org.xbmc.kodi/files/.kodi/userdata/keymaps/test-keymap.xml
             adb shell am start -n org.xbmc.kodi/.Splash
             sleep 30
             adb shell input keyevent 66
@@ -54,15 +57,11 @@ jobs:
             grep -E -i 'org.xbmc.kodi|kodi|FATAL EXCEPTION|UnsatisfiedLinkError|NoClassDefFoundError|native bridge' "$RUNNER_TEMP/logcat.txt" | head -35 > "$RUNNER_TEMP/kodi-log.txt" || true
             python3 -c "import os; from pathlib import Path; t=(Path(os.environ['RUNNER_TEMP'])/'kodi-log.txt').read_text(errors='replace'); print('::notice title=Log Kodi::'+t[-3500:].replace('%','%25').replace('\\n','%0A'))"
             adb shell ps -A | grep -i kodi | tr '\n' ' ' | sed 's/^/::notice title=Processos Kodi::/' || true
-            python3 -c "import os,struct; p=os.environ['RUNNER_TEMP']+'/screen.png'; w,h=struct.unpack('>II',open(p,'rb').read(24)[16:24]); print(w,h); open(os.environ['RUNNER_TEMP']+'/tap.txt','w').write(str(int(w*0.18))+' '+str(int(h*0.14)))"
-            adb shell input tap $(cat "$RUNNER_TEMP/tap.txt")
-            sleep 5
+            adb shell input keyevent 134
+            sleep 15
             adb exec-out screencap -p > "$RUNNER_TEMP/search.png"
             tesseract "$RUNNER_TEMP/search.png" stdout 2>/dev/null > "$RUNNER_TEMP/search.txt" || true
             python3 -c "import os; from pathlib import Path; t=(Path(os.environ['RUNNER_TEMP'])/'search.txt').read_text(errors='replace'); print('::notice title=Tela após busca::'+t[-2000:].replace('%','%25').replace('\n','%0A'))"
-            adb shell input keyevent 20
-            adb shell input keyevent 66
-            sleep 12
             adb shell uiautomator dump /sdcard/window.xml >/dev/null || true
             adb shell cat /sdcard/window.xml > "$RUNNER_TEMP/window.xml" || true
             python3 -c "import os; from pathlib import Path; t=(Path(os.environ['RUNNER_TEMP'])/'window.xml').read_text(errors='replace'); print('::notice title=Hierarquia de entrada::'+t[-3500:].replace('%','%25').replace('\n','%0A'))"
