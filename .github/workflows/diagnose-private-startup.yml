@@ -1,0 +1,47 @@
+name: Diagnosticar inicialização privada isolada
+on:
+  push:
+    branches: [arena/03cbbc5b-kode]
+    paths: [.github/workflows/diagnose-private-startup.yml]
+permissions:
+  contents: read
+jobs:
+  startup:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reconstruir APK privado em ambiente temporário
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(gh api repos/$GITHUB_REPOSITORY --jq .private)" = true
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          ids=json.loads(subprocess.check_output(['git','show','4a83ed5:.github/private-apk-chunks.json']))
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'private.apk'
+          with out.open('wb') as f:
+              for sha in ids:
+                  data=subprocess.check_output(['gh','api','-H','Accept: application/vnd.github.raw+json','repos/'+os.environ['GITHUB_REPOSITORY']+'/git/blobs/'+sha])
+                  assert hashlib.sha1(('blob %d\0'%len(data)).encode()+data).hexdigest()==sha
+                  f.write(data)
+          assert hashlib.sha256(out.read_bytes()).hexdigest()=='4e3f92f89f3a6f94e19d64fd893adedf40e7c9779a30e91b5b6b6a0144cae7e6'
+          print('Integridade do APK privado confirmada')
+          PY
+      - name: Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Iniciar sem publicar dados do perfil
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 3072
+          disable-animations: true
+          script: bash tools/android/diagnose-private-startup.sh
