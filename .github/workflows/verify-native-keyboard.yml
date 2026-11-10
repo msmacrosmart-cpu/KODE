@@ -1,0 +1,66 @@
+name: Compilar candidato teclado Android
+on:
+  push:
+    branches: [arena/03cbbc5b-kode]
+    paths:
+      - patches/kodi-21.3-native-android-keyboard.patch
+      - .github/workflows/verify-native-keyboard.yml
+permissions:
+  contents: read
+jobs:
+  android-arm64:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependências de compilação
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake bison build-essential curl flex gawk git gperf lib32stdc++6 lib32z1 lib32z1-dev libcurl4-openssl-dev unzip zip zlib1g-dev libtool pkg-config cmake
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Instalar SDK e NDK necessários
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-34' 'build-tools;33.0.1' 'ndk;21.4.7075529'
+      - name: Obter Kodi 21.3 e aplicar alteração
+        run: |
+          git clone --depth 1 --branch 21.3-Omega https://github.com/xbmc/xbmc.git "$RUNNER_TEMP/kodi"
+          cd "$RUNNER_TEMP/kodi"
+          test "$(git rev-parse HEAD)" = 'a3a448d26b8d560a65655dab2cd122994dc4e146'
+          git apply --check "$GITHUB_WORKSPACE/patches/kodi-21.3-native-android-keyboard.patch"
+          git apply "$GITHUB_WORKSPACE/patches/kodi-21.3-native-android-keyboard.patch"
+          git diff --check
+      - name: Compilar dependências Android
+        run: |
+          cd "$RUNNER_TEMP/kodi/tools/depends"
+          ./bootstrap
+          ./configure --with-tarballs="$RUNNER_TEMP/tarballs" --host=aarch64-linux-android \
+            --with-sdk-path="$ANDROID_HOME" --with-ndk-path="$ANDROID_HOME/ndk/21.4.7075529" \
+            --prefix="$RUNNER_TEMP/xbmc-depends"
+          make -j2
+      - name: Compilar Kodi para Android
+        run: |
+          mkdir -p "$RUNNER_TEMP/kodi-build"
+          make -C "$RUNNER_TEMP/kodi/tools/depends/target/cmakebuildsys" BUILD_DIR="$RUNNER_TEMP/kodi-build"
+          make -C "$RUNNER_TEMP/kodi-build" -j2
+      - name: Gerar APK de compilação não destinado a instalação
+        run: |
+          mkdir -p "$HOME/.android"
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            keytool -genkeypair -keystore "$HOME/.android/debug.keystore" -alias androiddebugkey \
+              -dname 'CN=Android Debug,O=Android,C=US' -keyalg RSA -keysize 2048 \
+              -validity 10000 -storepass android -keypass android
+          fi
+          make -C "$RUNNER_TEMP/kodi-build" apk
+          mkdir -p "$RUNNER_TEMP/kodi-build-output"
+          find "$RUNNER_TEMP/kodi-build" "$RUNNER_TEMP/kodi" -type f -name '*.apk' \
+            -exec cp -t "$RUNNER_TEMP/kodi-build-output" {} +
+          test -n "$(find "$RUNNER_TEMP/kodi-build-output" -type f -name '*.apk' -print -quit)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kodi-teclado-compilacao-intermediaria
+          path: ${{ runner.temp }}/kodi-build-output/*.apk
+          retention-days: 3
+          if-no-files-found: error
