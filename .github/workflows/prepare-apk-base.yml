@@ -25,5 +25,5 @@ jobs:
           for i in range(0, len(data), 8 * 1024 * 1024):
               body = json.dumps({'content': base64.b64encode(data[i:i+8*1024*1024]).decode(), 'encoding':'base64'}).encode()
               proc = subprocess.run(['gh','api','--method','POST','repos/'+os.environ['GITHUB_REPOSITORY']+'/git/blobs','--input','-','--jq','.sha'], input=body, capture_output=True, check=True)
-              print('BASE_CHUNK_%d=%s' % (i // (8*1024*1024), proc.stdout.decode().strip()), flush=True)
+              print('::notice::BASE_CHUNK_%d=%s' % (i // (8*1024*1024), proc.stdout.decode().strip()), flush=True)
           PY
