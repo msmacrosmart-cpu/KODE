@@ -49,7 +49,7 @@ jobs:
             sleep 30
             adb shell input keyevent 66
             sleep 90
-            UID_APP=$(adb shell ps -A | awk '$NF == "org.xbmc.kodi" {print $1; exit}' | tr -d '\r')
+            UID_APP=$(adb shell ps -A | tr -d '\r' | awk '$NF == "org.xbmc.kodi" {print $1; exit}')
             echo "::notice title=UID do aplicativo após inicialização::${UID_APP:-não encontrado}"
             test -n "$UID_APP"
             adb shell mkdir -p /sdcard/Android/data/org.xbmc.kodi/files/.kodi/userdata/keymaps
