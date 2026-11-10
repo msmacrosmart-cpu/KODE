@@ -3,11 +3,12 @@
 set -eu
 CACHE="${KODE_BUILD_HOME:-$HOME/.cache/kode-build}"
 mkdir -p "$CACHE/python" "$CACHE/tools"
-python3 -m pip install --disable-pip-version-check --target "$CACHE/python" --upgrade 'jdk4py==17.0.9.2' 'Pillow==11.3.0'
+python3 -m pip install --disable-pip-version-check --target "$CACHE/python" --upgrade 'jdk4py==17.0.9.2' 'Pillow==11.3.0' 'pyaxmlparser==0.3.31'
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 npm pack '@postar/apktool-node@0.3.4' --pack-destination "$TMP" >/dev/null
-tar -xzf "$TMP/postar-apktool-node-0.3.4.tgz" -C "$TMP" package/lib/apksigner.jar
+tar -xzf "$TMP/postar-apktool-node-0.3.4.tgz" -C "$TMP" package/lib/apksigner.jar package/lib/apktool.jar
 cp "$TMP/package/lib/apksigner.jar" "$CACHE/tools/apksigner.jar"
+cp "$TMP/package/lib/apktool.jar" "$CACHE/tools/apktool.jar"
 "$CACHE/python/jdk4py/java-runtime/bin/java" -jar "$CACHE/tools/apksigner.jar" version
 printf 'Ferramentas instaladas em %s\n' "$CACHE"

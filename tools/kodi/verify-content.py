@@ -21,9 +21,13 @@ def digest(archive, name):
         for chunk in iter(lambda: f.read(1024 * 1024), b''): h.update(chunk)
     return h.digest()
 
-if len(sys.argv) != 3:
-    raise SystemExit('Uso: verify-content.py ZIP APK')
-with zipfile.ZipFile(sys.argv[1]) as src, zipfile.ZipFile(sys.argv[2]) as apk:
+from_apk = len(sys.argv) == 4 and sys.argv[1] == '--apk'
+if not from_apk and len(sys.argv) != 3:
+    raise SystemExit('Uso: verify-content.py [--apk] ENTRADA APK')
+source, output = sys.argv[2:4] if from_apk else sys.argv[1:3]
+if from_apk:
+    ROOT = ''
+with zipfile.ZipFile(source) as src, zipfile.ZipFile(output) as apk:
     expected = {i.filename[len(ROOT):] for i in src.infolist()
                 if i.filename.startswith(ROOT) and not i.is_dir() and i.filename != ROOT
                 and not SIG.fullmatch(i.filename[len(ROOT):])}

@@ -1,0 +1,25 @@
+name: Publicar SMARTED-TV teste 1.0.15
+on:
+  push:
+    branches:
+      - arena/03cbbc5b-kode
+    paths:
+      - .github/workflows/publish-smarted-test.yml
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obter e verificar APK de teste previamente construído
+        run: |
+          curl --fail --location --retry 3 -o SMARTED-TV-v1.0.15-arm64-teste.apk 'https://www.dropbox.com/scl/fi/4g28c30ogobuq9c08xcss/SMARTED-TV-v1.0.15-arm64-teste.apk?rlkey=m1q2ke72wow893pjglp6dka2c&dl=1'
+          echo '1cb892b1103a3a42a2ed846825c93ae7075cccf9260b7b451d61c1b23ea827e0  SMARTED-TV-v1.0.15-arm64-teste.apk' | sha256sum -c -
+      - name: Publicar pré-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v1.0.15-smarted-test SMARTED-TV-v1.0.15-arm64-teste.apk \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title 'SMARTED-TV 1.0.15 — teste ARM64' \
+            --notes 'Pré-release para testes. APK baseado no Kodi 21.3 ARM64, com identidade SMARTED-TV e paleta Estuary em tons de cinza. Código nativo e Dex preservados; assinatura e conteúdo verificados estaticamente. Não foi testado em dispositivo. Apenas ARM64, pacote org.xbmc.kodi. Assinatura própria de teste diferente da versão oficial ou versões anteriores; faça backup antes de remover qualquer instalação. Não é versão de produção. Código do Kodi: https://github.com/xbmc/xbmc/tree/21.3-Omega .'
