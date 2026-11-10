@@ -57,3 +57,21 @@ jobs:
               lines = [str({k:n.get(k) for k in ('class','resource-id','text','bounds','focused')}) for n in root.iter('node') if n.get('class') in ('android.widget.EditText','android.widget.Button')]
               print('::notice title=Native controls::' + '%0A'.join(lines).replace('%','%25').replace('%250A','%0A'))
           PY
+      - name: Recuperar captura pública do emulador
+        run: |
+          python3 -m pip install --quiet 'Pillow==11.3.0'
+          python3 - <<'PY'
+          import base64, io
+          from pathlib import Path
+          from PIL import Image
+          path = Path('diagnostics/screen.png')
+          if path.exists():
+              image = Image.open(path).convert('RGB')
+              image.thumbnail((1280, 720))
+              image = image.quantize(colors=48)
+              buf = io.BytesIO(); image.save(buf, 'PNG', optimize=True)
+              data = base64.b64encode(buf.getvalue()).decode()
+              print('::notice title=Screen parts::' + str((len(data)+11999)//12000))
+              for index, start in enumerate(range(0, len(data), 12000)):
+                  print('::notice title=Screen part ' + str(index) + '::' + data[start:start+12000])
+          PY
