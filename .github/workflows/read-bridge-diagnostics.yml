@@ -14,7 +14,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: synthetic-seed-diagnostics
-          run-id: 42827164340
+          run-id: 42831039634
           github-token: ${{ github.token }}
           path: diagnostics
       - name: Examinar exclusivamente o perfil sintético
@@ -22,11 +22,26 @@ jobs:
           python3 - <<'PY'
           import re
           from pathlib import Path
-          for name in ('bridge-logcat.txt', 'logcat.txt'):
+          for name in ('search-logcat.txt', 'bridge-logcat.txt'):
               p = Path('diagnostics') / name
               if not p.exists(): continue
               relevant = [line for line in p.read_text(errors='replace').splitlines()
-                  if re.search(r'SMARTED_TEST|plugin.video.smarted|BrazucaPlay|python|ERROR|exception|MyVideoNav', line, re.I)]
+                  if re.search(r'SMARTED_TEST|plugin.video.smarted|BrazucaPlay|python|ERROR|exception|Keyboard|search-series|MyVideoNav', line, re.I)]
               text = '\n'.join(relevant[-80:])[-20000:] or '(none)'
               print('::notice title=' + name + '::' + text.replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
           PY
+
+      - name: Ler captura sintética do teclado
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr
+          for image in search-keyboard screen search-results; do
+            if [ -s "diagnostics/$image.png" ]; then
+              tesseract "diagnostics/$image.png" stdout 2>/dev/null > /tmp/ocr.txt || true
+              IMAGE="$image" python3 - <<'PY'
+          import os
+          from pathlib import Path
+          text = Path('/tmp/ocr.txt').read_text(errors='replace')
+          print('::notice title=Screen ' + os.environ['IMAGE'] + '::' + text.replace('%','%25').replace('\n','%0A'))
+          PY
+            fi
+          done
