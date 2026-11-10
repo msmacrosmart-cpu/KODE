@@ -1,0 +1,90 @@
+name: Preparar APK de teste do teclado
+on:
+  push:
+    branches: [arena/03cbbc5b-kode]
+    paths:
+      - .github/workflows/prepare-keyboard-test.yml
+      - tools/kodi/make-keyboard-update.py
+permissions:
+  actions: read
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: kodi-teclado-compilacao-intermediaria
+          run-id: 42775900278
+          github-token: ${{ github.token }}
+          path: candidate
+      - name: Obter APK instalado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v1.0.15-smarted-test -R "$GITHUB_REPOSITORY" --pattern 'SMARTED-TV-v1.0.15-arm64-teste.apk' --dir previous
+      - name: Compilar apenas a classe Android do teclado
+        run: |
+          mkdir -p "$RUNNER_TEMP/src" "$RUNNER_TEMP/java-out" "$RUNNER_TEMP/dex-out"
+          cd "$RUNNER_TEMP/src"
+          git apply --include='tools/android/packaging/xbmc/src/XBMCNativeKeyboard.java.in' "$GITHUB_WORKSPACE/patches/kodi-21.3-native-android-keyboard.patch"
+          mkdir -p org/xbmc/kodi
+          sed -e 's/@APP_PACKAGE@/org.xbmc.kodi/g' -e 's/@APP_NAME@/Kodi/g' tools/android/packaging/xbmc/src/XBMCNativeKeyboard.java.in >org/xbmc/kodi/XBMCNativeKeyboard.java
+          cat >org/xbmc/kodi/Main.java <<'EOF'
+          package org.xbmc.kodi;
+          public class Main extends android.app.NativeActivity {
+            public static Main MainActivity;
+          }
+          EOF
+          javac -source 8 -target 8 -cp "$ANDROID_HOME/platforms/android-34/android.jar" -d "$RUNNER_TEMP/java-out" org/xbmc/kodi/Main.java org/xbmc/kodi/XBMCNativeKeyboard.java
+          BUILD_TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          "$BUILD_TOOLS/d8" --min-api 21 --output "$RUNNER_TEMP/dex-out" "$RUNNER_TEMP"/java-out/org/xbmc/kodi/XBMCNativeKeyboard*.class
+          "$BUILD_TOOLS/dexdump" -f "$RUNNER_TEMP/dex-out/classes.dex" | sed -n "s/.*Class descriptor  : '\(.*\)'/\1/p" > "$RUNNER_TEMP/dex-classes.txt"
+          test -s "$RUNNER_TEMP/dex-classes.txt"
+          grep -F 'Lorg/xbmc/kodi/XBMCNativeKeyboard;' "$RUNNER_TEMP/dex-classes.txt"
+          if grep -v '^Lorg/xbmc/kodi/XBMCNativeKeyboard' "$RUNNER_TEMP/dex-classes.txt"; then echo 'Classes inesperadas no DEX' >&2; exit 1; fi
+      - name: Montar candidato sem assinatura
+        run: |
+          python3 tools/kodi/make-keyboard-update.py previous/SMARTED-TV-v1.0.15-arm64-teste.apk candidate/kodiapp-arm64-v8a-debug.apk "$RUNNER_TEMP/dex-out/classes.dex" "$RUNNER_TEMP/unsigned.apk"
+          python3 tools/kodi/align-apk.py "$RUNNER_TEMP/unsigned.apk" "$RUNNER_TEMP/aligned.apk"
+      - name: Verificar que apenas os arquivos necessários mudaram
+        run: |
+          python3 -m pip install --quiet 'pyaxmlparser==0.3.31'
+          python3 - <<'PY' > "$RUNNER_TEMP/diagnostico.txt" 2>&1
+          import os, re, hashlib, zipfile
+          from pyaxmlparser import APK
+          old = 'previous/SMARTED-TV-v1.0.15-arm64-teste.apk'
+          out = os.path.join(os.environ['RUNNER_TEMP'], 'aligned.apk')
+          apk = APK(out)
+          assert (apk.package, apk.version_name, str(apk.version_code), apk.get_app_name()) == ('org.xbmc.kodi', '1.0.16', '2103002', 'SMARTED-TV')
+          signature = re.compile(r'^META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC))$', re.I)
+          with zipfile.ZipFile(old) as a, zipfile.ZipFile(out) as b:
+              aa = {n for n in a.namelist() if not n.endswith('/') and not signature.fullmatch(n)}
+              bb = {n for n in b.namelist() if not n.endswith('/') and not signature.fullmatch(n)}
+              assert bb - aa == {'classes2.dex'} and not aa - bb, (bb - aa, aa - bb)
+              changed = {n for n in aa if hashlib.sha256(a.read(n)).digest() != hashlib.sha256(b.read(n)).digest()}
+              expected = {'AndroidManifest.xml', 'assets/system/settings/android.xml', 'lib/arm64-v8a/libkodi.so'}
+              assert changed == expected, changed
+              assert not b.testzip()
+              print('APK sem assinatura:', apk.package, apk.version_name, apk.version_code, apk.get_app_name())
+              print('Arquivos alterados:', sorted(changed), '; adicionado: classes2.dex')
+              print('Arquivos restantes, recursos, add-ons e demais bibliotecas preservados byte a byte.')
+              print('Candidato não testado em aparelho. Não publicar como funcional.')
+          PY
+      - name: Diagnóstico acessível
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          p = Path(os.environ['RUNNER_TEMP'])/'diagnostico.txt'
+          text = p.read_text(errors='replace') if p.exists() else 'A verificação anterior não chegou à comparação.'
+          print('::notice title=Preparação do APK::' + text[-6000:].replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smarted-teclado-nao-assinado
+          path: ${{ runner.temp }}/aligned.apk
+          retention-days: 3
+          if-no-files-found: error
