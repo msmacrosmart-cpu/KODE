@@ -66,8 +66,9 @@ jobs:
                   Path('new-' + name).write_bytes(b.read(path))
               Path('old-classes.dex').write_bytes(a.read('classes.dex'))
               Path('new-classes.dex').write_bytes(b.read('classes.dex'))
-              for label, dex in [('antigo', a.read('classes.dex')), ('novo', b.read('classes.dex'))]:
-                  print('DEX', label, 'contém XBMCNativeKeyboard:', b'XBMCNativeKeyboard' in dex)
+              for label, z in [('antigo', a), ('novo', b)]:
+                  dexfiles = sorted(x for x in z.namelist() if x.startswith('classes') and x.endswith('.dex'))
+                  print('DEX', label, ':', dexfiles, 'classe XBMCNativeKeyboard presente em:', [x for x in dexfiles if b'XBMCNativeKeyboard' in z.read(x)])
               Path('old-android.xml').write_bytes(a.read('assets/system/settings/android.xml'))
               Path('new-android.xml').write_bytes(b.read('assets/system/settings/android.xml'))
           PY
