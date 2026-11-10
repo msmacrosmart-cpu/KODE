@@ -30,7 +30,7 @@ def items(route):
     if route == 'tv':
         return [
             ('Opções de TV', brazuca(21, '#menu_canais')),
-            ('Buscar canais (exceto Pluto TV)', smarted('search-channels')),
+            ('Buscar canais', smarted('search-channels')),
         ]
     if route == 'series':
         return [

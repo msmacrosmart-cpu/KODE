@@ -66,25 +66,32 @@ def search_channels(handle):
     from search import normalize
 
     dialog = xbmcgui.Dialog()
-    query = dialog.input('Buscar canais do Brazuca (exceto Pluto TV)')
+    query = dialog.input('Buscar canais do Brazuca e Pluto TV')
     if not query or not normalize(query):
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
         return
-    request = {'jsonrpc': '2.0', 'id': 1, 'method': 'Files.GetDirectory',
-               'params': {'directory': brazuca(21, '#todoscanais'), 'media': 'video',
-                          'properties': ['thumbnail', 'fanart']}}
-    try:
-        response = json.loads(xbmc.executeJSONRPC(json.dumps(request)))
-        if 'error' in response or not isinstance(response.get('result', {}).get('files'), list):
-            raise ValueError('Channel directory unavailable')
-        results = matches(response['result']['files'], query)
-    except Exception:
-        dialog.notification('SMARTED-TV', 'Não foi possível consultar os canais do Brazuca.',
+    results, failures = [], []
+    sources = (('Brazuca', '#todoscanais'), ('Pluto TV', '#plutotv_16'))
+    for source, path in sources:
+        request = {'jsonrpc': '2.0', 'id': 1, 'method': 'Files.GetDirectory',
+                   'params': {'directory': brazuca(21, path), 'media': 'video',
+                              'properties': ['thumbnail', 'fanart']}}
+        try:
+            response = json.loads(xbmc.executeJSONRPC(json.dumps(request)))
+            result = response.get('result', {})
+            if 'error' in response or not isinstance(result, dict) or not isinstance(result.get('files', []), list):
+                raise ValueError('Channel directory unavailable')
+            results.extend(matches(result.get('files', []), query))
+        except Exception:
+            failures.append(source)
+    if failures:
+        dialog.notification('SMARTED-TV', 'Fontes indisponíveis: ' + ', '.join(failures),
                             xbmcgui.NOTIFICATION_WARNING, 7000)
+    if len(failures) == len(sources):
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
         return
     if not results:
-        dialog.notification('SMARTED-TV', 'Nenhum canal encontrado.', xbmcgui.NOTIFICATION_INFO, 5000)
+        dialog.notification('SMARTED-TV', 'Nenhum canal encontrado nas fontes disponíveis.', xbmcgui.NOTIFICATION_INFO, 5000)
     xbmcplugin.setContent(handle, 'videos')
     for result in results:
         item = xbmcgui.ListItem(label=result['label'])

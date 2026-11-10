@@ -62,25 +62,52 @@ class ChannelSearchTest(unittest.TestCase):
             addDirectoryItem=lambda *args, **kw: events.append(('item', args, kw)),
             endOfDirectory=lambda *args, **kw: events.append(('end', args, kw)))
         source = [{'label': 'Notícia TV', 'file': path(16, 'stream'), 'filetype': 'file'}]
+        pluto = [{'label': 'Notícia Pluto', 'file': path(16, 'pluto-stream'), 'filetype': 'file'}]
+        requested = []
         def json_rpc(request):
             request = json.loads(request)
-            self.assertEqual(request['method'], 'Files.GetDirectory')
             parsed = parse_qs(urlsplit(request['params']['directory']).query, keep_blank_values=True)
-            self.assertEqual(parsed['url'], ['#todoscanais'])
-            return json.dumps({'result': {'files': source}})
+            requested.append((request['method'], parsed['url'][0]))
+            return json.dumps({'result': {'files': source if parsed['url'][0] == '#todoscanais' else pluto}})
         xbmc = types.SimpleNamespace(executeJSONRPC=json_rpc)
         with patch.dict(sys.modules, {'routes': routes, 'search': search, 'channel_search': channels,
                                       'xbmcgui': gui, 'xbmcplugin': plugin, 'xbmc': xbmc}):
             main = load('channel_search_main', 'default.py')
             main.search_channels(5)
-            item = next(e for e in events if e[0] == 'item')
-            self.assertEqual(item[1][1], source[0]['file'])
-            self.assertEqual(item[1][2].property, ('IsPlayable', 'true'))
+            items = [e for e in events if e[0] == 'item']
+            self.assertEqual([item[1][1] for item in items], [source[0]['file'], pluto[0]['file']])
+            self.assertEqual(items[0][1][2].property, ('IsPlayable', 'true'))
+            self.assertEqual(requested, [('Files.GetDirectory', '#todoscanais'), ('Files.GetDirectory', '#plutotv_16')])
             self.assertTrue(events[-1][2]['succeeded'])
             events.clear(); query[0] = ''
             main.search_channels(5)
             self.assertEqual(len(events), 1)
             self.assertFalse(events[-1][2]['succeeded'])
+
+    def test_pluto_failure_keeps_brazuca_results(self):
+        events = []
+        class Item:
+            def __init__(self, label): pass
+            def setArt(self, value): pass
+            def setProperty(self, key, value): pass
+        gui = types.SimpleNamespace(Dialog=lambda: types.SimpleNamespace(input=lambda _: 'tv',
+            notification=lambda *a: events.append(('notification', a))), ListItem=Item,
+            NOTIFICATION_WARNING=2, NOTIFICATION_INFO=1)
+        plugin = types.SimpleNamespace(setContent=lambda *a: None,
+            addDirectoryItem=lambda *a, **kw: events.append(('item', a, kw)),
+            endOfDirectory=lambda *a, **kw: events.append(('end', a, kw)))
+        def rpc(request):
+            data = json.loads(request)
+            if '#plutotv_16' in parse_qs(urlsplit(data['params']['directory']).query)['url']:
+                return json.dumps({'error': {}})
+            return json.dumps({'result': {'files': [{'label':'TV', 'file':path(16,'stream'), 'filetype':'file'}]}})
+        with patch.dict(sys.modules, {'routes':routes, 'search':search, 'channel_search':channels,
+              'xbmcgui':gui, 'xbmcplugin':plugin, 'xbmc':types.SimpleNamespace(executeJSONRPC=rpc)}):
+            main = load('channel_partial_main', 'default.py')
+            main.search_channels(5)
+            self.assertEqual([e[0] for e in events], ['notification','item','end'])
+            self.assertIn('Pluto TV', events[0][1][1])
+            self.assertTrue(events[-1][2]['succeeded'])
 
     def test_kodi_reports_source_failure(self):
         events = []
