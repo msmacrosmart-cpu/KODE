@@ -47,7 +47,12 @@ jobs:
             adb wait-for-device
             adb shell mkdir -p /sdcard/Android/data/org.xbmc.kodi/files/.kodi/userdata/keymaps > "$RUNNER_TEMP/adb-mkdir.txt" 2>&1 || true
             adb push "$RUNNER_TEMP/test-keymap.xml" /sdcard/Android/data/org.xbmc.kodi/files/.kodi/userdata/keymaps/test-keymap.xml > "$RUNNER_TEMP/adb-push.txt" 2>&1 || true
-            python3 -c "import os; from pathlib import Path; d=Path(os.environ['RUNNER_TEMP']); t=(d/'adb-mkdir.txt').read_text()+(d/'adb-push.txt').read_text(); print('::notice title=Preparação do atalho::'+t.replace('%','%25').replace('\\n','%0A'))"
+            UID_APP=$(adb shell dumpsys package org.xbmc.kodi | sed -n 's/.*userId=\([0-9]*\).*/\1/p' | head -1 | tr -d '\r')
+            test -n "$UID_APP"
+            adb shell chown -R "$UID_APP:$UID_APP" /data/media/0/Android/data/org.xbmc.kodi/files/.kodi
+            adb shell chmod -R a+rX /data/media/0/Android/data/org.xbmc.kodi/files/.kodi
+            adb shell su "$UID_APP" -c 'cat /sdcard/Android/data/org.xbmc.kodi/files/.kodi/userdata/keymaps/test-keymap.xml' > "$RUNNER_TEMP/keymap-access.txt" 2>&1 || true
+            python3 -c "import os; from pathlib import Path; d=Path(os.environ['RUNNER_TEMP']); t=(d/'adb-mkdir.txt').read_text()+(d/'adb-push.txt').read_text()+(d/'keymap-access.txt').read_text(); print('::notice title=Preparação do atalho::'+t.replace('%','%25').replace('\\n','%0A'))"
             adb shell am start -n org.xbmc.kodi/.Splash
             sleep 30
             adb shell input keyevent 66
