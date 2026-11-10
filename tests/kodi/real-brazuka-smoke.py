@@ -63,5 +63,9 @@ try:
     if not channel_search.matches(channel_dir, 'tv'):
         raise RuntimeError('real channel search found no TV matches')
     xbmc.log('SMARTED_TEST_PUBLIC_BRAZUCA_CHANNEL_SEARCH_OK', xbmc.LOGWARNING)
+    featured = directory('plugin://plugin.video.smarted/?route=recent-movies')
+    if not featured:
+        raise RuntimeError('real Brazuca launch widget is empty')
+    xbmc.log('SMARTED_TEST_PUBLIC_BRAZUCA_LAUNCH_WIDGET_OK', xbmc.LOGWARNING)
 except Exception as exc:
     xbmc.log('SMARTED_TEST_PUBLIC_BRAZUCA_MENUS_FAILED: ' + str(exc), xbmc.LOGERROR)

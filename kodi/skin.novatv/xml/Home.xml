@@ -15,7 +15,7 @@
         <scrolltime>500</scrolltime>
         <autoscroll time="7000">Skin.HasSetting(hero_autoscroll)</autoscroll>
         <focusposition>0</focusposition>
-        <content limit="8">videodb://recentlyaddedmovies/</content>
+        <content limit="8">plugin://plugin.video.smarted/?route=recent-movies</content>
         <itemlayout width="1920" height="780">
           <control type="image">
             <left>0</left>
@@ -220,7 +220,7 @@
           <aligny>center</aligny>
           <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
           <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
-          <onclick>ActivateWindow(Videos,videodb://recentlyaddedmovies/,return)</onclick>
+          <onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=%23filmes_menu&amp;mode=27&amp;name=&amp;iconimage=&amp;fanart=&amp;description=,return)</onclick>
           <onup>9000</onup>
           <onleft>9111</onleft>
           <onleft>9110</onleft>
@@ -440,7 +440,7 @@
       <control type="group">
         <height>400</height>
         <width>1920</width>
-        <visible>Library.HasContent(Movies)</visible>
+        <visible>System.HasAddon(plugin.video.BrazucaPlay.Matrix) + System.HasAddon(plugin.video.smarted)</visible>
         <control type="label">
           <left>60</left>
           <top>0</top>
@@ -458,7 +458,7 @@
           <height>340</height>
           <orientation>horizontal</orientation>
           <scrolltime>250</scrolltime>
-          <content limit="24">videodb://recentlyaddedmovies/</content>
+          <content limit="10">plugin://plugin.video.smarted/?route=recent-movies</content>
           <itemlayout width="230" height="320">
             <control type="image">
               <left>0</left>

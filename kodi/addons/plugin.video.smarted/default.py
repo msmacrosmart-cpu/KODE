@@ -18,6 +18,9 @@ def main():
     if route == 'search-channels':
         search_channels(handle)
         return
+    if route == 'recent-movies':
+        recent_movies(handle)
+        return
     entries = items(route)
     if not entries:
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
@@ -86,6 +89,32 @@ def search_channels(handle):
     for result in results:
         item = xbmcgui.ListItem(label=result['label'])
         item.setArt({'thumb': result['thumb'], 'fanart': result['fanart']})
+        item.setProperty('IsPlayable', 'true' if result['playable'] else 'false')
+        xbmcplugin.addDirectoryItem(handle, result['url'], item, isFolder=result['folder'])
+    xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+
+
+def recent_movies(handle):
+    import xbmc
+    from catalogue import recent_movies as fetch_recent_movies
+
+    try:
+        results = fetch_recent_movies(xbmc.executeJSONRPC)
+    except Exception:
+        # A widget must not interrupt the Home with a dialog or leak URLs.
+        xbmc.log('SMARTED-TV: lançamentos do Brazuca indisponíveis', xbmc.LOGWARNING)
+        xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
+        return
+    xbmcplugin.setContent(handle, 'movies')
+    for result in results:
+        item = xbmcgui.ListItem(label=result['label'])
+        item.setArt({'thumb': result['thumbnail'], 'poster': result['thumbnail'],
+                     'fanart': result['fanart']})
+        info = item.getVideoInfoTag()
+        info.setTitle(result['title'])
+        info.setPlot(result['plot'])
+        if result['year'] > 0:
+            info.setYear(result['year'])
         item.setProperty('IsPlayable', 'true' if result['playable'] else 'false')
         xbmcplugin.addDirectoryItem(handle, result['url'], item, isFolder=result['folder'])
     xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
