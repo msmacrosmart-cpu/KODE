@@ -49,7 +49,7 @@ for _ in $(seq 1 24); do
   if grep -q 'SMARTED_TEST_BRIDGE_JSONRPC_FAILED' "$out/bridge-logcat.txt"; then break; fi
   sleep 5
 done
-if [ "$bridge" -ne 1 ] || ! grep -q 'SMARTED_TEST_BRAZUCA_SERIES_OK' "$out/bridge-logcat.txt"; then
+if [ "$bridge" -ne 1 ] || ! grep -q 'SMARTED_TEST_BRAZUCA_SERIES_OK' "$out/bridge-logcat.txt" || ! grep -q 'SMARTED_TEST_BRAZUCA_SEARCH_RESULT_OK' "$out/bridge-logcat.txt"; then
   echo '::error::Bridge routing fixture failed; inspect the synthetic log.'; exit 1
 fi
 # Real public indexes are queried, while the target add-on is still a stub.
