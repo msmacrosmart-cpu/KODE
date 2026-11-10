@@ -49,6 +49,29 @@ class CatalogueTest(unittest.TestCase):
         self.assertEqual(found[0]['fanart'], 'wide')
         self.assertEqual(found[0]['year'], 2026)
 
+    def test_movies_overview_keeps_native_search_and_flattens_genres_and_page(self):
+        def entry(label, target, kind='directory'):
+            return {'label': label, 'file': target, 'filetype': kind}
+        search_url, launches, genres, alphabet, trilogy = [url(27, str(i)) for i in range(5)]
+        genre, movie = url(27, 'acao'), url(16, 'movie')
+        menu = [entry('[B]PESQUISE POR FILMES[/B]',search_url),
+                entry('[B]CATEGORIA: GÊNEROS[/B]',genres),
+                entry('[B]CATEGORIA: LANÇAMENTOS[/B]',launches),
+                entry('[B]CATEGORIA: ORDEM ALFABÉTICA[/B]',alphabet),
+                entry('[B]CATEGORIA: TRILOGIA[/B]',trilogy)]
+        values = {routes.brazuca(27, '#filmes_menu'):menu, genres:[entry('Ação',genre)],
+                  alphabet:[entry('Um filme',movie,'file')]}
+        def rpc(raw):
+            req=json.loads(raw)
+            return json.dumps({'result': {'files': values[req['params']['directory']]}})
+        found, failed = catalogue.movie_overview(rpc)
+        self.assertEqual([x['url'] for x in found], [search_url, launches, genre, movie, alphabet, trilogy])
+        self.assertEqual(failed, [])
+        values[genres] = []
+        found, failed = catalogue.movie_overview(rpc)
+        self.assertIn(genres, [x['url'] for x in found])
+        self.assertEqual(failed, ['gêneros'])
+
     def test_empty_source_and_error_are_not_fabricated(self):
         self.assertEqual(catalogue.recent_movies(lambda _: '{"result": {}}'), [])
         with self.assertRaises(ValueError):
@@ -66,6 +89,7 @@ class CatalogueTest(unittest.TestCase):
             def getVideoInfoTag(self): return self.info
             def setProperty(self, key, value): self.prop = (key, value)
         plugin = types.SimpleNamespace(setContent=lambda *a: events.append(('content', a)),
+            SORT_METHOD_UNSORTED=0, addSortMethod=lambda *a: None,
             addDirectoryItem=lambda *a, **kw: events.append(('item', a, kw)),
             endOfDirectory=lambda *a, **kw: events.append(('end', a, kw)))
         xbmc = types.SimpleNamespace(executeJSONRPC=lambda _: '{}', LOGWARNING=2,

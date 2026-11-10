@@ -72,10 +72,7 @@ class SkinContracts(unittest.TestCase):
         self.assertTrue(all('System.HasAddon(plugin.video.BrazucaPlay.Matrix)' in item[2] for item in entries[:3]))
         self.assertEqual(entries[3][1], 'ActivateWindow(Settings)')
         self.assertIn('plugin.video.smarted/?route=tv', entries[0][1])
-        for _, action, _ in entries[1:2]:
-            url = action.split('Videos,', 1)[1].rsplit(',return)', 1)[0]
-            params = parse_qs(urlsplit(url).query, keep_blank_values=True)
-            self.assertTrue(all(params.get(k) == [''] for k in ('name', 'iconimage', 'fanart', 'description')))
+        self.assertIn('plugin.video.smarted/?route=movies', entries[1][1])
         self.assertTrue(all('Skin.HasSetting(SmartedFullMode)' in (item[2] or '') for item in entries[4:]))
         logo = home.find(".//control[@id='8999']")
         actions = logo.findall('onclick')

@@ -24,7 +24,7 @@ success=0
 donation_answered=0
 for _ in $(seq 1 100); do
   adb logcat -d -s Kodi:V > "$out/kodi-logcat.txt" || true
-  if grep -q SMARTED_TEST_CHANNEL_FAVORITE_OK "$out/kodi-logcat.txt" && grep -q SMARTED_TEST_LOCAL_KODI_PLAYER_OK "$out/kodi-logcat.txt" && grep -q SMARTED_TEST_PUBLIC_BRAZUCA_LAUNCH_WIDGET_OK "$out/kodi-logcat.txt" && grep -q SMARTED_TEST_PUBLIC_BRAZUCA_CHANNEL_SEARCH_OK "$out/kodi-logcat.txt" && grep -q SMARTED_TEST_PUBLIC_BRAZUCA_TV_OK "$out/kodi-logcat.txt" && grep -q SMARTED_TEST_PUBLIC_BRAZUCA_SEARCH_RESULT_OK "$out/kodi-logcat.txt"; then success=1; break; fi
+  if grep -q SMARTED_TEST_MOVIE_OVERVIEW_OK "$out/kodi-logcat.txt" && grep -q SMARTED_TEST_CHANNEL_FAVORITE_OK "$out/kodi-logcat.txt" && grep -q SMARTED_TEST_LOCAL_KODI_PLAYER_OK "$out/kodi-logcat.txt" && grep -q SMARTED_TEST_PUBLIC_BRAZUCA_LAUNCH_WIDGET_OK "$out/kodi-logcat.txt" && grep -q SMARTED_TEST_PUBLIC_BRAZUCA_CHANNEL_SEARCH_OK "$out/kodi-logcat.txt" && grep -q SMARTED_TEST_PUBLIC_BRAZUCA_TV_OK "$out/kodi-logcat.txt" && grep -q SMARTED_TEST_PUBLIC_BRAZUCA_SEARCH_RESULT_OK "$out/kodi-logcat.txt"; then success=1; break; fi
   if grep -q SMARTED_TEST_PUBLIC_BRAZUCA_MENUS_FAILED "$out/kodi-logcat.txt"; then break; fi
   # In the clean disposable profile Brazuca asks about an optional donation.
   # Its default focused button is No (control 10); respond like a user rather

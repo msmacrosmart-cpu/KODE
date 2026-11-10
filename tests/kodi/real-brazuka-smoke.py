@@ -40,6 +40,10 @@ try:
         raise RuntimeError('real series menu unavailable')
     if len(directory(routes.brazuca(27, '#filmes_menu'))) < 4:
         raise RuntimeError('real movies menu unavailable')
+    movies = directory('plugin://plugin.video.smarted/?route=movies')
+    if len(movies) < 10 or 'pesquis' not in search.normalize(movies[0].get('label', '')) or 'lancamentos' not in search.normalize(movies[1].get('label', '')):
+        raise RuntimeError('movie overview did not include search, releases and genres')
+    xbmc.log('SMARTED_TEST_MOVIE_OVERVIEW_OK', xbmc.LOGWARNING)
     xbmc.log('SMARTED_TEST_PUBLIC_BRAZUCA_MENUS_OK', xbmc.LOGWARNING)
     # Use an actual public-series index entry, then ask the real add-on to
     # expand its resolver options. No title, URL or user data is logged.

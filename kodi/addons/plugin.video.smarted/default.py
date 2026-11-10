@@ -21,6 +21,9 @@ def main():
     if route == 'recent-movies':
         recent_movies(handle)
         return
+    if route == 'movies':
+        movies(handle)
+        return
     if route == 'channel-favorites':
         channel_favorites(handle)
         return
@@ -131,18 +134,26 @@ def channel_favorites(handle):
     xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
 
 
-def recent_movies(handle):
+def movies(handle):
     import xbmc
-    from catalogue import recent_movies as fetch_recent_movies
+    from catalogue import movie_overview
 
     try:
-        results = fetch_recent_movies(xbmc.executeJSONRPC)
+        results, failed = movie_overview(xbmc.executeJSONRPC)
     except Exception:
-        # A widget must not interrupt the Home with a dialog or leak URLs.
-        xbmc.log('SMARTED-TV: lançamentos do Brazuca indisponíveis', xbmc.LOGWARNING)
+        xbmcgui.Dialog().notification('SMARTED-TV', 'Menu de filmes indisponível.',
+                                      xbmcgui.NOTIFICATION_WARNING, 7000)
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
         return
+    if failed:
+        xbmcgui.Dialog().notification('SMARTED-TV', 'Abertura direta disponível para: ' + ', '.join(failed),
+                                      xbmcgui.NOTIFICATION_WARNING, 7000)
+    _add_movies(handle, results)
+
+
+def _add_movies(handle, results):
     xbmcplugin.setContent(handle, 'movies')
+    xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
     for result in results:
         item = xbmcgui.ListItem(label=result['label'])
         item.setArt({'thumb': result['thumbnail'], 'poster': result['thumbnail'],
@@ -155,6 +166,20 @@ def recent_movies(handle):
         item.setProperty('IsPlayable', 'true' if result['playable'] else 'false')
         xbmcplugin.addDirectoryItem(handle, result['url'], item, isFolder=result['folder'])
     xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+
+
+def recent_movies(handle):
+    import xbmc
+    from catalogue import recent_movies as fetch_recent_movies
+
+    try:
+        results = fetch_recent_movies(xbmc.executeJSONRPC)
+    except Exception:
+        # A widget must not interrupt the Home with a dialog or leak URLs.
+        xbmc.log('SMARTED-TV: lançamentos do Brazuca indisponíveis', xbmc.LOGWARNING)
+        xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
+        return
+    _add_movies(handle, results)
 
 
 if __name__ == '__main__':
