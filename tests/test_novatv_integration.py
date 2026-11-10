@@ -202,5 +202,42 @@ class BackupStage(unittest.TestCase):
             self.assertFalse((root / 'dest').exists())
 
 
+class BridgeApkStaging(unittest.TestCase):
+    def test_bridge_staging_preserves_other_assets_and_refuses_overwrite(self):
+        spec = importlib.util.spec_from_file_location('bridge_stage', ROOT / 'tools/kodi/stage-smarted-bridge.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory() as tmp:
+            decoded = Path(tmp)
+            (decoded / 'assets/addons').mkdir(parents=True)
+            system = decoded / 'assets/system'
+            system.mkdir(parents=True)
+            manifest = system / 'addon-manifest.xml'
+            manifest.write_text('<addons><addon>original</addon></addons>')
+            module.stage(decoded)
+            root = ET.parse(manifest).getroot()
+            self.assertEqual([x.text for x in root], ['original', 'plugin.video.smarted'])
+            bridge = decoded / 'assets/addons/plugin.video.smarted'
+            self.assertEqual((bridge / 'default.py').read_bytes(), (ROOT / 'kodi/addons/plugin.video.smarted/default.py').read_bytes())
+            self.assertFalse(list(bridge.rglob('*.pyc')))
+            with self.assertRaises(ValueError):
+                module.stage(decoded)
+            self.assertEqual(len(ET.parse(manifest).getroot()), 2)
+
+    def test_bridge_staging_rejects_existing_manifest_entry(self):
+        spec = importlib.util.spec_from_file_location('bridge_stage2', ROOT / 'tools/kodi/stage-smarted-bridge.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory() as tmp:
+            decoded = Path(tmp)
+            (decoded / 'assets/addons').mkdir(parents=True)
+            system = decoded / 'assets/system'
+            system.mkdir(parents=True)
+            (system / 'addon-manifest.xml').write_text('<addons><addon>plugin.video.smarted</addon></addons>')
+            with self.assertRaises(ValueError):
+                module.stage(decoded)
+            self.assertFalse((decoded / 'assets/addons/plugin.video.smarted').exists())
+
+
 if __name__ == '__main__':
     unittest.main()

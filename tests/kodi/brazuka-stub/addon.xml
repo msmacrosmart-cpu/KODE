@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- TEST FIXTURE ONLY: not the Brazuka Play add-on or a catalogue. -->
+<addon id="plugin.video.BrazucaPlay.Matrix" name="Brazuka test stub" version="2.1.4" provider-name="SMARTED test">
+  <requires><import addon="xbmc.python" version="3.0.0"/></requires>
+  <extension point="xbmc.python.pluginsource" library="default.py"><provides>video</provides></extension>
+  <extension point="xbmc.addon.metadata"><summary lang="en_GB">Isolated routing test fixture</summary><platform>all</platform></extension>
+</addon>

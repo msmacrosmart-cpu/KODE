@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [arena/03cbbc5b-kode]
-    paths: [.github/workflows/test-profile-seed-emulator.yml, 'tools/android/**', 'tests/test_android_profile_seed.py', 'tests/java/**']
+    paths: [.github/workflows/test-profile-seed-emulator.yml, 'tools/android/**', 'tests/test_android_profile_seed.py', 'tests/java/**', 'tests/kodi/**', 'kodi/addons/plugin.video.smarted/**', 'tools/kodi/stage-smarted-bridge.py']
 permissions:
   contents: read
 jobs:
@@ -25,6 +25,11 @@ jobs:
           tar -xzf "$RUNNER_TEMP/postar-apktool-node-0.3.4.tgz" -C "$RUNNER_TEMP" package/lib/apktool.jar
           java -jar "$RUNNER_TEMP/package/lib/apktool.jar" d -f "$RUNNER_TEMP/skin.apk" -o "$RUNNER_TEMP/decoded"
           python3 tools/android/patch-splash-for-seed.py "$RUNNER_TEMP/decoded"
+          python3 tools/kodi/stage-smarted-bridge.py "$RUNNER_TEMP/decoded"
+          cp tests/kodi/bridge-smoke.py "$RUNNER_TEMP/decoded/assets/addons/plugin.video.smarted/bridge-smoke.py"
+          cat > "$RUNNER_TEMP/decoded/assets/system/keymaps/zzz-smarted-bridge-test.xml" <<'EOF'
+          <keymap><global><keyboard><f7>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=series,return)</f7><f8>RunScript(special://xbmc/addons/plugin.video.smarted/bridge-smoke.py)</f8></keyboard></global></keymap>
+          EOF
           mkdir -p "$RUNNER_TEMP/decoded/assets/smarted" "$RUNNER_TEMP/sources/org/smartedtv/bootstrap" "$RUNNER_TEMP/classes" "$RUNNER_TEMP/dex"
           cp tools/android/src/org/smartedtv/bootstrap/*.java "$RUNNER_TEMP/sources/org/smartedtv/bootstrap/"
           python3 - <<'PY'
@@ -35,6 +40,9 @@ jobs:
           with zipfile.ZipFile(z, 'w', zipfile.ZIP_DEFLATED) as f:
               f.writestr('files/.kodi/userdata/guisettings.xml', '<settings version="2"><setting id="lookandfeel.skin" default="true">skin.estuary</setting></settings>')
               f.writestr('files/.kodi/userdata/smarted-seed-test.txt', 'synthetic-seed-only\n')
+              for file in Path('tests/kodi/brazuka-stub').iterdir():
+                  if file.is_file():
+                      f.write(file, 'files/.kodi/addons/plugin.video.BrazucaPlay.Matrix/' + file.name)
           source = t/'sources/org/smartedtv/bootstrap/ProfileSeed.java'
           text = source.read_text()
           pinned = 'e38ee0e23356948a008a895fbefd8b659f62504b72d50712ac91c7305a774cde'
