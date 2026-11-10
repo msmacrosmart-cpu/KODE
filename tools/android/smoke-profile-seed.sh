@@ -85,6 +85,13 @@ PY2
 }
 adb shell input tap $(coords edit)
 adb shell input text 'amor'
+# The IME can cover the dialog's OK button. Hide the IME, then re-measure
+# controls instead of tapping stale coordinates through the keyboard.
+adb shell input keyevent 4
+sleep 2
+adb shell uiautomator dump /sdcard/smarted-window.xml >/dev/null
+adb exec-out cat /sdcard/smarted-window.xml > "$out/search-window-after-input.xml"
+cp "$out/search-window-after-input.xml" "$out/search-window.xml"
 adb shell input tap $(coords ok)
 search_ok=0
 for _ in $(seq 1 36); do
