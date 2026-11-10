@@ -1,5 +1,8 @@
 name: Inspecionar compilação teclado Android
 on:
+  push:
+    branches: [arena/03cbbc5b-kode]
+    paths: [.github/workflows/inspect-keyboard-build.yml]
   workflow_dispatch:
 permissions:
   actions: read
