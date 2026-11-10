@@ -46,18 +46,8 @@ if ! grep -iq 'skin.novatv' "$out/current.log" "$out/kodi-logcat.txt"; then
   exit 1
 fi
 cp "$out/screen.png" "$out/home.png"
-# Install an emulator-only keymap, then restart so Kodi actually loads it.
-adb root >/dev/null || true
-adb wait-for-device
-adb shell am force-stop "$app"
-printf '%s\n' '<keymap><global><keyboard><f4>ActivateWindow(Settings)</f4><f5>ActivateWindow(InterfaceSettings)</f5></keyboard></global></keymap>' > "$out/keymap.xml"
-adb shell mkdir -p "$base/userdata/keymaps"
-adb push "$out/keymap.xml" "$base/userdata/keymaps/novatv-smoke.xml" >/dev/null
-# adb root creates files owned by root; fix ownership to match the app directory.
-adb shell "chown --reference='$base/userdata' '$base/userdata/keymaps/novatv-smoke.xml'" || true
-adb shell chmod 644 "$base/userdata/keymaps/novatv-smoke.xml"
-adb shell am start -n "$app/.Splash"
-sleep 75
+# F4/F5 are provided only by the emulator build's system keymap; this avoids
+# adb-pushed profile files with the wrong SELinux label on Android 11.
 adb shell input keyevent 134
 sleep 10
 adb exec-out screencap -p > "$out/settings.png"

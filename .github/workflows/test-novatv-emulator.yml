@@ -29,6 +29,11 @@ jobs:
           tar -xzf "$RUNNER_TEMP/postar-apktool-node-0.3.4.tgz" -C "$RUNNER_TEMP" package/lib/apktool.jar
           java -jar "$RUNNER_TEMP/package/lib/apktool.jar" d -s -f "$RUNNER_TEMP/novatv-unsigned.apk" -o "$RUNNER_TEMP/decoded"
           python3 tools/kodi/apply-user-brand.py "$RUNNER_TEMP/decoded"
+          # This keymap exists only in the isolated emulator build. Unlike an
+          # adb-pushed profile file, it receives the application's SELinux label.
+          cat > "$RUNNER_TEMP/decoded/assets/system/keymaps/zzz-smarted-test.xml" <<'EOF'
+          <keymap><global><keyboard><f4>ActivateWindow(Settings)</f4><f5>ActivateWindow(InterfaceSettings)</f5></keyboard></global></keymap>
+          EOF
           java -jar "$RUNNER_TEMP/package/lib/apktool.jar" b "$RUNNER_TEMP/decoded" -o "$RUNNER_TEMP/novatv-branded.apk"
           python3 - <<'PY'
           import hashlib, os, zipfile
