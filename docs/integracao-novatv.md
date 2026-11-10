@@ -33,6 +33,8 @@ O teste com o backup fornecido comparou os hashes dos 2.731 arquivos extraídos 
 
 O smoke anterior de skin ([42824443156](https://github.com/msmacrosmart-cpu/KODE/actions/runs/42824443156)) confirmou a sequência de desbloqueio em perfil descartável. Não comprova player ou Brazuka.
 
+A abertura do menu real de TV e da lista de opções de um resultado de série passou em [42842862087](https://github.com/msmacrosmart-cpu/KODE/actions/runs/42842862087), usando a cópia pública do complemento. A resposta negativa ao diálogo de doação foi automatizada **somente no emulador descartável**, não no produto. A Home agora abre um menu com opções de TV e busca de canais: esta consulta a rota `#todoscanais` do próprio Brazuka e preserva os destinos retornados. Ela não cobre a rota separada da Pluto TV nem comprova a reprodução. A consulta da lista real e o filtro passaram em [42844036361](https://github.com/msmacrosmart-cpu/KODE/actions/runs/42844036361); a busca com teclado e abertura de um canal real ainda precisam de validação de ponta a ponta. A restauração sintética continuou passando em [42844036280](https://github.com/msmacrosmart-cpu/KODE/actions/runs/42844036280).
+
 ## Pendências para um APK testável
 
 - Definir e implementar migração no primeiro início/atualização com proteção aos dados já existentes, recuperação em caso de falha e comportamento correto dos bancos de dados do Kodi; a ferramenta offline não resolve a inicialização do aplicativo.
