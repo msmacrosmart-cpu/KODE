@@ -107,7 +107,7 @@ def parse_feed(category, raw, query):
     return matches
 
 
-def parse_recent_feed(category, raw, today=None):
+def parse_recent_feed(category, raw, today=None, limit=None):
     """Use explicit first-air dates, never feed position as invented recency."""
     today = today or date.today()
     if isinstance(raw, bytes):
@@ -121,10 +121,31 @@ def parse_recent_feed(category, raw, today=None):
             continue
         if release > today:
             continue
+        if limit is not None:
+            if limit <= 0:
+                return []
+            # Keep at most limit distinct candidates. Decode all art/plot only
+            # when the item could enter the small top list.
+            title = field(block, 'name')
+            key = normalize(title)
+            mode, _ = select_mode(field(block, 'externallink'))
+            if not key or mode is None:
+                continue
+            previous = next((x for x in results if normalize(x['title']) == key), None)
+            iso = release.isoformat()
+            if previous and previous['release_date'] >= iso:
+                continue
+            if len(results) >= limit and previous is None and iso <= results[-1]['release_date']:
+                continue
         item = _parse_channel(category, block)
         if item:
             item['release_date'] = release.isoformat()
+            if limit is not None and previous:
+                results.remove(previous)
             results.append(item)
+            if limit is not None:
+                results.sort(key=lambda x: x['release_date'], reverse=True)
+                del results[limit:]
     return results
 
 
@@ -132,17 +153,18 @@ def recent_series(loader=None, limit=10, today=None):
     """Return date-ordered releases and unavailable sources; data is public only."""
     loader = loader or download
     by_source, failed = {}, set()
-    with ThreadPoolExecutor(max_workers=3) as pool:
+    # Avoid retaining several multi-megabyte feed payloads at once on TVs.
+    with ThreadPoolExecutor(max_workers=2) as pool:
         futures = {pool.submit(loader, url): (index, name)
                    for index, (name, url) in enumerate(SOURCES)}
         for future in as_completed(futures):
-            index, name = futures[future]
+            index, name = futures.pop(future)
             try:
                 payload = future.result()
                 text = payload.decode('utf-8', errors='replace') if isinstance(payload, bytes) else payload
                 if not CHANNEL.search(text):
                     raise ValueError('Unexpected category index')
-                by_source[index] = parse_recent_feed(name, text, today=today)
+                by_source[index] = parse_recent_feed(name, text, today=today, limit=limit)
             except Exception:
                 failed.add(index)
     combined = [item for index in range(len(SOURCES)) for item in by_source.get(index, [])]

@@ -117,12 +117,36 @@ def search_channels(handle):
     xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
 
 
+def _widget_cached(name, fetch, successful):
+    # Kodi invokes each widget in an independent Python interpreter. Persist
+    # only real successful results and coalesce duplicate same-day requests.
+    try:
+        import xbmcvfs
+        from daily_cache import cached
+        directory = xbmcvfs.translatePath('special://profile/addon_data/plugin.video.smarted/widget-cache')
+    except (ImportError, OSError):
+        return fetch()
+    return cached(directory, name, fetch, successful)
+
+
+def _movie_cache_ok(value):
+    required = ('label', 'url', 'title', 'folder', 'playable', 'thumbnail', 'fanart', 'plot', 'year')
+    return isinstance(value, list) and 0 < len(value) <= 10 and all(
+        isinstance(item, dict) and all(key in item for key in required) for item in value)
+
+
+def _series_cache_ok(value):
+    required = ('category', 'title', 'thumb', 'fanart', 'description', 'url', 'release_date')
+    return isinstance(value, (list, tuple)) and len(value) == 2 and not value[1] and isinstance(value[0], list) and 0 < len(value[0]) <= 10 and all(
+        isinstance(item, dict) and all(key in item for key in required) for item in value[0])
+
+
 def recent_series(handle):
     import xbmc
     from search import SOURCES, recent_series as fetch_recent_series
 
     try:
-        results, failed = fetch_recent_series()
+        results, failed = _widget_cached('recent-series', fetch_recent_series, _series_cache_ok)
     except Exception:
         xbmc.log('SMARTED-TV: lançamentos de séries indisponíveis', xbmc.LOGWARNING)
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
@@ -208,7 +232,7 @@ def recent_movies(handle):
     from catalogue import recent_movies as fetch_recent_movies
 
     try:
-        results = fetch_recent_movies(xbmc.executeJSONRPC)
+        results = _widget_cached('recent-movies', lambda: fetch_recent_movies(xbmc.executeJSONRPC), _movie_cache_ok)
     except Exception:
         # A widget must not interrupt the Home with a dialog or leak URLs.
         xbmc.log('SMARTED-TV: lançamentos do Brazuca indisponíveis', xbmc.LOGWARNING)

@@ -80,6 +80,21 @@ class SearchTests(unittest.TestCase):
         self.assertEqual(search.parse_recent_feed('Séries', fixture(), today=date(2026,11,10)), [])
 
 
+    def test_bounded_recent_matches_unbounded_ranking_with_duplicates(self):
+        from datetime import date
+        feed = ''.join(fixture(title='Item %s' % (i % 19)).replace(
+            '</channel>', '<tmdb_date>%02d/01/%d</tmdb_date></channel>' % (i % 28 + 1, 2000 + i % 25))
+            for i in range(200))
+        all_items = search.parse_recent_feed('Séries', feed, today=date(2026,1,1))
+        all_items.sort(key=lambda item: item['release_date'], reverse=True)
+        expected, seen = [], set()
+        for item in all_items:
+            key = search.normalize(item['title'])
+            if key not in seen:
+                seen.add(key); expected.append(item)
+        limited = search.parse_recent_feed('Séries', feed, today=date(2026,1,1), limit=10)
+        self.assertEqual(limited, expected[:10])
+
     def test_kodi_search_reports_partial_results_and_cancel(self):
         events = []
         query = ['amor']
