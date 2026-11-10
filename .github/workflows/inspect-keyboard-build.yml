@@ -34,8 +34,11 @@ jobs:
           old = next(Path('previous').glob('*.apk'))
           candidates = list(Path('candidate').rglob('*.apk'))
           print('Candidatos encontrados:', [str(x) for x in candidates])
-          assert len(candidates) == 1, 'Esperado um único APK intermediário'
-          new = candidates[0]
+          for path in candidates:
+              print('Candidato:', path.name, 'bytes=', path.stat().st_size, 'sha256=', sha256(path.read_bytes()).hexdigest())
+          matches = [p for p in candidates if p.name == 'kodiapp-arm64-v8a-debug.apk']
+          assert len(matches) == 1, 'APK ARM64 esperado não encontrado'
+          new = matches[0]
           for label, path in [('ANTERIOR', old), ('INTERMEDIÁRIO', new)]:
               p = APK(str(path))
               print(label, 'arquivo=', path.name, 'bytes=', path.stat().st_size,
