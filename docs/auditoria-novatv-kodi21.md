@@ -56,3 +56,9 @@ A tabela abaixo distingue **rota presente** de comportamento comprovado. Uma rot
 ## Testes
 
 Executados localmente: parsing dos XMLs; referências estáticas de includes e texturas; IDs numéricos duplicados por arquivo; ações e condições estruturais do banner/OSD; navegação de rotas com stubs isolados; integridade de backups, scripts de construção e outros testes unitários. Esses testes **não validam** ações em execução, renderização 1080p, desempenho, serviços ou instalação. Quatro testes locais dependentes de ferramentas Java foram ignorados nesta execução. Os resultados do emulador são registrados separadamente quando disponíveis.
+
+### Execuções isoladas desta alteração
+
+- `42918736997`: emulador descartável abriu Home e ajustes, e percorreu a sequência de desbloqueio. Não testou o backup, os cards do Brazuca nem reprodução no aparelho do usuário.
+- `42918547759`: o teste público com vídeo local **falhou antes de confirmar os controles**; a execução não atingiu os marcadores de sucesso. O diagnóstico isolado mostra falha ao localizar o complemento Brazuca e erro no serviço de verificação de versão do ambiente, sem confirmar uma causa única. Não usar como aprovação do OSD ou de reprodução remota.
+- `42918737171`: teste de restauração sintética falhou na preparação do APK de teste, antes da execução no emulador. Não confirma nem descarta a restauração do backup real.
