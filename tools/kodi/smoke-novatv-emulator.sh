@@ -12,11 +12,12 @@ collect() {
 }
 trap collect EXIT
 adb install -g "$RUNNER_TEMP/novatv-debug.apk"
+# API 30 requires this special app-op in addition to install -g. Without it
+# Splash stays on its explanatory permission dialog and never starts Kodi.
+adb shell appops set "$app" MANAGE_EXTERNAL_STORAGE allow
 adb logcat -c
 adb shell am start -n "$app/.Splash"
 sleep 15
-# Accept any first-launch OS permission prompt when present.
-adb shell input keyevent 66
 ready=0
 for _ in $(seq 1 24); do
   adb shell "cat '$base/temp/kodi.log'" > "$out/current.log" 2>/dev/null || true
