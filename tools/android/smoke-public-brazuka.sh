@@ -23,9 +23,9 @@ adb shell input keyevent 140  # F10 invokes the isolated JSON-RPC test script
 success=0
 for _ in $(seq 1 60); do
   adb logcat -d -s Kodi:V > "$out/kodi-logcat.txt" || true
-  if grep -q SMARTED_TEST_PUBLIC_BRAZUCA_MENUS_OK "$out/kodi-logcat.txt"; then success=1; break; fi
+  if grep -q SMARTED_TEST_PUBLIC_BRAZUCA_TV_OK "$out/kodi-logcat.txt" && grep -q SMARTED_TEST_PUBLIC_BRAZUCA_SEARCH_RESULT_OK "$out/kodi-logcat.txt"; then success=1; break; fi
   if grep -q SMARTED_TEST_PUBLIC_BRAZUCA_MENUS_FAILED "$out/kodi-logcat.txt"; then break; fi
   sleep 5
 done
 if [ "$success" -ne 1 ]; then echo '::error::Public Brazuca menus did not complete; inspect isolated log.'; exit 1; fi
-echo 'Public 2.1.4 addon opened series and movies menus in Kodi. User backup and playback were not tested.'
+echo 'Public 2.1.4 addon opened menus and expanded a search result in Kodi. User backup and playback were not tested.'

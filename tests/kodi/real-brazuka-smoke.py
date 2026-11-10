@@ -5,10 +5,12 @@ No private profile, credentials, user favorites or playback are involved.
 import json
 import os
 import sys
+from urllib.parse import parse_qs, unquote_plus, urlsplit
 import xbmc
 
 sys.path.insert(0, os.path.dirname(__file__))
 import routes
+import search
 
 
 def rpc(method, params):
@@ -38,5 +40,21 @@ try:
     if len(directory(routes.brazuca(27, '#filmes_menu'))) < 4:
         raise RuntimeError('real movies menu unavailable')
     xbmc.log('SMARTED_TEST_PUBLIC_BRAZUCA_MENUS_OK', xbmc.LOGWARNING)
+    # Use an actual public-series index entry, then ask the real add-on to
+    # expand its resolver options. No title, URL or user data is logged.
+    real_index = search.download(search.SOURCES[0][1])
+    candidates = search.parse_feed('Séries', real_index, 'amor')
+    for candidate in candidates:
+        args = parse_qs(urlsplit(candidate['url']).query)
+        target = unquote_plus(args.get('url', [''])[0])
+        if args.get('mode') == ['6'] and target.startswith('#series_list='):
+            if directory(candidate['url']):
+                break
+    else:
+        raise RuntimeError('real series search result did not expand')
+    xbmc.log('SMARTED_TEST_PUBLIC_BRAZUCA_SEARCH_RESULT_OK', xbmc.LOGWARNING)
+    if not directory(routes.brazuca(21, '#menu_canais')):
+        raise RuntimeError('real TV options unavailable')
+    xbmc.log('SMARTED_TEST_PUBLIC_BRAZUCA_TV_OK', xbmc.LOGWARNING)
 except Exception as exc:
     xbmc.log('SMARTED_TEST_PUBLIC_BRAZUCA_MENUS_FAILED: ' + str(exc), xbmc.LOGERROR)
