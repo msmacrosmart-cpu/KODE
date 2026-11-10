@@ -67,5 +67,22 @@ try:
     if not featured:
         raise RuntimeError('real Brazuca launch widget is empty')
     xbmc.log('SMARTED_TEST_PUBLIC_BRAZUCA_LAUNCH_WIDGET_OK', xbmc.LOGWARNING)
+    # Separately verify the official Kodi VideoPlayer with a generated local
+    # clip. This does NOT validate a Brazuca resolver, server, or user stream.
+    if rpc('Player.Open', {'item': {'file': 'special://xbmc/media/smoke-video.mp4'}}) != 'OK':
+        raise RuntimeError('local Kodi player did not open')
+    active = []
+    for _ in range(40):
+        active = rpc('Player.GetActivePlayers', {})
+        video = next((p for p in active if p.get('type') == 'video'), None)
+        if video:
+            state = rpc('Player.GetProperties', {'playerid': video['playerid'], 'properties': ['time']})
+            if state.get('time', {}).get('seconds', 0) >= 1:
+                break
+        xbmc.sleep(500)
+    else:
+        raise RuntimeError('local Kodi player did not advance')
+    rpc('Player.Stop', {'playerid': video['playerid']})
+    xbmc.log('SMARTED_TEST_LOCAL_KODI_PLAYER_OK', xbmc.LOGWARNING)
 except Exception as exc:
     xbmc.log('SMARTED_TEST_PUBLIC_BRAZUCA_MENUS_FAILED: ' + str(exc), xbmc.LOGERROR)

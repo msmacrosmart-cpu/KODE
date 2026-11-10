@@ -28,6 +28,9 @@ jobs:
           java -jar "$RUNNER_TEMP/package/lib/apktool.jar" d -f "$RUNNER_TEMP/skin.apk" -o "$RUNNER_TEMP/decoded"
           python3 tools/android/patch-splash-for-seed.py "$RUNNER_TEMP/decoded"
           python3 tools/kodi/stage-smarted-bridge.py "$RUNNER_TEMP/decoded"
+          # A generated local clip is only in the disposable emulator APK.
+          # It tests Kodi's own VideoPlayer independently of third-party streams.
+          ffmpeg -v error -f lavfi -i 'color=c=black:s=320x180:r=10:d=20' -c:v mpeg4 -pix_fmt yuv420p -an -y "$RUNNER_TEMP/decoded/assets/media/smoke-video.mp4"
           cp tests/kodi/real-brazuka-smoke.py "$RUNNER_TEMP/decoded/assets/addons/plugin.video.smarted/real-brazuka-smoke.py"
           cat > "$RUNNER_TEMP/decoded/assets/system/keymaps/zzz-public-brazuka-test.xml" <<'EOF'
           <keymap><global><keyboard><f10>RunScript(special://xbmc/addons/plugin.video.smarted/real-brazuka-smoke.py)</f10></keyboard></global></keymap>
