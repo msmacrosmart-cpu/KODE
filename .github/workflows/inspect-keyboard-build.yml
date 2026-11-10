@@ -60,8 +60,35 @@ jobs:
               lib = 'lib/arm64-v8a/libkodi.so'
               assert lib in bb
               Path('candidate-libkodi.so').write_bytes(b.read(lib))
+              for name in ['libc++_shared.so', 'libshairplay.so']:
+                  path = 'lib/arm64-v8a/' + name
+                  Path('old-' + name).write_bytes(a.read(path))
+                  Path('new-' + name).write_bytes(b.read(path))
+              Path('old-classes.dex').write_bytes(a.read('classes.dex'))
+              Path('new-classes.dex').write_bytes(b.read('classes.dex'))
+              Path('old-android.xml').write_bytes(a.read('assets/system/settings/android.xml'))
+              Path('new-android.xml').write_bytes(b.read('assets/system/settings/android.xml'))
           PY
           readelf -d candidate-libkodi.so | grep NEEDED >>compare.txt || true
+          for lib in 'libc++_shared.so' 'libshairplay.so'; do
+            nm -D --undefined-only candidate-libkodi.so | awk '{print $NF}' | sort -u >undef.txt
+            nm -D --defined-only "new-$lib" | awk '{print $NF}' | sort -u >new-syms.txt
+            nm -D --defined-only "old-$lib" | awk '{print $NF}' | sort -u >old-syms.txt
+            comm -12 undef.txt new-syms.txt | comm -23 - old-syms.txt >missing.txt
+            echo "Símbolos usados pelo Kodi que estão em $lib novo mas faltam no antigo: $(wc -l < missing.txt)" >>compare.txt
+            head -15 missing.txt >>compare.txt
+          done
+          echo 'Diferença de configuração Android:' >>compare.txt
+          diff -u old-android.xml new-android.xml >>compare.txt || true
+          DEXDUMP=$(find "$ANDROID_HOME/build-tools" -name dexdump -type f | sort -V | tail -1)
+          if [ -n "$DEXDUMP" ]; then
+            "$DEXDUMP" -f old-classes.dex | sed -n "s/.*Class descriptor  : '\(.*\)'/\1/p" | sort -u >old-classes.txt
+            "$DEXDUMP" -f new-classes.dex | sed -n "s/.*Class descriptor  : '\(.*\)'/\1/p" | sort -u >new-classes.txt
+            echo "Classes removidas do dex novo: $(comm -23 old-classes.txt new-classes.txt | wc -l)" >>compare.txt
+            comm -23 old-classes.txt new-classes.txt | head -15 >>compare.txt
+            echo "Classes adicionadas no dex novo: $(comm -13 old-classes.txt new-classes.txt | wc -l)" >>compare.txt
+            comm -13 old-classes.txt new-classes.txt | head -15 >>compare.txt
+          else echo 'dexdump ausente' >>compare.txt; fi
       - name: Exibir diagnóstico acessível
         if: always()
         run: |
