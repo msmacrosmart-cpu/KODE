@@ -21,8 +21,9 @@ for name,pattern in [('home',r'Loading skin file.*Home.xml'),('seed_ok',r'Perfil
  print(name+'='+str(bool(re.search(pattern,text,re.I))).lower())
 PY
 if [ "$ok" -ne 1 ]; then echo '::error::Home não foi detectada em emulador isolado; logs privados não foram publicados.'; exit 1; fi
-# Restart with existing private profile; never touch or replace it.
+# Update over the existing private profile, with the same signing key.
 adb shell am force-stop "$app"
+if [ -f "$RUNNER_TEMP/private-upgrade.apk" ]; then adb install -r -g "$RUNNER_TEMP/private-upgrade.apk" >/dev/null; fi
 adb logcat -c
 adb shell am start -n "$app/.Splash" >/dev/null
 ok=0
@@ -32,4 +33,4 @@ for _ in $(seq 1 120); do
   sleep 5
 done
 if [ "$ok" -ne 1 ]; then echo '::error::Home não foi detectada ao reiniciar; logs privados não foram publicados.'; exit 1; fi
-echo 'Home carregou em perfil isolado novo e existente; nenhuma informação do perfil foi publicada.'
+echo 'Home carregou em perfil isolado novo e após atualização no perfil existente; nenhuma informação do perfil foi publicada.'

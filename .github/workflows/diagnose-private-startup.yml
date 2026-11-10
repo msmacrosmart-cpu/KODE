@@ -21,15 +21,18 @@ jobs:
           test "$(gh api repos/$GITHUB_REPOSITORY --jq .private)" = true
           python3 - <<'PY'
           import hashlib, json, os, pathlib, subprocess
-          ids=json.loads(subprocess.check_output(['git','show','4a83ed5:.github/private-apk-chunks.json']))
-          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'private.apk'
-          with out.open('wb') as f:
-              for sha in ids:
-                  data=subprocess.check_output(['gh','api','-H','Accept: application/vnd.github.raw+json','repos/'+os.environ['GITHUB_REPOSITORY']+'/git/blobs/'+sha])
-                  assert hashlib.sha1(('blob %d\0'%len(data)).encode()+data).hexdigest()==sha
-                  f.write(data)
-          assert hashlib.sha256(out.read_bytes()).hexdigest()=='4e3f92f89f3a6f94e19d64fd893adedf40e7c9779a30e91b5b6b6a0144cae7e6'
-          print('Integridade do APK privado confirmada')
+          versions=[('4a83ed5:.github/private-apk-chunks.json','private.apk','4e3f92f89f3a6f94e19d64fd893adedf40e7c9779a30e91b5b6b6a0144cae7e6'),
+                    ('HEAD:.github/private-apk-chunks.json','private-upgrade.apk','8b58ee878aa0356a268bfa19bb891b079233370c9fd367d54a9a425bcd6d9b2e')]
+          for gitpath,name,expected in versions:
+              ids=json.loads(subprocess.check_output(['git','show',gitpath]))
+              out=pathlib.Path(os.environ['RUNNER_TEMP'])/name
+              with out.open('wb') as f:
+                  for sha in ids:
+                      data=subprocess.check_output(['gh','api','-H','Accept: application/vnd.github.raw+json','repos/'+os.environ['GITHUB_REPOSITORY']+'/git/blobs/'+sha])
+                      assert hashlib.sha1(('blob %d\0'%len(data)).encode()+data).hexdigest()==sha
+                      f.write(data)
+              assert hashlib.sha256(out.read_bytes()).hexdigest()==expected
+              print(name+' íntegro')
           PY
       - name: Habilitar KVM
         run: |
