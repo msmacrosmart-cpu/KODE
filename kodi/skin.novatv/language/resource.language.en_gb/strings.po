@@ -144,3 +144,15 @@ msgstr "Hide widget rows"
 msgctxt "#31067"
 msgid "Event log"
 msgstr "Event log"
+
+msgctxt "#31104"
+msgid "Clear"
+msgstr "Clear"
+
+msgctxt "#31105"
+msgid "Keyboard layout"
+msgstr "Keyboard layout"
+
+msgctxt "#31106"
+msgid "Show"
+msgstr "Show"

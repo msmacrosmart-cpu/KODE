@@ -1,2 +1,946 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<window type="dialog"><defaultcontrol always="true">300</defaultcontrol><include>Anim</include><controls><control type="image"><left>0</left><top>0</top><width>1920</width><height>1080</height><texture colordiffuse="f20d0d0d">white.png</texture></control><control type="label" id="311"><left>60</left><top>60</top><width>1800</width><height>60</height><font>font_large_bold</font><textcolor>white</textcolor><aligny>center</aligny><label>-</label></control><control type="edit" id="312"><left>60</left><top>140</top><width>1800</width><height>80</height><font>font_large</font><textcolor>white</textcolor><aligny>center</aligny><texturefocus colordiffuse="panel2" border="16">rounded.png</texturefocus><texturenofocus colordiffuse="panel" border="16">rounded.png</texturenofocus><label>-</label></control><control type="button" id="65"><left>60</left><top>260</top><width>120</width><height>70</height><label>A</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="66"><left>190</left><top>260</top><width>120</width><height>70</height><label>B</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="67"><left>320</left><top>260</top><width>120</width><height>70</height><label>C</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="68"><left>450</left><top>260</top><width>120</width><height>70</height><label>D</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="69"><left>580</left><top>260</top><width>120</width><height>70</height><label>E</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="70"><left>710</left><top>260</top><width>120</width><height>70</height><label>F</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="71"><left>840</left><top>260</top><width>120</width><height>70</height><label>G</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="72"><left>970</left><top>260</top><width>120</width><height>70</height><label>H</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="73"><left>1100</left><top>260</top><width>120</width><height>70</height><label>I</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="74"><left>1230</left><top>260</top><width>120</width><height>70</height><label>J</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="75"><left>1360</left><top>260</top><width>120</width><height>70</height><label>K</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="76"><left>1490</left><top>260</top><width>120</width><height>70</height><label>L</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="77"><left>60</left><top>340</top><width>120</width><height>70</height><label>M</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="78"><left>190</left><top>340</top><width>120</width><height>70</height><label>N</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="79"><left>320</left><top>340</top><width>120</width><height>70</height><label>O</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="80"><left>450</left><top>340</top><width>120</width><height>70</height><label>P</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="81"><left>580</left><top>340</top><width>120</width><height>70</height><label>Q</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="82"><left>710</left><top>340</top><width>120</width><height>70</height><label>R</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="83"><left>840</left><top>340</top><width>120</width><height>70</height><label>S</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="84"><left>970</left><top>340</top><width>120</width><height>70</height><label>T</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="85"><left>1100</left><top>340</top><width>120</width><height>70</height><label>U</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="86"><left>1230</left><top>340</top><width>120</width><height>70</height><label>V</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="87"><left>1360</left><top>340</top><width>120</width><height>70</height><label>W</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="88"><left>1490</left><top>340</top><width>120</width><height>70</height><label>X</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="89"><left>60</left><top>420</top><width>120</width><height>70</height><label>Y</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="90"><left>190</left><top>420</top><width>120</width><height>70</height><label>Z</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="91"><left>320</left><top>420</top><width>120</width><height>70</height><label>0</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="92"><left>450</left><top>420</top><width>120</width><height>70</height><label>1</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="93"><left>580</left><top>420</top><width>120</width><height>70</height><label>2</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="94"><left>710</left><top>420</top><width>120</width><height>70</height><label>3</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="95"><left>840</left><top>420</top><width>120</width><height>70</height><label>4</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="96"><left>970</left><top>420</top><width>120</width><height>70</height><label>5</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="97"><left>1100</left><top>420</top><width>120</width><height>70</height><label>6</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="98"><left>1230</left><top>420</top><width>120</width><height>70</height><label>7</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="99"><left>1360</left><top>420</top><width>120</width><height>70</height><label>8</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="100"><left>1490</left><top>420</top><width>120</width><height>70</height><label>9</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="101"><left>60</left><top>500</top><width>120</width><height>70</height><label>-</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="102"><left>190</left><top>500</top><width>120</width><height>70</height><label>_</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="103"><left>320</left><top>500</top><width>120</width><height>70</height><label>.</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="104"><left>450</left><top>500</top><width>120</width><height>70</height><label>@</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="105"><left>580</left><top>500</top><width>120</width><height>70</height><label>!</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="106"><left>710</left><top>500</top><width>120</width><height>70</height><label>?</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="107"><left>840</left><top>500</top><width>120</width><height>70</height><label>,</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="108"><left>970</left><top>500</top><width>120</width><height>70</height><label>;</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="109"><left>1100</left><top>500</top><width>120</width><height>70</height><label>:</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="8"><left>60</left><top>600</top><width>280</width><height>64</height><label>Apagar</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="32"><left>360</left><top>600</top><width>560</width><height>64</height><label>Espaço</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="302"><left>940</left><top>600</top><width>200</width><height>64</height><label>Shift</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="303"><left>1160</left><top>600</top><width>200</width><height>64</height><label>Caps</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="304"><left>1380</left><top>600</top><width>240</width><height>64</height><label>Símbolos</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="305"><left>1640</left><top>600</top><width>100</width><height>64</height><label>←</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="306"><left>1760</left><top>600</top><width>100</width><height>64</height><label>→</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="300"><left>60</left><top>700</top><width>280</width><height>64</height><label>OK</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control><control type="button" id="307"><left>360</left><top>700</top><width>200</width><height>64</height><label>IP</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus></control></controls></window>
+<?xml version='1.0' encoding='UTF-8'?>
+<window type="dialog">
+  <defaultcontrol always="true">300</defaultcontrol>
+  <include>Anim</include>
+  <controls>
+    <control type="image">
+      <left>0</left>
+      <top>0</top>
+      <width>1920</width>
+      <height>1080</height>
+      <texture colordiffuse="f20d0d0d">white.png</texture>
+    </control>
+    <control type="label" id="311">
+      <left>60</left>
+      <top>60</top>
+      <width>1800</width>
+      <height>60</height>
+      <font>font_large_bold</font>
+      <textcolor>white</textcolor>
+      <aligny>center</aligny>
+      <label>-</label>
+    </control>
+    <control type="edit" id="312">
+      <left>60</left>
+      <top>140</top>
+      <width>1800</width>
+      <height>80</height>
+      <font>font_large</font>
+      <textcolor>white</textcolor>
+      <aligny>center</aligny>
+      <texturefocus colordiffuse="panel2" border="16">rounded.png</texturefocus>
+      <texturenofocus colordiffuse="panel" border="16">rounded.png</texturenofocus>
+      <label>-</label>
+    </control>
+    <control type="button" id="100">
+      <left>60</left>
+      <top>260</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="101">
+      <left>195</left>
+      <top>260</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="102">
+      <left>330</left>
+      <top>260</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="103">
+      <left>465</left>
+      <top>260</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="104">
+      <left>600</left>
+      <top>260</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="105">
+      <left>735</left>
+      <top>260</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="106">
+      <left>870</left>
+      <top>260</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="107">
+      <left>1005</left>
+      <top>260</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="108">
+      <left>1140</left>
+      <top>260</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="109">
+      <left>1275</left>
+      <top>260</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="110">
+      <left>1410</left>
+      <top>260</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="111">
+      <left>1545</left>
+      <top>260</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="112">
+      <left>1680</left>
+      <top>260</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="120">
+      <left>60</left>
+      <top>340</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="121">
+      <left>195</left>
+      <top>340</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="122">
+      <left>330</left>
+      <top>340</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="123">
+      <left>465</left>
+      <top>340</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="124">
+      <left>600</left>
+      <top>340</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="125">
+      <left>735</left>
+      <top>340</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="126">
+      <left>870</left>
+      <top>340</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="127">
+      <left>1005</left>
+      <top>340</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="128">
+      <left>1140</left>
+      <top>340</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="129">
+      <left>1275</left>
+      <top>340</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="130">
+      <left>1410</left>
+      <top>340</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="131">
+      <left>1545</left>
+      <top>340</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="132">
+      <left>1680</left>
+      <top>340</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="140">
+      <left>60</left>
+      <top>420</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="141">
+      <left>195</left>
+      <top>420</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="142">
+      <left>330</left>
+      <top>420</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="143">
+      <left>465</left>
+      <top>420</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="144">
+      <left>600</left>
+      <top>420</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="145">
+      <left>735</left>
+      <top>420</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="146">
+      <left>870</left>
+      <top>420</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="147">
+      <left>1005</left>
+      <top>420</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="148">
+      <left>1140</left>
+      <top>420</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="149">
+      <left>1275</left>
+      <top>420</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="150">
+      <left>1410</left>
+      <top>420</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="151">
+      <left>1545</left>
+      <top>420</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="152">
+      <left>1680</left>
+      <top>420</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="160">
+      <left>60</left>
+      <top>500</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="161">
+      <left>195</left>
+      <top>500</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="162">
+      <left>330</left>
+      <top>500</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="163">
+      <left>465</left>
+      <top>500</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="164">
+      <left>600</left>
+      <top>500</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="165">
+      <left>735</left>
+      <top>500</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="166">
+      <left>870</left>
+      <top>500</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="167">
+      <left>1005</left>
+      <top>500</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="168">
+      <left>1140</left>
+      <top>500</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="169">
+      <left>1275</left>
+      <top>500</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="170">
+      <left>1410</left>
+      <top>500</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="171">
+      <left>1545</left>
+      <top>500</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="172">
+      <left>1680</left>
+      <top>500</top>
+      <width>125</width>
+      <height>70</height>
+      <label />
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="8">
+      <left>60</left>
+      <top>600</top>
+      <width>280</width>
+      <height>64</height>
+      <label>Apagar</label>
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="32">
+      <left>360</left>
+      <top>600</top>
+      <width>560</width>
+      <height>64</height>
+      <label>Espaço</label>
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="302">
+      <left>940</left>
+      <top>600</top>
+      <width>200</width>
+      <height>64</height>
+      <label>Shift</label>
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="303">
+      <left>1160</left>
+      <top>600</top>
+      <width>200</width>
+      <height>64</height>
+      <label>Caps</label>
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="304">
+      <left>1380</left>
+      <top>600</top>
+      <width>240</width>
+      <height>64</height>
+      <label>Símbolos</label>
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="305">
+      <left>1640</left>
+      <top>600</top>
+      <width>100</width>
+      <height>64</height>
+      <label>←</label>
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="306">
+      <left>1760</left>
+      <top>600</top>
+      <width>100</width>
+      <height>64</height>
+      <label>→</label>
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="300">
+      <left>60</left>
+      <top>700</top>
+      <width>280</width>
+      <height>64</height>
+      <label>OK</label>
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="307">
+      <left>1560</left>
+      <top>700</top>
+      <width>280</width>
+      <height>64</height>
+      <label>IP</label>
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="301">
+      <left>360</left>
+      <top>700</top>
+      <width>280</width>
+      <height>64</height>
+      <label>$LOCALIZE[222]</label>
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="308">
+      <left>660</left>
+      <top>700</top>
+      <width>280</width>
+      <height>64</height>
+      <label>$LOCALIZE[31104]</label>
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="309">
+      <left>960</left>
+      <top>700</top>
+      <width>280</width>
+      <height>64</height>
+      <label>$LOCALIZE[31105]</label>
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+    <control type="button" id="310">
+      <left>1260</left>
+      <top>700</top>
+      <width>280</width>
+      <height>64</height>
+      <label>$LOCALIZE[31106]</label>
+      <font>font_main</font>
+      <textcolor>text</textcolor>
+      <focusedcolor>ontext</focusedcolor>
+      <align>center</align>
+      <aligny>center</aligny>
+      <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+      <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+    </control>
+  </controls>
+</window>

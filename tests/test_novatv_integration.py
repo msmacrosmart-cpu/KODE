@@ -49,6 +49,20 @@ class SkinContracts(unittest.TestCase):
                     for ident in ('28', '29', '30'):
                         self.assertEqual(found[ident].get('type'), 'button')
 
+    def test_fallback_keyboard_uses_kodi_layout_ids(self):
+        root = ET.parse(SKIN / 'xml' / 'DialogKeyboard.xml').getroot()
+        ids = [int(c.get('id')) for c in root.iter('control') if (c.get('id') or '').isdigit()]
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertTrue({100 + row * 20 + col for row in range(4) for col in range(13)}.issubset(ids))
+        self.assertTrue({8, 32, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312}.issubset(ids))
+
+    def test_select_dialog_uses_kodi_control_types(self):
+        root = ET.parse(SKIN / 'xml' / 'DialogSelect.xml').getroot()
+        controls = {c.get('id'): c.get('type') for c in root.iter('control') if c.get('id')}
+        self.assertEqual({key: controls[key] for key in ('1', '2', '3', '5', '6', '7', '8')},
+                         {'1': 'label', '2': 'label', '3': 'list', '5': 'button',
+                          '6': 'list', '7': 'button', '8': 'button'})
+
     def test_startup_advances_to_configured_kodi_window(self):
         root = ET.parse(SKIN / 'xml' / 'Startup.xml').getroot()
         self.assertEqual(root.findtext('onload'), 'ReplaceWindow($INFO[System.StartupWindow])')

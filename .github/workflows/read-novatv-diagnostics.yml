@@ -14,7 +14,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: novatv-emulator-diagnostics
-          run-id: 42818384608
+          run-id: 42821722344
           github-token: ${{ github.token }}
           path: diagnostics
       - name: Examinar logs e captura do emulador sem perfil
@@ -25,22 +25,27 @@ jobs:
           import re
           d = Path('diagnostics')
           print('::notice title=Arquivos diagnósticos::' + ', '.join(p.name + '=' + str(p.stat().st_size) for p in d.iterdir()))
-          for name in ('kodi.log', 'current.log', 'logcat.txt'):
+          for name in ('kodi.log', 'current.log', 'kodi-logcat.txt', 'logcat.txt'):
               p = d / name
               if not p.exists(): continue
               lines = p.read_text(errors='replace').splitlines()
+              if name in ('kodi-logcat.txt', 'kodi.log'):
+                  relevant = [s for s in lines if re.search(r'Home.xml|SettingsCategory.xml|Settings.xml|Loading skin file|skin.novatv|keymap|ERROR', s, re.I)]
+                  text = '\n'.join(relevant[-30:])[-3900:] or '(nenhuma)'
+                  print('::notice title=Detalhes ' + name + '::' + text.replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
               if name == 'logcat.txt':
-                  relevant = [s for s in lines if re.search(r'Home.xml|Loading skin|special://|kodi.log|skin.novatv|ERROR.*skin|Texture|Window Init', s, re.I)]
-                  print('::notice title=Inicializacao Kodi::' + ('\n'.join(relevant[-110:]) or '(nenhuma)').replace('%','%25').replace('\r','%0D').replace('\n','%0A')[-25000:])
                   lines = [s for s in lines if re.search(r'org\.xbmc|\bkodi\b|native.?bridge|fatal exception|permission denied|UnsatisfiedLinkError', s, re.I)]
               text = '\n'.join(lines[-65:]) or '(vazio)'
               print('::notice title=' + name + '::' + text[-18000:].replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
           PY
-          if [ -s diagnostics/screen.png ]; then
-            tesseract diagnostics/screen.png stdout 2>/dev/null > ocr.txt || true
-            python3 - <<'PY'
+          for image in initial-splash home settings interface-settings screen; do
+            if [ -s "diagnostics/$image.png" ]; then
+              tesseract "diagnostics/$image.png" stdout 2>/dev/null > ocr.txt || true
+              IMAGE="$image" python3 - <<'PY'
+          import os
           from pathlib import Path
           t = Path('ocr.txt').read_text(errors='replace')
-          print('::notice title=Texto da tela::' + t[-4000:].replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
+          print('::notice title=Tela ' + os.environ['IMAGE'] + '::' + t[-3500:].replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
           PY
-          fi
+            fi
+          done

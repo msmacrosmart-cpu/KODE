@@ -144,3 +144,15 @@ msgstr "Ocultar fileiras de widgets"
 msgctxt "#31067"
 msgid "Event log"
 msgstr "Registro de eventos"
+
+msgctxt "#31104"
+msgid "Clear"
+msgstr "Limpar"
+
+msgctxt "#31105"
+msgid "Keyboard layout"
+msgstr "Idioma do teclado"
+
+msgctxt "#31106"
+msgid "Show"
+msgstr "Mostrar"
