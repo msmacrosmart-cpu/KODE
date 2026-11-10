@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window type="dialog"><include>Anim</include><controls><control type="image"><left>0</left><top>0</top><width>1920</width><height>1080</height><texture colordiffuse="80000000">white.png</texture></control><control type="image"><left>910</left><top>490</top><width>100</width><height>100</height><texture colordiffuse="white">ring.png</texture><animation effect="rotate" end="-360" center="auto" time="1200" loop="true" condition="true">Conditional</animation></control></controls></window>

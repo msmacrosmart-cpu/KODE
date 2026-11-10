@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings version="1"><section id="skin.novatv"><category id="home" label="31100"><group id="1"><setting id="hero_autoscroll" type="boolean" label="31101"><level>0</level><default>true</default><control type="toggle"/></setting><setting id="hide_hero" type="boolean" label="31102"><level>0</level><default>false</default><control type="toggle"/></setting><setting id="hide_widgets" type="boolean" label="31103"><level>0</level><default>false</default><control type="toggle"/></setting></group></category></section></settings>

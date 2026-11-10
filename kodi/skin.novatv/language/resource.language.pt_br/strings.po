@@ -1,0 +1,146 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: skin.novatv\n"
+"Language: pt_br\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgctxt "#31000"
+msgid "Nova TV"
+msgstr "Nova TV"
+
+msgctxt "#31001"
+msgid "Movies"
+msgstr "Filmes"
+
+msgctxt "#31002"
+msgid "TV shows"
+msgstr "Séries de TV"
+
+msgctxt "#31003"
+msgid "Music"
+msgstr "Música"
+
+msgctxt "#31004"
+msgid "Music videos"
+msgstr "Vídeos musicais"
+
+msgctxt "#31005"
+msgid "TV"
+msgstr "TV"
+
+msgctxt "#31006"
+msgid "Radio"
+msgstr "Rádio"
+
+msgctxt "#31007"
+msgid "Games"
+msgstr "Jogos"
+
+msgctxt "#31008"
+msgid "Add-ons"
+msgstr "Complementos"
+
+msgctxt "#31009"
+msgid "Videos"
+msgstr "Vídeos"
+
+msgctxt "#31010"
+msgid "Pictures"
+msgstr "Imagens"
+
+msgctxt "#31011"
+msgid "Favourites"
+msgstr "Favoritos"
+
+msgctxt "#31012"
+msgid "Weather"
+msgstr "Clima"
+
+msgctxt "#31013"
+msgid "Files"
+msgstr "Arquivos"
+
+msgctxt "#31014"
+msgid "Search"
+msgstr "Busca"
+
+msgctxt "#31015"
+msgid "Settings"
+msgstr "Ajustes"
+
+msgctxt "#31016"
+msgid "Power"
+msgstr "Energia"
+
+msgctxt "#31020"
+msgid "Latest movies"
+msgstr "Lançamentos"
+
+msgctxt "#31021"
+msgid "Latest episodes"
+msgstr "Episódios recentes"
+
+msgctxt "#31022"
+msgid "Continue watching"
+msgstr "Continuar assistindo"
+
+msgctxt "#31023"
+msgid "Live TV"
+msgstr "TV ao vivo"
+
+msgctxt "#31024"
+msgid "Recordings"
+msgstr "Gravações"
+
+msgctxt "#31025"
+msgid "Radio"
+msgstr "Rádio"
+
+msgctxt "#31026"
+msgid "New albums"
+msgstr "Álbuns novos"
+
+msgctxt "#31027"
+msgid "Music videos"
+msgstr "Vídeos musicais"
+
+msgctxt "#31028"
+msgid "Favourites"
+msgstr "Favoritos"
+
+msgctxt "#31030"
+msgid "Play"
+msgstr "Assistir"
+
+msgctxt "#31031"
+msgid "Trailer"
+msgstr "Trailer"
+
+msgctxt "#31032"
+msgid "See all"
+msgstr "Ver todos"
+
+msgctxt "#31033"
+msgid "NEW"
+msgstr "LANÇAMENTO"
+
+msgctxt "#31100"
+msgid "Home screen"
+msgstr "Tela inicial"
+
+msgctxt "#31101"
+msgid "Auto-rotate hero banner"
+msgstr "Girar banner hero automaticamente"
+
+msgctxt "#31102"
+msgid "Hide hero banner"
+msgstr "Ocultar banner hero"
+
+msgctxt "#31103"
+msgid "Hide widget rows"
+msgstr "Ocultar fileiras de widgets"
+
+msgctxt "#31067"
+msgid "Event log"
+msgstr "Registro de eventos"

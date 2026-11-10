@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window><defaultcontrol always="true">50</defaultcontrol><views>50,51,52</views><include>Anim</include><controls><include>Bg</include><include>Fanart</include><include>Header</include><include>Views</include><include>ViewOptions</include></controls></window>

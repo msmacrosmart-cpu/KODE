@@ -1,0 +1,30 @@
+# Integração NovaTV e backup — em andamento
+
+Esta alteração **ainda não gera um APK de integração** e não substitui a versão 1.0.16 aprovada. Não há validação de execução da skin ou dos complementos em Android nesta etapa.
+
+## Referências examinadas
+
+- Backup reconstruído do Dropbox: `files.zip`, SHA-256 `e38ee0e23356948a008a895fbefd8b659f62504b72d50712ac91c7305a774cde`. O original contém dados pessoais e continua fora do repositório.
+- Skin fornecida separadamente, SHA-256 do ZIP `86b9808741bdc00f498dd7d83192518251a455b034eb667e90442e4182df1acb`: importada em `kodi/skin.novatv`. O arquivo `docs/JANELAS.md` da skin lista telas que precisam de sincronização com o Kodi.
+- Referência de comportamento do Kodi 21.3: tag `21.3-Omega`, commit `a3a448d26b8d560a65655dab2cd122994dc4e146`. Em `xbmc/settings/dialogs/GUIDialogSettingsBase.cpp` estão os IDs e tipos dos modelos de controles dinâmicos.
+
+## O que foi alterado
+
+A skin original foi mantida como referência visual, incluindo paleta, fontes e recursos. Foi criada a tela `Settings.xml`, ausente na skin original, com ações de configuração equivalentes às da Estuary. `SettingsCategory.xml`, `DialogAddonSettings.xml` e `DialogSettings.xml` foram ajustados aos IDs e tipos de controle esperados pelo Kodi 21. As listas de categorias e configurações agora são destinadas a receber os controles criados pelo próprio Kodi; foi acrescentado o botão de nível de configuração na janela principal. A compatibilidade funcional, navegação por controle e toque dependem de teste real.
+
+`tools/kodi/stage-profile.py` prepara uma cópia integral **offline** do backup verificado em diretório novo, privado, sem sobrescrever perfil existente. O comando valida o hash e caminhos antes da extração. Não é instalador e não restaura dados automaticamente dentro do aplicativo. Nunca executar sobre um perfil em uso. O backup contém credenciais e dados de conta; não publicar arquivos gerados nem incorporar a chave de assinatura.
+
+```sh
+python3 -m unittest discover -s tests -v
+python3 tools/kodi/stage-profile.py dropbox/files-reconstructed.zip dropbox/perfil-preparado
+```
+
+O teste com o backup fornecido comparou os hashes dos 2.731 arquivos extraídos aos dados do ZIP; o diretório temporário de teste foi removido. O backup original não foi alterado.
+
+## Pendências para um APK testável
+
+- Definir e implementar migração no primeiro início/atualização com proteção aos dados já existentes, recuperação em caso de falha e comportamento correto dos bancos de dados do Kodi; a ferramenta offline não resolve a inicialização do aplicativo.
+- Concluir as janelas e diálogos da skin, inclusive controles necessários para navegação, player, add-ons, PVR, jogos e perfis, e validar em execução. Nem todas as janelas fornecidas foram verificadas funcionalmente.
+- Integrar o Brazuka Play real e suas dependências. O código inspecionado tem buscas separadas por categoria e realiza atualizações remotas; não foi validado em execução ou sua disponibilidade. A Home fornecida usa `videodb://` e `pvr://`, não as fontes do Brazuka. Busca unificada, favoritos por categoria, retomada, paginação, métricas e atualização diária não estão implementados.
+- Implementar o modo restrito e o desbloqueio, mantendo acesso operacional às configurações autorizadas.
+- Empacotar, assinar com a chave da instalação existente, aumentar o versionCode, validar instalação/atualização e teclado; só então publicar no Dropbox e no release privado. Um ZIP ou um teste estrutural não é evidência de que a interface ou a reprodução funcionem.

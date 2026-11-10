@@ -1,0 +1,51 @@
+name: Testar skin NovaTV em emulador isolado
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/03cbbc5b-kode]
+    paths: [.github/workflows/test-novatv-emulator.yml]
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Testes estruturais
+        run: python3 -m unittest discover -s tests -v
+      - name: Obter APK 1.0.16 aprovado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v1.0.16-smarted-keyboard-test -R "$GITHUB_REPOSITORY" --pattern 'SMARTED-TV-v1.0.16-teclado-arm64-teste.apk' --dir "$RUNNER_TEMP/base"
+          python3 tools/kodi/make-novatv-emulator-apk.py "$RUNNER_TEMP/base/SMARTED-TV-v1.0.16-teclado-arm64-teste.apk" "$RUNNER_TEMP/novatv-unsigned.apk"
+      - name: Assinar exclusivamente para emulador
+        run: |
+          set -e
+          TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          "$TOOLS/zipalign" -f -p 4 "$RUNNER_TEMP/novatv-unsigned.apk" "$RUNNER_TEMP/novatv-aligned.apk"
+          keytool -genkeypair -keystore "$RUNNER_TEMP/debug-novatv.jks" -alias debug -dname 'CN=Temporary Emulator' -keyalg RSA -keysize 2048 -validity 2 -storepass android -keypass android
+          "$TOOLS/apksigner" sign --ks "$RUNNER_TEMP/debug-novatv.jks" --ks-pass pass:android --key-pass pass:android --out "$RUNNER_TEMP/novatv-debug.apk" "$RUNNER_TEMP/novatv-aligned.apk"
+      - name: Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Abrir NovaTV e configurações
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 3072
+          disable-animations: true
+          script: bash tools/kodi/smoke-novatv-emulator.sh
+      - name: Guardar capturas e logs sem dados pessoais
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: novatv-emulator-diagnostics
+          path: ${{ runner.temp }}/novatv-smoke/
+          if-no-files-found: warn
+          retention-days: 3

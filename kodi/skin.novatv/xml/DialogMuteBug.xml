@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window type="dialog"><include>Anim</include><controls><control type="label"><left>1700</left><top>40</top><width>160</width><height>50</height><font>font_main_bold</font><textcolor>white</textcolor><aligny>center</aligny><align>right</align><visible>Player.Muted</visible><label>MUDO</label></control></controls></window>
