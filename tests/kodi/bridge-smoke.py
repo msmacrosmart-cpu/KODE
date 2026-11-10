@@ -13,6 +13,14 @@ def directory(path):
 
 
 try:
+    # Kodi disables a new, manually copied profile add-on by default. The real
+    # backup's Addons database records Brazuka enabled; this synthetic profile
+    # has no database, so enable ONLY the disposable stub for this test.
+    enable = {'jsonrpc': '2.0', 'id': 2, 'method': 'Addons.SetAddonEnabled',
+              'params': {'addonid': 'plugin.video.BrazucaPlay.Matrix', 'enabled': True}}
+    response = json.loads(xbmc.executeJSONRPC(json.dumps(enable)))
+    if response.get('result') != 'OK':
+        raise RuntimeError('could not enable the synthetic stub')
     entries = directory('plugin://plugin.video.smarted/?route=series')
     targets = [item['file'] for item in entries if item.get('label') == 'Séries']
     if len(entries) != 5 or len(targets) != 1:
