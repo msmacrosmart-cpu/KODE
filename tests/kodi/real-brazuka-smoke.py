@@ -11,6 +11,7 @@ import xbmc
 sys.path.insert(0, os.path.dirname(__file__))
 import routes
 import search
+import channel_search
 
 
 def rpc(method, params):
@@ -53,8 +54,14 @@ try:
     else:
         raise RuntimeError('real series search result did not expand')
     xbmc.log('SMARTED_TEST_PUBLIC_BRAZUCA_SEARCH_RESULT_OK', xbmc.LOGWARNING)
-    if not directory(routes.brazuca(21, '#menu_canais')):
+    tv_menu = directory('plugin://plugin.video.smarted/?route=tv')
+    tv_options = [item['file'] for item in tv_menu if item.get('label') == 'Opções de TV']
+    if len(tv_options) != 1 or not directory(tv_options[0]):
         raise RuntimeError('real TV options unavailable')
     xbmc.log('SMARTED_TEST_PUBLIC_BRAZUCA_TV_OK', xbmc.LOGWARNING)
+    channel_dir = directory(routes.brazuca(21, '#todoscanais'))
+    if not channel_search.matches(channel_dir, 'tv'):
+        raise RuntimeError('real channel search found no TV matches')
+    xbmc.log('SMARTED_TEST_PUBLIC_BRAZUCA_CHANNEL_SEARCH_OK', xbmc.LOGWARNING)
 except Exception as exc:
     xbmc.log('SMARTED_TEST_PUBLIC_BRAZUCA_MENUS_FAILED: ' + str(exc), xbmc.LOGERROR)

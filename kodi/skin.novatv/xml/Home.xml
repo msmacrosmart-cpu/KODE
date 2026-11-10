@@ -240,8 +240,8 @@
       <content>
         <item>
           <label>$LOCALIZE[31023]</label>
-          <onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=%23menu_canais&amp;mode=21&amp;name=&amp;iconimage=&amp;fanart=&amp;description=,return)</onclick>
-          <visible>System.HasAddon(plugin.video.BrazucaPlay.Matrix)</visible>
+          <onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=tv,return)</onclick>
+          <visible>System.HasAddon(plugin.video.BrazucaPlay.Matrix) + System.HasAddon(plugin.video.smarted)</visible>
         </item>
         <item>
           <label>$LOCALIZE[31001]</label>

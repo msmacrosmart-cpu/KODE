@@ -27,6 +27,11 @@ def items(route):
             ('Filmes', brazuca(27, '#filmes_menu')),
             ('Séries', smarted('series')),
         ]
+    if route == 'tv':
+        return [
+            ('Opções de TV', brazuca(21, '#menu_canais')),
+            ('Buscar canais (exceto Pluto TV)', smarted('search-channels')),
+        ]
     if route == 'series':
         return [
             ('Buscar em todas as categorias', smarted('search-series')),

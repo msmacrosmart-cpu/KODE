@@ -15,6 +15,9 @@ def main():
     if route == 'search-series':
         search_series(handle)
         return
+    if route == 'search-channels':
+        search_channels(handle)
+        return
     entries = items(route)
     if not entries:
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
@@ -50,6 +53,42 @@ def search_series(handle):
         info.setPlot(result['description'])
         xbmcplugin.addDirectoryItem(handle, result['url'], item, isFolder=True)
     xbmcplugin.endOfDirectory(handle, succeeded=len(failed) < len(SOURCES), cacheToDisc=False)
+
+
+def search_channels(handle):
+    import json
+    import xbmc
+    from channel_search import matches
+    from routes import brazuca
+    from search import normalize
+
+    dialog = xbmcgui.Dialog()
+    query = dialog.input('Buscar canais do Brazuca (exceto Pluto TV)')
+    if not query or not normalize(query):
+        xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
+        return
+    request = {'jsonrpc': '2.0', 'id': 1, 'method': 'Files.GetDirectory',
+               'params': {'directory': brazuca(21, '#todoscanais'), 'media': 'video',
+                          'properties': ['thumbnail', 'fanart']}}
+    try:
+        response = json.loads(xbmc.executeJSONRPC(json.dumps(request)))
+        if 'error' in response or not isinstance(response.get('result', {}).get('files'), list):
+            raise ValueError('Channel directory unavailable')
+        results = matches(response['result']['files'], query)
+    except Exception:
+        dialog.notification('SMARTED-TV', 'Não foi possível consultar os canais do Brazuca.',
+                            xbmcgui.NOTIFICATION_WARNING, 7000)
+        xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
+        return
+    if not results:
+        dialog.notification('SMARTED-TV', 'Nenhum canal encontrado.', xbmcgui.NOTIFICATION_INFO, 5000)
+    xbmcplugin.setContent(handle, 'videos')
+    for result in results:
+        item = xbmcgui.ListItem(label=result['label'])
+        item.setArt({'thumb': result['thumb'], 'fanart': result['fanart']})
+        item.setProperty('IsPlayable', 'true' if result['playable'] else 'false')
+        xbmcplugin.addDirectoryItem(handle, result['url'], item, isFolder=result['folder'])
+    xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
 
 
 if __name__ == '__main__':

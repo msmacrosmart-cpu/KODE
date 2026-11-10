@@ -71,7 +71,8 @@ class SkinContracts(unittest.TestCase):
                          ['$LOCALIZE[31023]', '$LOCALIZE[31001]', '$LOCALIZE[31002]', '$LOCALIZE[31015]'])
         self.assertTrue(all('System.HasAddon(plugin.video.BrazucaPlay.Matrix)' in item[2] for item in entries[:3]))
         self.assertEqual(entries[3][1], 'ActivateWindow(Settings)')
-        for _, action, _ in entries[:2]:
+        self.assertIn('plugin.video.smarted/?route=tv', entries[0][1])
+        for _, action, _ in entries[1:2]:
             url = action.split('Videos,', 1)[1].rsplit(',return)', 1)[0]
             params = parse_qs(urlsplit(url).query, keep_blank_values=True)
             self.assertTrue(all(params.get(k) == [''] for k in ('name', 'iconimage', 'fanart', 'description')))
@@ -123,6 +124,8 @@ class BrazucaRoutes(unittest.TestCase):
             'Desenhos': (28, '#desenhos_menu'),
         }
         self.assertTrue(routes.items('series')[0][1].startswith(routes.SMARTED))
+        self.assertEqual(routes.items('tv')[0][1], routes.brazuca(21, '#menu_canais'))
+        self.assertEqual(routes.items('tv')[1][1], routes.smarted('search-channels'))
         entries = routes.items('root')[:2] + routes.items('series')[1:]
         for label, url in entries:
             with self.subTest(label=label):
