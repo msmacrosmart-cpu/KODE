@@ -1,0 +1,41 @@
+name: Exportar componentes não assinados do teclado
+on:
+  push:
+    branches: [arena/03cbbc5b-kode]
+    paths: [.github/workflows/export-keyboard-parts.yml]
+permissions:
+  actions: read
+  contents: write
+jobs:
+  export:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: smarted-teclado-nao-assinado
+          run-id: 42785178774
+          github-token: ${{ github.token }}
+          path: candidate
+      - name: Exportar apenas os componentes modificados, sem chave
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, os, subprocess, tempfile, zipfile
+          from pathlib import Path
+          names = ['AndroidManifest.xml', 'assets/system/settings/android.xml', 'lib/arm64-v8a/libkodi.so', 'classes2.dex']
+          datafile = Path(os.environ['RUNNER_TEMP'])/'keyboard-components.zip'
+          with zipfile.ZipFile('candidate/aligned.apk') as src, zipfile.ZipFile(datafile, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=6) as dst:
+              for name in names:
+                  dst.writestr(name, src.read(name))
+          data = datafile.read_bytes()
+          chunks = [data[i:i+4*1024*1024] for i in range(0, len(data), 4*1024*1024)]
+          shas = []
+          for idx, chunk in enumerate(chunks):
+              req = Path(os.environ['RUNNER_TEMP']) / f'blob-{idx}.json'
+              req.write_text(json.dumps({'content': base64.b64encode(chunk).decode(), 'encoding': 'base64'}))
+              result = subprocess.check_output(['gh', 'api', '--method', 'POST', f'repos/{os.environ["GITHUB_REPOSITORY"]}/git/blobs', '--input', str(req)])
+              shas.append(json.loads(result)['sha'])
+              req.unlink()
+          print('::notice title=Componentes sem assinatura::archive_sha256=' + hashlib.sha256(data).hexdigest() + ' bytes=' + str(len(data)) + ' partes=' + ','.join(shas))
+          PY
