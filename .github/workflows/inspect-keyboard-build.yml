@@ -49,9 +49,11 @@ jobs:
               aa, bb = set(a.namelist()), set(b.namelist())
               only_a, only_b = sorted(aa - bb), sorted(bb - aa)
               changed = sorted(x for x in aa & bb if not x.endswith('/') and sha256(a.read(x)).digest() != sha256(b.read(x)).digest())
-              print('Arquivos apenas no anterior:', len(only_a)); print('\n'.join(only_a[:100]))
-              print('Arquivos apenas no intermediário:', len(only_b)); print('\n'.join(only_b[:100]))
-              print('Arquivos diferentes no mesmo caminho:', len(changed)); print('\n'.join(changed[:150]))
+              print('Arquivos apenas no anterior:', len(only_a), 'exemplos:', only_a[:3])
+              print('Arquivos apenas no intermediário:', len(only_b), 'exemplos:', only_b[:3])
+              print('Arquivos diferentes no mesmo caminho:', len(changed), 'exemplos:', changed[:3])
+              for label, paths in [('antigas', aa), ('novas', bb)]:
+                  print('Bibliotecas', label, sorted(x for x in paths if x.startswith('lib/') and x.endswith('.so')))
               for n in ['classes.dex', 'lib/arm64-v8a/libkodi.so', 'system/settings/android.xml', 'assets/system/settings/android.xml']:
                   print(n, 'anterior=', n in aa, 'intermediário=', n in bb)
               lib = 'lib/arm64-v8a/libkodi.so'
