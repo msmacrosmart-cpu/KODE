@@ -14,7 +14,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: synthetic-seed-diagnostics
-          run-id: 42831039634
+          run-id: 42832823527
           github-token: ${{ github.token }}
           path: diagnostics
       - name: Examinar exclusivamente o perfil sintético
@@ -45,3 +45,15 @@ jobs:
           PY
             fi
           done
+
+      - name: Examinar controles sintéticos
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          p = Path('diagnostics/search-window.xml')
+          if p.exists():
+              root = ET.parse(p).getroot()
+              lines = [str({k:n.get(k) for k in ('class','resource-id','text','bounds','focused')}) for n in root.iter('node') if n.get('class') in ('android.widget.EditText','android.widget.Button')]
+              print('::notice title=Native controls::' + '%0A'.join(lines).replace('%','%25').replace('%250A','%0A'))
+          PY
