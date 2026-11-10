@@ -1,0 +1,44 @@
+name: Ler diagnóstico isolado NovaTV
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/03cbbc5b-kode]
+    paths: [.github/workflows/read-novatv-diagnostics.yml]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: novatv-emulator-diagnostics
+          run-id: 42816881268
+          github-token: ${{ github.token }}
+          path: diagnostics
+      - name: Examinar logs e captura do emulador sem perfil
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          d = Path('diagnostics')
+          print('::notice title=Arquivos diagnósticos::' + ', '.join(p.name + '=' + str(p.stat().st_size) for p in d.iterdir()))
+          for name in ('kodi.log', 'current.log', 'logcat.txt'):
+              p = d / name
+              if not p.exists(): continue
+              lines = p.read_text(errors='replace').splitlines()
+              if name == 'logcat.txt':
+                  lines = [s for s in lines if re.search(r'org\.xbmc|\bkodi\b|native.?bridge|fatal exception|permission denied|UnsatisfiedLinkError', s, re.I)]
+              text = '\n'.join(lines[-65:]) or '(vazio)'
+              print('::notice title=' + name + '::' + text[-18000:].replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
+          PY
+          if [ -s diagnostics/screen.png ]; then
+            tesseract diagnostics/screen.png stdout 2>/dev/null > ocr.txt || true
+            python3 - <<'PY'
+          from pathlib import Path
+          t = Path('ocr.txt').read_text(errors='replace')
+          print('::notice title=Texto da tela::' + t[-4000:].replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
+          PY
+          fi

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="plugin.video.smarted" name="SMARTED-TV" version="0.1.0" provider-name="SMARTED-TV">
+  <requires>
+    <import addon="xbmc.python" version="3.0.0"/>
+    <import addon="plugin.video.BrazucaPlay.Matrix" version="2.1.4"/>
+  </requires>
+  <extension point="xbmc.python.pluginsource" library="default.py">
+    <provides>video</provides>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="pt_BR">Navegação do SMARTED-TV</summary>
+    <description lang="pt_BR">Organiza os menus do Brazuca Play instalado no perfil.</description>
+    <platform>all</platform>
+    <license>GPL-2.0-or-later</license>
+  </extension>
+</addon>

@@ -5,8 +5,12 @@ from pathlib import Path
 import stat
 import tempfile
 import unittest
+from unittest.mock import patch
+import sys
+import types
 import xml.etree.ElementTree as ET
 from zipfile import ZipFile, ZipInfo
+from urllib.parse import parse_qs, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 SKIN = ROOT / 'kodi' / 'skin.novatv'
@@ -63,6 +67,56 @@ class SkinContracts(unittest.TestCase):
         self.assertEqual({k: colors[k] for k in ('bg', 'panel', 'panel2', 'white', 'text', 'muted', 'accent')},
                          dict(bg='ff0d0d0d', panel='ff181818', panel2='ff262626', white='fff2f2f2',
                               text='ffd9d9d9', muted='ffa6a6a6', accent='fff2f2f2'))
+
+
+class BrazucaRoutes(unittest.TestCase):
+    def test_links_use_known_brazuca_modes_and_escape_hash(self):
+        spec = importlib.util.spec_from_file_location('smarted_routes', ROOT / 'kodi/addons/plugin.video.smarted/routes.py')
+        routes = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(routes)
+        expected = {
+            'TV ao vivo': (21, '#menu_canais'), 'Filmes': (27, '#filmes_menu'),
+            'Séries': (27, '#series_menu'), 'Novelas': (25, '#novelas_menu'),
+            'Animes': (22, '#animes_menu'), 'Doramas': (31, '#doramas_menu'),
+            'Desenhos': (28, '#desenhos_menu'),
+        }
+        entries = routes.items('root')[:2] + routes.items('series')
+        for label, url in entries:
+            with self.subTest(label=label):
+                parsed = urlsplit(url)
+                self.assertEqual(parsed.scheme, 'plugin')
+                self.assertEqual(parsed.netloc, 'plugin.video.BrazucaPlay.Matrix')
+                self.assertFalse(parsed.fragment)
+                args = parse_qs(parsed.query)
+                mode, target = expected[label]
+                self.assertEqual((int(args['mode'][0]), args['url'][0]), (mode, target))
+        self.assertTrue(routes.items('root')[2][1].startswith(routes.SMARTED))
+        self.assertEqual(routes.items('invalid'), [])
+
+    def test_kodi_entrypoint_exposes_directories_and_handles_unknown_route(self):
+        base = ROOT / 'kodi/addons/plugin.video.smarted'
+        spec = importlib.util.spec_from_file_location('routes', base / 'routes.py')
+        routes = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(routes)
+        calls = []
+        gui = types.SimpleNamespace(ListItem=lambda **kw: kw)
+        plugin = types.SimpleNamespace(
+            addDirectoryItem=lambda *a, **kw: calls.append(('item', a, kw)),
+            endOfDirectory=lambda *a, **kw: calls.append(('end', a, kw)))
+        spec = importlib.util.spec_from_file_location('smarted_main', base / 'default.py')
+        main = importlib.util.module_from_spec(spec)
+        with patch.dict(sys.modules, {'routes': routes, 'xbmcgui': gui, 'xbmcplugin': plugin}):
+            spec.loader.exec_module(main)
+            with patch.object(sys, 'argv', ['plugin://plugin.video.smarted/', '42', '?route=series']):
+                main.main()
+            self.assertEqual(len([c for c in calls if c[0] == 'item']), 5)
+            self.assertTrue(all(c[2]['isFolder'] for c in calls if c[0] == 'item'))
+            self.assertTrue(calls[-1][2]['succeeded'])
+            calls.clear()
+            with patch.object(sys, 'argv', ['plugin://plugin.video.smarted/', '42', '?route=unknown']):
+                main.main()
+            self.assertEqual(len(calls), 1)
+            self.assertFalse(calls[0][2]['succeeded'])
 
 
 class BackupStage(unittest.TestCase):

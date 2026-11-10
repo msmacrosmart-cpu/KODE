@@ -12,6 +12,8 @@ Esta alteração **ainda não gera um APK de integração** e não substitui a v
 
 A skin original foi mantida como referência visual, incluindo paleta, fontes e recursos. Foi criada a tela `Settings.xml`, ausente na skin original, com ações de configuração equivalentes às da Estuary. `SettingsCategory.xml`, `DialogAddonSettings.xml` e `DialogSettings.xml` foram ajustados aos IDs e tipos de controle esperados pelo Kodi 21. As listas de categorias e configurações agora são destinadas a receber os controles criados pelo próprio Kodi; foi acrescentado o botão de nível de configuração na janela principal. A compatibilidade funcional, navegação por controle e toque dependem de teste real.
 
+`kodi/addons/plugin.video.smarted` contém uma primeira ponte de navegação para os menus reais de TV, filmes, séries, novelas, animes, doramas e desenhos do Brazuca Play 2.1.4. Os destinos foram verificados estaticamente no complemento fornecido e as URLs são testadas, mas a ponte ainda não foi incluída no APK nem validada contra o serviço ao vivo. Ela ainda não implementa busca unificada, histórico ou widgets.
+
 `tools/kodi/stage-profile.py` prepara uma cópia integral **offline** do backup verificado em diretório novo, privado, sem sobrescrever perfil existente. O comando valida o hash e caminhos antes da extração. Não é instalador e não restaura dados automaticamente dentro do aplicativo. Nunca executar sobre um perfil em uso. O backup contém credenciais e dados de conta; não publicar arquivos gerados nem incorporar a chave de assinatura.
 
 ```sh
