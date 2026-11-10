@@ -1,6 +1,6 @@
 # Teclado Android no SMARTED-TV: investigação
 
-**Estado: não implementado; não há APK ou release novo para esta função.**
+**Estado: candidato ARM64 1.0.16 compilado e assinado para teste; teclado e colagem ainda não foram validados em aparelho.**
 
 O SMARTED-TV 1.0.15 é um reempacotamento do Kodi 21.3, cujo código nativo já está compilado. Na fonte oficial `21.3-Omega`, `xbmc/guilib/GUIKeyboardFactory.cpp` seleciona o teclado do Kodi no Android; a seleção de teclado nativo existente é específica de plataformas Darwin. `system/settings/android.xml` não contém uma opção para habilitar o teclado Android. Portanto adicionar uma preferência XML ao APK atual, sem alterar o código, não ativaria o teclado nativo.
 
@@ -18,6 +18,10 @@ Uma possível opção temporária, sem alterar o APK, é controlar o Kodi com um
 
 ## Preparação iniciada
 
-Uma adaptação inicial da implementação oficial, limitada ao Android, foi preparada em `patches/kodi-21.3-native-android-keyboard.patch`. O patch foi conferido para aplicação limpa sobre a tag oficial e o XML da opção tem `false` como padrão para “usar teclado virtual do Kodi” (portanto solicita o teclado Android). **A adaptação ainda não foi compilada nem validada em aparelho.** A operação de compilar um candidato intermediário foi configurada em `.github/workflows/verify-native-keyboard.yml`; ela não publica release e não usa a chave do usuário. O resultado intermediário, caso exista, não deve ser instalado por cima do SMARTED-TV.
+Uma adaptação inicial da implementação oficial, limitada ao Android, foi preparada em `patches/kodi-21.3-native-android-keyboard.patch`. O patch foi conferido para aplicação limpa sobre a tag oficial e o XML da opção tem `false` como padrão para “usar teclado virtual do Kodi” (portanto solicita o teclado Android). **A adaptação foi compilada, mas ainda não foi validada em aparelho.** A operação de compilar um candidato intermediário foi configurada em `.github/workflows/verify-native-keyboard.yml`; ela não publica release e não usa a chave do usuário. O resultado intermediário, caso exista, não deve ser instalado por cima do SMARTED-TV.
 
 Uma cópia do APK 1.0.15 e da chave de teste foi colocada em `/SMARTED-TV-privado/backup-v1.0.15` no Dropbox. Esse backup não contém o perfil, fontes de mídia, add-ons instalados ou outras configurações que existam apenas no dispositivo.
+
+## Candidato 1.0.16
+
+O código foi compilado para ARM64 e o candidato assinado com o certificado da 1.0.15. O APK de teste possui pacote `org.xbmc.kodi`, versão 1.0.16 e versionCode 2103002; seu SHA-256 é `76d70063b3e3783d43bbe757fa8158195a536cdb7ad4707e17a05163db911942`. A comparação do conteúdo descompactado com o APK 1.0.15 confirmou apenas alterações em `AndroidManifest.xml`, `assets/system/settings/android.xml` e `lib/arm64-v8a/libkodi.so`, além da inclusão de `classes2.dex`. Os demais arquivos do pacote, incluindo add-ons e demais bibliotecas, permanecem idênticos. O app foi aberto em emulador, porém a abertura do teclado, colagem, atualização sobre a instalação e funcionamento em aparelho real **não foram validados**. Trata-se de pré-release de teste, não versão comprovadamente funcional. O backup do APK não faz backup dos dados do usuário; reinstalar a versão anterior pode exigir desinstalação e apagar dados.

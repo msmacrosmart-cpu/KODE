@@ -1,0 +1,23 @@
+name: Publicar SMARTED-TV teste de teclado 1.0.16
+on:
+  push:
+    branches: [arena/03cbbc5b-kode]
+    paths: [.github/workflows/publish-keyboard-test.yml]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obter APK assinado e conferir integridade
+        run: |
+          curl --fail --location --retry 3 -o SMARTED-TV-v1.0.16-teclado-arm64-teste.apk 'https://www.dropbox.com/scl/fi/ckw9pnsh30tk6gk5g3336/SMARTED-TV-v1.0.16-teclado-arm64-teste.apk?rlkey=gzwz74e8gigknk0d5b6pae99v&dl=1'
+          echo '76d70063b3e3783d43bbe757fa8158195a536cdb7ad4707e17a05163db911942  SMARTED-TV-v1.0.16-teclado-arm64-teste.apk' | sha256sum -c -
+      - name: Publicar pré-release de teste
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v1.0.16-smarted-keyboard-test SMARTED-TV-v1.0.16-teclado-arm64-teste.apk \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title 'SMARTED-TV 1.0.16 — teste do teclado Android ARM64' \
+            --notes 'Pré-release experimental para teste em aparelho real. Teclado Android solicitado como padrão, com opção de voltar ao teclado Kodi nas configurações. O app foi compilado e aberto em emulador, mas o teclado, a colagem, a atualização no aparelho e as demais funções NÃO foram validados em dispositivo real; podem falhar. Mesmo pacote e certificado da versão 1.0.15 e versionCode maior, conferidos estaticamente. O APK preserva os demais recursos, add-ons e bibliotecas do APK 1.0.15, exceto o motor libkodi, a configuração Android e a classe Java acrescentada para o teclado. ARM64, Android 5 ou superior. Faça backup dos dados antes de atualizar. O backup do APK e da chave no Dropbox não contém dados, fontes nem add-ons instalados no dispositivo. Voltar para uma versão anterior pode exigir desinstalação e apagar dados. Código do Kodi: https://github.com/xbmc/xbmc/tree/21.3-Omega .'
