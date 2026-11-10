@@ -1,8 +1,0 @@
-<resources>
-    <style name="Theme.SmartEDTV" parent="android:Theme.Leanback">
-        <item name="android:windowBackground">@color/smarted_background</item>
-        <item name="android:colorPrimary">@color/smarted_coral</item>
-        <item name="android:colorPrimaryDark">#000000</item>
-        <item name="android:colorAccent">@color/smarted_orange</item>
-    </style>
-</resources>
