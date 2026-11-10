@@ -68,6 +68,11 @@ jobs:
             adb shell uiautomator dump /sdcard/window.xml >/dev/null || true
             adb shell cat /sdcard/window.xml > "$RUNNER_TEMP/window.xml" || true
             python3 -c "import os; from pathlib import Path; t=(Path(os.environ['RUNNER_TEMP'])/'window.xml').read_text(errors='replace'); print('::notice title=Hierarquia de entrada::'+t[-3500:].replace('%','%25').replace('\n','%0A'))"
+            adb shell 'find /sdcard/Android/data/org.xbmc.kodi/files /data/user/0/org.xbmc.kodi/files -iname kodi.log -o -iname test-keymap.xml 2>/dev/null' > "$RUNNER_TEMP/paths.txt" || true
+            python3 -c "import os; from pathlib import Path; t=(Path(os.environ['RUNNER_TEMP'])/'paths.txt').read_text(errors='replace'); print('::notice title=Caminhos Kodi::'+t.replace('%','%25').replace('\\n','%0A'))"
+            adb shell cat /sdcard/Android/data/org.xbmc.kodi/files/.kodi/temp/kodi.log > "$RUNNER_TEMP/kodi-native.log" 2>/dev/null || true
+            grep -Ei 'keymap|userdata|key.?board|special://|error|search' "$RUNNER_TEMP/kodi-native.log" | tail -35 > "$RUNNER_TEMP/native-filter.txt" || true
+            python3 -c "import os; from pathlib import Path; t=(Path(os.environ['RUNNER_TEMP'])/'native-filter.txt').read_text(errors='replace'); print('::notice title=Log interno do Kodi::'+t[-3500:].replace('%','%25').replace('\\n','%0A'))"
             adb logcat -d -v brief | grep -E 'XBMCNativeKeyboard|FATAL EXCEPTION|UnsatisfiedLinkError|NoClassDefFoundError' | tail -25 > "$RUNNER_TEMP/keyboard-log.txt" || true
             python3 -c "import os; from pathlib import Path; t=(Path(os.environ['RUNNER_TEMP'])/'keyboard-log.txt').read_text(errors='replace'); print('::notice title=Log do teclado::'+t[-3500:].replace('%','%25').replace('\n','%0A'))"
             grep -E -i 'FATAL EXCEPTION|UnsatisfiedLinkError|NoClassDefFoundError|AndroidRuntime|XBMCNativeKeyboard' "$RUNNER_TEMP/logcat.txt" | tail -20 > "$RUNNER_TEMP/errors.txt" || true
