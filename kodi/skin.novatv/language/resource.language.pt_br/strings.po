@@ -73,6 +73,10 @@ msgctxt "#31016"
 msgid "Power"
 msgstr "Energia"
 
+msgctxt "#31018"
+msgid "Favourite channels"
+msgstr "Canais favoritos"
+
 msgctxt "#31020"
 msgid "Latest movies"
 msgstr "Lançamentos"

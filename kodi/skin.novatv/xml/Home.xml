@@ -755,7 +755,7 @@
       <control type="group">
         <height>400</height>
         <width>1920</width>
-        <visible>Pvr.HasTVChannels</visible>
+        <visible>System.HasAddon(plugin.video.BrazucaPlay.Matrix) + System.HasAddon(plugin.video.smarted)</visible>
         <control type="label">
           <left>60</left>
           <top>0</top>
@@ -764,7 +764,8 @@
           <font>font_main_bold</font>
           <textcolor>white</textcolor>
           <aligny>center</aligny>
-          <label>$LOCALIZE[31023]</label>
+          <label>$LOCALIZE[31018]</label>
+          <visible>Integer.IsGreater(Container(9230).NumItems,0)</visible>
         </control>
         <control type="list" id="9230">
           <left>60</left>
@@ -773,7 +774,7 @@
           <height>340</height>
           <orientation>horizontal</orientation>
           <scrolltime>250</scrolltime>
-          <content limit="24">pvr://channels/tv/*</content>
+          <content limit="24">plugin://plugin.video.smarted/?route=channel-favorites</content>
           <itemlayout width="380" height="250">
             <control type="image">
               <left>0</left>

@@ -21,6 +21,9 @@ def main():
     if route == 'recent-movies':
         recent_movies(handle)
         return
+    if route == 'channel-favorites':
+        channel_favorites(handle)
+        return
     entries = items(route)
     if not entries:
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
@@ -92,6 +95,33 @@ def search_channels(handle):
         return
     if not results:
         dialog.notification('SMARTED-TV', 'Nenhum canal encontrado nas fontes disponíveis.', xbmcgui.NOTIFICATION_INFO, 5000)
+    xbmcplugin.setContent(handle, 'videos')
+    for result in results:
+        item = xbmcgui.ListItem(label=result['label'])
+        item.setArt({'thumb': result['thumb'], 'fanart': result['fanart']})
+        item.setProperty('IsPlayable', 'true' if result['playable'] else 'false')
+        xbmcplugin.addDirectoryItem(handle, result['url'], item, isFolder=result['folder'])
+    xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+
+
+def channel_favorites(handle):
+    import xbmc
+    import xbmcvfs
+    from catalogue import directory
+    from channel_search import channel_items
+    from favorites import has_channel_favorites
+    from routes import brazuca
+
+    path = xbmcvfs.translatePath('special://profile/addon_data/plugin.video.BrazucaPlay.Matrix/favorites.dat')
+    if not has_channel_favorites(path):
+        xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+        return
+    try:
+        results = channel_items(directory(xbmc.executeJSONRPC, brazuca(15, 'canais')))
+    except Exception:
+        xbmc.log('SMARTED-TV: favoritos de canais indisponíveis', xbmc.LOGWARNING)
+        xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
+        return
     xbmcplugin.setContent(handle, 'videos')
     for result in results:
         item = xbmcgui.ListItem(label=result['label'])

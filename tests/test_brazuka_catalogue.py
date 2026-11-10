@@ -97,6 +97,9 @@ class CatalogueTest(unittest.TestCase):
         latest=home.find(".//control[@id='9200']/content")
         self.assertEqual(latest.text, 'plugin://plugin.video.smarted/?route=recent-movies')
         self.assertEqual(latest.get('limit'), '10')
+        favourite_channels=home.find(".//control[@id='9230']/content")
+        self.assertEqual(favourite_channels.text, 'plugin://plugin.video.smarted/?route=channel-favorites')
+        self.assertNotIn('pvr://', favourite_channels.text)
 
 if __name__ == '__main__':
     unittest.main()

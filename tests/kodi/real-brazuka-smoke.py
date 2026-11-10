@@ -67,6 +67,10 @@ try:
     if not featured:
         raise RuntimeError('real Brazuca launch widget is empty')
     xbmc.log('SMARTED_TEST_PUBLIC_BRAZUCA_LAUNCH_WIDGET_OK', xbmc.LOGWARNING)
+    favorite_channels = directory('plugin://plugin.video.smarted/?route=channel-favorites')
+    if not any('Canal sintético' in item.get('label', '') for item in favorite_channels):
+        raise RuntimeError('synthetic favorite not returned by public Brazuca')
+    xbmc.log('SMARTED_TEST_CHANNEL_FAVORITE_OK', xbmc.LOGWARNING)
     # Separately verify the official Kodi VideoPlayer with a generated local
     # clip. This does NOT validate a Brazuca resolver, server, or user stream.
     if rpc('Player.Open', {'item': {'file': 'special://xbmc/media/smoke-video.mp4'}}) != 'OK':

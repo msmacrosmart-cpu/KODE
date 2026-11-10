@@ -47,6 +47,8 @@ jobs:
           target = t/'decoded/assets/smarted/profile.zip'
           with zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED) as out, zipfile.ZipFile(io.BytesIO(data)) as public:
               out.writestr('files/.kodi/userdata/guisettings.xml', '<settings version="2"><setting id="lookandfeel.skin" default="true">skin.estuary</setting></settings>')
+              out.writestr('files/.kodi/userdata/addon_data/plugin.video.BrazucaPlay.Matrix/favorites.dat',
+                           json.dumps({'canais': [['[B]Canal sintético[/B]', 'fixture-only', '16', '', '', '', '']]}))
               for entry in public.infolist():
                   path = PurePosixPath(entry.filename)
                   if path.is_absolute() or '..' in path.parts or not path.parts or path.parts[0] != 'plugin.video.BrazucaPlay.Matrix':
