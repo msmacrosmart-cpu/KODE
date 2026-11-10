@@ -26,6 +26,7 @@ def items(route):
         ]
     if route == 'series':
         return [
+            ('Buscar em todas as categorias', smarted('search-series')),
             ('Séries', brazuca(27, '#series_menu')),
             ('Novelas', brazuca(25, '#novelas_menu')),
             ('Animes', brazuca(22, '#animes_menu')),

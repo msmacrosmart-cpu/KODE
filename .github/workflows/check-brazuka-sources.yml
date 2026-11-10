@@ -1,0 +1,38 @@
+name: Verificar fontes públicas de busca Brazuka
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/03cbbc5b-kode]
+    paths: [.github/workflows/check-brazuka-sources.yml, 'kodi/addons/plugin.video.smarted/**', 'tests/test_brazuka_search.py']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Testar parser e rotas
+        run: python3 -m unittest discover -s tests -p 'test_brazuka_search.py' -v
+      - name: Verificar disponibilidade dos índices públicos sem dados pessoais
+        run: |
+          python3 - <<'PY'
+          import sys
+          sys.path.insert(0, 'kodi/addons/plugin.video.smarted')
+          import search
+          failed = []
+          for category, url in search.SOURCES:
+              try:
+                  data = search.download(url)
+                  if not search.CHANNEL.search(data.decode('utf-8', 'replace')):
+                      raise ValueError('invalid or empty index')
+                  found = search.parse_feed(category, data, 'a')
+                  if not found:
+                      raise ValueError('no recognized matching route')
+                  print(f'{category}: {len(data)} bytes, {len(found)} matching routes')
+              except Exception as exc:
+                  print(f'{category}: unavailable or incompatible ({type(exc).__name__})')
+                  failed.append(category)
+          if failed:
+              raise SystemExit('Failed categories: ' + ', '.join(failed))
+          PY

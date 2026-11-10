@@ -118,7 +118,8 @@ class BrazucaRoutes(unittest.TestCase):
             'Animes': (22, '#animes_menu'), 'Doramas': (31, '#doramas_menu'),
             'Desenhos': (28, '#desenhos_menu'),
         }
-        entries = routes.items('root')[:2] + routes.items('series')
+        self.assertTrue(routes.items('series')[0][1].startswith(routes.SMARTED))
+        entries = routes.items('root')[:2] + routes.items('series')[1:]
         for label, url in entries:
             with self.subTest(label=label):
                 parsed = urlsplit(url)
@@ -147,7 +148,7 @@ class BrazucaRoutes(unittest.TestCase):
             spec.loader.exec_module(main)
             with patch.object(sys, 'argv', ['plugin://plugin.video.smarted/', '42', '?route=series']):
                 main.main()
-            self.assertEqual(len([c for c in calls if c[0] == 'item']), 5)
+            self.assertEqual(len([c for c in calls if c[0] == 'item']), 6)
             self.assertTrue(all(c[2]['isFolder'] for c in calls if c[0] == 'item'))
             self.assertTrue(calls[-1][2]['succeeded'])
             calls.clear()

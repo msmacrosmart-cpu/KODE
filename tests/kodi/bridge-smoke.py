@@ -23,7 +23,7 @@ try:
         raise RuntimeError('could not enable the synthetic stub')
     entries = directory('plugin://plugin.video.smarted/?route=series')
     targets = [item['file'] for item in entries if item.get('label') == 'Séries']
-    if len(entries) != 5 or len(targets) != 1:
+    if len(entries) != 6 or len(targets) != 1:
         raise RuntimeError('unexpected bridge directory')
     children = directory(targets[0])
     if not any(item.get('label') == 'Teste isolado' for item in children):
