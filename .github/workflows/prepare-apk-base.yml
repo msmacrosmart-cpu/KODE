@@ -1,0 +1,29 @@
+name: Preparar base APK para montagem local
+on:
+  push:
+    branches: [arena/03cbbc5b-kode]
+    paths: [.github/workflows/prepare-apk-base.yml]
+permissions:
+  contents: write
+jobs:
+  transfer:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - name: Recuperar APK público anterior do repositório privado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download v1.0.16-smarted-keyboard-test -R "$GITHUB_REPOSITORY" --pattern 'SMARTED-TV-v1.0.16-teclado-arm64-teste.apk' --dir "$RUNNER_TEMP"
+          export SOURCE="$RUNNER_TEMP/SMARTED-TV-v1.0.16-teclado-arm64-teste.apk"
+          python3 - <<'PY'
+          import base64, hashlib, json, os, subprocess
+          with open(os.environ['SOURCE'], 'rb') as f: data = f.read()
+          if hashlib.sha256(data).hexdigest() != '76d70063b3e3783d43bbe757fa8158195a536cdb7ad4707e17a05163db911942':
+              raise SystemExit('hash incorreto')
+          for i in range(0, len(data), 8 * 1024 * 1024):
+              body = json.dumps({'content': base64.b64encode(data[i:i+8*1024*1024]).decode(), 'encoding':'base64'}).encode()
+              proc = subprocess.run(['gh','api','--method','POST','repos/'+os.environ['GITHUB_REPOSITORY']+'/git/blobs','--input','-','--jq','.sha'], input=body, capture_output=True, check=True)
+              print('BASE_CHUNK_%d=%s' % (i // (8*1024*1024), proc.stdout.decode().strip()), flush=True)
+          PY
