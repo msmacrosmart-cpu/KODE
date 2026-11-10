@@ -207,7 +207,7 @@
           <aligny>center</aligny>
           <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
           <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
-          <onclick>RunScript(special://xbmc/addons/plugin.video.smarted/hero_details.py)</onclick>
+          <onclick>RunScript(special://skin/hero_details.py)</onclick>
           <onup>9000</onup>
           <ondown>9500</ondown>
           <onleft condition="!String.IsEmpty(Container(9100).ListItem.Trailer)">9111</onleft>
