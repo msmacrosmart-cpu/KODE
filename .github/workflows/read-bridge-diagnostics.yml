@@ -13,8 +13,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: synthetic-seed-diagnostics
-          run-id: 42832823527
+          name: public-brazuka-diagnostics
+          run-id: 42838311565
           github-token: ${{ github.token }}
           path: diagnostics
       - name: Examinar exclusivamente o perfil sintético
@@ -22,7 +22,7 @@ jobs:
           python3 - <<'PY'
           import re
           from pathlib import Path
-          for name in ('search-logcat.txt', 'bridge-logcat.txt'):
+          for name in ('kodi-logcat.txt', 'logcat.txt'):
               p = Path('diagnostics') / name
               if not p.exists(): continue
               relevant = [line for line in p.read_text(errors='replace').splitlines()
@@ -34,7 +34,7 @@ jobs:
       - name: Ler captura sintética do teclado
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr
-          for image in search-keyboard screen search-results; do
+          for image in screen; do
             if [ -s "diagnostics/$image.png" ]; then
               tesseract "diagnostics/$image.png" stdout 2>/dev/null > /tmp/ocr.txt || true
               IMAGE="$image" python3 - <<'PY'
