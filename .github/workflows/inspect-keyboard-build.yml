@@ -26,7 +26,7 @@ jobs:
       - name: Comparar pacote, versão, bibliotecas e recursos
         run: |
           python3 -m pip install --quiet pyaxmlparser
-          python3 - <<'PY'
+          python3 - <<'PY' >compare.txt 2>&1
           from pathlib import Path
           from zipfile import ZipFile
           from hashlib import sha256
@@ -55,4 +55,14 @@ jobs:
               assert lib in bb
               Path('candidate-libkodi.so').write_bytes(b.read(lib))
           PY
-          readelf -d candidate-libkodi.so | grep NEEDED || true
+          readelf -d candidate-libkodi.so | grep NEEDED >>compare.txt || true
+      - name: Exibir diagnóstico acessível
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('compare.txt')
+          text = p.read_text(errors='replace') if p.exists() else 'Arquivo de diagnóstico não criado.'
+          text = text[-60000:].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+          print('::notice title=Diagnóstico de compatibilidade::' + text)
+          PY
