@@ -14,7 +14,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: public-brazuka-diagnostics
-          run-id: 42838311565
+          run-id: 42918547759
           github-token: ${{ github.token }}
           path: diagnostics
       - name: Examinar exclusivamente o perfil sintético
