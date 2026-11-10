@@ -13,18 +13,40 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Testes estruturais
-        run: python3 -m unittest discover -s tests -v
+        run: |
+          python3 -m pip install --quiet 'Pillow==11.3.0'
+          python3 -m unittest discover -s tests -v
       - name: Obter APK 1.0.16 aprovado
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release download v1.0.16-smarted-keyboard-test -R "$GITHUB_REPOSITORY" --pattern 'SMARTED-TV-v1.0.16-teclado-arm64-teste.apk' --dir "$RUNNER_TEMP/base"
           python3 tools/kodi/make-novatv-emulator-apk.py "$RUNNER_TEMP/base/SMARTED-TV-v1.0.16-teclado-arm64-teste.apk" "$RUNNER_TEMP/novatv-unsigned.apk"
+      - name: Aplicar imagens e barra branca ao candidato isolado
+        run: |
+          set -e
+          npm pack '@postar/apktool-node@0.3.4' --pack-destination "$RUNNER_TEMP" >/dev/null
+          tar -xzf "$RUNNER_TEMP/postar-apktool-node-0.3.4.tgz" -C "$RUNNER_TEMP" package/lib/apktool.jar
+          java -jar "$RUNNER_TEMP/package/lib/apktool.jar" d -s -f "$RUNNER_TEMP/novatv-unsigned.apk" -o "$RUNNER_TEMP/decoded"
+          python3 tools/kodi/apply-user-brand.py "$RUNNER_TEMP/decoded"
+          java -jar "$RUNNER_TEMP/package/lib/apktool.jar" b "$RUNNER_TEMP/decoded" -o "$RUNNER_TEMP/novatv-branded.apk"
+          python3 - <<'PY'
+          import hashlib, os, zipfile
+          from pathlib import Path
+          temp = Path(os.environ['RUNNER_TEMP'])
+          with zipfile.ZipFile(temp/'base/SMARTED-TV-v1.0.16-teclado-arm64-teste.apk') as a, zipfile.ZipFile(temp/'novatv-branded.apk') as b:
+              for n in ('classes.dex', 'classes2.dex', 'lib/arm64-v8a/libkodi.so', 'assets/system/settings/android.xml'):
+                  assert hashlib.sha256(a.read(n)).digest() == hashlib.sha256(b.read(n)).digest(), n
+              assert b.testzip() is None
+              assert b'addons/skin.novatv' not in b.read('assets/system/addon-manifest.xml')
+              assert b'skin.novatv' in b.read('assets/system/addon-manifest.xml')
+              print('DEX, motor nativo e teclado permanecem idênticos ao 1.0.16; verificação estrutural não substitui teste no aparelho.')
+          PY
       - name: Assinar exclusivamente para emulador
         run: |
           set -e
           TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
-          "$TOOLS/zipalign" -f -p 4 "$RUNNER_TEMP/novatv-unsigned.apk" "$RUNNER_TEMP/novatv-aligned.apk"
+          "$TOOLS/zipalign" -f -p 4 "$RUNNER_TEMP/novatv-branded.apk" "$RUNNER_TEMP/novatv-aligned.apk"
           keytool -genkeypair -keystore "$RUNNER_TEMP/debug-novatv.jks" -alias debug -dname 'CN=Temporary Emulator' -keyalg RSA -keysize 2048 -validity 2 -storepass android -keypass android
           "$TOOLS/apksigner" sign --ks "$RUNNER_TEMP/debug-novatv.jks" --ks-pass pass:android --key-pass pass:android --out "$RUNNER_TEMP/novatv-debug.apk" "$RUNNER_TEMP/novatv-aligned.apk"
       - name: Habilitar KVM

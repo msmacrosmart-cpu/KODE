@@ -49,6 +49,10 @@ class SkinContracts(unittest.TestCase):
                     for ident in ('28', '29', '30'):
                         self.assertEqual(found[ident].get('type'), 'button')
 
+    def test_startup_advances_to_configured_kodi_window(self):
+        root = ET.parse(SKIN / 'xml' / 'Startup.xml').getroot()
+        self.assertEqual(root.findtext('onload'), 'ReplaceWindow($INFO[System.StartupWindow])')
+
     def test_main_settings_navigates_to_kodi_windows(self):
         root = ET.parse(SKIN / 'xml' / 'Settings.xml').getroot()
         menu = root.find(".//control[@id='9000']")
