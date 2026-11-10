@@ -52,8 +52,9 @@ jobs:
               print('Arquivos apenas no anterior:', len(only_a), 'exemplos:', only_a[:3])
               print('Arquivos apenas no intermediário:', len(only_b), 'exemplos:', only_b[:3])
               print('Arquivos diferentes no mesmo caminho:', len(changed), 'exemplos:', changed[:3])
-              for label, paths in [('antigas', aa), ('novas', bb)]:
-                  print('Bibliotecas', label, sorted(x for x in paths if x.startswith('lib/') and x.endswith('.so')))
+              old_libs = {x for x in aa if x.startswith('lib/') and x.endswith('.so')}
+              new_libs = {x for x in bb if x.startswith('lib/') and x.endswith('.so')}
+              print('Bibliotecas:', len(old_libs), 'antigas,', len(new_libs), 'novas; somente antigas:', sorted(old_libs - new_libs), '; somente novas:', sorted(new_libs - old_libs))
               for n in ['classes.dex', 'lib/arm64-v8a/libkodi.so', 'system/settings/android.xml', 'assets/system/settings/android.xml']:
                   print(n, 'anterior=', n in aa, 'intermediário=', n in bb)
               lib = 'lib/arm64-v8a/libkodi.so'
