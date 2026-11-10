@@ -1,0 +1,42 @@
+name: Enviar APK para release privado
+on:
+  push:
+    branches: [arena/03cbbc5b-kode]
+    paths: [.github/workflows/private-apk-release.yml]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconstituir APK e enviar somente ao release privado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(gh api repos/$GITHUB_REPOSITORY --jq .private)" = true
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          ids=json.loads(pathlib.Path('.github/private-apk-chunks.json').read_text())
+          output=pathlib.Path(os.environ['RUNNER_TEMP'])/'SMARTED-TV-v1.0.21-arm64.apk'
+          with output.open('wb') as out:
+              for sha in ids:
+                  p=subprocess.run(['gh','api','-H','Accept: application/vnd.github.raw+json',
+                    'repos/'+os.environ['GITHUB_REPOSITORY']+'/git/blobs/'+sha],capture_output=True,check=True)
+                  data=p.stdout
+                  if hashlib.sha1(('blob %d\0' % len(data)).encode()+data).hexdigest() != sha:
+                      raise SystemExit('Falha na integridade de um bloco')
+                  out.write(data)
+          if hashlib.sha256(output.read_bytes()).hexdigest() != '4e3f92f89f3a6f94e19d64fd893adedf40e7c9779a30e91b5b6b6a0144cae7e6':
+              raise SystemExit('Hash do APK não confere')
+          print('Integridade do APK confirmada')
+          PY
+          gh release upload v1.0.21-smarted-arm64 "$RUNNER_TEMP/SMARTED-TV-v1.0.21-arm64.apk" --repo "$GITHUB_REPOSITORY"
+          gh release view v1.0.21-smarted-arm64 --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[] | {name,size,digest}'
+          test "$(gh api repos/$GITHUB_REPOSITORY --jq .private)" = true
+          (cd kodi && zip -qr "$RUNNER_TEMP/skin.novatv-1.0.1.zip" skin.novatv -x '*/__pycache__/*' '*.pyc')
+          (cd kodi/addons && zip -qr "$RUNNER_TEMP/plugin.video.smarted-0.2.0.zip" plugin.video.smarted -x '*/__pycache__/*' '*.pyc')
+          gh release upload v1.0.21-smarted-arm64 "$RUNNER_TEMP/skin.novatv-1.0.1.zip" "$RUNNER_TEMP/plugin.video.smarted-0.2.0.zip" docs/auditoria-novatv-kodi21.md --repo "$GITHUB_REPOSITORY"
+          gh release edit v1.0.21-smarted-arm64 --repo "$GITHUB_REPOSITORY" --draft=false
