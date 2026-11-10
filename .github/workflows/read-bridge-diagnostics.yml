@@ -71,7 +71,7 @@ jobs:
               image = image.quantize(colors=48)
               buf = io.BytesIO(); image.save(buf, 'PNG', optimize=True)
               data = base64.b64encode(buf.getvalue()).decode()
-              print('::notice title=Screen parts::' + str((len(data)+11999)//12000))
-              for index, start in enumerate(range(0, len(data), 12000)):
-                  print('::notice title=Screen part ' + str(index) + '::' + data[start:start+12000])
+              print('::notice title=Screen parts::' + str((len(data)+2999)//3000))
+              for index, start in enumerate(range(0, len(data), 3000)):
+                  print('::notice title=Screen part ' + str(index) + '::' + data[start:start+3000])
           PY
