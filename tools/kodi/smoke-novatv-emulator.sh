@@ -64,4 +64,40 @@ if grep -Ei 'FATAL EXCEPTION|UnsatisfiedLinkError|NoClassDefFoundError' "$out/lo
   echo '::error::Potential fatal Android error; inspect the artifact.'
   exit 1
 fi
-printf '%s\n' 'NovaTV Home and settings files were loaded. Screenshots and logs still require review; this is not a playback or integration test.'
+# Return from InterfaceSettings through Settings to Home, then exercise the
+# eight-click/two-visits unlock. The temporary app has no personal profile.
+adb shell input keyevent 4
+sleep 3
+adb shell input keyevent 4
+sleep 4
+adb shell input keyevent 136  # F6: focus logo
+sleep 2
+for _ in $(seq 1 8); do adb shell input keyevent 66; sleep 0.5; done
+check_unlock() {
+  expected="$1"
+  sleep 3
+  adb shell "cat '$base/userdata/addon_data/skin.novatv/settings.xml'" > "$out/skin-state-$expected.xml"
+  python3 - "$out/skin-state-$expected.xml" "$expected" <<'PY'
+import sys, xml.etree.ElementTree as ET
+root = ET.parse(sys.argv[1]).getroot()
+settings = {x.get('id', '').lower(): (x.text or '').lower() for x in root.findall('.//setting')}
+expected = sys.argv[2]
+if expected == 'full':
+    assert settings.get('smartedfullmode') == 'true', settings
+else:
+    assert settings.get('smartedunlock') == expected, settings
+    assert settings.get('smartedfullmode', 'false') != 'true', settings
+print('Unlock stage confirmed:', expected)
+PY
+}
+check_unlock 8
+adb shell input keyevent 134
+sleep 3
+adb shell input keyevent 4
+check_unlock 9
+adb shell input keyevent 134
+sleep 3
+adb shell input keyevent 4
+check_unlock full
+adb exec-out screencap -p > "$out/unlocked-home.png"
+printf '%s\n' 'NovaTV Home, settings and unlock sequence loaded. Playback, real data and backup integration remain untested.'

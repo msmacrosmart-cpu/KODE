@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [arena/03cbbc5b-kode]
-    paths: [.github/workflows/test-novatv-emulator.yml, tools/kodi/smoke-novatv-emulator.sh, tools/kodi/make-novatv-emulator-apk.py]
+    paths: [.github/workflows/test-novatv-emulator.yml, tools/kodi/smoke-novatv-emulator.sh, tools/kodi/make-novatv-emulator-apk.py, 'kodi/skin.novatv/**']
 permissions:
   contents: read
 jobs:
@@ -32,7 +32,7 @@ jobs:
           # This keymap exists only in the isolated emulator build. Unlike an
           # adb-pushed profile file, it receives the application's SELinux label.
           cat > "$RUNNER_TEMP/decoded/assets/system/keymaps/zzz-smarted-test.xml" <<'EOF'
-          <keymap><global><keyboard><f4>ActivateWindow(Settings)</f4><f5>ActivateWindow(InterfaceSettings)</f5></keyboard></global></keymap>
+          <keymap><global><keyboard><f4>ActivateWindow(Settings)</f4><f5>ActivateWindow(InterfaceSettings)</f5><f6>SetFocus(8999)</f6></keyboard></global></keymap>
           EOF
           java -jar "$RUNNER_TEMP/package/lib/apktool.jar" b "$RUNNER_TEMP/decoded" -o "$RUNNER_TEMP/novatv-branded.apk"
           python3 - <<'PY'

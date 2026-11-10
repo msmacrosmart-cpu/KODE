@@ -63,6 +63,26 @@ class SkinContracts(unittest.TestCase):
                          {'1': 'label', '2': 'label', '3': 'list', '5': 'button',
                           '6': 'list', '7': 'button', '8': 'button'})
 
+    def test_restricted_home_routes_and_unlock_sequence(self):
+        home = ET.parse(SKIN / 'xml' / 'Home.xml').getroot()
+        menu = home.find(".//control[@id='9000']/content")
+        entries = [(i.findtext('label'), i.findtext('onclick'), i.findtext('visible')) for i in menu.findall('item')]
+        self.assertEqual([x[0] for x in entries[:4]],
+                         ['$LOCALIZE[31023]', '$LOCALIZE[31001]', '$LOCALIZE[31002]', '$LOCALIZE[31015]'])
+        self.assertTrue(all('System.HasAddon(plugin.video.BrazucaPlay.Matrix)' in item[2] for item in entries[:3]))
+        self.assertEqual(entries[3][1], 'ActivateWindow(Settings)')
+        self.assertTrue(all('Skin.HasSetting(SmartedFullMode)' in (item[2] or '') for item in entries[4:]))
+        logo = home.find(".//control[@id='8999']")
+        actions = logo.findall('onclick')
+        self.assertEqual(len(actions), 8)
+        for step, action in enumerate(actions, 1):
+            self.assertEqual(action.text, 'Skin.SetString(SmartedUnlock,%d)' % step)
+            self.assertIn('!Skin.HasSetting(SmartedFullMode)', action.get('condition'))
+        settings = ET.parse(SKIN / 'xml' / 'Settings.xml').getroot()
+        actions = settings.findall('onunload')
+        self.assertEqual([a.text for a in actions], ['Skin.SetString(SmartedUnlock,9)', 'Skin.SetBool(SmartedFullMode)'])
+        self.assertTrue(all('Window.Next(Home)' in a.get('condition') for a in actions))
+
     def test_startup_advances_to_configured_kodi_window(self):
         root = ET.parse(SKIN / 'xml' / 'Startup.xml').getroot()
         self.assertEqual(root.findtext('onload'), 'ReplaceWindow($INFO[System.StartupWindow])')

@@ -156,3 +156,7 @@ msgstr "Idioma do teclado"
 msgctxt "#31106"
 msgid "Show"
 msgstr "Mostrar"
+
+msgctxt "#31017"
+msgid "Programs"
+msgstr "Programas"

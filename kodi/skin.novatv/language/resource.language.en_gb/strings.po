@@ -156,3 +156,7 @@ msgstr "Keyboard layout"
 msgctxt "#31106"
 msgid "Show"
 msgstr "Show"
+
+msgctxt "#31017"
+msgid "Programs"
+msgstr "Programs"
