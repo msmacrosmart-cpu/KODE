@@ -45,18 +45,21 @@ jobs:
             printf '%s\n' '<keymap><global><keyboard><f4>ActivateWindow(addonbrowser,addons://search/,return)</f4></keyboard></global></keymap>' > "$RUNNER_TEMP/test-keymap.xml"
             adb root || true
             adb wait-for-device
-            adb shell mkdir -p /sdcard/Android/data/org.xbmc.kodi/files/.kodi/userdata/keymaps > "$RUNNER_TEMP/adb-mkdir.txt" 2>&1 || true
-            adb push "$RUNNER_TEMP/test-keymap.xml" /sdcard/Android/data/org.xbmc.kodi/files/.kodi/userdata/keymaps/test-keymap.xml > "$RUNNER_TEMP/adb-push.txt" 2>&1 || true
-            UID_APP=$(adb shell stat -c %u /data/user/0/org.xbmc.kodi | tr -d '\r')
-            echo "::notice title=UID do aplicativo::${UID_APP:-não encontrado}"
-            if [ -n "$UID_APP" ]; then adb shell chown -R "$UID_APP:$UID_APP" /data/media/0/Android/data/org.xbmc.kodi/files/.kodi > "$RUNNER_TEMP/chown.txt" 2>&1 || true; fi
-            adb shell chmod -R a+rX /data/media/0/Android/data/org.xbmc.kodi/files/.kodi >> "$RUNNER_TEMP/adb-push.txt" 2>&1 || true
-            adb shell su "$UID_APP" cat /sdcard/Android/data/org.xbmc.kodi/files/.kodi/userdata/keymaps/test-keymap.xml > "$RUNNER_TEMP/keymap-access.txt" 2>&1 || true
-            python3 -c "import os; from pathlib import Path; d=Path(os.environ['RUNNER_TEMP']); t=''.join((d/f).read_text() if (d/f).exists() else '' for f in ['adb-mkdir.txt','adb-push.txt','chown.txt','keymap-access.txt']); print('::notice title=Preparação do atalho::'+t.replace('%','%25').replace('\\n','%0A'))"
             adb shell am start -n org.xbmc.kodi/.Splash
             sleep 30
             adb shell input keyevent 66
-            sleep 120
+            sleep 90
+            UID_APP=$(adb shell ps -A | awk '$NF == "org.xbmc.kodi" {print $1; exit}' | tr -d '\r')
+            echo "::notice title=UID do aplicativo após inicialização::${UID_APP:-não encontrado}"
+            test -n "$UID_APP"
+            adb shell mkdir -p /sdcard/Android/data/org.xbmc.kodi/files/.kodi/userdata/keymaps
+            adb push "$RUNNER_TEMP/test-keymap.xml" /sdcard/Android/data/org.xbmc.kodi/files/.kodi/userdata/keymaps/test-keymap.xml
+            adb shell chown "$UID_APP:$UID_APP" /data/media/0/Android/data/org.xbmc.kodi/files/.kodi/userdata/keymaps/test-keymap.xml || true
+            adb shell chmod 644 /data/media/0/Android/data/org.xbmc.kodi/files/.kodi/userdata/keymaps/test-keymap.xml || true
+            adb shell ls -l /sdcard/Android/data/org.xbmc.kodi/files/.kodi/userdata/keymaps/test-keymap.xml | sed 's/^/::notice title=Arquivo de atalho::/'
+            adb shell am force-stop org.xbmc.kodi
+            adb shell am start -n org.xbmc.kodi/.Splash
+            sleep 90
             adb logcat -d -v brief > "$RUNNER_TEMP/logcat.txt"
             adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' | tr '\n' ' ' | sed 's/^/::notice title=Janela em foco::/'
             adb exec-out screencap -p > "$RUNNER_TEMP/screen.png"
