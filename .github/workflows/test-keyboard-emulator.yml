@@ -41,8 +41,13 @@ jobs:
             echo "::notice title=ABI do emulador::$(adb shell getprop ro.product.cpu.abilist | tr -d '\r')"
             adb install -g "$RUNNER_TEMP/debug.apk"
             adb logcat -c
+            adb shell appops set org.xbmc.kodi MANAGE_EXTERNAL_STORAGE allow || true
             adb shell am start -n org.xbmc.kodi/.Splash
-            sleep 150
+            sleep 30
+            adb shell input keyevent 66
+            sleep 10
+            adb shell input keyevent 66
+            sleep 120
             adb logcat -d -v brief > "$RUNNER_TEMP/logcat.txt"
             adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' | tr '\n' ' ' | sed 's/^/::notice title=Janela em foco::/'
             adb exec-out screencap -p > "$RUNNER_TEMP/screen.png"
