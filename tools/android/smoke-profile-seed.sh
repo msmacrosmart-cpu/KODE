@@ -53,11 +53,39 @@ if [ "$bridge" -ne 1 ] || ! grep -q 'SMARTED_TEST_BRAZUCA_SERIES_OK' "$out/bridg
   echo '::error::Bridge routing fixture failed; inspect the synthetic log.'; exit 1
 fi
 # Real public indexes are queried, while the target add-on is still a stub.
+adb logcat -c
 adb shell input keyevent 139  # F9: start unified search
-sleep 12
+keyboard=0
+for _ in $(seq 1 24); do
+  adb logcat -d -s Kodi:V > "$out/keyboard-logcat.txt" || true
+  if grep -q 'XBMCNativeKeyboard.show' "$out/keyboard-logcat.txt"; then keyboard=1; break; fi
+  sleep 5
+done
+if [ "$keyboard" -ne 1 ]; then echo '::error::Native search keyboard was not shown.'; exit 1; fi
+sleep 3
 adb exec-out screencap -p > "$out/search-keyboard.png" || true
+adb shell uiautomator dump /sdcard/smarted-window.xml >/dev/null
+adb exec-out cat /sdcard/smarted-window.xml > "$out/search-window.xml"
+# Click the actual native edit field and confirmation button instead of sending
+# KEYCODE_ENTER (which does not trigger the IME_ACTION_DONE callback on all IMEs).
+coords() {
+  python3 - "$out/search-window.xml" "$1" <<'PY2'
+import re, sys, xml.etree.ElementTree as ET
+root = ET.parse(sys.argv[1]).getroot()
+for n in root.iter('node'):
+    match = (sys.argv[2] == 'edit' and n.get('class') == 'android.widget.EditText') or (sys.argv[2] == 'ok' and n.get('resource-id') == 'android:id/button1')
+    if match:
+        nums = [int(x) for x in re.findall(r'\d+', n.get('bounds', ''))]
+        if len(nums) == 4:
+            print((nums[0] + nums[2]) // 2, (nums[1] + nums[3]) // 2)
+            break
+else:
+    raise SystemExit('Native keyboard control missing')
+PY2
+}
+adb shell input tap $(coords edit)
 adb shell input text 'amor'
-adb shell input keyevent 66
+adb shell input tap $(coords ok)
 search_ok=0
 for _ in $(seq 1 36); do
   adb logcat -d -s Kodi:V > "$out/search-logcat.txt" || true
