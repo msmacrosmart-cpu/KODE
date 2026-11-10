@@ -1,0 +1,81 @@
+name: Testar restauração sintética no emulador
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/03cbbc5b-kode]
+    paths: [.github/workflows/test-profile-seed-emulator.yml, 'tools/android/**', 'tests/test_android_profile_seed.py', 'tests/java/**']
+permissions:
+  contents: read
+jobs:
+  synthetic-seed:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Testar núcleo de restauração
+        run: python3 -m unittest discover -s tests -p 'test_android_profile_seed.py' -v
+      - name: Criar APK descartável com perfil inteiramente sintético
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download v1.0.16-smarted-keyboard-test -R "$GITHUB_REPOSITORY" --pattern 'SMARTED-TV-v1.0.16-teclado-arm64-teste.apk' --dir "$RUNNER_TEMP/base"
+          python3 tools/kodi/make-novatv-emulator-apk.py "$RUNNER_TEMP/base/SMARTED-TV-v1.0.16-teclado-arm64-teste.apk" "$RUNNER_TEMP/skin.apk"
+          npm pack '@postar/apktool-node@0.3.4' --pack-destination "$RUNNER_TEMP" >/dev/null
+          tar -xzf "$RUNNER_TEMP/postar-apktool-node-0.3.4.tgz" -C "$RUNNER_TEMP" package/lib/apktool.jar
+          java -jar "$RUNNER_TEMP/package/lib/apktool.jar" d -f "$RUNNER_TEMP/skin.apk" -o "$RUNNER_TEMP/decoded"
+          python3 tools/android/patch-splash-for-seed.py "$RUNNER_TEMP/decoded"
+          mkdir -p "$RUNNER_TEMP/decoded/assets/smarted" "$RUNNER_TEMP/sources/org/smartedtv/bootstrap" "$RUNNER_TEMP/classes" "$RUNNER_TEMP/dex"
+          cp tools/android/src/org/smartedtv/bootstrap/*.java "$RUNNER_TEMP/sources/org/smartedtv/bootstrap/"
+          python3 - <<'PY'
+          import hashlib, os, zipfile
+          from pathlib import Path
+          t = Path(os.environ['RUNNER_TEMP'])
+          z = t/'decoded/assets/smarted/profile.zip'
+          with zipfile.ZipFile(z, 'w', zipfile.ZIP_DEFLATED) as f:
+              f.writestr('files/.kodi/userdata/guisettings.xml', '<settings version="2"><setting id="lookandfeel.skin" default="true">skin.estuary</setting></settings>')
+              f.writestr('files/.kodi/userdata/smarted-seed-test.txt', 'synthetic-seed-only\n')
+          source = t/'sources/org/smartedtv/bootstrap/ProfileSeed.java'
+          text = source.read_text()
+          pinned = 'e38ee0e23356948a008a895fbefd8b659f62504b72d50712ac91c7305a774cde'
+          assert text.count(pinned) == 1
+          source.write_text(text.replace(pinned, hashlib.sha256(z.read_bytes()).hexdigest()))
+          PY
+          SDK_JAR=$(find "$ANDROID_HOME/platforms" -name android.jar | sort -V | tail -1)
+          TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          javac -source 8 -target 8 -classpath "$SDK_JAR" -d "$RUNNER_TEMP/classes" "$RUNNER_TEMP"/sources/org/smartedtv/bootstrap/*.java
+          "$TOOLS/d8" --min-api 21 --lib "$SDK_JAR" --output "$RUNNER_TEMP/dex" $(find "$RUNNER_TEMP/classes" -name '*.class')
+          java -jar "$RUNNER_TEMP/package/lib/apktool.jar" b "$RUNNER_TEMP/decoded" -o "$RUNNER_TEMP/rebuilt.apk"
+          python3 - <<'PY'
+          import os, zipfile
+          from pathlib import Path
+          t = Path(os.environ['RUNNER_TEMP'])
+          with zipfile.ZipFile(t/'rebuilt.apk', 'a') as apk:
+              assert 'classes3.dex' not in apk.namelist()
+              apk.write(t/'dex/classes.dex', 'classes3.dex', compress_type=zipfile.ZIP_DEFLATED)
+          PY
+          "$TOOLS/zipalign" -f -p 4 "$RUNNER_TEMP/rebuilt.apk" "$RUNNER_TEMP/aligned.apk"
+          keytool -genkeypair -keystore "$RUNNER_TEMP/temporary.jks" -alias debug -dname 'CN=Disposable Emulator' -keyalg RSA -keysize 2048 -validity 2 -storepass android -keypass android
+          "$TOOLS/apksigner" sign --ks "$RUNNER_TEMP/temporary.jks" --ks-pass pass:android --key-pass pass:android --out "$RUNNER_TEMP/seed-debug.apk" "$RUNNER_TEMP/aligned.apk"
+      - name: Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Restaurar perfil sintético e preservar perfil existente
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 3072
+          disable-animations: true
+          script: bash tools/android/smoke-profile-seed.sh
+      - name: Guardar logs do teste sintético
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-seed-diagnostics
+          path: ${{ runner.temp }}/seed-smoke/
+          if-no-files-found: warn
+          retention-days: 3

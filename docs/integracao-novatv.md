@@ -1,6 +1,6 @@
 # Integração NovaTV e backup — em andamento
 
-Esta alteração **ainda não gera um APK de integração** e não substitui a versão 1.0.16 aprovada. Não há validação de execução da skin ou dos complementos em Android nesta etapa.
+Esta alteração **ainda não gera um APK de integração** e não substitui a versão 1.0.16 aprovada. A Home, configurações e sequência de desbloqueio passaram em emulador isolado; complementos e reprodução ainda não foram validados.
 
 ## Referências examinadas
 
@@ -27,10 +27,16 @@ python3 tools/kodi/stage-profile.py dropbox/files-reconstructed.zip dropbox/perf
 
 O teste com o backup fornecido comparou os hashes dos 2.731 arquivos extraídos aos dados do ZIP; o diretório temporário de teste foi removido. O backup original não foi alterado.
 
+## Restauração Android em desenvolvimento
+
+`tools/android/src/org/smartedtv/bootstrap/ProfileSeed.java` é um núcleo de restauração para perfil inexistente: verifica SHA-256, caminhos e CRC, extrai para staging e seleciona NovaTV. A comparação local com o backup real conferiu os 2.731 arquivos e só alterou a preferência de skin. O backup original não foi alterado. `ProfileBootstrap.java` é um protótipo assíncrono antes do início do Kodi; **não foi incluído em APK de entrega**. O workflow `test-profile-seed-emulator.yml` cria exclusivamente um perfil sintético e usa assinatura descartável, para testar a primeira execução e preservação de perfil existente. A execução e o ciclo de vida Android, interrupção, reinício, espaço insuficiente e atualização de instalação real ainda precisam ser verificados; não é uma migração de perfis já existentes. Nenhum dado pessoal ou chave de produção é incluído no teste.
+
+O smoke anterior de skin ([42824443156](https://github.com/msmacrosmart-cpu/KODE/actions/runs/42824443156)) confirmou a sequência de desbloqueio em perfil descartável. Não comprova player ou Brazuka.
+
 ## Pendências para um APK testável
 
 - Definir e implementar migração no primeiro início/atualização com proteção aos dados já existentes, recuperação em caso de falha e comportamento correto dos bancos de dados do Kodi; a ferramenta offline não resolve a inicialização do aplicativo.
 - Concluir as janelas e diálogos da skin, inclusive controles necessários para navegação, player, add-ons, PVR, jogos e perfis, e validar em execução. Nem todas as janelas fornecidas foram verificadas funcionalmente.
 - Integrar o Brazuka Play real e suas dependências. O código inspecionado tem buscas separadas por categoria e realiza atualizações remotas; não foi validado em execução ou sua disponibilidade. A Home fornecida usa `videodb://` e `pvr://`, não as fontes do Brazuka. Busca unificada, favoritos por categoria, retomada, paginação, métricas e atualização diária não estão implementados.
-- Confirmar no emulador e em aparelho real o modo restrito e o desbloqueio: foram adicionados à skin os menus de TV/filmes/séries condicionados aos complementos instalados, o logo com oito cliques e a contagem de duas saídas de Ajustes para a Home. A lógica é persistente depois de liberada, mas ainda precisa de validação em execução, inclusive com toque e controle.
+- Confirmar no emulador e em aparelho real o modo restrito e o desbloqueio: foram adicionados à skin os menus de TV/filmes/séries condicionados aos complementos instalados, o logo com oito cliques e a contagem de duas saídas de Ajustes para a Home. A sequência passou no emulador com teclado de teste; toque e controle físico ainda precisam de validação.
 - Empacotar, assinar com a chave da instalação existente, aumentar o versionCode, validar instalação/atualização e teclado; só então publicar no Dropbox e no release privado. Um ZIP ou um teste estrutural não é evidência de que a interface ou a reprodução funcionem.
