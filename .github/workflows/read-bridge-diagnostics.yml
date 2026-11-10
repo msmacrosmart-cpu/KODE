@@ -1,0 +1,32 @@
+name: Examinar diagnóstico sintético da ponte
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/03cbbc5b-kode]
+    paths: [.github/workflows/read-bridge-diagnostics.yml]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: synthetic-seed-diagnostics
+          run-id: 42827164340
+          github-token: ${{ github.token }}
+          path: diagnostics
+      - name: Examinar exclusivamente o perfil sintético
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          for name in ('bridge-logcat.txt', 'logcat.txt'):
+              p = Path('diagnostics') / name
+              if not p.exists(): continue
+              relevant = [line for line in p.read_text(errors='replace').splitlines()
+                  if re.search(r'SMARTED_TEST|plugin.video.smarted|BrazucaPlay|python|ERROR|exception|MyVideoNav', line, re.I)]
+              text = '\n'.join(relevant[-80:])[-20000:] or '(none)'
+              print('::notice title=' + name + '::' + text.replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
+          PY
