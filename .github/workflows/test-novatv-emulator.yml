@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [arena/03cbbc5b-kode]
-    paths: [.github/workflows/test-novatv-emulator.yml]
+    paths: [.github/workflows/test-novatv-emulator.yml, tools/kodi/smoke-novatv-emulator.sh, tools/kodi/make-novatv-emulator-apk.py]
 permissions:
   contents: read
 jobs:
