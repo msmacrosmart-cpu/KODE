@@ -64,6 +64,21 @@ class SearchTests(unittest.TestCase):
     def test_empty_query_never_fetches(self):
         self.assertEqual(search.search('!!!', loader=lambda u: self.fail('network call')), ([], []))
 
+    def test_recent_uses_real_dates_not_feed_order_or_future(self):
+        from datetime import date
+        def dated(name, when):
+            return fixture(title=name).replace('</channel>', '<tmdb_date>' + when + '</tmdb_date></channel>')
+        feed = dated('Antiga', '01/01/2022') + dated('Recente', '10/11/2025') + dated('Futura', '01/01/2099') + dated('Inválida', 'xx')
+        def loader(url):
+            if url == search.SOURCES[1][1]:
+                raise OSError('offline')
+            return feed
+        results, failed = search.recent_series(loader=loader, today=date(2026,11,10))
+        self.assertEqual([i['title'] for i in results], ['Recente', 'Antiga'])
+        self.assertEqual([i['release_date'] for i in results], ['2025-11-10', '2022-01-01'])
+        self.assertEqual(failed, ['Novelas'])
+        self.assertEqual(search.parse_recent_feed('Séries', fixture(), today=date(2026,11,10)), [])
+
 
     def test_kodi_search_reports_partial_results_and_cancel(self):
         events = []

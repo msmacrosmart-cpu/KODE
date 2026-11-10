@@ -545,7 +545,7 @@
       <control type="group">
         <height>400</height>
         <width>1920</width>
-        <visible>Library.HasContent(TVShows)</visible>
+        <visible>System.HasAddon(plugin.video.BrazucaPlay.Matrix) + System.HasAddon(plugin.video.smarted)</visible>
         <control type="label">
           <left>60</left>
           <top>0</top>
@@ -563,7 +563,7 @@
           <height>340</height>
           <orientation>horizontal</orientation>
           <scrolltime>250</scrolltime>
-          <content limit="24">videodb://recentlyaddedepisodes/</content>
+          <content limit="10">plugin://plugin.video.smarted/?route=recent-series</content>
           <itemlayout width="380" height="250">
             <control type="image">
               <left>0</left>

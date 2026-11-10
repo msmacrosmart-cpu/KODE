@@ -65,7 +65,8 @@ class CatalogueTest(unittest.TestCase):
             req=json.loads(raw)
             return json.dumps({'result': {'files': values[req['params']['directory']]}})
         found, failed = catalogue.movie_overview(rpc)
-        self.assertEqual([x['url'] for x in found], [search_url, launches, genre, movie, alphabet, trilogy])
+        self.assertEqual([x['url'] for x in found], [search_url, launches, genre, movie, alphabet, trilogy,
+                                                    routes.brazuca(27, '#filmes_menu')])
         self.assertEqual(failed, [])
         values[genres] = []
         found, failed = catalogue.movie_overview(rpc)

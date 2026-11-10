@@ -24,6 +24,9 @@ def main():
     if route == 'movies':
         movies(handle)
         return
+    if route == 'recent-series':
+        recent_series(handle)
+        return
     if route == 'channel-favorites':
         channel_favorites(handle)
         return
@@ -105,6 +108,31 @@ def search_channels(handle):
         item.setProperty('IsPlayable', 'true' if result['playable'] else 'false')
         xbmcplugin.addDirectoryItem(handle, result['url'], item, isFolder=result['folder'])
     xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+
+
+def recent_series(handle):
+    import xbmc
+    from search import SOURCES, recent_series as fetch_recent_series
+
+    try:
+        results, failed = fetch_recent_series()
+    except Exception:
+        xbmc.log('SMARTED-TV: lançamentos de séries indisponíveis', xbmc.LOGWARNING)
+        xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
+        return
+    if failed:
+        xbmc.log('SMARTED-TV: fontes de séries indisponíveis: ' + ', '.join(failed), xbmc.LOGWARNING)
+    xbmcplugin.setContent(handle, 'tvshows')
+    xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
+    for result in results:
+        item = xbmcgui.ListItem(label='[%s] %s' % (result['category'], result['title']))
+        item.setArt({'thumb': result['thumb'], 'poster': result['thumb'], 'fanart': result['fanart']})
+        info = item.getVideoInfoTag()
+        info.setTitle(result['title'])
+        info.setPlot(result['description'])
+        info.setYear(int(result['release_date'][:4]))
+        xbmcplugin.addDirectoryItem(handle, result['url'], item, isFolder=True)
+    xbmcplugin.endOfDirectory(handle, succeeded=len(failed) < len(SOURCES), cacheToDisc=False)
 
 
 def channel_favorites(handle):

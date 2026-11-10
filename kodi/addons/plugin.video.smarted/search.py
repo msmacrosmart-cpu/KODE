@@ -5,6 +5,7 @@ The optional private/pro indexes in Brazuca are not yet supported.
 """
 import base64
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import date, datetime
 from html import unescape
 import re
 import unicodedata
@@ -69,6 +70,26 @@ def result_url(mode, url, name, thumb, fanart, description):
     return BRAZUCA + '?' + urlencode(values)
 
 
+def _parse_channel(category, block):
+    title = field(block, 'name')
+    if not title:
+        return None
+    mode, url = select_mode(field(block, 'externallink'))
+    if mode is None:
+        return None  # Never guess an unknown resolver.
+    thumb = field(block, 'thumbnail')
+    try:
+        decoded = base64.b64decode(thumb, validate=True).decode('utf-8')
+        if decoded.startswith(('http://', 'https://')):
+            thumb = decoded
+    except (ValueError, UnicodeError):
+        pass
+    fanart, description = field(block, 'fanart'), field(block, 'info')
+    return {'category': category, 'title': TAGS.sub('', title).strip(), 'thumb': thumb,
+            'fanart': fanart, 'description': description,
+            'url': result_url(mode, url, title, thumb, fanart, description)}
+
+
 def parse_feed(category, raw, query):
     needle = normalize(query)
     if not needle:
@@ -78,26 +99,64 @@ def parse_feed(category, raw, query):
     matches = []
     for channel in CHANNEL.finditer(raw):
         block = channel.group(1)
-        title = field(block, 'name')
-        if not title or needle not in normalize(title):
+        if needle not in normalize(field(block, 'name')):
             continue
-        url = field(block, 'externallink')
-        mode, url = select_mode(url)
-        if mode is None:
-            continue  # A resolver unknown to this Brazuca version is not guessed.
-        thumb = field(block, 'thumbnail')
-        try:
-            decoded = base64.b64decode(thumb, validate=True).decode('utf-8')
-            if decoded.startswith(('http://', 'https://')):
-                thumb = decoded
-        except (ValueError, UnicodeError):
-            pass
-        fanart, description = field(block, 'fanart'), field(block, 'info')
-        plain_title = TAGS.sub('', title).strip()
-        matches.append({'category': category, 'title': plain_title, 'thumb': thumb,
-                        'fanart': fanart, 'description': description,
-                        'url': result_url(mode, url, title, thumb, fanart, description)})
+        item = _parse_channel(category, block)
+        if item:
+            matches.append(item)
     return matches
+
+
+def parse_recent_feed(category, raw, today=None):
+    """Use explicit first-air dates, never feed position as invented recency."""
+    today = today or date.today()
+    if isinstance(raw, bytes):
+        raw = raw.decode('utf-8', errors='replace')
+    results = []
+    for channel in CHANNEL.finditer(raw):
+        block = channel.group(1)
+        try:
+            release = datetime.strptime(field(block, 'tmdb_date'), '%d/%m/%Y').date()
+        except ValueError:
+            continue
+        if release > today:
+            continue
+        item = _parse_channel(category, block)
+        if item:
+            item['release_date'] = release.isoformat()
+            results.append(item)
+    return results
+
+
+def recent_series(loader=None, limit=10, today=None):
+    """Return date-ordered releases and unavailable sources; data is public only."""
+    loader = loader or download
+    by_source, failed = {}, set()
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        futures = {pool.submit(loader, url): (index, name)
+                   for index, (name, url) in enumerate(SOURCES)}
+        for future in as_completed(futures):
+            index, name = futures[future]
+            try:
+                payload = future.result()
+                text = payload.decode('utf-8', errors='replace') if isinstance(payload, bytes) else payload
+                if not CHANNEL.search(text):
+                    raise ValueError('Unexpected category index')
+                by_source[index] = parse_recent_feed(name, text, today=today)
+            except Exception:
+                failed.add(index)
+    combined = [item for index in range(len(SOURCES)) for item in by_source.get(index, [])]
+    combined.sort(key=lambda item: item['release_date'], reverse=True)
+    unique, seen = [], set()
+    for item in combined:
+        key = normalize(item['title'])
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        unique.append(item)
+        if len(unique) >= limit:
+            break
+    return unique, [name for index, (name, _) in enumerate(SOURCES) if index in failed]
 
 
 def download(url):

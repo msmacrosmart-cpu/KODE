@@ -15,12 +15,12 @@ A entrega 1.0.18 **não satisfez** todos estes critérios. Abrir menus, verifica
 - [ ] Disponibilizar complementos de programas/YouTube e áudio/música quando apropriado, mantendo o layout.
 - [ ] Listar todas as opções originais de TV, busca de canais incluindo Pluto e favoritos de canais na Home. A busca em duas fontes tem testes de unidade, não comprova a disponibilidade das fontes ou reprodução. O widget usa a lista nativa do Brazuca sem alterar favoritos; [42855782454](https://github.com/msmacrosmart-cpu/KODE/actions/runs/42855782454) retornou um canal sintético num perfil descartável, não os favoritos do usuário.
 - [ ] Organizar séries, novelas, animes, doramas e desenhos na mesma aba; busca unificada também precisa refletir fontes privadas habilitadas no perfil e suas regras de acesso.
-- [ ] Tela de filmes com busca exclusiva, lançamentos, gêneros e alfabética em uma grade; filmes e séries com rolagem infinita.
+- [ ] Tela de filmes com busca exclusiva, lançamentos, gêneros e alfabética. A visão atual abre a primeira página e mantém o menu nativo para as demais; faltam grade contínua e rolagem infinita de filmes e séries.
 
 ## Home e atualizações
 
 - [ ] Hero de filmes e séries do Brazuca com o design original. A alteração em desenvolvimento conecta o hero e a primeira grade à pasta nativa de lançamentos de filmes: [42852349386](https://github.com/msmacrosmart-cpu/KODE/actions/runs/42852349386) confirmou consulta com cópia pública do Brazuca em emulador. Falta validar aparência no aparelho, navegação, séries e reprodução.
-- [ ] Seções, nesta ordem: continuar assistindo; 10 filmes mais recentes; 10 séries mais recentes; canais favoritos; 10 filmes mais vistos/votados; 10 séries mais vistas/votadas. Dados de popularidade e recência devem vir de fonte real, não inventada.
+- [ ] Seções, nesta ordem: continuar assistindo; 10 filmes mais recentes; 10 séries mais recentes; canais favoritos; 10 filmes mais vistos/votados; 10 séries mais vistas/votadas. A seção de séries consulta índices públicos e ordena por data de estreia, não de inclusão; não cobre PRO. Dados de popularidade e recência devem vir de fonte real, não inventada.
 - [ ] Favoritos de canais, filmes e séries; progresso e confirmação de retomada. Não sobrescrever favoritos do usuário.
 - [ ] Atualizar conteúdo do Brazuca no primeiro início após meia-noite, uma vez por dia, respeitando falhas de rede e perfil.
 

@@ -87,6 +87,12 @@ def movie_overview(rpc):
             result.append(folder)
             failed.append(label)
     result.extend(item for item in menu if item not in used)
+    # Kodi's Files.GetDirectory does not export add-on-specific context menus.
+    # Keep an explicit route to the unwrapped menu for native favorite actions.
+    native = _entry({'label': 'Abrir menu original do Brazuca',
+                     'file': brazuca(27, '#filmes_menu'), 'filetype': 'directory'})
+    if native:
+        result.append(native)
     return result, failed
 
 

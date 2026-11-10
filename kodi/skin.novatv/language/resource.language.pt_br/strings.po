@@ -82,8 +82,8 @@ msgid "Latest movies"
 msgstr "Lançamentos"
 
 msgctxt "#31021"
-msgid "Latest episodes"
-msgstr "Episódios recentes"
+msgid "Latest series by release date"
+msgstr "Séries mais recentes por estreia"
 
 msgctxt "#31022"
 msgid "Continue watching"

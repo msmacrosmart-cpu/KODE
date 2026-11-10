@@ -82,8 +82,8 @@ msgid "Latest movies"
 msgstr "Latest movies"
 
 msgctxt "#31021"
-msgid "Latest episodes"
-msgstr "Latest episodes"
+msgid "Latest series by release date"
+msgstr "Latest series by release date"
 
 msgctxt "#31022"
 msgid "Continue watching"
