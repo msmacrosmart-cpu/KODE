@@ -164,3 +164,11 @@ msgstr "Show"
 msgctxt "#31017"
 msgid "Programs"
 msgstr "Programs"
+
+msgctxt "#31034"
+msgid "Details"
+msgstr "Details"
+
+msgctxt "#31035"
+msgid "Categories"
+msgstr "Categories"

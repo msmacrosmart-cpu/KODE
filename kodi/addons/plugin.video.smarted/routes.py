@@ -23,9 +23,13 @@ def smarted(route):
 def items(route):
     if route == 'root':
         return [
-            ('TV ao vivo', brazuca(21, '#menu_canais')),
-            ('Filmes', brazuca(27, '#filmes_menu')),
+            ('TV ao vivo', smarted('tv')),
+            ('Filmes', smarted('movies')),
             ('Séries', smarted('series')),
+            ('Doramas', brazuca(31, '#doramas_menu')),
+            ('Animes', brazuca(22, '#animes_menu')),
+            ('Novelas', brazuca(25, '#novelas_menu')),
+            ('Desenhos', brazuca(28, '#desenhos_menu')),
         ]
     if route == 'tv':
         return [

@@ -1,2 +1,392 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<window><defaultcontrol always="true">703</defaultcontrol><include>Anim</include><controls><control type="image"><left>0</left><top>540</top><width>1920</width><height>540</height><texture>scrim_v.png</texture></control><control type="label"><left>60</left><top>640</top><width>1500</width><height>60</height><font>font_large_bold</font><textcolor>white</textcolor><aligny>center</aligny><label>$INFO[VideoPlayer.Title]</label></control><control type="label"><left>60</left><top>700</top><width>1500</width><height>40</height><font>font_small</font><textcolor>muted</textcolor><aligny>center</aligny><label>$INFO[VideoPlayer.Year]  ·  $INFO[VideoPlayer.Genre]</label></control><control type="progress"><left>60</left><top>770</top><width>1800</width><height>8</height><info>Player.Progress</info><texturebg colordiffuse="40ffffff">white.png</texturebg><midtexture colordiffuse="white">white.png</midtexture></control><control type="label"><left>60</left><top>785</top><width>300</width><height>40</height><font>font_tiny</font><textcolor>muted</textcolor><aligny>center</aligny><label>$INFO[Player.Time]</label></control><control type="label"><left>1560</left><top>785</top><width>300</width><height>40</height><font>font_tiny</font><textcolor>muted</textcolor><aligny>center</aligny><align>right</align><label>$INFO[Player.Duration]</label></control><control type="group" id="700"><left>0</left><top>860</top><control type="button" id="701"><left>60</left><top>0</top><width>150</width><height>64</height><label>−10 s</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus><onclick>PlayerControl(SmallSkipBackward)</onclick></control><control type="button" id="702"><left>222</left><top>0</top><width>170</width><height>64</height><label>Anterior</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus><onclick>PlayerControl(Previous)</onclick></control><control type="button" id="703"><left>404</left><top>0</top><width>200</width><height>64</height><label>Pausar</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus><onclick>PlayerControl(Play)</onclick></control><control type="button" id="704"><left>616</left><top>0</top><width>170</width><height>64</height><label>Próximo</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus><onclick>PlayerControl(Next)</onclick></control><control type="button" id="705"><left>798</left><top>0</top><width>150</width><height>64</height><label>+30 s</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus><onclick>PlayerControl(BigSkipForward)</onclick></control><control type="button" id="706"><left>960</left><top>0</top><width>150</width><height>64</height><label>Parar</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus><onclick>PlayerControl(Stop)</onclick></control></control><control type="grouplist" id="710"><left>1000</left><top>860</top><width>860</width><height>64</height><orientation>horizontal</orientation><itemgap>8</itemgap><control type="button" id="711"><left>0</left><top>0</top><width>230</width><height>64</height><label>Áudio</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus><onclick>ActivateWindow(OSDAudioSettings)</onclick></control><control type="button" id="712"><left>0</left><top>0</top><width>230</width><height>64</height><label>Legendas</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus><onclick>ActivateWindow(OSDSubtitleSettings)</onclick></control><control type="button" id="713"><left>0</left><top>0</top><width>230</width><height>64</height><label>Vídeo</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus><onclick>ActivateWindow(OSDVideoSettings)</onclick></control><control type="button" id="714"><left>0</left><top>0</top><width>230</width><height>64</height><label>Info</label><font>font_main</font><textcolor>text</textcolor><focusedcolor>ontext</focusedcolor><align>center</align><aligny>center</aligny><texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus><texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus><onclick>Action(PlayerProcessInfo)</onclick></control></control></controls></window>
+<?xml version='1.0' encoding='UTF-8'?>
+<window>
+  <defaultcontrol always="true">602</defaultcontrol>
+  <onload condition="!Player.PauseEnabled">SetFocus(603)</onload>
+  <include>Anim</include>
+  <controls>
+    <control type="image">
+      <left>0</left>
+      <top>580</top>
+      <width>1920</width>
+      <height>500</height>
+      <texture>scrim_v.png</texture>
+    </control>
+    <control type="label">
+      <left>60</left>
+      <top>630</top>
+      <width>1400</width>
+      <height>55</height>
+      <font>font_large_bold</font>
+      <textcolor>white</textcolor>
+      <label>$INFO[VideoPlayer.Title]</label>
+    </control>
+    <control type="slider" id="87">
+      <left>60</left>
+      <top>720</top>
+      <width>1800</width>
+      <height>22</height>
+      <texturesliderbar>white.png</texturesliderbar>
+      <textureslidernib>nib.png</textureslidernib>
+      <textureslidernibfocus>nib.png</textureslidernibfocus>
+      <info>Player.Progress</info>
+      <action>seek</action>
+      <onup>602</onup>
+      <ondown>602</ondown>
+      <visible>Player.SeekEnabled + !VideoPlayer.Content(LiveTV)</visible>
+    </control>
+    <control type="label">
+      <left>60</left>
+      <top>750</top>
+      <width>1800</width>
+      <height>32</height>
+      <font>font_small</font>
+      <textcolor>white</textcolor>
+      <label>$INFO[Player.Time] / $INFO[Player.Duration]</label>
+    </control>
+    <control type="grouplist" id="200">
+      <left>60</left>
+      <top>800</top>
+      <width>1800</width>
+      <height>70</height>
+      <orientation>horizontal</orientation>
+      <itemgap>8</itemgap>
+      <onup>87</onup>
+      <ondown>201</ondown>
+      <onleft>200</onleft>
+      <onright>200</onright>
+      <control type="button" id="600">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Anterior</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>PlayerControl(Previous)</onclick>
+        <visible>Player.HasSceneMarkers | Player.ChapterCount | Integer.IsGreater(Playlist.Length(video),1)</visible>
+      </control>
+      <control type="button" id="601">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Retroceder</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick condition="Player.Paused">PlayerControl(Play)</onclick>
+        <onclick condition="!Player.Paused">PlayerControl(Rewind)</onclick>
+        <visible>Player.SeekEnabled + !VideoPlayer.Content(livetv)</visible>
+      </control>
+      <control type="button" id="610">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Salto −</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>PlayerControl(SmallSkipBackward)</onclick>
+        <visible>Player.SeekEnabled</visible>
+      </control>
+      <control type="button" id="602">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Reproduzir / Pausar</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>PlayerControl(Play)</onclick>
+        <visible>Player.PauseEnabled</visible>
+      </control>
+      <control type="button" id="603">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Parar</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>PlayerControl(Stop)</onclick>
+      </control>
+      <control type="button" id="611">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Salto +</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>PlayerControl(BigSkipForward)</onclick>
+        <visible>Player.SeekEnabled</visible>
+      </control>
+      <control type="button" id="606">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Avançar</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick condition="Player.Paused">PlayerControl(Play)</onclick>
+        <onclick condition="!Player.Paused">PlayerControl(Forward)</onclick>
+        <visible>Player.SeekEnabled + !VideoPlayer.Content(livetv)</visible>
+      </control>
+      <control type="button" id="607">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Próximo</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>PlayerControl(Next)</onclick>
+        <visible>Player.HasSceneMarkers | Player.ChapterCount | Integer.IsGreater(Playlist.Length(video),1)</visible>
+      </control>
+      <control type="button" id="608">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Gravar</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>PVR.ToggleRecordPlayingChannel</onclick>
+        <visible>VideoPlayer.Content(livetv) + PVR.CanRecordPlayingChannel</visible>
+      </control>
+    </control>
+    <control type="grouplist" id="201">
+      <left>60</left>
+      <top>880</top>
+      <width>1800</width>
+      <height>70</height>
+      <orientation>horizontal</orientation>
+      <itemgap>8</itemgap>
+      <onup>200</onup>
+      <ondown>87</ondown>
+      <onleft>201</onleft>
+      <onright>201</onright>
+      <control type="button" id="70046">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Legendas</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>ActivateWindow(osdsubtitlesettings)</onclick>
+        <visible>!VideoPlayer.Content(LiveTV) | VideoPlayer.HasSubtitles</visible>
+      </control>
+      <control type="button" id="710">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Áudio</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>ActivateWindow(osdaudiosettings)</onclick>
+      </control>
+      <control type="button" id="711">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Vídeo</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>ActivateWindow(osdvideosettings)</onclick>
+      </control>
+      <control type="button" id="70043">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Informações</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>Info</onclick>
+      </control>
+      <control type="button" id="712">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Detalhes técnicos</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>Action(PlayerProcessInfo)</onclick>
+      </control>
+      <control type="button" id="70044">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Marcadores</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>ActivateWindow(videobookmarks)</onclick>
+        <visible>!VideoPlayer.Content(livetv)</visible>
+      </control>
+      <control type="button" id="70042">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Lista de reprodução</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>Dialog.Close(all,true)</onclick>
+        <onclick>ActivateWindow(videoplaylist)</onclick>
+        <visible>Integer.IsGreater(Playlist.Length(video),1)</visible>
+      </control>
+      <control type="button" id="804">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Menu do vídeo</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>PlayerControl(ShowVideoMenu)</onclick>
+        <visible>VideoPlayer.HasMenu</visible>
+      </control>
+      <control type="button" id="70040">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Canais</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>Dialog.Close(VideoOSD)</onclick>
+        <onclick>ActivateWindow(PVROSDChannels)</onclick>
+        <visible>VideoPlayer.Content(livetv)</visible>
+      </control>
+      <control type="button" id="70041">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Guia</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>Dialog.Close(VideoOSD)</onclick>
+        <onclick>ActivateWindow(pvrchannelguide)</onclick>
+        <visible>VideoPlayer.Content(livetv) + VideoPlayer.HasEPG</visible>
+      </control>
+      <control type="button" id="70045">
+        <left>0</left>
+        <top>0</top>
+        <width>190</width>
+        <height>62</height>
+        <label>Teletexto</label>
+        <font>font_small</font>
+        <textcolor>text</textcolor>
+        <focusedcolor>ontext</focusedcolor>
+        <align>center</align>
+        <aligny>center</aligny>
+        <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
+        <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
+        <onclick>Dialog.Close(VideoOSD)</onclick>
+        <onclick>ActivateWindow(Teletext)</onclick>
+        <visible>VideoPlayer.HasTeletext</visible>
+      </control>
+    </control>
+  </controls>
+</window>

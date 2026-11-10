@@ -33,13 +33,6 @@
             <texture>scrim_h.png</texture>
           </control>
           <control type="image">
-            <left>0</left>
-            <top>480</top>
-            <width>1920</width>
-            <height>300</height>
-            <texture>scrim_v.png</texture>
-          </control>
-          <control type="image">
             <left>60</left>
             <top>196</top>
             <width>200</width>
@@ -102,13 +95,6 @@
             <width>1920</width>
             <height>780</height>
             <texture>scrim_h.png</texture>
-          </control>
-          <control type="image">
-            <left>0</left>
-            <top>480</top>
-            <width>1920</width>
-            <height>300</height>
-            <texture>scrim_v.png</texture>
           </control>
           <control type="image">
             <left>60</left>
@@ -182,10 +168,11 @@
           <aligny>center</aligny>
           <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
           <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
-          <onclick>PlayMedia($INFO[Container(9100).ListItem.FileNameAndPath])</onclick>
           <onup>9000</onup>
           <onright>9111</onright>
           <ondown>9500</ondown>
+          <onclick condition="Container(9100).ListItem.IsFolder">ActivateWindow(Videos,$INFO[Container(9100).ListItem.FileNameAndPath],return)</onclick>
+          <onclick condition="!Container(9100).ListItem.IsFolder">PlayMedia($INFO[Container(9100).ListItem.FileNameAndPath])</onclick>
         </control>
         <control type="button" id="9111">
           <left>316</left>
@@ -212,7 +199,7 @@
           <top>540</top>
           <width>240</width>
           <height>64</height>
-          <label>$LOCALIZE[31032]</label>
+          <label>$LOCALIZE[31034]</label>
           <font>font_main</font>
           <textcolor>text</textcolor>
           <focusedcolor>ontext</focusedcolor>
@@ -220,11 +207,11 @@
           <aligny>center</aligny>
           <texturenofocus colordiffuse="panel2" border="16">rounded.png</texturenofocus>
           <texturefocus colordiffuse="accent" border="16">rounded.png</texturefocus>
-          <onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=%23filmes_menu&amp;mode=27&amp;name=&amp;iconimage=&amp;fanart=&amp;description=,return)</onclick>
+          <onclick>RunScript(special://xbmc/addons/plugin.video.smarted/hero_details.py)</onclick>
           <onup>9000</onup>
-          <onleft>9111</onleft>
-          <onleft>9110</onleft>
           <ondown>9500</ondown>
+          <onleft condition="!String.IsEmpty(Container(9100).ListItem.Trailer)">9111</onleft>
+          <onleft condition="String.IsEmpty(Container(9100).ListItem.Trailer)">9110</onleft>
         </control>
       </control>
     </control>
@@ -238,6 +225,11 @@
       <onright>9010</onright>
       <ondown>9110</ondown>
       <content>
+        <item>
+          <label>$LOCALIZE[31035]</label>
+          <onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=root,return)</onclick>
+          <visible>System.HasAddon(plugin.video.BrazucaPlay.Matrix) + System.HasAddon(plugin.video.smarted)</visible>
+        </item>
         <item>
           <label>$LOCALIZE[31023]</label>
           <onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=tv,return)</onclick>

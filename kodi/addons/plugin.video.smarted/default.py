@@ -1,5 +1,6 @@
 """Kodi directory bridge; does not collect or fabricate catalogue data."""
 import sys
+import os
 from urllib.parse import parse_qs
 
 import xbmcgui
@@ -36,6 +37,12 @@ def main():
         return
     for label, url in entries:
         item = xbmcgui.ListItem(label=label)
+        category = {'TV ao vivo': 'tv', 'Filmes': 'movies', 'Séries': 'series',
+                    'Doramas': 'doramas', 'Animes': 'animes', 'Novelas': 'novelas',
+                    'Desenhos': 'desenhos'}.get(label)
+        if category:
+            art = os.path.join(os.path.dirname(__file__), 'resources', 'categories', category + '.png')
+            item.setArt({'poster': art, 'thumb': art, 'icon': art})
         xbmcplugin.addDirectoryItem(handle, url, item, isFolder=True)
     xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
 

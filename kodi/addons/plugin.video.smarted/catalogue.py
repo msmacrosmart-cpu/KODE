@@ -113,7 +113,9 @@ def recent_movies(rpc, limit=10):
     result = []
     for item in directory(rpc, folder):
         entry = _entry(item)
-        if entry:
+        # Skip non-playable command entries in the hero. They remain accessible
+        # through the add-on's native menu, but cannot be played as movies.
+        if entry and (entry['folder'] or entry['playable']):
             result.append(entry)
         if len(result) >= limit:
             break

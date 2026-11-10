@@ -67,13 +67,14 @@ class SkinContracts(unittest.TestCase):
         home = ET.parse(SKIN / 'xml' / 'Home.xml').getroot()
         menu = home.find(".//control[@id='9000']/content")
         entries = [(i.findtext('label'), i.findtext('onclick'), i.findtext('visible')) for i in menu.findall('item')]
-        self.assertEqual([x[0] for x in entries[:4]],
-                         ['$LOCALIZE[31023]', '$LOCALIZE[31001]', '$LOCALIZE[31002]', '$LOCALIZE[31015]'])
-        self.assertTrue(all('System.HasAddon(plugin.video.BrazucaPlay.Matrix)' in item[2] for item in entries[:3]))
-        self.assertEqual(entries[3][1], 'ActivateWindow(Settings)')
-        self.assertIn('plugin.video.smarted/?route=tv', entries[0][1])
-        self.assertIn('plugin.video.smarted/?route=movies', entries[1][1])
-        self.assertTrue(all('Skin.HasSetting(SmartedFullMode)' in (item[2] or '') for item in entries[4:]))
+        self.assertEqual([x[0] for x in entries[:5]],
+                         ['$LOCALIZE[31035]', '$LOCALIZE[31023]', '$LOCALIZE[31001]', '$LOCALIZE[31002]', '$LOCALIZE[31015]'])
+        self.assertTrue(all('System.HasAddon(plugin.video.BrazucaPlay.Matrix)' in item[2] for item in entries[:4]))
+        self.assertEqual(entries[4][1], 'ActivateWindow(Settings)')
+        self.assertIn('plugin.video.smarted/?route=root', entries[0][1])
+        self.assertIn('plugin.video.smarted/?route=tv', entries[1][1])
+        self.assertIn('plugin.video.smarted/?route=movies', entries[2][1])
+        self.assertTrue(all('Skin.HasSetting(SmartedFullMode)' in (item[2] or '') for item in entries[5:]))
         logo = home.find(".//control[@id='8999']")
         actions = logo.findall('onclick')
         self.assertEqual(len(actions), 8)
@@ -115,7 +116,7 @@ class BrazucaRoutes(unittest.TestCase):
         routes = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(routes)
         expected = {
-            'TV ao vivo': (21, '#menu_canais'), 'Filmes': (27, '#filmes_menu'),
+            'TV ao vivo': (21, '#menu_canais'), 'Opções de TV': (21, '#menu_canais'), 'Filmes': (27, '#filmes_menu'),
             'Séries': (27, '#series_menu'), 'Novelas': (25, '#novelas_menu'),
             'Animes': (22, '#animes_menu'), 'Doramas': (31, '#doramas_menu'),
             'Desenhos': (28, '#desenhos_menu'),
@@ -123,7 +124,7 @@ class BrazucaRoutes(unittest.TestCase):
         self.assertTrue(routes.items('series')[0][1].startswith(routes.SMARTED))
         self.assertEqual(routes.items('tv')[0][1], routes.brazuca(21, '#menu_canais'))
         self.assertEqual(routes.items('tv')[1][1], routes.smarted('search-channels'))
-        entries = routes.items('root')[:2] + routes.items('series')[1:]
+        entries = [routes.items('tv')[0]] + routes.items('root')[3:] + routes.items('series')[1:]
         for label, url in entries:
             with self.subTest(label=label):
                 parsed = urlsplit(url)
@@ -143,7 +144,10 @@ class BrazucaRoutes(unittest.TestCase):
         routes = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(routes)
         calls = []
-        gui = types.SimpleNamespace(ListItem=lambda **kw: kw)
+        class Item:
+            def __init__(self, **kw): self.label = kw['label']; self.art = {}
+            def setArt(self, art): self.art = art
+        gui = types.SimpleNamespace(ListItem=Item)
         plugin = types.SimpleNamespace(
             addDirectoryItem=lambda *a, **kw: calls.append(('item', a, kw)),
             endOfDirectory=lambda *a, **kw: calls.append(('end', a, kw)))

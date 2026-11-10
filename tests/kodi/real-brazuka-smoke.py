@@ -90,6 +90,31 @@ try:
         xbmc.sleep(500)
     else:
         raise RuntimeError('local Kodi player did not advance')
+    # Open the actual NovaTV OSD and operate its native play/pause control.
+    xbmc.executebuiltin('ActivateWindow(VideoOSD)')
+    for _ in range(30):
+        if xbmc.getCondVisibility('Window.IsVisible(VideoOSD)'):
+            break
+        xbmc.sleep(200)
+    else:
+        raise RuntimeError('VideoOSD did not open')
+    xbmc.executebuiltin('SendClick(12901,602)')
+    for _ in range(30):
+        state = rpc('Player.GetProperties', {'playerid': video['playerid'], 'properties': ['speed']})
+        if state.get('speed') == 0:
+            break
+        xbmc.sleep(200)
+    else:
+        raise RuntimeError('OSD pause did not pause the local video')
+    xbmc.executebuiltin('SendClick(12901,602)')
+    for _ in range(30):
+        state = rpc('Player.GetProperties', {'playerid': video['playerid'], 'properties': ['speed']})
+        if state.get('speed') == 1:
+            break
+        xbmc.sleep(200)
+    else:
+        raise RuntimeError('OSD resume did not resume the local video')
+    xbmc.log('SMARTED_TEST_NOVATV_OSD_PAUSE_OK', xbmc.LOGWARNING)
     rpc('Player.Stop', {'playerid': video['playerid']})
     xbmc.log('SMARTED_TEST_LOCAL_KODI_PLAYER_OK', xbmc.LOGWARNING)
 except Exception as exc:
