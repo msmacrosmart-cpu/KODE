@@ -28,3 +28,7 @@ A entrega 1.0.18 **não satisfez** todos estes critérios. Abrir menus, verifica
 
 - [ ] Validar com o backup real em ambiente protegido, sem comprometer dados existentes; assinar com a mesma chave e versionCode crescente.
 - [ ] Testar instalação/atualização ARM64 e reprodução no aparelho. A versão universal é uma etapa posterior.
+
+## Correção de inicialização 1.0.20
+
+A inspeção identificou que o APK 1.0.19 perdeu `classes3.dex` no reempacotamento: o `Splash` referenciava classes de bootstrap que não estavam presentes, uma causa plausível de fechamento na abertura. Sem o log do aparelho, não é possível confirmar se essa foi a única causa. Na 1.0.20 o DEX foi recuperado da 1.0.18 e todos os três DEX foram comparados byte a byte; `tools/kodi/restore-multidex.py` impede que o reempacotamento prossiga com código divergente ou multidex incompleto. A assinatura e o versionCode crescente foram verificados. Os assets e bibliotecas nativas foram comparados com a 1.0.19, incluindo o perfil incorporado. O `libkodi.so` e o `playercorefactory.xml` são os mesmos arquivos oficiais já presentes na 1.0.16; não é uma troca de player nem prova de reprodução remota. A abertura e a reprodução no aparelho ainda precisam ser verificadas. Nunca desinstalar nem apagar os dados para atualizar.
