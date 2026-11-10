@@ -1,0 +1,55 @@
+name: Inspecionar compilação teclado Android
+on:
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: kodi-teclado-compilacao-intermediaria
+          run-id: 42775900278
+          github-token: ${{ github.token }}
+          path: candidate
+      - name: Baixar APK publicado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v1.0.15-smarted-test -R "$GITHUB_REPOSITORY" --pattern 'SMARTED-TV-v1.0.15-arm64-teste.apk' --dir previous
+          echo '1cb892b1103a3a42a2ed846825c93ae7075cccf9260b7b451d61c1b23ea827e0  previous/SMARTED-TV-v1.0.15-arm64-teste.apk' | sha256sum -c -
+      - name: Comparar pacote, versão, bibliotecas e recursos
+        run: |
+          python3 -m pip install --quiet pyaxmlparser
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          from hashlib import sha256
+          from pyaxmlparser import APK
+          old = next(Path('previous').glob('*.apk'))
+          candidates = list(Path('candidate').rglob('*.apk'))
+          print('Candidatos encontrados:', [str(x) for x in candidates])
+          assert len(candidates) == 1, 'Esperado um único APK intermediário'
+          new = candidates[0]
+          for label, path in [('ANTERIOR', old), ('INTERMEDIÁRIO', new)]:
+              p = APK(str(path))
+              print(label, 'arquivo=', path.name, 'bytes=', path.stat().st_size,
+                    'sha256=', sha256(path.read_bytes()).hexdigest(),
+                    'pacote=', p.package, 'versão=', p.version_name, 'versionCode=', p.version_code,
+                    'minSdk=', p.get_min_sdk_version(), 'targetSdk=', p.get_target_sdk_version())
+          with ZipFile(old) as a, ZipFile(new) as b:
+              aa, bb = set(a.namelist()), set(b.namelist())
+              only_a, only_b = sorted(aa - bb), sorted(bb - aa)
+              changed = sorted(x for x in aa & bb if not x.endswith('/') and sha256(a.read(x)).digest() != sha256(b.read(x)).digest())
+              print('Arquivos apenas no anterior:', len(only_a)); print('\n'.join(only_a[:100]))
+              print('Arquivos apenas no intermediário:', len(only_b)); print('\n'.join(only_b[:100]))
+              print('Arquivos diferentes no mesmo caminho:', len(changed)); print('\n'.join(changed[:150]))
+              for n in ['classes.dex', 'lib/arm64-v8a/libkodi.so', 'system/settings/android.xml', 'assets/system/settings/android.xml']:
+                  print(n, 'anterior=', n in aa, 'intermediário=', n in bb)
+              lib = 'lib/arm64-v8a/libkodi.so'
+              assert lib in bb
+              Path('candidate-libkodi.so').write_bytes(b.read(lib))
+          PY
+          readelf -d candidate-libkodi.so | grep NEEDED || true
