@@ -27,8 +27,19 @@ jobs:
           python3 tools/android/patch-splash-for-seed.py "$RUNNER_TEMP/decoded"
           python3 tools/kodi/stage-smarted-bridge.py "$RUNNER_TEMP/decoded"
           cp tests/kodi/bridge-smoke.py "$RUNNER_TEMP/decoded/assets/addons/plugin.video.smarted/bridge-smoke.py"
+          # Marker is injected only into this synthetic APK; query text is not logged.
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          p = Path(os.environ['RUNNER_TEMP'])/'decoded/assets/addons/plugin.video.smarted/default.py'
+          s = p.read_text()
+          marker = "    xbmcplugin.endOfDirectory(handle, succeeded=len(failed) < len(SOURCES), cacheToDisc=False)"
+          assert s.count(marker) == 1
+          s = s.replace(marker, "    import xbmc\n    xbmc.log('SMARTED_TEST_SEARCH_COMPLETED results=%d failed=%d' % (len(results), len(failed)), xbmc.LOGWARNING)\n" + marker)
+          p.write_text(s)
+          PY
           cat > "$RUNNER_TEMP/decoded/assets/system/keymaps/zzz-smarted-bridge-test.xml" <<'EOF'
-          <keymap><global><keyboard><f7>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=series,return)</f7><f8>RunScript(special://xbmc/addons/plugin.video.smarted/bridge-smoke.py)</f8></keyboard></global></keymap>
+          <keymap><global><keyboard><f7>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=series,return)</f7><f8>RunScript(special://xbmc/addons/plugin.video.smarted/bridge-smoke.py)</f8><f9>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=search-series,return)</f9></keyboard></global></keymap>
           EOF
           mkdir -p "$RUNNER_TEMP/decoded/assets/smarted" "$RUNNER_TEMP/sources/org/smartedtv/bootstrap" "$RUNNER_TEMP/classes" "$RUNNER_TEMP/dex"
           cp tools/android/src/org/smartedtv/bootstrap/*.java "$RUNNER_TEMP/sources/org/smartedtv/bootstrap/"
