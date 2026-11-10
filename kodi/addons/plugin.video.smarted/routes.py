@@ -10,7 +10,10 @@ SMARTED = 'plugin://plugin.video.smarted/'
 
 
 def brazuca(mode, url):
-    return BRAZUCA + '?' + urlencode({'url': url, 'mode': mode})
+    # Brazuca 2.1.4 passes these fields to quote_plus; omitted values become
+    # None and can crash its menu construction. Blank values are intentional.
+    return BRAZUCA + '?' + urlencode({'url': url, 'mode': mode, 'name': '',
+                                     'iconimage': '', 'fanart': '', 'description': ''})
 
 
 def smarted(route):

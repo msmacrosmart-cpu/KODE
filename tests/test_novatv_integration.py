@@ -71,6 +71,10 @@ class SkinContracts(unittest.TestCase):
                          ['$LOCALIZE[31023]', '$LOCALIZE[31001]', '$LOCALIZE[31002]', '$LOCALIZE[31015]'])
         self.assertTrue(all('System.HasAddon(plugin.video.BrazucaPlay.Matrix)' in item[2] for item in entries[:3]))
         self.assertEqual(entries[3][1], 'ActivateWindow(Settings)')
+        for _, action, _ in entries[:2]:
+            url = action.split('Videos,', 1)[1].rsplit(',return)', 1)[0]
+            params = parse_qs(urlsplit(url).query, keep_blank_values=True)
+            self.assertTrue(all(params.get(k) == [''] for k in ('name', 'iconimage', 'fanart', 'description')))
         self.assertTrue(all('Skin.HasSetting(SmartedFullMode)' in (item[2] or '') for item in entries[4:]))
         logo = home.find(".//control[@id='8999']")
         actions = logo.findall('onclick')
@@ -126,7 +130,8 @@ class BrazucaRoutes(unittest.TestCase):
                 self.assertEqual(parsed.scheme, 'plugin')
                 self.assertEqual(parsed.netloc, 'plugin.video.BrazucaPlay.Matrix')
                 self.assertFalse(parsed.fragment)
-                args = parse_qs(parsed.query)
+                args = parse_qs(parsed.query, keep_blank_values=True)
+                self.assertTrue(all(args.get(k) == [''] for k in ('name', 'iconimage', 'fanart', 'description')))
                 mode, target = expected[label]
                 self.assertEqual((int(args['mode'][0]), args['url'][0]), (mode, target))
         self.assertTrue(routes.items('root')[2][1].startswith(routes.SMARTED))
