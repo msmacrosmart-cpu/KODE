@@ -1,6 +1,6 @@
 # Integração NovaTV e backup — em andamento
 
-Esta alteração **ainda não gera um APK de integração** e não substitui a versão 1.0.16 aprovada. A Home, configurações e sequência de desbloqueio passaram em emulador isolado; complementos e reprodução ainda não foram validados.
+**A versão 1.0.18 foi entregue, mas não cumpriu todos os requisitos**: o usuário relatou falha na reprodução, e layout, player, widgets e migração real ainda precisam de trabalho. A Home, configurações e sequência de desbloqueio passaram em emulador isolado; isso não valida reprodução. O estado e critérios atuais estão em `docs/aceitacao-smarted.md`. O texto abaixo é um histórico da integração e testes, não uma afirmação de que a versão entregue esteja concluída.
 
 ## Referências examinadas
 
