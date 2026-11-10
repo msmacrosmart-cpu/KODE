@@ -1,0 +1,56 @@
+name: Testar candidato de teclado em emulador
+on:
+  push:
+    branches: [arena/03cbbc5b-kode]
+    paths: [.github/workflows/test-keyboard-emulator.yml]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  emulator:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: smarted-teclado-nao-assinado
+          run-id: 42785178774
+          github-token: ${{ github.token }}
+          path: candidate
+      - name: Habilitar aceleração do emulador
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Assinar somente para o emulador isolado
+        run: |
+          keytool -genkeypair -keystore "$RUNNER_TEMP/debug.jks" -alias debug -dname 'CN=Temporary Debug' -keyalg RSA -keysize 2048 -validity 2 -storepass android -keypass android
+          TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          "$TOOLS/apksigner" sign --ks "$RUNNER_TEMP/debug.jks" --ks-pass pass:android --key-pass pass:android --out "$RUNNER_TEMP/debug.apk" candidate/aligned.apk
+      - name: Inicializar e examinar o aplicativo
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            set -e
+            echo "::notice title=ABI do emulador::$(adb shell getprop ro.product.cpu.abilist | tr -d '\r')"
+            adb install "$RUNNER_TEMP/debug.apk"
+            adb logcat -c
+            adb shell am start -n org.xbmc.kodi/.Splash
+            sleep 120
+            adb shell input keyevent 4 || true
+            adb shell input keyevent 66 || true
+            sleep 30
+            adb logcat -d -v brief > "$RUNNER_TEMP/logcat.txt"
+            PID=$(adb shell pidof org.xbmc.kodi | tr -d '\r')
+            echo "::notice title=Resultado da inicialização::PID do aplicativo: ${PID:-ausente}"
+            grep -E -i 'FATAL EXCEPTION|UnsatisfiedLinkError|NoClassDefFoundError|AndroidRuntime|XBMCNativeKeyboard' "$RUNNER_TEMP/logcat.txt" | tail -20 > "$RUNNER_TEMP/errors.txt" || true
+            python3 -c "import os; from pathlib import Path; p=Path(os.environ['RUNNER_TEMP'])/'errors.txt'; t=p.read_text(errors='replace') or 'Nenhuma falha JNI/Java encontrada no log filtrado.'; print('::notice title=Log filtrado::'+t[-3500:].replace('%','%25').replace('\\n','%0A'))"
+            test -n "$PID"
+      - name: Diagnóstico do emulador
+        if: failure()
+        run: echo '::notice title=Diagnóstico::O emulador não validou o aplicativo. Verifique ABI, inicialização e logs antes de criar uma atualização.'
