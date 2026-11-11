@@ -411,3 +411,52 @@ commit `d0320fa`) — asset `SMARTED-TV-v1.0.33-arm64.apk`, 241.549.982 B.
 URL: `https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.33-smarted-arm64/SMARTED-TV-v1.0.33-arm64.apk`.
 A release 1.0.32 (241.545.788 B) foi preservada intacta. Candidato local
 `/tmp/unsigned-1033.apk` (240.906.426 B, sha256 `1bcbc870…`), `verify-boot-integrity` **8/8 OK**.
+
+---
+
+## v1.0.34 — linhas da Home com conteúdo real (rodada 9)
+
+**Problema:** as linhas da Home mostravam as **pastas** do addon
+("CATEGORIA: GÊNEROS", "TODAS SÉRIES") em vez de filmes, séries e canais, e a
+navegação interna abria com `ActivateWindow(10025, …)`.
+
+**Mudanças**
+- `plugin.video.smarted/catalogue.py`: `carousel(rpc, alvo)` + `walk(...)`
+  percorrem a árvore do Brazuca por `Files.GetDirectory` e param no nível de
+  mídia. Alvos: `canais`, `filmes`, `series`, `novelas`, `animes`, `doramas`,
+  `desenhos`. Ramo preferido por heurística (LANÇAMENTOS, TODAS SÉRIES, PLUTO TV)
+  e profundidade máxima por alvo (2–3 chamadas). Nada é inventado.
+- `default.py`: rota `carrossel&alvo=…` com cache diário
+  (`addon_data/plugin.video.smarted/widget-cache/carrossel-<alvo>.json`) e
+  fallback para os favoritos reais da categoria (linha nunca vazia).
+- `Home.xml`: 9200/9201/9202 → `plugin://plugin.video.smarted/?route=carrossel&alvo=…`;
+  nova linha **9206 Favoritos** (`favourites://`, dinâmica); cartazes 168×120 em
+  y=484/630/776/922; hero em 404; 26 botões de categoria passaram a
+  `ActivateWindow(Videos, "plugin://…", return)` (Back nativo).
+- Testes: `tests/test_carrossel_resolver.py` (8 casos) + contrato da Home
+  atualizado. **157 testes OK** (11 skipped).
+- Emulador: `tests/kodi/home-carrossel-smoke.py`,
+  `tools/android/smoke-home-carrossel.sh`, `tools/android/stage-public-addons.py`
+  e workflow `home-carrossel-emulator.yml`.
+
+**Evidência do emulador (run `43093257501`, Android 13 x86_64, addon público 2.1.4)**
+```
+CAddonMgr::FindAddons: plugin.video.BrazucaPlay.Matrix v2.1.4 installed
+SMARTED_TEST_CARROSSEL SERIES total=20 midia=0 arte=20 menu=0
+  #BLACKAF | directory | image://image.tmdb.org/…w300_and_h450…
+  007: ESTRADA PARA O MILHÃO | directory | image://image.tmdb.org/…
+  100 ANOS DA WARNER BROS. | directory | image://image.tmdb.org/…
+```
+Ou seja: a linha de Séries deixou de mostrar o menu e passou a mostrar as capas
+reais das séries. O run falhou em seguida no **check de navegação** por um
+`Files.GetDirectory: Invalid params` transitório (o Kodi estava abrindo a janela
+de vídeos); o check foi refeito com novas tentativas no commit seguinte e o run
+`43095300204` **ficou preso na fila do GitHub Actions** (runner não alocado).
+
+**Como reproduzir/confirmar:**
+1. rodar o workflow `Validar carrossel da Home em emulador` (workflow_dispatch);
+2. ler `docs/emulador-diagnostico.md`, seção `marcadores.txt`:
+   `CANAIS/FILMES/SERIES total=… midia=… arte=… menu=0` e `_OK`.
+
+**Release:** `v1.0.34-smarted-arm64` (run `43081018007`, success) —
+`SMARTED-TV-v1.0.34-arm64.apk`, 241.549.982 B, sha256 `3b8aa840…bd3f`.
