@@ -800,11 +800,25 @@
 		<value>$INFO[ListItem.Duration,$LOCALIZE[180]: ][CR]$VAR[VideoCodecVar,, ]$INFO[ListItem.VideoResolution,| , ]$VAR[VideoResolutionTypeVar,, ]$VAR[VideoHDRVar,| , ]$INFO[ListItem.VideoAspect,| ,:1 ]$VAR[AudioCodecVar,| , ]$VAR[AudioChannelsVar]</value>
 	</variable>
 	<variable name="SecretClickLabelVar">
-		<value condition="Integer.IsGreater(Skin.String(secret_click_count),0)">$INFO[Skin.String(secret_click_count)]/8</value>
-		<value>0/8</value>
+		<value condition="Skin.HasSetting(secret_unlocked)">liberado</value>
+		<value condition="Integer.IsGreater(Skin.String(secret_settings_cycle),0)">$INFO[Skin.String(secret_settings_cycle)]/5</value>
+		<value>0/5</value>
 	</variable>
 	<variable name="SecretUnlockedVar">
-		<value condition="Integer.IsGreaterOrEqual(Skin.String(secret_click_count),8) + Integer.IsGreaterOrEqual(Skin.String(secret_settings_cycle),2)">1</value>
+		<value condition="Skin.HasSetting(secret_unlocked)">1</value>
 		<value>0</value>
+	</variable>
+	<variable name="ItemArt">
+		<value condition="!String.IsEmpty(ListItem.Art(poster))">$INFO[ListItem.Art(poster)]</value>
+		<value condition="!String.IsEmpty(ListItem.Art(thumb))">$INFO[ListItem.Art(thumb)]</value>
+		<value condition="!String.IsEmpty(ListItem.Icon)">$INFO[ListItem.Icon]</value>
+		<value>$INFO[ListItem.Thumb]</value>
+	</variable>
+	<variable name="ItemLand">
+		<value condition="!String.IsEmpty(ListItem.Art(landscape))">$INFO[ListItem.Art(landscape)]</value>
+		<value condition="!String.IsEmpty(ListItem.Art(thumb))">$INFO[ListItem.Art(thumb)]</value>
+		<value condition="!String.IsEmpty(ListItem.Art(poster))">$INFO[ListItem.Art(poster)]</value>
+		<value condition="!String.IsEmpty(ListItem.Icon)">$INFO[ListItem.Icon]</value>
+		<value>$INFO[ListItem.Thumb]</value>
 	</variable>
 </includes>

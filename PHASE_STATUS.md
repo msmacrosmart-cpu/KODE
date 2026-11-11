@@ -312,3 +312,37 @@
 - Teste de regressão novo em `tests/test_skin_phone_layout.py`
   (`test_icones_da_barra_superior_centrados_no_botao`) compara botão × ícone ancorados em `right`.
 - Suíte: **115 testes OK** (9 skipped). `verify-boot-integrity.py` no candidato: **7/7 OK**.
+
+### v1.0.32 — navegação real do addon, favoritos sincronizados na Home e novo unlock (2026-11-11)
+
+Pedido desta rodada: (1) restaurar/preservar **toda** a árvore de navegação do Brazuca Play,
+(2) trocar o desbloqueio por **5 entradas consecutivas em Ajustes**, (3) ligar TV ao vivo /
+Filmes / Séries da Home aos **favoritos sincronizados** do add-on (cartazes iguais aos da grade
+do add-on), (4) manter o ícone do botão Add-ons corrigido na 1.0.31.
+
+| Área | Arquivo | O que mudou |
+|---|---|---|
+| Navegação | `xml/Home.xml` | novo botão **Brazuca Play** (`id=9022` → `mode=0`, menu raiz do add-on); TV ao vivo/Filmes/Séries → `mode=15&url=canais|filmes|series`; Novelas/Animes/Doramas/Desenhos seguem abrindo as pastas originais; nada foi substituído por lista estática |
+| Linhas da Home | `xml/Home.xml` (9200/9201/9202) | três linhas de **cartazes** (210×150, `$VAR[ItemArt]`, `aspectratio keep`) alimentadas por `plugin://plugin.video.smarted/?route=favoritos-<categoria>` |
+| Variáveis | `xml/Variables.xml` | `ItemArt`/`ItemLand` passaram a existir de fato (antes eram usadas e não definidas → cartazes vazios); `SecretUnlockedVar` agora lê `Skin.HasSetting(secret_unlocked)` |
+| Favoritos | `plugin.video.smarted/favorites.py` | leitor de `addon_data/plugin.video.BrazucaPlay.Matrix/favorites.dat` (mesma fonte da aba Favoritos): decodifica `base64(b16(...))`, remonta a URL nativa (`mode=11/16` toca, resto abre pasta) e **nunca escreve** no arquivo |
+| Favoritos | `plugin.video.smarted/default.py` | rota `favoritos-<categoria>` (cartazes + `IsPlayable`) usada pelas linhas da Home |
+| Unlock | `service.smarted.bootstrap/check.py` | `SETTINGS_VISITS_TO_UNLOCK = 5`; a cada abertura de Ajustes (`onload` → `secret-cycle`) soma 1 e na 5ª executa `Skin.SetBool(secret_unlocked)` + `Notification(SMARTEDTV, Modo avancado liberado)`; comando antigo de clique na logo virou reset |
+| Unlock | `xml/Settings.xml` | 9 opções administrativas (File Manager, Info do Sistema, Event Log, Perfis, Sistema, Configurações Avançadas, Diagnóstico, Restaurar atalhos, LibreELEC) só aparecem com `Skin.HasSetting(secret_unlocked)`; aviso discreto “Modo avançado ativo” |
+| Unlock | `xml/Includes_SecretUnlock.xml` | reescrito para o novo modelo (sem `secret_click_count`, sem botão sobre a logo); Home perdeu os 4 botões invisíveis de clique |
+| Atalhos do Kodi | `service.smarted.bootstrap/favourites.py` | os 3 primeiros atalhos passaram a apontar para os favoritos sincronizados (`mode=15`), seguidos das pastas do add-on |
+| Build | `tools/kodi/verify-boot-integrity.py` | versão da skin deixou de ser hardcoded (lê `SKIN_VERSION` do script de build) |
+
+**Versões:** skin `SMARTEDTV 1.0.3`, ponte `plugin.video.smarted 0.2.1`, bootstrap `1.0.3`, APK `1.0.32` (code `2103018`).
+
+**Validação**
+- `python3 -m unittest discover -s tests -p "test_*.py"` → **148 testes OK** (9 skipped sem `SMARTED_PROFILE`),
+  incluindo `tests/test_advanced_unlock.py` (5 entradas liberam, 4 não, restart preserva, comando antigo reseta)
+  e `tests/test_bridge_favorites.py` (12 testes de decodificação/rota/read-only).
+- Árvore do add-on executada de verdade no harness offline: `mode=0` → 10 itens; `#menu_canais` → PLUTO TV;
+  `#pluto_menu` → 14 categorias; `#filmes_menu` → busca/gêneros/lançamentos/alfabética/trilogia;
+  `#filmes_por_generos_menu` → gêneros com paginação; `#series_menu` → busca/todas as séries.
+  Detalhes em `docs/navegacao-brazuca-play.md`.
+- Favoritos: `mode=15&url=canais|filmes|series` devolveu itens reais (canais/filmes `folder=false`, séries `folder=true`).
+- APK candidato `/tmp/unsigned-1032.apk` (240.903.163 B, sha256 `fa8633cd…234e5a`): `verify-boot-integrity.py` **7/7 OK**;
+  Home/Settings/ponte/bootstrap conferidos dentro do APK (botão raiz presente, zero `secret-click`, 3 rotas de favoritos).

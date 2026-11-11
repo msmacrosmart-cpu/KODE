@@ -34,6 +34,21 @@ OLD_SKIN_LINE = '<setting id="lookandfeel.skin" default="true">skin.estuary</set
 NEW_SKIN_LINE = '<setting id="lookandfeel.skin">skin.novatv</setting>'
 EXPECTED_MANIFEST_SHA256 = "1447de816a44ecc11c42c2c315cf20e61c9baa037e914a13293711cf152d1ede"
 SKIN_ADDON_XML = "assets/addons/skin.novatv/addon.xml"
+BUILD_SCRIPT = Path(__file__).resolve().parent / "build-release-apk.py"
+
+
+def expected_skin_version() -> str:
+    """Versao da skin vem do script de build (evita quebrar a cada release)."""
+    import re
+
+    try:
+        text = BUILD_SCRIPT.read_text(encoding="utf-8")
+        match = re.search(r'SKIN_VERSION\s*=\s*"([^"]+)"', text)
+        if match:
+            return match.group(1)
+    except OSError:
+        pass
+    return "1.0.3"
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -107,7 +122,9 @@ def main():
 
             root = ET.fromstring(z.read(SKIN_ADDON_XML))
             check("skin.novatv addon id", root.get("id") == "skin.novatv", f"got {root.get('id')}")
-            check("skin.novatv version", root.get("version") == "1.0.2", f"got {root.get('version')}")
+            wanted = expected_skin_version()
+            check("skin.novatv version", root.get("version") == wanted,
+                  f"got {root.get('version')} (esperado {wanted})")
             # the dex rewrites the skin line to skin.novatv — skin must load that id
         else:
             check("skin.novatv addon.xml present", False, SKIN_ADDON_XML)

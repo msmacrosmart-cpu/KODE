@@ -23,10 +23,13 @@ import service
 from favourites import ensure_favourites
 from performance import ensure_performance
 
-# valor máximo de cada contador (o unlock usa >= 8 cliques e >= 2 ciclos)
+# Novo desbloqueio (v1.0.32): 5 entradas consecutivas em Ajustes. Sem cliques
+# na logo, sem etapa extra. O resultado é gravado como skin bool
+# (``secret_unlocked``), que persiste em addon_data/skin.novatv/settings.xml —
+# ou seja, continua liberado depois de reiniciar o app.
+SETTINGS_VISITS_TO_UNLOCK = 5
 SECRET_LIMITS = {
-    'secret_click_count': 8,
-    'secret_settings_cycle': 2,
+    'secret_settings_cycle': SETTINGS_VISITS_TO_UNLOCK,
 }
 
 
@@ -40,6 +43,31 @@ def _current(name):
 
 def _store(name, value):
     xbmc.executebuiltin('Skin.SetString(%s,%d)' % (name, max(0, value)))
+
+
+def skin_flag(name):
+    """Lê um skin bool (Skin.HasSetting) sem depender do tema atual."""
+    try:
+        return bool(xbmc.getCondVisibility('Skin.HasSetting(%s)' % name))
+    except Exception:
+        return False
+
+
+def unlock_advanced():
+    xbmc.executebuiltin('Skin.SetBool(secret_unlocked)')
+    xbmc.executebuiltin(
+        'Notification(SMARTEDTV, Modo avancado liberado, 4000)')
+
+
+def bump_settings_visits():
+    """Conta entradas em Ajustes e libera o modo avançado na 5ª."""
+    if skin_flag('secret_unlocked'):
+        return SETTINGS_VISITS_TO_UNLOCK
+    visits = min(SETTINGS_VISITS_TO_UNLOCK, _current('secret_settings_cycle') + 1)
+    _store('secret_settings_cycle', visits)
+    if visits >= SETTINGS_VISITS_TO_UNLOCK:
+        unlock_advanced()
+    return visits
 
 
 def bump_secret(name):
@@ -57,22 +85,18 @@ def reset_secret(name):
 
 def handle_skin_command(command):
     """Executa um comando vindo da skin. Retorna True se tratou o comando."""
-    if command == 'secret-click':
-        bump_secret('secret_click_count')
-        return True
     if command == 'secret-cycle':
-        bump_secret('secret_settings_cycle')
-        return True
-    if command == 'secret-reset':
-        reset_secret('secret_click_count')
+        bump_settings_visits()
         return True
     if command == 'performance':
         return apply_performance()
     if command == 'favoritos':
         return restore_favourites()
-    if command in ('secret-full-reset', 'secret reset all'):
-        reset_secret('secret_click_count')
+    if command in ('secret-click', 'secret-reset',
+                   'secret-full-reset', 'secret reset all'):
+        # modelo antigo (cliques na logo): desativado, mas aceito sem erro
         reset_secret('secret_settings_cycle')
+        xbmc.executebuiltin('Skin.Reset(secret_unlocked)')
         return True
     return False
 

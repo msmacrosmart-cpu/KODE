@@ -31,6 +31,9 @@ def main():
     if route == 'channel-favorites':
         channel_favorites(handle)
         return
+    if route.startswith('favoritos-'):
+        favorites_window(handle, route.split('-', 1)[1])
+        return
     entries = items(route)
     if not entries:
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
@@ -164,6 +167,45 @@ def recent_series(handle):
         info.setYear(int(result['release_date'][:4]))
         xbmcplugin.addDirectoryItem(handle, result['url'], item, isFolder=True)
     xbmcplugin.endOfDirectory(handle, succeeded=len(failed) < len(SOURCES), cacheToDisc=False)
+
+
+FAVORITES_FILE = 'special://profile/addon_data/plugin.video.BrazucaPlay.Matrix/favorites.dat'
+
+
+def favorites_window(handle, category):
+    """Lista os favoritos reais do Brazuca Play (mesma fonte da aba Favoritos).
+
+    Usado pelas linhas da Home: le apenas o favorites.dat do addon e devolve os
+    itens com a URL nativa dele, para o OK tocar o canal/filme ou abrir a pasta.
+    """
+    import xbmc
+    import xbmcvfs
+    from favorites import favorite_items
+
+    path = xbmcvfs.translatePath(FAVORITES_FILE)
+    try:
+        results = favorite_items(path, category)
+    except Exception:
+        xbmc.log('SMARTED-TV: favoritos indisponiveis (%s)' % category, xbmc.LOGWARNING)
+        xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
+        return
+    if not results:
+        xbmc.log('SMARTED-TV: sem favoritos em %s' % category, xbmc.LOGINFO)
+        xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+        return
+    xbmcplugin.setContent(handle, 'movies')
+    for result in results:
+        item = xbmcgui.ListItem(label=result['label'])
+        item.setArt({'thumb': result['thumb'], 'poster': result['poster'] or result['thumb'],
+                     'icon': result['thumb'] or 'DefaultFolder.png',
+                     'fanart': result['fanart']})
+        info = item.getVideoInfoTag()
+        info.setTitle(result['label'])
+        info.setPlot(result['plot'])
+        info.setMediaType('video')
+        item.setProperty('IsPlayable', 'true' if result['playable'] else 'false')
+        xbmcplugin.addDirectoryItem(handle, result['url'], item, isFolder=result['folder'])
+    xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
 
 
 def channel_favorites(handle):

@@ -24,10 +24,16 @@ PLUGIN = 'plugin://plugin.video.BrazucaPlay.Matrix/'
 THUMB = 'DefaultFolder.png'
 
 # (rótulo, mode, url interna do plugin)
+# As tres primeiras apontam para os FAVORITOS sincronizados do Brazuca Play
+# (mode 15 + categoria) — os mesmos dados que a Home mostra nas linhas 9200/9201/9202.
+# As seguintes abrem as pastas do addon, para navegar em todo o catalogo.
 SHORTCUTS = (
-    ('TV ao vivo', 21, '#menu_canais'),
-    ('Filmes', 27, '#filmes_menu'),
-    ('Séries', 27, '#series_menu'),
+    ('TV ao vivo', 15, 'canais'),
+    ('Filmes', 15, 'filmes'),
+    ('Séries', 15, 'series'),
+    ('Canais (pastas)', 21, '#menu_canais'),
+    ('Filmes (pastas)', 27, '#filmes_menu'),
+    ('Séries (pastas)', 27, '#series_menu'),
     ('Novelas', 25, '#novelas_menu'),
     ('Animes', 22, '#animes_menu'),
     ('Desenhos', 28, '#desenhos_menu'),

@@ -73,24 +73,163 @@ class PluginCallTest(unittest.TestCase):
 
 
 class SecretUnlockTest(unittest.TestCase):
+    """Modo avançado = 5 entradas consecutivas em Ajustes (v1.0.32)."""
+
     def test_sem_builtin_inexistente_na_skin(self):
         for path in skin_xml_files():
             text = re.sub(r'<!--.*?-->', '', path.read_text(encoding='utf-8'), flags=re.S)
             self.assertNotIn('Skin.SetSetting', text, path.name)
             self.assertNotIn('Skin.GetSetting', text, path.name)
 
-    def test_contadores_passam_pelo_addon_ponte(self):
-        home = (XML / 'Home.xml').read_text(encoding='utf-8')
-        self.assertIn('RunScript(service.smarted.bootstrap,secret-click)', home)
+    def test_cinco_entradas_em_ajustes_liberam_o_modo_avancado(self):
+        source = (BOOTSTRAP / 'check.py').read_text(encoding='utf-8')
+        self.assertIn('SETTINGS_VISITS_TO_UNLOCK = 5', source)
+        self.assertIn("Skin.SetBool(secret_unlocked)", source)
+        self.assertIn('Notification(SMARTEDTV, Modo avancado liberado', source)
+        self.assertIn('def bump_settings_visits', source)
+
+    def test_ajustes_conta_uma_visita_por_abertura(self):
         settings = (XML / 'Settings.xml').read_text(encoding='utf-8')
-        self.assertIn('RunScript(service.smarted.bootstrap,secret-cycle)', settings)
         self.assertIn('<onload>RunScript(service.smarted.bootstrap,secret-cycle)</onload>', settings)
 
-    def test_check_py_implementa_os_comandos(self):
-        source = (BOOTSTRAP / 'check.py').read_text(encoding='utf-8')
-        for command in ('secret-click', 'secret-cycle', 'secret-reset'):
-            self.assertIn(command, source)
-        self.assertIn('Skin.SetString(', source)
+    def test_nao_existe_mais_clique_na_logo(self):
+        home = (XML / 'Home.xml').read_text(encoding='utf-8')
+        self.assertNotIn('secret-click', home)
+        includes = (XML / 'Includes_SecretUnlock.xml').read_text(encoding='utf-8')
+        self.assertNotIn('secret-click', includes)
+        self.assertNotIn('secret_click_count', includes)
+        for path in skin_xml_files():
+            self.assertNotIn('secret_click_count', path.read_text(encoding='utf-8'), path.name)
+
+    def test_modo_basico_esconde_opcoes_administrativas(self):
+        settings = (XML / 'Settings.xml').read_text(encoding='utf-8')
+        avancados = ('File Manager', 'Informa\u00e7\u00f5es do Sistema', 'Event Log', 'Perfis',
+                     'Configura\u00e7\u00f5es Avan\u00e7adas', 'Diagn\u00f3stico Brazuca Play',
+                     'Restaurar atalhos', 'LibreELEC')
+        for rotulo in avancados:
+            bloco = re.search(r'<item>\s*<label>%s</label>.*?</item>' % re.escape(rotulo), settings, re.S)
+            self.assertIsNotNone(bloco, rotulo)
+            self.assertIn('Skin.HasSetting(secret_unlocked)', bloco.group(0), rotulo)
+        # as opcoes do dia a dia continuam sempre visiveis
+        for rotulo in ('Add-ons', 'Apar\u00eancia', 'Interface', 'Reprodutor', 'M\u00eddia',
+                       'TV ao vivo', 'Servi\u00e7os', 'Favoritos', 'Add-ons de v\u00eddeo', 'Energia'):
+            bloco = re.search(r'<item>\s*<label>%s</label>.*?</item>' % re.escape(rotulo), settings, re.S)
+            self.assertIsNotNone(bloco, rotulo)
+            self.assertNotIn('secret_unlocked', bloco.group(0), rotulo)
+
+    def test_confirmacao_discreta_e_persistente(self):
+        settings = (XML / 'Settings.xml').read_text(encoding='utf-8')
+        self.assertIn('Modo avan\u00e7ado ativo', settings)
+        self.assertIn('<visible>Skin.HasSetting(secret_unlocked)</visible>', settings)
+        # Skin.SetBool grava em addon_data/skin.novatv/settings.xml -> sobrevive ao restart
+        variables = (XML / 'Variables.xml').read_text(encoding='utf-8')
+        self.assertNotIn('secret_click_count', variables)
+        self.assertIn('Skin.HasSetting(secret_unlocked)', variables)
+
+
+class HomeBrazucaFavoritosTest(unittest.TestCase):
+    """As tres linhas/botoes da Home vivem dos favoritos do Brazuca Play."""
+
+    def setUp(self):
+        self.home = (XML / 'Home.xml').read_text(encoding='utf-8')
+
+    def test_botoes_abrem_os_favoritos_sincronizados(self):
+        for botao, categoria, rotulo in (('9010', 'canais', 'TV ao vivo'),
+                                         ('9011', 'filmes', 'Filmes'),
+                                         ('9012', 'series', 'S\u00e9ries')):
+            bloco = re.search(r'id="%s">.*?</control>' % botao, self.home, re.S)
+            self.assertIsNotNone(bloco, botao)
+            texto = bloco.group(0)
+            self.assertIn('<label>%s</label>' % rotulo, texto)
+            self.assertIn('mode=15&amp;url=%s' % categoria, texto)
+            self.assertIn('ActivateWindow(10025', texto)
+
+    def test_linhas_da_home_listam_os_favoritos(self):
+        esperado = {'9200': 'favoritos-canais', '9201': 'favoritos-filmes', '9202': 'favoritos-series'}
+        for lista, rota in esperado.items():
+            bloco = re.search(r'<control type="list" id="%s">.*?</control>\n' % lista, self.home, re.S)
+            self.assertIsNotNone(bloco, lista)
+            texto = bloco.group(0)
+            self.assertIn('plugin://plugin.video.smarted/?route=%s' % rota, texto)
+            # cards com poster, como a grade do addon
+            self.assertIn('$VAR[ItemArt]', texto)
+            self.assertIn('<aspectratio>keep</aspectratio>', texto)
+
+    def test_linhas_visiveis_dentro_da_tela(self):
+        for lista, teto in (('9200', 700), ('9201', 890), ('9202', 1080)):
+            bloco = re.search(r'<control type="list" id="%s"><left>\d+</left><top>(\d+)</top>'
+                              r'<right>\d+</right><height>(\d+)</height>' % lista, self.home)
+            self.assertIsNotNone(bloco, lista)
+            top, altura = int(bloco.group(1)), int(bloco.group(2))
+            self.assertLessEqual(top + altura, teto + 20, '%s passa da tela' % lista)
+
+    def test_navegacao_real_dentro_do_addon(self):
+        # o menu completo do addon (pastas, subpastas, canais, filmes, series) continua acessivel
+        self.assertTrue('id="9022"' in self.home, 'falta o botao do menu completo do addon')
+        self.assertTrue('plugin://plugin.video.BrazucaPlay.Matrix/?mode=0' in self.home,
+                        'o botao Brazuca Play deve abrir o menu raiz do addon')
+        atalhos = (BOOTSTRAP / 'favourites.py').read_text(encoding='utf-8')
+        for url in ('#menu_canais', '#filmes_menu', '#series_menu'):
+            self.assertTrue(url in atalhos, 'atalho %s ausente' % url)
+
+    def test_variaveis_de_arte_existem(self):
+        variables = (XML / 'Variables.xml').read_text(encoding='utf-8')
+        self.assertIn('<variable name="ItemArt">', variables)
+        self.assertIn('<variable name="ItemLand">', variables)
+
+
+class NavegacaoCompletaTest(unittest.TestCase):
+    """A arvore original do Brazuca Play continua acessivel a partir da skin.
+
+    Home tem atalhos (favoritos), mas o menu raiz do addon e todas as suas
+    pastas precisam estar a um clique: nada de lista estatica no lugar do addon.
+    """
+
+    def setUp(self):
+        self.home = (XML / 'Home.xml').read_text(encoding='utf-8')
+
+    def test_botao_abre_o_menu_raiz_do_addon(self):
+        bloco = re.search(r'id="9022">.*?</control>', self.home, re.S)
+        self.assertIsNotNone(bloco, 'falta o botao do addon')
+        texto = bloco.group(0)
+        self.assertIn('<label>Brazuca Play</label>', texto)
+        self.assertIn('ActivateWindow(10025', texto)
+        self.assertIn('plugin://plugin.video.BrazucaPlay.Matrix/?mode=0', texto)
+
+    def test_todo_atalho_executa_o_addon_e_nao_uma_lista_da_skin(self):
+        esperado = {
+            '9013': 'mode=25&amp;url=%23novelas_menu',
+            '9014': 'mode=22&amp;url=%23animes_menu',
+            '9015': 'mode=31&amp;url=%23doramas_menu',
+            '9016': 'mode=28&amp;url=%23desenhos_menu',
+        }
+        for botao, rota in esperado.items():
+            bloco = re.search(r'id="%s">.*?</control>' % botao, self.home, re.S)
+            self.assertIsNotNone(bloco, botao)
+            texto = bloco.group(0)
+            self.assertIn('ActivateWindow(10025', texto, botao)
+            self.assertIn(rota, texto, botao)
+            self.assertIn('iconimage=', texto, botao)
+            self.assertIn('fanart=', texto, botao)
+
+    def test_atalhos_de_favoritos_abrem_a_janela_do_addon(self):
+        for botao in ('9010', '9011', '9012'):
+            bloco = re.search(r'id="%s">.*?</control>' % botao, self.home, re.S)
+            self.assertIn('mode=15&amp;url=', bloco.group(0), botao)
+
+    def test_addons_continuam_alcancaveis_pela_barra_superior(self):
+        bloco = re.search(r'id="9124">.*?</control>', self.home, re.S)
+        self.assertIn('ActivateWindow(10040)', bloco.group(0))
+
+    def test_skin_nao_embute_catalogo(self):
+        # nada de canais/filmes ficticios na skin: o conteudo vem do addon
+        proibido = re.search(r'(Globo|SBT|Netflix|Canais\s*<|Movie\s*<)', self.home)
+        self.assertIsNone(proibido, 'a skin nao deve listar canais/filmes fixos')
+
+    def test_ponte_cobre_as_categorias_da_home(self):
+        bridge = (BOOTSTRAP.parents[0] / 'plugin.video.smarted' / 'favorites.py').read_text(encoding='utf-8')
+        for categoria in ('canais', 'filmes', 'series'):
+            self.assertIn("'%s'" % categoria, bridge)
 
 
 class SettingsScreenTest(unittest.TestCase):

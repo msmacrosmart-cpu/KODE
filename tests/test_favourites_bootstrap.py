@@ -35,14 +35,26 @@ class FavouritesModuleTest(unittest.TestCase):
     def path(self):
         return self.home / 'userdata' / 'favourites.xml'
 
-    def test_cria_os_sete_atalhos(self):
+    def test_cria_os_atalhos_do_brazuca_play(self):
         added = favourites.ensure_favourites(str(self.home))
-        self.assertEqual(len(added), 7)
+        self.assertEqual(len(added), len(favourites.SHORTCUTS))
         root = ET.parse(self.path()).getroot()
         self.assertEqual(root.tag, 'favourites')
         names = [node.get('name') for node in root]
-        self.assertEqual(names, ['TV ao vivo', 'Filmes', 'Séries', 'Novelas',
-                                 'Animes', 'Desenhos', 'Doramas'])
+        self.assertEqual(names, ['TV ao vivo', 'Filmes', 'Séries',
+                                 'Canais (pastas)', 'Filmes (pastas)', 'Séries (pastas)',
+                                 'Novelas', 'Animes', 'Desenhos', 'Doramas'])
+
+    def test_primeiros_atalhos_apontam_para_os_favoritos_sincronizados(self):
+        """Os tres atalhos principais leem favorites.json do addon (mode 15)."""
+        favourites.ensure_favourites(str(self.home))
+        root = ET.parse(self.path()).getroot()
+        esperado = {'TV ao vivo': 'canais', 'Filmes': 'filmes', 'Séries': 'series'}
+        for node in list(root)[:3]:
+            nome = node.get('name')
+            self.assertIn(nome, esperado)
+            self.assertIn('mode=15', node.text or '', nome)
+            self.assertIn('url=%s' % esperado[nome], node.text or '', nome)
 
     def test_atalhos_abrem_o_plugin_com_icone_e_fanart(self):
         favourites.ensure_favourites(str(self.home))
@@ -69,22 +81,22 @@ class FavouritesModuleTest(unittest.TestCase):
         root = ET.parse(self.path()).getroot()
         names = [node.get('name') for node in root]
         self.assertEqual(names[0], 'Meu canal')
-        self.assertEqual(len(root), 8)
+        self.assertEqual(len(root), 1 + len(favourites.SHORTCUTS))
 
     def test_nao_duplica_atalho_que_ja_existe(self):
-        action = favourites.shortcut_action('Filmes', 27, '#filmes_menu')
+        action = favourites.shortcut_action('Filmes', 15, 'filmes')
         (self.path()).write_text(
             '<favourites>\n    <favourite name="Filmes">%s</favourite>\n</favourites>\n'
             % action.replace('&', '&amp;'))
         added = favourites.ensure_favourites(str(self.home))
         self.assertNotIn('Filmes', added)
-        self.assertEqual(len(ET.parse(self.path()).getroot()), 7)
+        self.assertEqual(len(ET.parse(self.path()).getroot()), len(favourites.SHORTCUTS))
 
     def test_arquivo_corrompido_e_recriado(self):
         self.path().write_text('lixo que nao e xml')
         added = favourites.ensure_favourites(str(self.home))
-        self.assertEqual(len(added), 7)
-        self.assertEqual(len(ET.parse(self.path()).getroot()), 7)
+        self.assertEqual(len(added), len(favourites.SHORTCUTS))
+        self.assertEqual(len(ET.parse(self.path()).getroot()), len(favourites.SHORTCUTS))
 
 
 class BootServiceTest(unittest.TestCase):

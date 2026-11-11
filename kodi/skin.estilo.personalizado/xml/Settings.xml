@@ -45,6 +45,7 @@
 			<label>AJUSTES</label>
 		</control>
 
+		<control type="label"><right>270</right><top>40</top><width>240</width><height>52</height><font>font10</font><textcolor>pb_muted</textcolor><align>right</align><aligny>center</aligny><label>Modo avançado ativo</label><visible>Skin.HasSetting(secret_unlocked)</visible></control>
 		<control type="button" id="9051">
 			<right>60</right>
 			<top>40</top>
@@ -86,6 +87,7 @@
 					<label>File Manager</label>
 					<onclick>ActivateWindow(filemanager)</onclick>
 					<icon>icons/settings/filemanager.png</icon>
+									<visible>Skin.HasSetting(secret_unlocked)</visible>
 				</item>
 				<item>
 					<label>Add-ons</label>
@@ -96,11 +98,13 @@
 					<label>Informações do Sistema</label>
 					<onclick>ActivateWindow(systeminfo)</onclick>
 					<icon>icons/settings/sysinfo.png</icon>
+									<visible>Skin.HasSetting(secret_unlocked)</visible>
 				</item>
 				<item>
 					<label>Event Log</label>
 					<onclick>ActivateWindow(eventlog)</onclick>
 					<icon>icons/settings/eventlog.png</icon>
+									<visible>Skin.HasSetting(secret_unlocked)</visible>
 				</item>
 				<item>
 					<label>Aparência</label>
@@ -142,29 +146,31 @@
 					<label>Perfis</label>
 					<onclick>ActivateWindow(Profiles)</onclick>
 					<icon>icons/settings/profiles.png</icon>
+									<visible>Skin.HasSetting(secret_unlocked)</visible>
 				</item>
 				<item>
 					<label>Sistema</label>
 					<onclick>ActivateWindow(SystemSettings)</onclick>
 					<icon>icons/settings/system.png</icon>
+									<visible>Skin.HasSetting(secret_unlocked)</visible>
 				</item>
 				<item>
 					<label>Configurações Avançadas</label>
 					<onclick>ActivateWindow(SkinSettings)</onclick>
 					<icon>icons/settings/skin.png</icon>
-					<visible>Integer.IsGreaterOrEqual(Skin.String(secret_click_count),8) + Integer.IsGreaterOrEqual(Skin.String(secret_settings_cycle),2)</visible>
+					<visible>Skin.HasSetting(secret_unlocked)</visible>
 				</item>
 				<item>
 					<label>Diagnóstico Brazuca Play</label>
 					<onclick>RunScript(service.smarted.bootstrap,diagnostico)</onclick>
 					<icon>icons/settings/diagnostics.png</icon>
-					<visible>System.HasAddon(service.smarted.bootstrap)</visible>
+					<visible>(System.HasAddon(service.smarted.bootstrap)) + Skin.HasSetting(secret_unlocked)</visible>
 				</item>
 				<item>
 					<label>LibreELEC</label>
 					<onclick>RunAddon(service.libreelec.settings)</onclick>
 					<icon>icons/settings/libreelec.png</icon>
-					<visible>System.AddonIsEnabled(service.libreelec.settings)</visible>
+					<visible>(System.AddonIsEnabled(service.libreelec.settings)) + Skin.HasSetting(secret_unlocked)</visible>
 				</item>
 				<item>
 					<label>Favoritos</label>
@@ -180,7 +186,7 @@
 					<label>Restaurar atalhos</label>
 					<onclick>RunScript(service.smarted.bootstrap,favoritos)</onclick>
 					<icon>icons/settings/refresh.png</icon>
-					<visible>System.HasAddon(service.smarted.bootstrap)</visible>
+					<visible>(System.HasAddon(service.smarted.bootstrap)) + Skin.HasSetting(secret_unlocked)</visible>
 				</item>
 				<item>
 					<label>Energia</label>
