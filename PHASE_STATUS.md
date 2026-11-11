@@ -405,3 +405,9 @@ Rotas executadas no perfil semeado (primeiro boot, partindo de `skin.estuary`):
 **Limite declarado:** o sandbox não tem `/dev/kvm`, `adb`, `emulator`, `java` nem acesso ao
 repositório do SDK Android, então **não foi possível iniciar um AVD**; a validação é uma
 simulação do fluxo do app (perfil real + skin real + add-on real), não um emulador de hardware.
+
+**Release publicada:** `v1.0.33-smarted-arm64` (run `43018318893`, conclusão `success`,
+commit `d0320fa`) — asset `SMARTED-TV-v1.0.33-arm64.apk`, 241.549.982 B.
+URL: `https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.33-smarted-arm64/SMARTED-TV-v1.0.33-arm64.apk`.
+A release 1.0.32 (241.545.788 B) foi preservada intacta. Candidato local
+`/tmp/unsigned-1033.apk` (240.906.426 B, sha256 `1bcbc870…`), `verify-boot-integrity` **8/8 OK**.
