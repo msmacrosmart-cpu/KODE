@@ -2,9 +2,9 @@
 """Ativa a Nova TV em um APK unsigned, sem tocar no dex/lib.
 
 Aplica no nivel ZIP:
-1. assets/smarted/profile/userdata/guisettings.xml -> skin.novatv
+1. assets/smarted/profile/userdata/guisettings.xml -> skin.estilo.personalizado
 2. os backups do wizard em assets/smarted/profile/My_Builds/*.zip e
-   assets/smarted/profile/SaveData.zip -> guisettings internos com skin.novatv
+   assets/smarted/profile/SaveData.zip -> guisettings internos com skin.estilo.personalizado
 
 Reaproveita activate_guisettings() e rewrite_zip() do activate-novatv.py.
 Os zips internos sao reescritos em memoria (BytesIO); o APK final preserva
@@ -88,7 +88,7 @@ def main() -> None:
         contents[gui] = data
         actions.append(gui)
     else:
-        print(f'  {gui}: ja skin.novatv (sem alteracao)')
+        print(f'  {gui}: ja skin.estilo.personalizado (sem alteracao)')
 
     # 2. Backups do wizard (zips internos)
     for name in BACKUP_NAMES:
@@ -104,7 +104,7 @@ def main() -> None:
             contents[name] = new_data
             actions.append(name)
         else:
-            print(f'  {name}: ja skin.novatv (sem alteracao)')
+            print(f'  {name}: ja skin.estilo.personalizado (sem alteracao)')
 
     # Verificacao final: nenhum guisettings.xml com skin.estuary.
     # (O backup tambem contem skin.py/skin.pyc do wizard com a string

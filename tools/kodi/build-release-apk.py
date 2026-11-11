@@ -18,7 +18,7 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[2]
-SKIN = ROOT / "kodi" / "skin.novatv"
+SKIN = ROOT / "kodi" / "skin.estilo.personalizado"
 BRIDGE = ROOT / "kodi" / "addons" / "plugin.video.smarted"
 SIG = re.compile(r"^META-INF/(?:MANIFEST\.MF|[^/]+\\.(?:SF|RSA|DSA|EC))$", re.I)
 MANIFEST = "assets/system/addon-manifest.xml"
@@ -86,9 +86,9 @@ def main():
     new_code = to_code if to_code is not None else old_code + 1
     print(f"Version: {old_name} ({old_code}) -> {new_name} ({new_code})")
 
-    skin_files = collect(SKIN, "assets/addons/skin.novatv/")
+    skin_files = collect(SKIN, "assets/addons/skin.estilo.personalizado/")
     bridge_files = collect(BRIDGE, "assets/addons/plugin.video.smarted/")
-    if ET.parse(SKIN / "addon.xml").getroot().get("id") != "skin.novatv":
+    if ET.parse(SKIN / "addon.xml").getroot().get("id") != "skin.estilo.personalizado":
         raise SystemExit("Skin ID mismatch")
     if ET.parse(BRIDGE / "addon.xml").getroot().get("id") != "plugin.video.smarted":
         raise SystemExit("Bridge ID mismatch")
@@ -111,7 +111,7 @@ def main():
         addon_manifest = src.read(MANIFEST)
         if addon_manifest.count(b"</addons>") != 1:
             raise SystemExit("Unexpected addon manifest")
-        for addon_id in ("skin.novatv", "plugin.video.smarted"):
+        for addon_id in ("skin.estilo.personalizado", "plugin.video.smarted"):
             if f">{addon_id}<".encode() not in addon_manifest:
                 addon_manifest = addon_manifest.replace(
                     b"</addons>",

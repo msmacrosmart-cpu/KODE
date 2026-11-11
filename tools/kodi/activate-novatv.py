@@ -7,7 +7,7 @@ Dois mecanismos independentes, ambos verificados antes de escrever:
    `lookandfeel.skin` é o default compilado do Kodi. Instalações sem
    preferência salva passam a abrir na Nova TV.
 2. Perfil semeado (assets/smarted/profile/...): instalações novas recebem o
-   perfil com `skin.novatv` ativo, inclusive nos backups do wizard
+   perfil com `skin.estilo.personalizado` ativo, inclusive nos backups do wizard
    (`My_Builds/*.zip`), que o plugin.program.openwizard pode restaurar.
    O `ProfileSeed.setDefaultSkin()` do dex troca apenas a linha
    `<setting id="lookandfeel.skin" default="true">skin.estuary</setting>`;
@@ -30,27 +30,27 @@ import zipfile
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-SKIN_ID = 'skin.novatv'
+SKIN_ID = 'skin.estilo.personalizado'
 SKIN_DEFAULT = re.compile(br'<default>skin\.[a-z0-9_.]+</default>')
 PROFILE_SKIN = re.compile(
     br'<setting id="lookandfeel\.skin"[^>]*>skin\.estuary</setting>')
 
 
 def activate_settings(path: Path) -> bool:
-    """Garante skin.novatv como default em assets/system/settings/settings.xml.
+    """Garante skin.estilo.personalizado como default em assets/system/settings/settings.xml.
 
-    O APK de producao ja vem com skin.novatv aqui; a funcao valida e corrige
+    O APK de producao ja vem com skin.estilo.personalizado aqui; a funcao valida e corrige
     apenas se o default estiver apontando para outra skin.
     """
     data = path.read_bytes()
     matches = SKIN_DEFAULT.findall(data)
     if len(matches) != 1:
         raise SystemExit(f'{path}: esperava um unico <default>skin.*</default>')
-    if matches[0] == b'<default>skin.novatv</default>':
+    if matches[0] == b'<default>skin.estilo.personalizado</default>':
         return False
-    updated = data.replace(matches[0], b'<default>skin.novatv</default>')
+    updated = data.replace(matches[0], b'<default>skin.estilo.personalizado</default>')
     ET.fromstring(updated)
-    if updated.count(b'<default>skin.novatv</default>') != 1:
+    if updated.count(b'<default>skin.estilo.personalizado</default>') != 1:
         raise SystemExit(f'{path}: substituicao nao aplicada')
     path.write_bytes(updated)
     return True
@@ -63,11 +63,11 @@ def activate_guisettings(data: bytes) -> tuple[bytes, bool]:
         raise SystemExit('guisettings: mais de uma linha lookandfeel.skin')
     if len(matches) == 1:
         updated = PROFILE_SKIN.sub(
-            b'<setting id="lookandfeel.skin" default="true">skin.novatv</setting>', data, count=1)
+            b'<setting id="lookandfeel.skin" default="true">skin.estilo.personalizado</setting>', data, count=1)
         if b'skin.estuary' in updated:
             raise SystemExit('guisettings: skin.estuary remanescente')
         return updated, True
-    if b'id="lookandfeel.skin"' in data and b'skin.novatv' in data:
+    if b'id="lookandfeel.skin"' in data and b'skin.estilo.personalizado' in data:
         return data, False
     raise SystemExit('guisettings: linha lookandfeel.skin ausente ou inesperada')
 
@@ -147,19 +147,19 @@ def main() -> None:
         raise SystemExit(f'settings.xml ausente: {settings}')
 
     data = settings.read_bytes()
-    already = b'<default>skin.novatv</default>' in data
+    already = b'<default>skin.estilo.personalizado</default>' in data
     if args.check:
-        print(f'settings.xml: skin padrao = {"skin.novatv" if already else "skin.estuary"}')
+        print(f'settings.xml: skin padrao = {"skin.estilo.personalizado" if already else "skin.estuary"}')
         gui = profile / 'userdata/guisettings.xml'
         if gui.is_file():
-            active = b'skin.novatv' in gui.read_bytes()
-            print(f'perfil guisettings: {"skin.novatv" if active else "skin.estuary"}')
+            active = b'skin.estilo.personalizado' in gui.read_bytes()
+            print(f'perfil guisettings: {"skin.estilo.personalizado" if active else "skin.estuary"}')
         return
     if already:
-        print('settings.xml ja aponta para skin.novatv')
+        print('settings.xml ja aponta para skin.estilo.personalizado')
     else:
         activate_settings(settings)
-        print('settings.xml: skin padrao alterada para skin.novatv')
+        print('settings.xml: skin padrao alterada para skin.estilo.personalizado')
 
     for action in activate_profile(profile):
         print(f'perfil atualizado: {action}')
