@@ -5,7 +5,7 @@ on:
     branches: [arena/1a97faf9-kode]
     paths: [.github/workflows/home-carrossel-emulator.yml]
 permissions:
-  contents: read
+  contents: write
 jobs:
   carrossel:
     runs-on: ubuntu-22.04
@@ -145,6 +145,32 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 3072
           disable-animations: true
           script: bash tools/android/smoke-home-carrossel.sh
+
+      - name: Publicar diagnostico no repositorio
+        if: always()
+        run: |
+          mkdir -p docs
+          {
+            echo "# Diagnostico do emulador"
+            echo
+            echo "- run: \`$GITHUB_RUN_ID\`"
+            echo "- commit: \`$GITHUB_SHA\`"
+            echo "- quando: $(date -u +%FT%TZ)"
+            echo
+            for f in "$RUNNER_TEMP"/home-carrossel-smoke/*; do
+              [ -f "$f" ] || continue
+              case "$f" in
+                *.png) echo "## $(basename "$f") (imagem, ver artefato)";;
+                *) echo "## $(basename "$f")"; echo '```'; tail -c 12000 "$f"; echo '```';;
+              esac
+              echo
+            done
+          } > docs/emulador-diagnostico.md
+          git config user.name 'SMARTED CI'
+          git config user.email 'ci@smarted.local'
+          git add docs/emulador-diagnostico.md
+          git commit -m "ci: diagnostico do emulador (run $GITHUB_RUN_ID)" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" || true
 
       - name: Guardar capturas e logs
         if: always()
