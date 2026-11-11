@@ -262,3 +262,42 @@
   (`run_plugin.py <perfil> 'mode=27&url=%23filmes_menu&name=Filmes'`).
 - Suíte: 92 testes (9 skipped sem `SMARTED_PROFILE`); com perfil real os testes
   de runtime passam (18/18) e o menu de Filmes lista "PESQUISE POR FILMES".
+
+---
+
+## v1.0.30 — SMARTEDTV: boot instala/sincroniza, favoritos nativos e performance (2026-11-11)
+
+### O que o usuário pediu
+1. Brazuca Play instalado, ativado e sincronizado **logo na abertura**, sem entrar em seção de vídeo.
+2. Opções principais (TV ao vivo, Filmes, Séries, ...) configuradas, **salvas nos favoritos** e sincronizadas.
+3. Nome oficial da skin → **SMARTEDTV** (metadados/manifesto).
+4. Caminho nativo para navegar nos addons (fallback) e para abrir Favoritos.
+5. Otimizações de reprodução no perfil (cache em memória + aceleração por hardware).
+6. Validar o build contra o hash do dex.
+
+### O que foi implementado
+| Item | Onde | O que faz |
+|---|---|---|
+| Reparo no boot com repetição | `service.py` | `repair_until_ready()` tenta até 6 vezes (5 s) em vez de uma tentativa só; `UpdateLocalAddons()` + `SetAddonEnabled` antes da Home ser usada; notificações "Preparando o Brazuca Play..." e "Brazuca Play pronto para usar" |
+| Atalhos nos favoritos do Kodi | `favourites.py` (novo) | Escreve/atualiza `userdata/favourites.xml` com TV ao vivo, Filmes, Séries, Novelas, Animes, Desenhos e Doramas — idempotente, preserva favoritos do usuário, não duplica o que já existe no perfil semeado |
+| Navegação nativa | `Home.xml`, `Settings.xml` | Home ganhou "Favoritos" (`ActivateWindow(10060)`) e "Add-ons" (`10040`) na barra e um botão redondo de Add-ons na barra superior; Ajustes ganhou Favoritos, Add-ons de vídeo e Restaurar atalhos |
+| Nome SMARTEDTV | `addon.xml`, build, workflow, Home | `name`/`provider-name` = SMARTEDTV, versão da skin 1.0.2, labels "NOVA TV" → "SMARTEDTV" em todas as janelas (id `skin.novatv` mantido: é o que o dex do launcher aplica) |
+| Performance | `performance.py` (novo) | `userdata/advancedsettings.xml` (cache 256 MB, readfactor 10x, timeouts de rede) + `Settings.SetSettingValue` para `filecache.*` e `videoplayer.usemediacodecsurface/usemediacodec` (MediaCodec), com verificação de leitura de volta |
+| Ícones | `make-settings-icons.py` | glifos novos `favourites.png` (estrela) e `refresh.png` (setas) |
+
+### Validação
+- `python3 -m unittest discover -s tests` → **114 testes OK** (9 skipped sem `SMARTED_PROFILE`).
+- `tools/kodi/verify-boot-integrity.py` no candidato 1.0.30 → **7/7 checks OK**
+  (manifest sha256 == const do dex, todas as entradas verificadas, skin/versão ok).
+- APK: `assets/smarted/profile/` intocado (164,8 MB), addon `service.smarted.bootstrap`
+  1.0.2 com `favourites.py`/`performance.py`, `skin.novatv` = SMARTEDTV 1.0.2.
+
+### Limites (medidos, não estimados)
+- Composição do APK base: perfil semeado **164,8 MB (69,7%)**, `lib/` 37,2 MB, `assets/addons` 19,8 MB.
+  Um APK de ~60 MB exigiria remover o perfil do APK e **patchear a constante sha256 dentro do
+  `classes3.dex`** (o dex valida `assets/smarted/profile-manifest.txt` no boot). Sem isso o boot
+  falha como na 1.0.25. Também não é seguro baixar o pacote no primeiro boot: o aparelho não
+  alcança os repositórios externos (`CCurlFile::Open ... Failed with code 0` no log), então o
+  app abriria vazio. O caminho offline-first foi mantido de propósito.
+- "ExoPlayer" não existe no Kodi: o equivalente nativo no Android é o decodificador MediaCodec
+  (Surface), que agora está forçado junto com o cache agressivo.

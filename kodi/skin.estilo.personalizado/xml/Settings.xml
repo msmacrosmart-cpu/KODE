@@ -167,6 +167,22 @@
 					<visible>System.AddonIsEnabled(service.libreelec.settings)</visible>
 				</item>
 				<item>
+					<label>Favoritos</label>
+					<onclick>ActivateWindow(10060)</onclick>
+					<icon>icons/settings/favourites.png</icon>
+				</item>
+				<item>
+					<label>Add-ons de vídeo</label>
+					<onclick>ActivateWindow(10040)</onclick>
+					<icon>icons/settings/addons.png</icon>
+				</item>
+				<item>
+					<label>Restaurar atalhos</label>
+					<onclick>RunScript(service.smarted.bootstrap,favoritos)</onclick>
+					<icon>icons/settings/refresh.png</icon>
+					<visible>System.HasAddon(service.smarted.bootstrap)</visible>
+				</item>
+				<item>
 					<label>Energia</label>
 					<onclick>ActivateWindow(ShutdownMenu)</onclick>
 					<icon>icons/settings/energy.png</icon>

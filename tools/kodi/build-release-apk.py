@@ -2,7 +2,7 @@
 """Build an UNSIGNED release candidate from the published SMARTED-TV APK.
 
 ZIP-level update only (no apktool decode): bumps versionName/versionCode,
-replaces assets/addons/skin.novatv/ wholesale with the Brazuka Play skin from
+replaces assets/addons/skin.novatv/ wholesale with the SMARTEDTV skin from
 this repo (addon.xml rewritten to id=skin.novatv — the id the launcher dex
 applies at first boot), refreshes plugin.video.smarted, preserves every other
 entry (native libs, dex, profile data) byte for byte, and strips old signatures.
@@ -42,8 +42,8 @@ MANIFEST = "assets/system/addon-manifest.xml"
 
 # Id that the launcher dex applies as default skin at first boot.
 SKIN_ADDON_ID = "skin.novatv"
-SKIN_NAME = "Brazuka Play"
-SKIN_VERSION = "1.0.1"
+SKIN_NAME = "SMARTEDTV"
+SKIN_VERSION = "1.0.2"
 SKIN_PREFIX = "assets/addons/skin.novatv/"
 
 

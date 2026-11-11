@@ -17,8 +17,11 @@ import sys
 
 import xbmc
 import xbmcgui
+import xbmcvfs
 
 import service
+from favourites import ensure_favourites
+from performance import ensure_performance
 
 # valor máximo de cada contador (o unlock usa >= 8 cliques e >= 2 ciclos)
 SECRET_LIMITS = {
@@ -63,11 +66,39 @@ def handle_skin_command(command):
     if command == 'secret-reset':
         reset_secret('secret_click_count')
         return True
+    if command == 'performance':
+        return apply_performance()
+    if command == 'favoritos':
+        return restore_favourites()
     if command in ('secret-full-reset', 'secret reset all'):
         reset_secret('secret_click_count')
         reset_secret('secret_settings_cycle')
         return True
     return False
+
+
+def restore_favourites():
+    """Recria os atalhos do Brazuca Play em userdata/favourites.xml."""
+    home = xbmcvfs.translatePath('special://home')
+    added = ensure_favourites(home, service.log)
+    if added:
+        xbmcgui.Dialog().ok('SMARTEDTV', 'Atalhos adicionados aos favoritos:\n%s' %
+                            '\n'.join(added))
+    else:
+        xbmcgui.Dialog().ok('SMARTEDTV', 'Os atalhos do Brazuca Play já estão nos favoritos.')
+    return True
+
+
+def apply_performance():
+    """Reaplica cache/aceleração e mostra o que foi aceito pelo Kodi."""
+    home = xbmcvfs.translatePath('special://home')
+    result = ensure_performance(home, service.jsonrpc, service.log)
+    linhas = ['Cache: %s' % ('gravado' if result['advancedsettings'] else 'preservado')]
+    linhas.append('Aplicados: %d' % len(result['applied']))
+    if result['failed']:
+        linhas.append('Recusados: %s' % ', '.join(result['failed'][:6]))
+    xbmcgui.Dialog().ok('SMARTEDTV', '\n'.join(linhas))
+    return True
 
 
 def show_report():

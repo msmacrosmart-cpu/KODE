@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Gera os ícones de Ajustes da skin Brazuka Play (glifos brancos 256x256).
+"""Gera os ícones de Ajustes da skin SMARTEDTV (glifos brancos 256x256).
 
 Os ícones seguem o mesmo padrão dos que já existiam em
 ``media/icons/settings`` (glifo branco sobre fundo transparente, 256x256),
@@ -95,6 +95,29 @@ def diagnostics():
     save(img, "diagnostics.png")
 
 
+def favourites():
+    """Estrela (Favoritos)."""
+    import math
+    img, d = canvas()
+    points = []
+    for index in range(10):
+        angle = math.radians(-90 + index * 36)
+        radius = 380 if index % 2 == 0 else 160
+        points.append((512 + radius * math.cos(angle), 512 + radius * math.sin(angle)))
+    d.polygon(points, outline=COLOR, width=44)
+    save(img, "favourites.png")
+
+
+def refresh():
+    """Setas circulares (Restaurar atalhos)."""
+    img, d = canvas()
+    d.arc([150, 150, 874, 874], start=300, end=120, fill=COLOR, width=56)
+    d.arc([150, 150, 874, 874], start=120, end=300, fill=COLOR, width=56)
+    d.polygon([(560, 90), (760, 230), (560, 370)], fill=COLOR)
+    d.polygon([(464, 934), (264, 794), (464, 654)], fill=COLOR)
+    save(img, "refresh.png")
+
+
 def main():
     video()
     music()
@@ -102,6 +125,8 @@ def main():
     appearance()
     energy()
     diagnostics()
+    favourites()
+    refresh()
 
 
 if __name__ == "__main__":

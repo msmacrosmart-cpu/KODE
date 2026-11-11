@@ -45,7 +45,7 @@ jobs:
       - name: Montar candidato sem assinatura (versão + skin.novatv + ponte)
         run: |
           export PYTHONPATH="$HOME/.cache/kode-build/python:$PYTHONPATH"
-          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.29 --to-code 2103015 "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
+          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.30 --to-code 2103016 "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
           ls -lh "$RUNNER_TEMP/unsigned.apk"
 
       - name: Verificar integridade de boot (simulação do launcher dex)
@@ -72,8 +72,8 @@ jobs:
           base = Path(os.environ["RUNNER_TEMP"]) / "base/SMARTED-TV-v1.0.22-arm64.apk"
           out = Path(os.environ["RUNNER_TEMP"]) / "signed.apk"
           a = APK(str(out))
-          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTED-TV', '1.0.29', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
-          assert int(a.version_code) == 2103015, f"versionCode inesperado: {a.version_code}"
+          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTED-TV', '1.0.30', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
+          assert int(a.version_code) == 2103016, f"versionCode inesperado: {a.version_code}"
           print(f"Identidade: {a.package} {a.get_app_name()} {a.version_name} ({a.version_code})")
           with zipfile.ZipFile(base) as before, zipfile.ZipFile(out) as after:
               assert after.testzip() is None
@@ -89,12 +89,12 @@ jobs:
               for n in sorted(oldlibs | {'classes.dex'}):
                   assert digest(before, n) == digest(after, n), f"Código alterado: {n}"
               print(f"Motor preservado: {len(oldlibs)} bibliotecas + classes.dex idênticos")
-              # Skin.novatv no APK deve ser a skin do repositório (Brazuka Play)
+              # Skin.novatv no APK deve ser a skin do repositório (SMARTEDTV)
               # com addon.xml reajustado para id=skin.novatv.
               import xml.etree.ElementTree as ET
               SKIN_ID = "skin.novatv"
-              SKIN_NAME = "Brazuka Play"
-              SKIN_VERSION = "1.0.1"
+              SKIN_NAME = "SMARTEDTV"
+              SKIN_VERSION = "1.0.2"
               for p in sorted(Path('kodi/skin.estilo.personalizado').rglob('*')):
                   if not p.is_file() or '__pycache__' in p.parts or p.suffix == '.pyc':
                       continue
@@ -129,7 +129,7 @@ jobs:
               manifest = after.read('assets/system/addon-manifest.xml').decode()
               for addon_id in [SKIN_ID] + [d.name for d in bridges]:
                   assert f'>{addon_id}<' in manifest, f'addon ausente do manifesto: {addon_id}'
-              print("Skin.novatv (Brazuka Play) + addons do repositório no APK idênticos à origem; skin.novatv base totalmente substituída.")
+              print("Skin.novatv (SMARTEDTV) + addons do repositório no APK idênticos à origem; skin.novatv base totalmente substituída.")
           print(f"Tamanho base: {base.stat().st_size} -> final: {out.stat().st_size}")
           print(f"SHA-256 final: {hashlib.sha256(out.read_bytes()).hexdigest()}")
           PY
@@ -138,15 +138,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp "$RUNNER_TEMP/signed.apk" "SMARTED-TV-v1.0.29-arm64.apk"
-          sha256sum "SMARTED-TV-v1.0.29-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
-          TAG=v1.0.29-smarted-arm64
+          cp "$RUNNER_TEMP/signed.apk" "SMARTED-TV-v1.0.30-arm64.apk"
+          sha256sum "SMARTED-TV-v1.0.30-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
+          TAG=v1.0.30-smarted-arm64
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" "SMARTED-TV-v1.0.29-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
+            gh release upload "$TAG" "SMARTED-TV-v1.0.30-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
             gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false
             echo "Release $TAG atualizada com o APK assinado."
           else
-          gh release create v1.0.29-smarted-arm64 "SMARTED-TV-v1.0.29-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTED-TV 1.0.29 ARM64' --notes 'Release final ARM64 (Kodi 21.3, pacote org.xbmc.kodi). Correcao do Brazuca Play: a skin agora abre o plugin com os parametros iconimage/fanart/description, que faltavam e faziam o addDir do plugin chamar quote_plus(None) — TypeError: quote_from_bytes() expected bytes ao abrir Filmes, Series, Canais, Animes, Novelas, Desenhos e Doramas (confirmado no log do aparelho e reproduzido/validado no harness tests/kodi_plugin_stubs). Ajustes refeito: grade de icones ancorada nas quatro bordas (sem corte na ultima linha), cabecalho Voltar/AJUSTES/Buscar sem sobreposicao e todas as 17 opcoes com icone. O unlock secreto nao usa mais Skin.SetSetting (builtin inexistente no Kodi 21): os contadores passam pelo addon service.smarted.bootstrap (RunScript ... secret-click/secret-cycle) e sao gravados com Skin.SetString. Tela cheia: resolucao unica 1080p, fundos em 100%, barra superior ancorada a direita e listas do Home esticando ate a borda — sem faixa vazia no lado direito em telas 20:9/21:9. Skin Brazuka Play embarcada como skin.novatv; perfil semeado mantido byte-identico ao manifesto (sha256 do dex 1447de81...). Motor nativo e Dex preservados; assinatura com a mesma chave da linha 1.0.15+ (atualizacao direta). Apenas ARM64. Codigo do Kodi: https://github.com/xbmc/xbmc/tree/21.3-Omega .'
+          gh release create v1.0.30-smarted-arm64 "SMARTED-TV-v1.0.30-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTED-TV 1.0.30 ARM64' --notes 'Release final ARM64 (Kodi 21.3, pacote org.xbmc.kodi). Correcao do Brazuca Play: a skin agora abre o plugin com os parametros iconimage/fanart/description, que faltavam e faziam o addDir do plugin chamar quote_plus(None) — TypeError: quote_from_bytes() expected bytes ao abrir Filmes, Series, Canais, Animes, Novelas, Desenhos e Doramas (confirmado no log do aparelho e reproduzido/validado no harness tests/kodi_plugin_stubs). Ajustes refeito: grade de icones ancorada nas quatro bordas (sem corte na ultima linha), cabecalho Voltar/AJUSTES/Buscar sem sobreposicao e todas as 17 opcoes com icone. O unlock secreto nao usa mais Skin.SetSetting (builtin inexistente no Kodi 21): os contadores passam pelo addon service.smarted.bootstrap (RunScript ... secret-click/secret-cycle) e sao gravados com Skin.SetString. Tela cheia: resolucao unica 1080p, fundos em 100%, barra superior ancorada a direita e listas do Home esticando ate a borda — sem faixa vazia no lado direito em telas 20:9/21:9. Skin Brazuka Play embarcada como skin.novatv; perfil semeado mantido byte-identico ao manifesto (sha256 do dex 1447de81...). Motor nativo e Dex preservados; assinatura com a mesma chave da linha 1.0.15+ (atualizacao direta). Apenas ARM64. Codigo do Kodi: https://github.com/xbmc/xbmc/tree/21.3-Omega .'
           fi
-          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.29-smarted-arm64/SMARTED-TV-v1.0.29-arm64.apk"
+          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.30-smarted-arm64/SMARTED-TV-v1.0.30-arm64.apk"
 # build-release-apk - disparado para regenerar APK 1.0.26 com skin.novatv = Brazuka Play (correção de boot do 1.0.25)

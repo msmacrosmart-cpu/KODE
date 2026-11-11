@@ -101,13 +101,13 @@ def main():
         else:
             check("profile-manifest.txt present", False, MANIFEST_PATH)
 
-        # --- 4. skin.novatv is the Brazuka Play skin (id + addon.xml) ---
+        # --- 4. skin.novatv is the SMARTEDTV skin (id + addon.xml) ---
         if SKIN_ADDON_XML in names:
             import xml.etree.ElementTree as ET
 
             root = ET.fromstring(z.read(SKIN_ADDON_XML))
             check("skin.novatv addon id", root.get("id") == "skin.novatv", f"got {root.get('id')}")
-            check("skin.novatv version", root.get("version") == "1.0.1", f"got {root.get('version')}")
+            check("skin.novatv version", root.get("version") == "1.0.2", f"got {root.get('version')}")
             # the dex rewrites the skin line to skin.novatv — skin must load that id
         else:
             check("skin.novatv addon.xml present", False, SKIN_ADDON_XML)

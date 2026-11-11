@@ -5,7 +5,7 @@
 	<menucontrol>10000</menucontrol>
 	<controls>
 		<control type="image"><left>0</left><top>0</top><width>100%</width><height>100%</height><texture colordiffuse="pb_dark">pb_white.png</texture></control>
-		<control type="label"><left>60</left><top>40</top><width>400</width><height>40</height><font>font12</font><textcolor>pb_white</textcolor><label>NOVA TV</label></control>
+		<control type="label"><left>60</left><top>40</top><width>400</width><height>40</height><font>font12</font><textcolor>pb_white</textcolor><label>SMARTEDTV</label></control>
 		<control type="button" id="20000">
 			<include>HiddenObject</include>
 			<animation effect="fade" time="300" start="100" end="0">Focus</animation>

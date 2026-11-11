@@ -14,15 +14,20 @@ import xbmcaddon
 import xbmcvfs
 
 import repair
+from favourites import ensure_favourites
+from performance import ensure_performance
 
 ADDON = xbmcaddon.Addon()
 ADDON_ID = ADDON.getAddonInfo('id')
 ADDON_PATH = xbmcvfs.translatePath(ADDON.getAddonInfo('path'))
 PAYLOAD_DIR = os.path.join(ADDON_PATH, 'payload')
 
-# Instalação do perfil semeado pode levar alguns segundos: tentamos por ~90s.
-WAIT_SECONDS = 90
+# O perfil semeado pode ainda estar sendo copiado no primeiro boot: tentamos
+# o reparo várias vezes antes de desistir (nada de esperar 90s para começar).
+WAIT_SECONDS = 20
 POLL_SECONDS = 5
+REPAIR_ATTEMPTS = 6
+REPAIR_RETRY_SECONDS = 5
 
 
 def log(message, level=xbmc.LOGINFO):
@@ -102,9 +107,52 @@ def run_repair(show_dialogs=False):
     return report
 
 
+def write_favourites():
+    """Garante os atalhos do Brazuca Play em userdata/favourites.xml."""
+    home = xbmcvfs.translatePath('special://home')
+    try:
+        added = ensure_favourites(home, log)
+    except Exception as error:
+        log('não foi possível gravar os favoritos: %s' % error, xbmc.LOGWARNING)
+        return []
+    if added:
+        xbmc.executebuiltin('Notification(SMARTEDTV, Atalhos adicionados aos favoritos, 3000)')
+    return added
+
+
+def apply_performance():
+    """Cache agressivo + aceleração por hardware (idempotente)."""
+    home = xbmcvfs.translatePath('special://home')
+    try:
+        result = ensure_performance(home, jsonrpc, log)
+    except Exception as error:
+        log('performance: falhou (%s)' % error, xbmc.LOGWARNING)
+        return {'applied': [], 'failed': [], 'advancedsettings': False}
+    return result
+
+
+def repair_until_ready(monitor):
+    """Repete o reparo até o perfil ficar completo (ou esgotar as tentativas)."""
+    report = None
+    for attempt in range(1, REPAIR_ATTEMPTS + 1):
+        if monitor.abortRequested():
+            break
+        report = run_repair(show_dialogs=False)
+        if report['ok']:
+            return report, attempt
+        log('tentativa %d/%d incompleta: %s' % (
+            attempt, REPAIR_ATTEMPTS, ', '.join(report['missing']) or 'sem detalhes'),
+            xbmc.LOGWARNING)
+        if attempt < REPAIR_ATTEMPTS and monitor.waitForAbort(REPAIR_RETRY_SECONDS):
+            break
+    return report, REPAIR_ATTEMPTS
+
+
 def main():
     monitor = xbmc.Monitor()
-    log('startup: verificando perfil')
+    log('startup: preparando o Brazuca Play')
+    xbmc.executebuiltin('Notification(SMARTEDTV, Preparando o Brazuca Play..., 4000)')
+
     waited = 0
     while waited < WAIT_SECONDS and not monitor.abortRequested():
         if addon_manager_ready():
@@ -112,16 +160,35 @@ def main():
         if monitor.waitForAbort(POLL_SECONDS):
             return
         waited += POLL_SECONDS
-    report = run_repair(show_dialogs=False)
-    if not report['ok']:
-        log('perfil incompleto: %s' % ', '.join(report['missing']), xbmc.LOGWARNING)
-        if not monitor.abortRequested():
-            xbmc.executebuiltin(
-                'Notification(SMARTED-TV, '
-                'Brazuca Play incompleto: veja userdata/smarted-bootstrap.log, 8000)')
+
+    report, attempts = repair_until_ready(monitor)
+    if report is None:
+        return
+
+    # o addon precisa aparecer habilitado no Kodi antes da Home abrir
+    xbmc.executebuiltin('UpdateLocalAddons()')
+    failed = enable_addons(report['required'])
+    write_favourites()
+    performance = apply_performance()
+
+    if report['ok'] and not failed:
+        log('pronto após %d tentativa(s): %d addons verificados, %d otimizações' % (
+            attempts, len(report['required']), len(performance['applied'])))
+        xbmc.executebuiltin(
+            'Notification(SMARTEDTV, Brazuca Play pronto para usar, 4000)')
+    else:
+        problems = report['missing'] + failed
+        log('perfil incompleto: %s' % ', '.join(problems), xbmc.LOGWARNING)
+        xbmc.executebuiltin(
+            'Notification(SMARTEDTV, Brazuca Play incompleto: veja userdata/smarted-bootstrap.log, 8000)')
+
+    # reavalia de tempos em tempos (addon desabilitado, perfil limpo, etc.)
     while not monitor.abortRequested():
-        if monitor.waitForAbort(3600):
+        if monitor.waitForAbort(1800):
             return
+        if not monitor.abortRequested():
+            run_repair(show_dialogs=False)
+            write_favourites()
 
 
 if __name__ == '__main__':
