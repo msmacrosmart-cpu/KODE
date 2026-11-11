@@ -31,6 +31,17 @@
 | **Top10** | `4f52102` | ✅ Adaptada | Hero com botões "Detalhes"/"+ Minha lista" + atalhos principais |
 | **Sports** | `62ad9f2` | ✅ Adaptada | Hero com botões "Detalhes"/"+ Minha lista" + atalhos principais |
 
+### Phase 5: YouTube/Programas/Música (CONCLUÍDA)
+
+| XML | Commit | Status | Alterações |
+|---|---|---|---|
+| **MyMusicNav.xml** | `64c623c` | ✅ Adaptada | Menu lateral vertical pb_dark/pb_white, Busca/Ajustes/Sair |
+| **MusicOSD.xml** | `64c623c` | ✅ Adaptada | Fundo pb_dark, cores pb_white |
+| **MyPics.xml** | `18bf825` | ✅ Adaptada | Fundo pb_dark, header NOVA TV |
+| **MyGames.xml** | `18bf825` | ✅ Adaptada | Fundo pb_dark, header NOVA TV |
+| **MyPrograms.xml** | `18bf825` | ✅ Adaptada | Fundo pb_dark, header NOVA TV |
+| **MyWeather.xml** | `18bf825` | ✅ Adaptada | Fundo pb_dark, header NOVA TV |
+
 ### Phase 3: Brazuka Play Integration (EM PROGRESSO)
 
 **Ordem fixa do Home (Aurora) implementada** — commit `999ff98`:
