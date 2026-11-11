@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nova TV — Preview da skin Kodi Omega 21 (44 telas)</title>
+<style>
+:root{--bg:#0d0d0d;--panel:#181818;--panel2:#262626;--white:#f2f2f2;--text:#d9d9d9;--muted:#a6a6a6;--line:rgba(255,255,255,.14);--r:14px}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:#000;color:var(--text);font:15px/1.45 "Liberation Sans",Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;gap:10px;align-items:center;padding:8px 12px;background:#000;border-bottom:1px solid var(--line);flex:none;flex-wrap:wrap}
+header .logo{color:var(--white);font-weight:700;letter-spacing:2px;font-size:18px}
+header .meta{color:var(--muted);font-size:13px}
+header .sp{flex:1}
+button{font:inherit;cursor:pointer}
+.btn{background:var(--panel2);color:var(--text);border:0;border-radius:999px;padding:.45em 1em;white-space:nowrap}
+.btn:hover,.btn:focus,.btn.on{background:var(--white);color:#0d0d0d;outline:0}
+nav{display:flex;gap:6px;align-items:center;padding:8px 12px;background:#000;border-bottom:1px solid var(--line);overflow-x:auto;flex:none}
+nav button{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:999px;padding:.35em .8em;font-size:13px;white-space:nowrap}
+nav button.on{background:var(--white);color:#0d0d0d;border-color:var(--white)}
+nav button:hover,nav button:focus{background:var(--white);color:#0d0d0d;outline:0}
+main{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;background:#000}
+.stage-wrap{width:min(1200px,100%);display:flex;flex-direction:column;gap:10px;min-height:0}
+.stage{position:relative;width:100%;aspect-ratio:16/9;background:var(--bg);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.scr{position:absolute;inset:0;display:none;overflow:auto;padding:clamp(12px,2.5vw,36px)}
+.scr.on{display:block}
+.scr h1{color:var(--white);font-size:clamp(20px,3.2vw,44px);line-height:1.1}
+.scr h2{color:var(--white);font-size:clamp(15px,1.8vw,26px);margin:1em 0 .5em}
+.sub{color:var(--muted);font-size:.92em}
+.tag{display:inline-block;background:var(--white);color:#0d0d0d;padding:.1em .8em;font-size:.72em;border-radius:4px;width:max-content;margin-bottom:.6em;letter-spacing:1px}
+.hero{position:relative;min-height:52%;border-radius:var(--r);padding:clamp(14px,3vw,44px);display:flex;flex-direction:column;justify-content:flex-end;background:linear-gradient(90deg,#000 8%,rgba(0,0,0,.55) 55%,rgba(0,0,0,.15)),linear-gradient(0deg,#000 5%,rgba(0,0,0,.25) 60%),#2b2b2b;margin-bottom:16px}
+.hero h1{font-size:clamp(26px,5vw,68px)}
+.row{display:flex;gap:12px;overflow-x:auto;padding:6px 4px 14px}
+.card{aspect-ratio:2/3;background:linear-gradient(0deg,rgba(0,0,0,.75),rgba(0,0,0,0) 55%),#333;border-radius:10px;padding:10px;display:flex;align-items:flex-end;color:var(--white);border:2px solid transparent;flex:0 0 clamp(110px,13vw,180px);font-size:.85em;position:relative}
+.card:nth-child(3n){background-color:#3d3d3d}.card:nth-child(3n+1){background-color:#1f1f1f}
+.card.wide{aspect-ratio:16/9;flex-basis:clamp(180px,22vw,300px)}
+.card:focus,.card:hover{outline:0;border-color:var(--white)}
+.card .n{position:absolute;top:8px;left:10px;font-size:1.6em;font-weight:700;color:var(--white);opacity:.9}
+.card .bar{position:absolute;left:0;bottom:0;height:5px;background:var(--white);border-radius:0 0 8px 8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(110px,14vw,190px),1fr));gap:14px}
+.grid .card{flex:auto}
+.split{display:grid;grid-template-columns:minmax(170px,22%) 1fr;gap:18px}
+@media(max-width:700px){.split{grid-template-columns:1fr}}
+.menu{display:flex;flex-direction:column;gap:8px}
+.menu .btn{border-radius:var(--r);text-align:left;padding:.8em 1em;background:transparent;border:1px solid var(--line)}
+.menu .btn.on,.menu .btn:focus{background:var(--white);color:#0d0d0d}
+.list .li{display:flex;justify-content:space-between;gap:12px;padding:.85em 1em;border-bottom:1px solid var(--line);border-radius:10px;cursor:pointer}
+.list .li:focus,.list .li:hover{background:var(--white);color:#0d0d0d;outline:0}
+.set{display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border-radius:var(--r);padding:.85em 1.1em;margin-bottom:8px;cursor:pointer;gap:12px}
+.set:focus,.set:hover{background:var(--white);color:#0d0d0d;outline:0}
+.sw{width:3em;height:1.5em;border-radius:99px;background:#555;position:relative;flex:none}
+.sw:after{content:"";position:absolute;top:.2em;left:.2em;width:1.1em;height:1.1em;border-radius:50%;background:#fff}
+.sw.on{background:var(--white)}.sw.on:after{left:1.7em;background:#0d0d0d}
+.set:focus .sw.on,.set:hover .sw.on{background:#0d0d0d}.set:focus .sw.on:after,.set:hover .sw.on:after{background:var(--white)}
+.player{position:relative;min-height:100%;background:radial-gradient(circle at 50% 35%,#3a3a3a,#000 75%);border-radius:var(--r);display:flex;flex-direction:column;justify-content:flex-end;padding:clamp(12px,2.5vw,32px)}
+.bar{height:8px;background:rgba(255,255,255,.25);border-radius:9px;margin:12px 0}
+.bar i{display:block;height:100%;width:35%;background:var(--white);border-radius:9px}
+.ctl{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.ctl .btn{min-width:3em;text-align:center}
+.flex{display:flex;gap:18px;flex-wrap:wrap}
+.cover{width:clamp(140px,18vw,240px);aspect-ratio:1;background:linear-gradient(0deg,rgba(0,0,0,.6),rgba(0,0,0,0) 60%),#333;border-radius:12px;flex:none}
+.eq{display:flex;gap:3px;align-items:flex-end;height:44px}
+.eq i{flex:1;background:var(--white);opacity:.85;min-height:6px}
+.epg{display:grid;grid-template-columns:140px repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:640px}
+.epg div{background:var(--panel);padding:.7em .8em;font-size:.9em}
+.epg .h{background:var(--panel2);color:var(--white);font-weight:700}
+.epg .n{background:var(--white);color:#0d0d0d;font-weight:700}
+.kb{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;margin:14px 0}
+.kb .btn{border-radius:8px;padding:.6em 0;text-align:center}
+footer{display:flex;gap:10px;align-items:center;padding:10px 12px;background:#000;border-top:1px solid var(--line);flex:none;flex-wrap:wrap}
+footer .idx{display:flex;gap:4px;overflow-x:auto;flex:1;padding:2px}
+footer .idx button{background:var(--panel);color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:.25em .5em;font-size:12px;min-width:2.2em}
+footer .idx button.on{background:var(--white);color:#0d0d0d}
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;padding:16px;z-index:9}
+.mask.on{display:flex}
+.dlg{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:clamp(16px,2.5vw,32px);width:min(860px,100%);max-height:90vh;overflow:auto}
+.dlg .ctl{margin-top:18px;justify-content:flex-start}
+.note{font-size:.85em;color:var(--muted);border:1px dashed var(--line);border-radius:10px;padding:.7em 1em;margin-top:12px}
+@media(max-width:700px){.kb{grid-template-columns:repeat(5,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">NOVA TV</span>
+  <span class="meta" id="meta">01 / 44 · Aurora</span>
+  <span class="sp"></span>
+  <span class="meta">Preview Kodi Omega 21 · monocromático · offline</span>
+  <button class="btn" id="fs">Tela cheia</button>
+</header>
+<nav id="nav" aria-label="Telas"></nav>
+<main>
+  <div class="stage-wrap">
+    <div class="stage" id="stage"></div>
+    <div class="note">Dados ilustrativos. Na skin real, TV ao vivo, Filmes e Séries vêm do Brazuca Play via ponte SMARTED-TV (rotas <b>tv</b>, <b>movies</b>, <b>series</b>). Séries reúne Séries, Novelas, Animes, Doramas e Desenhos. Use <b>← →</b> para trocar de tela, <b>↑ ↓</b> para mover o foco, <b>Enter</b> para ativar, <b>Esc</b> para fechar diálogo.</div>
+  </div>
+</main>
+<footer>
+  <button class="btn" id="prev">Anterior</button>
+  <button class="btn" id="next">Próxima</button>
+  <div class="idx" id="idx" aria-label="Índice"></div>
+</footer>
+<div class="mask" id="mask"><div class="dlg" id="dlg" role="dialog" aria-modal="true"></div></div>
+<script>
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const cards=(n,w,nums)=>Array.from({length:n},(_,i)=>`<div class="card ${w?'wide':''}" tabindex="0" data-go="detalhes">${nums?`<span class="n">${i+1}</span>`:''}<span>Título ${i+1}</span>${i%3==0?`<span class="bar" style="width:${(20+i*7)%90+10}%"></span>`:''}</div>`).join('');
+const L=(a)=>a.map(x=>`<div class="li" tabindex="0"><span>${x[0]}</span><span class="sub">${x[1]||''}</span></div>`).join('');
+const S=(a)=>a.map(x=>`<div class="set" tabindex="0" data-tg><span>${x[0]}</span>${x[1]===undefined?'':'<span class="sw '+(x[1]?'on':'')+'"></span>'}${x[2]?`<span class="sub">${x[2]}</span>`:''}</div>`).join('');
+const menu=(a,on)=>`<div class="menu">${a.map((x,i)=>`<button class="btn ${i==on?'on':''}" data-nav="${x}">${x}</button>`).join('')}</div>`;
+const hero=(tag,title,meta,plot)=>`<div class="hero"><span class="tag">${tag}</span><h1>${title}</h1><p class="sub">${meta}</p><p style="max-width:62ch;margin:.6em 0 1em">${plot}</p><div class="ctl" style="justify-content:flex-start"><button class="btn on" data-go="player">Assistir</button><button class="btn" data-m="detalhes">Detalhes</button><button class="btn" data-m="ctx">+ Minha lista</button></div></div>`;
+const homeMenu=(on)=>`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">${['Categorias','TV ao vivo','Filmes','Séries','Ajustes'].map((x,i)=>`<button class="btn ${i==on?'on':''}" data-go="${['canais','canais','filmes','serie','config'][i]}">${x}</button>`).join('')}</div>`;
+const screens=[
+['Aurora',hero('LANÇAMENTO','Noite Vermelha','2026 · Thriller · 16 anos · 1h58','Uma investigadora aposentada volta ao caso que destruiu sua carreira quando novas pistas surgem.')+homeMenu(0)+'<h2>Lançamentos</h2><div class="row">'+cards(7)+'</div>'],
+['Blade',hero('LANÇAMENTO','Código Atlas','2026 · Ação · 118 min','Um mensageiro descobre um código que pode mudar o destino da cidade.')+homeMenu(0)+'<h2>Filmes recentes</h2><div class="row">'+cards(8)+'</div><h2>Séries recentes</h2><div class="row">'+cards(6,1)+'</div>'],
+['Top 10','<h1>Top 10</h1><p class="sub">Ranking por popularidade da fonte (sem métrica fabricada na skin real).</p><div class="row" style="margin-top:14px">'+cards(10,0,1)+'</div>'],
+['Esportes','<h1>Esportes</h1><p class="sub">Navegação pelas opções disponíveis na fonte (TV Brazuca). Sem eventos fabricados.</p><div class="split" style="margin-top:14px">'+menu(['Opções de TV','Buscar canais','Favoritos'],0)+'<div class="list">'+L([['Opções de TV','menu original do provedor'],['Buscar canais','Brazuca + Pluto TV'],['Canais favoritos','quando existirem']])+'</div></div>'],
+['Guia','<h1>Guia de TV</h1><p class="sub">Programação PVR (requer PVR configurado).</p><div style="overflow:auto;margin-top:12px"><div class="epg"><div class="h">Canal</div><div class="h">20:00</div><div class="h">21:00</div><div class="h">22:00</div><div class="h">23:00</div>'+[1,2,3,4,5].map(c=>`<div>Canal ${c}</div><div class="n">Agora</div><div>Programa</div><div>Programa</div><div>Programa</div>`).join('')+'</div></div>'],
+['Canais','<h1>TV ao vivo</h1><p class="sub">Rota <b>tv</b> → Opções de TV (Brazuca #menu_canais) + Buscar canais.</p><div class="split" style="margin-top:14px">'+menu(['Opções de TV','Buscar canais'],0)+'<div class="list">'+L([['Opções de TV','abrir menu original'],['Buscar canais','consultar Brazuca e Pluto TV'],['Canal 1','ao vivo'],['Canal 2','ao vivo'],['Canal 3','ao vivo']])+'</div></div>'],
+['Serie','<h1>Séries</h1><p class="sub">Rota <b>series</b>: Buscar + Séries, Novelas, Animes, Doramas, Desenhos.</p><div class="split" style="margin-top:14px">'+menu(['Buscar em todas as categorias','Séries','Novelas','Animes','Doramas','Desenhos'],1)+'<div><div class="grid">'+cards(12)+'</div></div></div>'],
+['Player','<div class="player"><h1>Título em reprodução</h1><p class="sub">00:42:10 / 01:58:00</p><div class="bar"><i></i></div><div class="ctl"><button class="btn">Anterior</button><button class="btn">Voltar 10s</button><button class="btn on">Pausar</button><button class="btn">Avançar 30s</button><button class="btn">Próximo</button><button class="btn" data-m="audio">Áudio</button><button class="btn" data-m="legenda">Legendas</button><button class="btn" data-m="info">Info</button></div></div>'],
+['Aurora (variação)',hero('LANÇAMENTO','Rota 66','2026 · Drama · 112 min','Dois irmãos atravessam o país em busca de uma nova chance.')+homeMenu(0)+'<h2>Lançamentos</h2><div class="row">'+cards(7)+'</div>'],
+['Blade (variação)',hero('LANÇAMENTO','Maré Alta','2026 · Suspense · 104 min','Uma cidade costeira guarda segredos sob a maré.')+homeMenu(0)+'<h2>Continuar assistindo</h2><div class="row">'+cards(6,1)+'</div>'],
+['Top 10 (variação)','<h1>Top 10</h1><p class="sub">Variação: foco no 1º lugar.</p><div class="row" style="margin-top:14px">'+cards(10,0,1)+'</div>'],
+['Esportes (variação)','<h1>Esportes</h1><p class="sub">Variação: busca focada.</p><div class="split" style="margin-top:14px">'+menu(['Opções de TV','Buscar canais','Favoritos'],1)+'<div class="list">'+L([['Buscar canais','digite para filtrar'],['Opções de TV','menu original']])+'</div></div>'],
+['Guia (variação)','<h1>Guia de TV</h1><p class="sub">Variação: grade deslocada.</p><div style="overflow:auto;margin-top:12px"><div class="epg"><div class="h">Canal</div><div class="h">21:00</div><div class="h">22:00</div><div class="h">23:00</div><div class="h">00:00</div>'+[1,2,3].map(c=>`<div>Canal ${c}</div><div>Programa</div><div class="n">Agora</div><div>Programa</div><div>Programa</div>`).join('')+'</div></div>'],
+['Canais (variação)','<h1>TV ao vivo</h1><p class="sub">Variação: favoritos.</p><div class="list" style="margin-top:14px">'+L([['Canal favorito 1','ao vivo'],['Canal favorito 2','ao vivo'],['Buscar canais','Brazuca + Pluto TV']])+'</div>'],
+['Serie (variação)','<h1>Nome da série</h1><p class="sub">Temporada 1 · Episódios</p><div class="list" style="margin-top:14px">'+L([['1x01 · Piloto','45 min · assistido'],['1x02 · Segundo','44 min'],['1x03 · Terceiro','46 min'],['1x04 · Quarto','43 min'],['1x05 · Quinto','47 min'],['1x06 · Sexto','45 min']])+'</div>'],
+['Player (variação)','<div class="player"><h1>Título em reprodução</h1><p class="sub">Marcadores</p><div class="bar"><i style="width:60%"></i></div><div class="ctl"><button class="btn">Anterior</button><button class="btn on">Pausar</button><button class="btn">Próximo</button><button class="btn" data-m="marcadores">Marcadores</button><button class="btn" data-m="audio">Áudio</button></div></div>'],
+['Config','<div class="split">'+menu(['Player','Mídia','TV','Serviços','Interface','Sistema','Skin'],4)+'<div><h1>Interface</h1><div style="margin-top:14px">'+S([['Banner em destaque',1],['Rotação automática do banner',1],['Mostrar relógio',1],['Idioma',undefined,'Português (Brasil)'],['Fonte',undefined,'Liberation Sans'],['Calibrar tela',undefined,'›'],['Modo de suspensão',0]])+'</div></div></div>'],
+['Musica','<div class="split">'+menu(['Artistas','Álbuns','Gêneros','Músicas','Playlists'],1)+'<div class="grid">'+cards(12)+'</div></div><h2>Tocando agora</h2><div class="flex"><div class="cover"></div><div style="flex:1;min-width:240px"><h1>Faixa</h1><p class="sub">Artista · Álbum</p><div class="eq" style="margin:14px 0">'+'<i></i>'.repeat(24)+'</div><div class="bar"><i></i></div><div class="ctl"><button class="btn">Anterior</button><button class="btn on">Pausar</button><button class="btn">Próximo</button></div></div></div>'],
+['Tocando','<div class="flex"><div class="cover"></div><div style="flex:1;min-width:260px"><h1>Faixa em reprodução</h1><p class="sub">Artista · Álbum · 03:42</p><div class="eq" style="margin:16px 0">'+'<i></i>'.repeat(32)+'</div><div class="bar"><i style="width:55%"></i></div><div class="ctl"><button class="btn">Anterior</button><button class="btn on">Pausar</button><button class="btn">Próximo</button><button class="btn">Aleatório</button><button class="btn">Repetir</button></div></div></div>'],
+['VideoMus','<h1>Vídeos musicais</h1><p class="sub">Biblioteca de vídeos musicais (videodb://musicvideos/).</p><div class="grid" style="margin-top:14px">'+cards(12,1)+'</div>'],
+['Radio','<h1>Rádio</h1><p class="sub">Rádio PVR (condicional ao PVR). Sem PVR, a lista fica vazia.</p><div class="list" style="margin-top:14px">'+L([['Estação 1','rádio'],['Estação 2','rádio'],['Estação 3','rádio']])+'</div>'],
+['Jogos','<h1>Jogos</h1><p class="sub">Condicional a suporte a jogos (gamesgeneral.enable).</p><div class="grid" style="margin-top:14px">'+cards(8)+'</div>'],
+['Complementos','<div class="split">'+menu(['Instalados','Repositórios','Atualizações','Instalar de zip'],0)+'<div class="list">'+L([['Complemento de vídeo','v1.2.0'],['Complemento de música','v2.0.1'],['Serviço PVR','v21.0.0'],['Pacote de idioma','pt_BR'],['Skin Nova TV','v1.0.1']])+'</div></div>'],
+['Imagens','<h1>Imagens</h1><p class="sub">Biblioteca de imagens.</p><div class="grid" style="margin-top:14px">'+cards(12,1)+'</div>'],
+['Filmes','<h1>Filmes</h1><p class="sub">Rota <b>movies</b>: Buscar por filmes, Lançamentos, Gêneros, Ordem alfabética + menu original.</p><div class="split" style="margin-top:14px">'+menu(['Visualização','Ordenar por','Ordem','Filtrar','Buscar'],0)+'<div><div class="grid">'+cards(18)+'</div></div></div>'],
+['Favoritos','<h1>Favoritos</h1><p class="sub">Favoritos do Kodi + canais favoritos do Brazuca.</p><div class="list" style="margin-top:14px">'+L([['Canal favorito 1','TV ao vivo'],['Filme favorito','Filmes'],['Série favorita','Séries']])+'</div>'],
+['Clima','<h1>Clima</h1><p class="sub">Previsão (requer serviço de clima).</p><div class="flex" style="margin-top:14px"><div class="set" style="flex:1;min-width:220px"><span>Hoje · 24°C</span><span class="sub">Ensolarado</span></div><div class="set" style="flex:1;min-width:220px"><span>Amanhã · 22°C</span><span class="sub">Nublado</span></div><div class="set" style="flex:1;min-width:220px"><span>Locais</span><span class="sub">›</span></div></div>'],
+['Arquivos','<h1>Arquivos</h1><p class="sub">Navegador de fontes.</p><div class="list" style="margin-top:14px">'+L([['Copiar',''],['Mover',''],['Excluir',''],['Renomear',''],['Nova pasta',''],['Atualizar','']])+'</div>'],
+['Energia','<h1>Energia</h1><div class="ctl" style="justify-content:flex-start;margin-top:18px"><button class="btn on" data-m="power">Desligar</button><button class="btn" data-m="power">Reiniciar</button><button class="btn" data-m="power">Suspender</button><button class="btn" data-m="power">Sair</button></div>'],
+['Busca','<h1>Busca</h1><p class="sub">Busca global, de canais e de séries (fontes públicas do Brazuca).</p><div class="set" style="margin-top:14px"><span>Digite para buscar…</span><span class="sub">teclado virtual</span></div><div class="ctl" style="justify-content:flex-start;margin-top:14px"><button class="btn on" data-m="kb">Abrir teclado</button><button class="btn" data-m="prog">Atualizando…</button></div>'],
+['Gravacoes','<h1>Gravações</h1><p class="sub">Gravações PVR (requer PVR).</p><div class="list" style="margin-top:14px">'+L([['Gravação 1','TV · 20:00'],['Gravação 2','TV · 21:30']])+'</div>'],
+['Timers','<h1>Timers</h1><p class="sub">Agendamentos PVR (requer PVR).</p><div class="list" style="margin-top:14px">'+L([['Timer 1','22:00 · gravar'],['Timer 2','23:00 · lembrete']])+'</div>'],
+['Perfis','<h1>Perfis</h1><p class="sub">Perfis do Kodi.</p><div class="list" style="margin-top:14px">'+L([['Perfil principal','ativo'],['Novo perfil','criar']])+'</div>'],
+['Contexto','<h1>Menu de contexto</h1><p class="sub">Ações do item selecionado.</p><div class="ctl" style="justify-content:flex-start;margin-top:18px"><button class="btn on" data-m="ctx">Abrir opções</button></div>'],
+['AudioLeg','<h1>Áudio e legendas</h1><div style="margin-top:14px">'+S([['Ativar legendas',1],['Idioma das legendas',undefined,'Português'],['Sincronizar legendas',undefined,'0,0 s'],['Trilha de áudio',undefined,'Português · AC3 5.1']])+'</div>'],
+['Sobre','<div class="split">'+menu(['Resumo','Armazenamento','Rede','Hardware'],0)+'<div class="list">'+L([['Kodi','21.x Omega'],['Skin','Nova TV 1.0.1'],['Resolução','1920×1080'],['Memória','—'],['Rede','—']])+'</div></div>'],
+['Ajustes','<div class="split">'+menu(['Player','Mídia','TV','Serviços','Jogos','Interface','Perfis','Sistema','Complementos','Arquivos','Informações','Registro de eventos'],5)+'<div><h1>Interface</h1><p class="sub">Ajustes principais do Kodi.</p></div></div>'],
+['CPlayer','<div class="split">'+menu(['Player','Mídia','TV','Serviços','Interface','Sistema'],0)+'<div><h1>Player</h1><div style="margin-top:14px">'+S([['Reprodução automática',1],['Retomar reprodução',1],['Legendas automáticas',0]])+'</div></div></div>'],
+['CMidia','<div class="split">'+menu(['Player','Mídia','TV','Serviços','Interface','Sistema'],1)+'<div><h1>Mídia</h1><div style="margin-top:14px">'+S([['Atualizar biblioteca ao iniciar',1],['Extrair informações',1]])+'</div></div></div>'],
+['CTV','<div class="split">'+menu(['Player','Mídia','TV','Serviços','Interface','Sistema'],2)+'<div><h1>TV / PVR</h1><p class="sub">Depende de PVR. Não exposto no modo básico.</p></div></div>'],
+['CServ','<div class="split">'+menu(['Player','Mídia','TV','Serviços','Interface','Sistema'],3)+'<div><h1>Serviços</h1><div style="margin-top:14px">'+S([['Serviço de clima',0],['Serviço de legendas',1]])+'</div></div></div>'],
+['CInt','<div class="split">'+menu(['Player','Mídia','TV','Serviços','Interface','Sistema'],4)+'<div><h1>Interface</h1><div style="margin-top:14px">'+S([['Banner em destaque',1],['Rotação automática do banner',1],['Mostrar relógio',1],['Idioma',undefined,'Português (Brasil)']])+'</div></div></div>'],
+['CSis','<div class="split">'+menu(['Player','Mídia','TV','Serviços','Interface','Sistema'],5)+'<div><h1>Sistema</h1><div style="margin-top:14px">'+S([['Modo de suspensão',0],['Calibrar tela',undefined,'›']])+'</div></div></div>'],
+['CPerf','<div class="split">'+menu(['Player','Mídia','TV','Serviços','Interface','Sistema','Perfis'],6)+'<div><h1>Perfis</h1><p class="sub">Gerenciar perfis do Kodi.</p></div></div>']
+];
+const groups=['Início e entretenimento','Variações e configurações','Mídia e navegação','Sistema e gerenciamento','Configurações avançadas'];
+const groupOf=i=>i<8?0:i<16?1:i<28?2:i<36?3:4;
+const modals={
+detalhes:`<h1>Título do filme</h1><p class="sub">2026 · Ação, Drama · 118 min · Nota 8,1</p><p style="margin:1em 0;max-width:70ch">Sinopse completa com rolagem automática quando o texto exceder o espaço disponível.</p><p class="sub">Diretor: Nome · Elenco: Ator 1, Ator 2, Ator 3</p><div class="ctl"><button class="btn on" data-go="player">Reproduzir</button><button class="btn" data-m="ctx">Opções</button><button class="btn" data-x>Fechar</button></div>`,
+ctx:`<h2>Opções</h2><div class="list">${L([['Reproduzir'],['Marcar como assistido'],['Adicionar aos favoritos'],['Informações']])}</div><div class="ctl"><button class="btn" data-x>Fechar</button></div>`,
+confirm:`<h1>Remover item?</h1><p class="sub" style="margin-top:12px">Esta ação não pode ser desfeita.</p><div class="ctl"><button class="btn on" data-x>Sim</button><button class="btn" data-x>Não</button></div>`,
+kb:`<h2>Buscar</h2><div class="set">Digite aqui…</div><div class="kb">${[...'1234567890QWERTYUIOPASDFGHJKLZXCVBNM'].map(k=>`<button class="btn">${k}</button>`).join('')}</div><div class="ctl"><button class="btn" data-x>Cancelar</button><button class="btn on" data-x>OK</button></div>`,
+power:`<h2>Energia</h2><div class="ctl"><button class="btn on" data-x>Desligar</button><button class="btn" data-x>Reiniciar</button><button class="btn" data-x>Suspender</button><button class="btn" data-x>Sair</button></div>`,
+prog:`<h2>Atualizando biblioteca…</h2><div class="bar"><i style="width:60%"></i></div><div class="ctl"><button class="btn" data-x>Cancelar</button></div>`,
+notif:`<h2>Nova notificação</h2><p class="sub">Mensagem informativa exibida pelo Kodi.</p><div class="ctl"><button class="btn" data-x>OK</button></div>`,
+audio:`<h2>Áudio</h2><div class="list">${L([['Português · AC3 5.1'],['Inglês · AAC 2.0']])}</div><div class="ctl"><button class="btn" data-x>Fechar</button></div>`,
+legenda:`<h2>Legendas</h2>${S([['Ativar legendas',1],['Idioma',undefined,'Português'],['Sincronizar',undefined,'0,0 s']])}<div class="ctl"><button class="btn" data-x>Fechar</button></div>`,
+info:`<h2>Informações do vídeo</h2><div class="list">${L([['Codec','H.264'],['Resolução','1920×1080'],['Áudio','AC3 5.1']])}</div><div class="ctl"><button class="btn" data-x>Fechar</button></div>`,
+marcadores:`<h2>Marcadores</h2><div class="list">${L([['00:12:30 · Cena'],['00:45:10 · Cena'],['Adicionar marcador','']])}</div><div class="ctl"><button class="btn" data-x>Fechar</button></div>`
+};
+let cur=0;
+const nav=$('#nav'),stage=$('#stage'),idx=$('#idx');
+nav.innerHTML=screens.map((s,i)=>`<button data-i="${i}">${String(i+1).padStart(2,'0')} ${s[0]}</button>`).join('');
+idx.innerHTML=screens.map((s,i)=>`<button data-i="${i}">${i+1}</button>`).join('');
+stage.innerHTML=screens.map((s,i)=>`<section class="scr" id="s${i}">${s[1]}</section>`).join('');
+function show(i){
+  cur=(i+screens.length)%screens.length;
+  $$('.scr').forEach(e=>e.classList.toggle('on',e.id==='s'+cur));
+  $$('#nav button').forEach(b=>b.classList.toggle('on',+b.dataset.i===cur));
+  $$('#idx button').forEach(b=>b.classList.toggle('on',+b.dataset.i===cur));
+  $('#meta').textContent=`${String(cur+1).padStart(2,'0')} / 44 · ${screens[cur][0]} · ${groups[groupOf(cur)]}`;
+  location.hash=String(cur+1).padStart(2,'0');
+  const f=$(`#s${cur} [tabindex],#s${cur} button`);
+  if(f) f.focus({preventScroll:true});
+  const nb=$(`#nav button[data-i="${cur}"]`);
+  if(nb) nb.scrollIntoView({inline:'center',block:'nearest'});
+}
+function modal(k){$('#dlg').innerHTML=modals[k];$('#mask').classList.add('on');const f=$('#dlg .on')||$('#dlg button');if(f)f.focus();}
+function close(){$('#mask').classList.remove('on');show(cur);}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-i],[data-go],[data-m],[data-x],[data-tg],[data-nav],.menu .btn');
+  if(!t) return;
+  if(t.dataset.i!==undefined){show(+t.dataset.i);return;}
+  if(t.dataset.go){const map={detalhes:'detalhes',player:'player',canais:'canais',filmes:'filmes',serie:'serie',config:'config'};const target=map[t.dataset.go];const found=screens.findIndex(s=>s[0]===target||s[0].toLowerCase()===target);if(found>=0){show(found);return;}if(t.dataset.go==='detalhes'){modal('detalhes');return;}if(t.dataset.go==='player'){show(7);return;}return;}
+  if(t.dataset.m){modal(t.dataset.m);return;}
+  if('x'in t.dataset){close();return;}
+  if('tg'in t.dataset){const s=$('.sw',t);if(s)s.classList.toggle('on');return;}
+  if(t.dataset.nav){const map={'TV ao vivo':5,'Filmes':24,'Séries':6,'Opções de TV':5,'Buscar canais':5,'Buscar em todas as categorias':6,'Séries':6,'Novelas':6,'Animes':6,'Doramas':6,'Desenhos':6,'Player':37,'Mídia':38,'TV':39,'Serviços':40,'Interface':41,'Sistema':42,'Skin':16,'Perfis':43};if(map[t.dataset.nav]!==undefined){show(map[t.dataset.nav]);}return;}
+});
+$('#mask').addEventListener('click',e=>{if(e.target.id==='mask')close();});
+$('#prev').onclick=()=>show(cur-1);
+$('#next').onclick=()=>show(cur+1);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){if($('#mask').classList.contains('on'))close();else show(0);return;}
+  if(e.key==='ArrowRight'&&!$('#mask').classList.contains('on')){show(cur+1);return;}
+  if(e.key==='ArrowLeft'&&!$('#mask').classList.contains('on')){show(cur-1);return;}
+  if(e.key==='Enter'&&document.activeElement&&document.activeElement.tabIndex===0){document.activeElement.click();return;}
+  const k={ArrowDown:1,ArrowUp:-1}[e.key];if(!k)return;
+  const root=$('#mask').classList.contains('on')?$('#dlg'):$(`.scr.on`);
+  const els=$$('[tabindex="0"],button',root),i=els.indexOf(document.activeElement);
+  let n=i<0?0:i+k;
+  const t=els[Math.max(0,Math.min(els.length-1,n))];if(t){t.focus();t.scrollIntoView({block:'nearest',inline:'nearest'});}
+});
+$('#fs').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
+const h=parseInt(location.hash.slice(1),10);
+show(Number.isFinite(h)&&h>=1&&h<=44?h-1:0);
+</script>
+</body>
+</html>
