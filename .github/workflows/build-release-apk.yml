@@ -45,7 +45,7 @@ jobs:
       - name: Montar candidato sem assinatura (versão + skin.novatv + ponte)
         run: |
           export PYTHONPATH="$HOME/.cache/kode-build/python:$PYTHONPATH"
-          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.30 --to-code 2103016 "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
+          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.31 --to-code 2103017 "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
           ls -lh "$RUNNER_TEMP/unsigned.apk"
 
       - name: Verificar integridade de boot (simulação do launcher dex)
@@ -72,8 +72,8 @@ jobs:
           base = Path(os.environ["RUNNER_TEMP"]) / "base/SMARTED-TV-v1.0.22-arm64.apk"
           out = Path(os.environ["RUNNER_TEMP"]) / "signed.apk"
           a = APK(str(out))
-          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTED-TV', '1.0.30', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
-          assert int(a.version_code) == 2103016, f"versionCode inesperado: {a.version_code}"
+          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTED-TV', '1.0.31', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
+          assert int(a.version_code) == 2103017, f"versionCode inesperado: {a.version_code}"
           print(f"Identidade: {a.package} {a.get_app_name()} {a.version_name} ({a.version_code})")
           with zipfile.ZipFile(base) as before, zipfile.ZipFile(out) as after:
               assert after.testzip() is None
@@ -138,15 +138,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp "$RUNNER_TEMP/signed.apk" "SMARTED-TV-v1.0.30-arm64.apk"
-          sha256sum "SMARTED-TV-v1.0.30-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
-          TAG=v1.0.30-smarted-arm64
+          cp "$RUNNER_TEMP/signed.apk" "SMARTED-TV-v1.0.31-arm64.apk"
+          sha256sum "SMARTED-TV-v1.0.31-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
+          TAG=v1.0.31-smarted-arm64
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" "SMARTED-TV-v1.0.30-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
+            gh release upload "$TAG" "SMARTED-TV-v1.0.31-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
             gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false
             echo "Release $TAG atualizada com o APK assinado."
           else
-          gh release create v1.0.30-smarted-arm64 "SMARTED-TV-v1.0.30-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTED-TV 1.0.30 ARM64' --notes 'Release final ARM64 (Kodi 21.3, pacote org.xbmc.kodi). Correcao do Brazuca Play: a skin agora abre o plugin com os parametros iconimage/fanart/description, que faltavam e faziam o addDir do plugin chamar quote_plus(None) — TypeError: quote_from_bytes() expected bytes ao abrir Filmes, Series, Canais, Animes, Novelas, Desenhos e Doramas (confirmado no log do aparelho e reproduzido/validado no harness tests/kodi_plugin_stubs). Ajustes refeito: grade de icones ancorada nas quatro bordas (sem corte na ultima linha), cabecalho Voltar/AJUSTES/Buscar sem sobreposicao e todas as 17 opcoes com icone. O unlock secreto nao usa mais Skin.SetSetting (builtin inexistente no Kodi 21): os contadores passam pelo addon service.smarted.bootstrap (RunScript ... secret-click/secret-cycle) e sao gravados com Skin.SetString. Tela cheia: resolucao unica 1080p, fundos em 100%, barra superior ancorada a direita e listas do Home esticando ate a borda — sem faixa vazia no lado direito em telas 20:9/21:9. Skin Brazuka Play embarcada como skin.novatv; perfil semeado mantido byte-identico ao manifesto (sha256 do dex 1447de81...). Motor nativo e Dex preservados; assinatura com a mesma chave da linha 1.0.15+ (atualizacao direta). Apenas ARM64. Codigo do Kodi: https://github.com/xbmc/xbmc/tree/21.3-Omega .'
+          gh release create v1.0.31-smarted-arm64 "SMARTED-TV-v1.0.31-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTED-TV 1.0.31 ARM64' --notes 'SMARTED-TV 1.0.31 (ARM64, Kodi 21.3, org.xbmc.kodi). Correcao visual pedida: o botao redondo de Add-ons na barra superior da Home estava com o icone deslocado 16 px para a direita (botao de um lado, icone do outro). O centro do icone agora coincide com o centro do botao em todos os quatro botoes (Add-ons, Busca, Ajustes, Energia), que sao ancorados em right e por isso ficam iguais em qualquer largura de tela. Entra tambem um teste de regressao que compara centro do botao e do icone. Tudo o que veio na 1.0.30 continua: service.smarted.bootstrap 1.0.2 instala, habilita e sincroniza o Brazuca Play na abertura (reparo repetido, notificacoes de preparo e pronto), atalhos TV ao vivo, Filmes, Series, Novelas, Animes, Desenhos e Doramas gravados em userdata/favourites.xml de forma idempotente, Home com Favoritos (10060) e Add-ons (10040), Ajustes com 20 opcoes icone a icone, skin renomeada para SMARTEDTV (id skin.novatv mantido por exigencia do dex do launcher), advancedsettings.xml com cache agressivo e MediaCodec (Surface) forcado via Settings.SetSettingValue. Perfil semeado em assets/smarted/profile/ intocado e byte-identico ao manifesto (sha256 do dex 1447de81...), verificado por tools/kodi/verify-boot-integrity.py (7/7). Motor nativo e Dex preservados; assinatura com a mesma chave da linha 1.0.15+ (atualizacao direta). Apenas ARM64. Codigo do Kodi: https://github.com/xbmc/xbmc/tree/21.3-Omega .'
           fi
-          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.30-smarted-arm64/SMARTED-TV-v1.0.30-arm64.apk"
+          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.31-smarted-arm64/SMARTED-TV-v1.0.31-arm64.apk"
 # build-release-apk - disparado para regenerar APK 1.0.26 com skin.novatv = Brazuka Play (correção de boot do 1.0.25)

@@ -301,3 +301,14 @@
   app abriria vazio. O caminho offline-first foi mantido de propósito.
 - "ExoPlayer" não existe no Kodi: o equivalente nativo no Android é o decodificador MediaCodec
   (Surface), que agora está forçado junto com o cache agressivo.
+
+### v1.0.31 — ícone do botão Add-ons alinhado (2026-11-11)
+- O botão redondo de **Add-ons** (id 9124) na barra superior da Home foi criado com `<right>360</right>`
+  (centro a 390 px da borda), mas o ícone usava `<right>344</right>` (centro a 372 px) → o glifo aparecia
+  16 px fora do círculo. Corrigido para `<right>376</right>`, que mantém o centro do ícone igual ao do
+  botão (right + width/2 = 390).
+- Conferidos os quatro botões redondos: 9124 (Add-ons) 390, 9121 (Busca) 290, 9122 (Ajustes) 190,
+  9123 (Energia) 90 — ícones nos mesmos centros.
+- Teste de regressão novo em `tests/test_skin_phone_layout.py`
+  (`test_icones_da_barra_superior_centrados_no_botao`) compara botão × ícone ancorados em `right`.
+- Suíte: **115 testes OK** (9 skipped). `verify-boot-integrity.py` no candidato: **7/7 OK**.

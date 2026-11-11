@@ -159,6 +159,33 @@ class FullScreenTest(unittest.TestCase):
             self.assertIsNotNone(node, control_id)
             self.assertIsNotNone(node.find('right'), '%s precisa de <right>' % control_id)
 
+    def test_icones_da_barra_superior_centrados_no_botao(self):
+        """Botão e ícone redondos precisam compartilhar o mesmo centro.
+
+        Regressão de 2026-11-11: o botão Add-ons (9124) ficou com o ícone
+        deslocado 16 px para a direita, aparecendo "de um lado e o ícone do
+        outro". Como tudo é ancorado em <right>, o centro é
+        right + width/2 — não depende da largura da tela.
+        """
+        root = ET.parse(XML / 'Home.xml').getroot()
+        buttons = []
+        icons = []
+        for control in root.iter('control'):
+            if control.find('right') is None:
+                continue
+            right = int(control.findtext('right'))
+            width = int(control.findtext('width') or 0)
+            if control.get('type') == 'button' and control.get('id') in (
+                    '9121', '9122', '9123', '9124'):
+                buttons.append((control.get('id'), right + width / 2.0))
+            if (control.get('type') == 'image'
+                    and (control.findtext('texture') or '').startswith('icons/')
+                    and width == 28):
+                icons.append(right + width / 2.0)
+        self.assertEqual(len(buttons), 4)
+        for control_id, center in buttons:
+            self.assertIn(center, icons, 'ícone não centrado no botão %s' % control_id)
+
     def test_listas_do_home_esticam_ate_a_borda(self):
         root = ET.parse(XML / 'Home.xml').getroot()
         for control_id in ('9200', '9210', '9220'):
