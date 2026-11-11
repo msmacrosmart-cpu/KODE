@@ -1,3 +1,4 @@
+# v1.0.34: republicado apos restaurar dropbox/smarted-tv-test.jks (a chave de assinatura).
 name: Build SMARTED-TV release APK
 on:
   workflow_dispatch:
