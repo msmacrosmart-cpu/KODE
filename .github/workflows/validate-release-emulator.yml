@@ -97,24 +97,44 @@ jobs:
           "$TOOLS/d8" --min-api 21 --lib "$SDK_JAR" --output "$RUNNER_TEMP/dex" $(find "$RUNNER_TEMP/classes" -name '*.class')
           java -jar "$RUNNER_TEMP/package/lib/apktool.jar" b "$RUNNER_TEMP/decoded" -o "$RUNNER_TEMP/rebuilt.apk"
           python3 - <<'PY'
-          import os, zipfile
+          import os, shutil, zipfile
           from pathlib import Path
           t = Path(os.environ['RUNNER_TEMP'])
-          with zipfile.ZipFile(t/'rebuilt.apk', 'a') as apk:
-              assert 'classes3.dex' not in apk.namelist()
-              apk.write(t/'dex/classes.dex', 'classes3.dex', compress_type=zipfile.ZIP_DEFLATED)
+          # O rebuild do apktool reconstrói classes3.dex do smali original;
+          # substituí-lo pelo classes3.dex recompilado do bootstrap Java.
+          src = t/'rebuilt.apk'
+          tmp = t/'rebuilt_tmp.apk'
+          with zipfile.ZipFile(src) as zin, zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as zout:
+              for item in zin.infolist():
+                  if item.filename == 'classes3.dex':
+                      continue
+                  zout.writestr(item, zin.read(item.filename))
+          with zipfile.ZipFile(t/'dex/classes.dex') as jf:
+              data = jf.read('classes.dex')
+          with zipfile.ZipFile(tmp, 'a', zipfile.ZIP_DEFLATED) as zout:
+              zout.writestr('classes3.dex', data, zipfile.ZIP_DEFLATED)
+          shutil.move(str(tmp), str(src))
           PY
           # Video local apenas para exercitar o player nativo do Kodi.
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
           ffmpeg -v error -f lavfi -i 'color=c=black:s=320x180:r=10:d=20' -c:v mpeg4 -pix_fmt yuv420p -an -y "$RUNNER_TEMP/decoded/assets/media/smoke-video.mp4"
           java -jar "$RUNNER_TEMP/package/lib/apktool.jar" b "$RUNNER_TEMP/decoded" -o "$RUNNER_TEMP/rebuilt2.apk" >/dev/null
           python3 - <<'PY'
-          import os, zipfile
+          import os, shutil, zipfile
           from pathlib import Path
           t = Path(os.environ['RUNNER_TEMP'])
-          with zipfile.ZipFile(t/'rebuilt2.apk', 'a') as apk:
-              assert 'classes3.dex' not in apk.namelist()
-              apk.write(t/'dex/classes.dex', 'classes3.dex', compress_type=zipfile.ZIP_DEFLATED)
+          src = t/'rebuilt2.apk'
+          tmp = t/'rebuilt2_tmp.apk'
+          with zipfile.ZipFile(src) as zin, zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as zout:
+              for item in zin.infolist():
+                  if item.filename == 'classes3.dex':
+                      continue
+                  zout.writestr(item, zin.read(item.filename))
+          with zipfile.ZipFile(t/'dex/classes.dex') as jf:
+              data = jf.read('classes.dex')
+          with zipfile.ZipFile(tmp, 'a', zipfile.ZIP_DEFLATED) as zout:
+              zout.writestr('classes3.dex', data, zipfile.ZIP_DEFLATED)
+          shutil.move(str(tmp), str(src))
           PY
           "$TOOLS/zipalign" -f -p 4 "$RUNNER_TEMP/rebuilt2.apk" "$RUNNER_TEMP/aligned.apk"
           keytool -genkeypair -keystore "$RUNNER_TEMP/emu.jks" -alias debug -dname 'CN=Disposable Emulator' -keyalg RSA -keysize 2048 -validity 2 -storepass android -keypass android
