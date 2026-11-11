@@ -31,7 +31,28 @@
 | **Top10** | `4f52102` | ✅ Adaptada | Hero com botões "Detalhes"/"+ Minha lista" + atalhos principais |
 | **Sports** | `62ad9f2` | ✅ Adaptada | Hero com botões "Detalhes"/"+ Minha lista" + atalhos principais |
 
-### Elementos adicionados em todas as 4 telas
+### MyVideoNav.xml adaptado para Brazuka Play
+
+| XML | Commit | Status | Alterações |
+|---|---|---|---|
+| **MyVideoNav.xml** | `bd3f374` | ✅ Adaptada | Menu lateral com 7 categorias Brazuka Play + painel de conteúdo |
+
+**Menu lateral (grouplist 9000, vertical):**
+1. **TV ao vivo** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=21&url=%23menu_canais")`
+2. **Filmes** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&url=%23filmes_menu")`
+3. **Séries** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&url=%23series_menu")`
+4. **Novelas** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=25&url=%23novelas_menu")`
+5. **Animes** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=22&url=%23animes_menu")`
+6. **Doramas** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=31&url=%23doramas_menu")`
+7. **Desenhos** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=28&url=%23desenhos_menu")`
+
+**Painel de conteúdo (à direita):**
+- List 50 (lista vertical com thumbnail 180x90 + título + sinopse)
+- List 51 (lista vertical com poster 1000x350 + sinopse lateral)
+- Foco: `onright=50` no menu, `onup/ondown/onleft=9000` na lista
+- Busca/Ajustes/Sair na barra inferior
+
+### Elementos adicionados em todas as 4 telas do Home
 
 **Hero:**
 - Botão "Detalhes" (`Action(Info)`) — substitui "Trailer" ou "Informações"
@@ -49,9 +70,11 @@
 - Blade: `onup=9320` (hero) → `onup=9410` (atalhos) → `onup=9210` (continue watching)
 - Top10: `onup=9340` (hero) → `onup=9420` (atalhos) → `onup=9230` (top 10)
 - Sports: `onup=9350` (hero) → `onup=9430` (atalhos) → `onup=9240` (canais)
+- MyVideoNav: `onright=50` (menu → conteúdo), `onup/ondown/onleft=9000` (conteúdo → menu)
 
 ### Backup
 - `xml/Home.xml.bak` preservado para reversão
+- `xml/MyVideoNav.xml.bak` preservado para reversão
 
 ---
 
