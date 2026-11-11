@@ -702,3 +702,76 @@ Extraído do CSS `:root`:
 - Navegação: 44 telas cíclicas, 15 mapeamentos `data-nav`, 6 mapeamentos `data-go`
 - Foco: automático ao abrir tela, sequencial com ↑↓, Enter aciona, Esc fecha
 - Estados visuais: `:focus` (borda/fundo branco), `.on` (selecionado), `.sw.on` (switch ligado)
+
+## 18. Rodada 8 (v1.0.33) — Home ↔ Brazuca Play, Ajustes e Energia
+
+Seção **aditiva**: nada das seções 1–17 foi alterado. Registra a ligação real
+entre a Home da skin SMARTEDTV e o addon Brazuca Play, e as duas entradas novas
+da barra superior (**Ajustes** e **Energia**). Mapas complementares:
+`SCREEN_MAP.md` (telas) e `COMPONENT_MAP.md` (componentes).
+
+### 18.1 Barra superior — eventos
+
+| Controle | Evento HTML equivalente | Ação Kodi | Resultado |
+|---|---|---|---|
+| `#btn-settings` (9122) | clique em "Ajustes" | `ActivateWindow(Settings)` | janela **10004** (`xml/Settings.xml`) |
+| `#btn-power` (9123) | clique em "Energia" | `ActivateWindow(ShutdownMenu)` | menu nativo de energia |
+| 9124 | "Add-ons" | `ActivateWindow(10040)` | navegador de add-ons |
+| 9121 | "Busca" | `ActivateWindow(1107)` | teclado de busca |
+
+### 18.2 Home → rotas do addon (fonte única: o addon)
+
+| Item da Home | Rota (parâmetros reais) | Conteúdo que o addon devolve |
+|---|---|---|
+| linha 9200 / botão 9010 / 9061 / 9091 / 9101 | `mode=21&url=%23menu_canais` | PLUTO TV + categorias de canais (`#plutotv_4…15`) |
+| linha 9201 / botão 9011 / 9062 / 9092 / 9102 | `mode=27&url=%23filmes_menu` | pesquisa, CATEGORIA: GÊNEROS, LANÇAMENTOS, ORDEM ALFABÉTICA, TRILOGIA |
+| linha 9202 / botão 9012 / 9063 / 9093 / 9103 | `mode=27&url=%23series_menu` | pesquisar séries, TODAS SÉRIES |
+| 9013/9014/9015/9016 | `mode=25` / `22` / `31` / `28` | novelas, animes, doramas, desenhos |
+| 9017 | `mode=20&url=%23pesquisar_filmes` | busca do addon |
+| 9022 | `mode=0` | raiz real (FAVORITOS, TV AO VIVO, FILMES, SÉRIES, …) |
+| 9019 | `ActivateWindow(10060)` | favoritos nativos (inclui os 3 do Brazuca) |
+| 9018 | `plugin://plugin.video.youtube/…` | YouTube, se instalado |
+
+Regra: **nenhum item de conteúdo é estático**. Toda linha/botão resolve via
+`plugin://plugin.video.BrazucaPlay.Matrix/`; se o addon não estiver instalado a
+lista fica vazia (nunca aparece dado inventado).
+
+### 18.3 Categorias do addon ↔ telas
+
+```
+Home (10000)
+ ├─ linha/botão TV ao vivo ─▶ VideoNav (10025) ─▶ #menu_canais ─▶ PLUTO TV ─▶ #plutotv_N ─▶ canal ─▶ player
+ ├─ linha/botão Filmes     ─▶ VideoNav ─▶ #filmes_menu ─▶ GÊNEROS/LANÇAMENTOS/A-Z/TRILOGIA ─▶ filme ─▶ player
+ ├─ linha/botão Séries     ─▶ VideoNav ─▶ #series_menu ─▶ TODAS SÉRIES ─▶ série ─▶ temporada ─▶ episódio ─▶ player
+ ├─ 9013..9016             ─▶ VideoNav ─▶ mode=25/22/31/28 (novelas, animes, doramas, desenhos)
+ ├─ 9017                   ─▶ VideoNav ─▶ mode=20&url=#pesquisar_filmes  (busca)
+ ├─ 9019                   ─▶ Favoritos   (10060)
+ ├─ 9021                   ─▶ Add-ons     (10040) ─▶ Brazuca Play
+ ├─ 9022                   ─▶ VideoNav ─▶ mode=0 (raiz)
+ └─ barra: 9121 Busca · 9122 Ajustes (10004) · 9123 Energia · 9124 Add-ons
+```
+
+Back em qualquer nível = `Action(Back)` nativo (pilha de janelas); nenhuma rota
+usa `Container.Update` que roube o Back.
+
+### 18.4 Ajustes — interação com ícones
+
+- cada linha de categoria/ajuste tem `image` 48×48 (`media/icons/settings/*.png`)
+  + rótulo a partir de 72 px → **nada cortado**;
+- D-pad: ↑↓ na coluna de categorias, → entra no painel, ← volta, OK aplica;
+- 5 aberturas consecutivas da janela (contador em `Skin.String`) →
+  `Skin.SetBool(secret_unlocked)`; o contador e a flag persistem em
+  `guisettings.xml` (`Includes_SecretUnlock.xml`, `onload`).
+
+### 18.5 Validação desta rodada
+
+`tools/kodi/simulate-first-boot.py` monta o perfil semeado do APK, roda o
+bootstrap real e **executa o addon** para cada nó — 3 passagens, 26/22/22 checks,
+0 falhas (`docs/simulacao-primeiro-boot.md`). Resultado das rotas:
+
+| Nó | Itens | Amostra |
+|---|---|---|
+| 9200 TV ao vivo | 1 | PLUTO TV |
+| 9201 Filmes | 5 | PESQUISE POR FILMES, CATEGORIA: GÊNEROS, CATEGORIA: LANÇAMENTOS |
+| 9202 Séries | 2 | PESQUISAR SÉRIES, TODAS SÉRIES |
+| 9022 Brazuca Play | 10 | FAVORITOS, TV AO VIVO, FILMES, SÉRIES… |

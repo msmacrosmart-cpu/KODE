@@ -356,3 +356,52 @@ A release 1.0.31 anterior foi preservada intacta (asset 241.541.690 B).
 antiga a cada versão (`SKIN_VERSION = "1.0.2"` na verificação de conteúdo e o `TAG` da release). Ambas
 passaram a ser derivadas (`SKIN_VERSION` do script de build; `TAG` acompanha a versão), então a próxima
 release não exige editar o YAML em dois lugares.
+
+---
+
+## v1.0.33 — Home abrindo o Brazuca Play de verdade + simulação de primeiro boot
+
+**Problema atacado (rodada 8):** as linhas e os botões da Home apontavam para rotas mortas
+(`mode=15&url=canais…` e `plugin.video.smarted/?route=favoritos-*`), então a Home mostrava
+spinner/texto em vez de conteúdo, mesmo com o Kodi base carregando o addon corretamente.
+
+**O que mudou**
+- `xml/Home.xml`: as **três linhas** (9200/9201/9202) e os **quatro layouts** de navegação
+  (9010–9012, 9061–9063, 9091–9093, 9101–9103) passaram a usar as rotas reais
+  `mode=21&url=%23menu_canais`, `mode=27&url=%23filmes_menu`, `mode=27&url=%23series_menu`
+  de `plugin://plugin.video.BrazucaPlay.Matrix/`; o layout principal foi compactado
+  (hero 150–476, linhas em 500/686/872, listas em 526/712/898) e os títulos agora dizem
+  "TV ao vivo · Brazuca Play", "Filmes · Brazuca Play", "Séries · Brazuca Play".
+- `service.smarted.bootstrap` 1.0.4: novo `skin_setup.py` com `ensure_skin` (grava
+  `lookandfeel.skin=skin.novatv` via `Settings.SetSettingValue` **e** reescreve
+  `userdata/guisettings.xml`; reconhece a skin nos add-ons de sistema do APK),
+  `ensure_home_nodes` (confere as três rotas no `Home.xml` e nos favoritos, sem falso
+  positivo quando não acha o arquivo) e `home_xml_candidates` (perfil + `special://xbmc`).
+  `service.py` chama os dois no boot e no ciclo de 1800 s; `check.py` ganhou `skin` e `skin-setup`.
+- Simulação: `tools/kodi/kodi_plugin_runner.py`, `tools/kodi/kodi_boot_runner.py` e
+  `tools/kodi/simulate-first-boot.py` (novo) — monta perfil semeado do APK, instala a skin do
+  repositório como add-on de sistema `skin.novatv`, roda o bootstrap real e **executa o add-on**
+  para cada nó da Home.
+- Stubs de teste: `translatePath` agora entende `special://home|profile|temp|xbmc` sem barra final
+  (era a causa do `faltando=9` no reparo simulado — `packages_dir` ficava literal).
+- Documentação aditiva: `SCREEN_MAP.md` e `COMPONENT_MAP.md` (novos), seção 18 do
+  `INTERACTION_MAP.md`, `docs/simulacao-primeiro-boot.md` e um painel "Rodada 8" no
+  `ENTREGA_FINAL/PREVIEW_KODI.html` (as 44 telas continuam intactas).
+- Versões: skin **1.0.4**, plugin **0.2.2**, bootstrap **1.0.4**, APK **1.0.33** (versionCode 2103019).
+
+**Evidência (3 passagens, 0 falhas)** — `docs/simulacao-primeiro-boot.md`:
+
+| Passagem | Checks | Falhas |
+|---|---|---|
+| 1 (deep, todos os botões) | 26 | 0 |
+| 2 | 22 | 0 |
+| 3 | 22 | 0 |
+
+Rotas executadas no perfil semeado (primeiro boot, partindo de `skin.estuary`):
+`9200` → 1 item (PLUTO TV); `9201` → 5 itens (pesquisa, gêneros, lançamentos, A-Z, trilogia);
+`9202` → 2 itens (pesquisar séries, todas as séries); `9022` → 10 itens (raiz real).
+`repair_ok=true` na 1ª tentativa, `favourites_total=10`, `skin ch changed=True`.
+
+**Limite declarado:** o sandbox não tem `/dev/kvm`, `adb`, `emulator`, `java` nem acesso ao
+repositório do SDK Android, então **não foi possível iniciar um AVD**; a validação é uma
+simulação do fluxo do app (perfil real + skin real + add-on real), não um emulador de hardware.

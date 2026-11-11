@@ -20,7 +20,13 @@ def getAddonInfo(i):
     return '/tmp/prof/plugin.video.BrazucaPlay.Matrix'
 def translatePath(p):
     home = os.environ.get('SMARTED_STUB_HOME', '/tmp/kodi')
-    return p.replace('special://home/', home + '/').replace('special://profile/', home + '/userdata/')
+    if p in ('special://home', 'special://home/'):
+        return home
+    if p in ('special://profile', 'special://profile/'):
+        return os.path.join(home, 'userdata')
+    return (p.replace('special://home/', home + '/')
+             .replace('special://profile/', home + '/userdata/')
+             .replace('special://xbmc/', os.environ.get('SMARTED_STUB_XBMC', '/tmp/kodi/xbmc') + '/'))
 def getLanguage(*a, **k):
     return 'Portuguese'
 def getLocalizedString(*a, **k):

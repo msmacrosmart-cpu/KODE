@@ -22,6 +22,7 @@ import xbmcvfs
 import service
 from favourites import ensure_favourites
 from performance import ensure_performance
+from skin_setup import ensure_home_nodes, ensure_skin, home_xml_candidates
 
 # Novo desbloqueio (v1.0.32): 5 entradas consecutivas em Ajustes. Sem cliques
 # na logo, sem etapa extra. O resultado é gravado como skin bool
@@ -88,6 +89,12 @@ def handle_skin_command(command):
     if command == 'secret-cycle':
         bump_settings_visits()
         return True
+    if command in ('skin', 'skin-setup'):
+        home = xbmcvfs.translatePath('special://home')
+        ensure_skin(home)
+        return bool(ensure_home_nodes(
+            home_xml_candidates(os.path.join(home, 'addons')),
+            os.path.join(home, 'userdata', 'favourites.xml'))['ok'])
     if command == 'performance':
         return apply_performance()
     if command == 'favoritos':

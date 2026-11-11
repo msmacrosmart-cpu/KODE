@@ -16,6 +16,7 @@ import xbmcvfs
 import repair
 from favourites import ensure_favourites
 from performance import ensure_performance
+from skin_setup import ensure_home_nodes, ensure_skin, home_xml_candidates
 
 ADDON = xbmcaddon.Addon()
 ADDON_ID = ADDON.getAddonInfo('id')
@@ -171,6 +172,17 @@ def main():
     write_favourites()
     performance = apply_performance()
 
+    # 1º arranque: skin SMARTEDTV ativa + nós da Home ligados às rotas do addon
+    home = xbmcvfs.translatePath('special://home')
+    addons_dir = os.path.join(home, 'addons')
+    skin = ensure_skin(home, log=log)
+    nodes = ensure_home_nodes(
+        home_xml_candidates(addons_dir),
+        os.path.join(home, 'userdata', 'favourites.xml'),
+        log=log)
+    log('skin=%s (alterada=%s, instalada=%s) e %d nós da Home' % (
+        skin['skin'], skin['changed'], skin['installed'], len(nodes['routes'])))
+
     if report['ok'] and not failed:
         log('pronto após %d tentativa(s): %d addons verificados, %d otimizações' % (
             attempts, len(report['required']), len(performance['applied'])))
@@ -189,6 +201,9 @@ def main():
         if not monitor.abortRequested():
             run_repair(show_dialogs=False)
             write_favourites()
+            ensure_skin(home, log=log)
+            ensure_home_nodes(home_xml_candidates(addons_dir),
+                              os.path.join(home, 'userdata', 'favourites.xml'), log=log)
 
 
 if __name__ == '__main__':

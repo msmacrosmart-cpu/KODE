@@ -1,9 +1,20 @@
 import os, shutil
 HOME = os.environ.get('SMARTED_STUB_HOME', '/tmp/kodi')
-def translatePath(p):
+def _translate(p):
+    if p in ('special://home', 'special://home/'):
+        return HOME
+    if p in ('special://profile', 'special://profile/'):
+        return os.path.join(HOME, 'userdata')
+    if p in ('special://temp', 'special://temp/'):
+        return os.path.join(HOME, 'temp')
+    if p in ('special://xbmc', 'special://xbmc/'):
+        return os.environ.get('SMARTED_STUB_XBMC', '/tmp/kodi/xbmc')
     return (p.replace('special://home/', HOME + '/')
              .replace('special://profile/', HOME + '/userdata/')
+             .replace('special://xbmc/', os.environ.get('SMARTED_STUB_XBMC', '/tmp/kodi/xbmc') + '/')
              .replace('special://temp/', HOME + '/temp/'))
+def translatePath(p):
+    return _translate(p)
 def exists(p):
     return os.path.exists(translatePath(p))
 def mkdir(p):

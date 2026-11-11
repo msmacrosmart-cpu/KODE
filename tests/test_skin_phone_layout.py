@@ -128,29 +128,41 @@ class SecretUnlockTest(unittest.TestCase):
 
 
 class HomeBrazucaFavoritosTest(unittest.TestCase):
-    """As tres linhas/botoes da Home vivem dos favoritos do Brazuca Play."""
+    """As tres linhas/botoes da Home vivem das rotas reais do Brazuca Play.
+
+    Ate a v1.0.32 estes itens apontavam para `mode=15`/ponte de favoritos, o que
+    deixava a Home sem conteudo. Desde a v1.0.33 usam as rotas do proprio addon.
+    """
 
     def setUp(self):
         self.home = (XML / 'Home.xml').read_text(encoding='utf-8')
 
-    def test_botoes_abrem_os_favoritos_sincronizados(self):
-        for botao, categoria, rotulo in (('9010', 'canais', 'TV ao vivo'),
-                                         ('9011', 'filmes', 'Filmes'),
-                                         ('9012', 'series', 'S\u00e9ries')):
+    def test_botoes_abrem_as_rotas_do_addon(self):
+        esperado = (('9010', 21, '#menu_canais', 'TV ao vivo'),
+                    ('9011', 27, '#filmes_menu', 'Filmes'),
+                    ('9012', 27, '#series_menu', 'S\u00e9ries'))
+        for botao, modo, marcador, rotulo in esperado:
             bloco = re.search(r'id="%s">.*?</control>' % botao, self.home, re.S)
             self.assertIsNotNone(bloco, botao)
             texto = bloco.group(0)
             self.assertIn('<label>%s</label>' % rotulo, texto)
-            self.assertIn('mode=15&amp;url=%s' % categoria, texto)
+            self.assertIn('plugin://plugin.video.BrazucaPlay.Matrix/', texto, botao)
+            self.assertIn('mode=%d&amp;url=%%23%s' % (modo, marcador.lstrip('#')), texto, botao)
             self.assertIn('ActivateWindow(10025', texto)
+            # a Home nao pode voltar para as rotas mortas da 1.0.32
+            self.assertNotIn('mode=15', texto, botao)
+            self.assertNotIn('plugin.video.smarted/?route=', texto, botao)
 
-    def test_linhas_da_home_listam_os_favoritos(self):
-        esperado = {'9200': 'favoritos-canais', '9201': 'favoritos-filmes', '9202': 'favoritos-series'}
+    def test_linhas_da_home_listam_o_addon(self):
+        esperado = {'9200': 'mode=21&amp;url=%23menu_canais',
+                    '9201': 'mode=27&amp;url=%23filmes_menu',
+                    '9202': 'mode=27&amp;url=%23series_menu'}
         for lista, rota in esperado.items():
             bloco = re.search(r'<control type="list" id="%s">.*?</control>\n' % lista, self.home, re.S)
             self.assertIsNotNone(bloco, lista)
             texto = bloco.group(0)
-            self.assertIn('plugin://plugin.video.smarted/?route=%s' % rota, texto)
+            self.assertIn('plugin://plugin.video.BrazucaPlay.Matrix/?%s' % rota, texto, lista)
+            self.assertIn('<content target="videos">', texto, lista)
             # cards com poster, como a grade do addon
             self.assertIn('$VAR[ItemArt]', texto)
             self.assertIn('<aspectratio>keep</aspectratio>', texto)
@@ -212,10 +224,13 @@ class NavegacaoCompletaTest(unittest.TestCase):
             self.assertIn('iconimage=', texto, botao)
             self.assertIn('fanart=', texto, botao)
 
-    def test_atalhos_de_favoritos_abrem_a_janela_do_addon(self):
-        for botao in ('9010', '9011', '9012'):
+    def test_atalhos_de_categoria_abrem_a_janela_do_addon(self):
+        for botao, modo in (('9010', 21), ('9011', 27), ('9012', 27)):
             bloco = re.search(r'id="%s">.*?</control>' % botao, self.home, re.S)
-            self.assertIn('mode=15&amp;url=', bloco.group(0), botao)
+            texto = bloco.group(0)
+            self.assertIn('plugin://plugin.video.BrazucaPlay.Matrix/', texto, botao)
+            self.assertIn('mode=%d&amp;url=' % modo, texto, botao)
+            self.assertIn('ActivateWindow(10025', texto, botao)
 
     def test_addons_continuam_alcancaveis_pela_barra_superior(self):
         bloco = re.search(r'id="9124">.*?</control>', self.home, re.S)
