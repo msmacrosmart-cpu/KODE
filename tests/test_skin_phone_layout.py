@@ -128,10 +128,13 @@ class SecretUnlockTest(unittest.TestCase):
 
 
 class HomeBrazucaFavoritosTest(unittest.TestCase):
-    """As tres linhas/botoes da Home vivem das rotas reais do Brazuca Play.
+    """As linhas/botoes da Home vivem do conteudo real do Brazuca Play.
 
-    Ate a v1.0.32 estes itens apontavam para `mode=15`/ponte de favoritos, o que
-    deixava a Home sem conteudo. Desde a v1.0.33 usam as rotas do proprio addon.
+    v1.0.33 passou a Home para as rotas do addon (antes era mode=15/ponte).
+    v1.0.34 vai alem: as tres linhas deixam de listar PASTAS de menu e usam o
+    carrossel da ponte, que desce a arvore do addon ate midia (canais e filmes
+    reproduzem) ou ate as capas das series. A navegacao interna abre a janela
+    Videos com `return`, para o Back continuar nativo.
     """
 
     def setUp(self):
@@ -148,27 +151,35 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
             self.assertIn('<label>%s</label>' % rotulo, texto)
             self.assertIn('plugin://plugin.video.BrazucaPlay.Matrix/', texto, botao)
             self.assertIn('mode=%d&amp;url=%%23%s' % (modo, marcador.lstrip('#')), texto, botao)
-            self.assertIn('ActivateWindow(10025', texto)
+            self.assertIn('ActivateWindow(Videos, "plugin://plugin.video.BrazucaPlay.Matrix/', texto)
+            self.assertIn(', return)', texto, botao)
             # a Home nao pode voltar para as rotas mortas da 1.0.32
             self.assertNotIn('mode=15', texto, botao)
             self.assertNotIn('plugin.video.smarted/?route=', texto, botao)
 
-    def test_linhas_da_home_listam_o_addon(self):
-        esperado = {'9200': 'mode=21&amp;url=%23menu_canais',
-                    '9201': 'mode=27&amp;url=%23filmes_menu',
-                    '9202': 'mode=27&amp;url=%23series_menu'}
-        for lista, rota in esperado.items():
+    def test_linhas_da_home_usam_o_carrossel_de_conteudo(self):
+        esperado = {'9200': 'canais', '9201': 'filmes', '9202': 'series'}
+        for lista, alvo in esperado.items():
             bloco = re.search(r'<control type="list" id="%s">.*?</control>\n' % lista, self.home, re.S)
             self.assertIsNotNone(bloco, lista)
             texto = bloco.group(0)
-            self.assertIn('plugin://plugin.video.BrazucaPlay.Matrix/?%s' % rota, texto, lista)
+            # a linha nao aponta mais para a pasta de menu do addon
+            self.assertIn('plugin://plugin.video.smarted/?route=carrossel&amp;alvo=%s' % alvo, texto, lista)
+            self.assertNotIn('url=%23filmes_menu', texto, lista)
+            self.assertNotIn('url=%23series_menu', texto, lista)
             self.assertIn('<content target="videos">', texto, lista)
             # cards com poster, como a grade do addon
             self.assertIn('$VAR[ItemArt]', texto)
             self.assertIn('<aspectratio>keep</aspectratio>', texto)
 
+    def test_home_tem_carrossel_de_favoritos(self):
+        bloco = re.search(r'<control type="list" id="9206">.*?</control>\n', self.home, re.S)
+        self.assertIsNotNone(bloco, 'falta a linha de favoritos')
+        self.assertIn('<content target="videos">favourites://</content>', bloco.group(0))
+        self.assertIn('<label>Favoritos</label>', self.home)
+
     def test_linhas_visiveis_dentro_da_tela(self):
-        for lista, teto in (('9200', 700), ('9201', 890), ('9202', 1080)):
+        for lista, teto in (('9206', 620), ('9200', 770), ('9201', 920), ('9202', 1060)):
             bloco = re.search(r'<control type="list" id="%s"><left>\d+</left><top>(\d+)</top>'
                               r'<right>\d+</right><height>(\d+)</height>' % lista, self.home)
             self.assertIsNotNone(bloco, lista)
@@ -205,7 +216,7 @@ class NavegacaoCompletaTest(unittest.TestCase):
         self.assertIsNotNone(bloco, 'falta o botao do addon')
         texto = bloco.group(0)
         self.assertIn('<label>Brazuca Play</label>', texto)
-        self.assertIn('ActivateWindow(10025', texto)
+        self.assertIn('ActivateWindow(Videos, "plugin://plugin.video.BrazucaPlay.Matrix/', texto)
         self.assertIn('plugin://plugin.video.BrazucaPlay.Matrix/?mode=0', texto)
 
     def test_todo_atalho_executa_o_addon_e_nao_uma_lista_da_skin(self):
@@ -219,7 +230,7 @@ class NavegacaoCompletaTest(unittest.TestCase):
             bloco = re.search(r'id="%s">.*?</control>' % botao, self.home, re.S)
             self.assertIsNotNone(bloco, botao)
             texto = bloco.group(0)
-            self.assertIn('ActivateWindow(10025', texto, botao)
+            self.assertIn('ActivateWindow(Videos, "plugin://plugin.video.BrazucaPlay.Matrix/', texto, botao)
             self.assertIn(rota, texto, botao)
             self.assertIn('iconimage=', texto, botao)
             self.assertIn('fanart=', texto, botao)
@@ -230,7 +241,7 @@ class NavegacaoCompletaTest(unittest.TestCase):
             texto = bloco.group(0)
             self.assertIn('plugin://plugin.video.BrazucaPlay.Matrix/', texto, botao)
             self.assertIn('mode=%d&amp;url=' % modo, texto, botao)
-            self.assertIn('ActivateWindow(10025', texto, botao)
+            self.assertIn('ActivateWindow(Videos, "plugin://plugin.video.BrazucaPlay.Matrix/', texto, botao)
 
     def test_addons_continuam_alcancaveis_pela_barra_superior(self):
         bloco = re.search(r'id="9124">.*?</control>', self.home, re.S)

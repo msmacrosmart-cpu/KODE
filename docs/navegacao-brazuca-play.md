@@ -90,3 +90,22 @@ da troca dos três botões da Home para os **favoritos sincronizados**.
 
 `tests/test_bridge_favorites.py` cobre a leitura de `favorites.dat` (URLs
 nativas, playable × pasta, arquivo nunca escrito).
+
+## Rodada 9 (v1.0.34) — das pastas de menu ao conteúdo
+
+A v1.0.33 já executava o addon, mas as linhas mostravam **pastas** (o menu
+"CATEGORIA: GÊNEROS", "TODAS SÉRIES"). A v1.0.34 mantém a árvore inteira
+acessível pelos botões e faz as linhas descerem até o conteúdo:
+
+```
+linha          rota da Home                                   nível que aparece
+TV ao vivo     plugin.video.smarted?route=carrossel&alvo=canais   canais (reproduzem)
+Filmes         plugin.video.smarted?route=carrossel&alvo=filmes   filmes (reproduzem, com pôster)
+Séries         plugin.video.smarted?route=carrossel&alvo=series   séries (capas; OK abre temporadas)
+Favoritos      favourites://                                      favoritos do usuário (dinâmico)
+```
+
+Nada foi inventado: o resolver só devolve itens que o addon devolveu, com a URL
+nativa dele. A navegação completa (menu raiz `mode=0`, gêneros, paginação, busca,
+temporadas, episódios) continua a um clique pelos botões da barra, agora com
+`ActivateWindow(Videos, "…", return)` para o Back seguir nativo.

@@ -1,0 +1,105 @@
+name: Validar carrossel da Home em emulador
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/1a97faf9-kode]
+    paths: [.github/workflows/home-carrossel-emulator.yml]
+permissions:
+  contents: read
+jobs:
+  public-addon:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preparar cópias públicas e APK sintético
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download v1.0.16-smarted-keyboard-test -R "$GITHUB_REPOSITORY" --pattern 'SMARTED-TV-v1.0.16-teclado-arm64-teste.apk' --dir "$RUNNER_TEMP/base"
+          python3 tools/kodi/make-novatv-emulator-apk.py --skin kodi/skin.estilo.personalizado "$RUNNER_TEMP/base/SMARTED-TV-v1.0.16-teclado-arm64-teste.apk" "$RUNNER_TEMP/skin.apk"
+          gh api 'repos/skyrisk/brazucaplay/contents/addons/repo/Plugins/plugin.video.BrazucaPlay.Matrix/plugin.video.BrazucaPlay.Matrix-2.1.4.zip' > "$RUNNER_TEMP/public-addon.json"
+          git clone --depth 1 --filter=blob:none --sparse -b matrix https://github.com/xbmc/repo-scripts.git "$RUNNER_TEMP/repo-scripts"
+          git -C "$RUNNER_TEMP/repo-scripts" sparse-checkout set script.module.six script.module.kodi-six script.module.certifi script.module.chardet script.module.idna script.module.urllib3 script.module.requests script.module.simplejson
+          git -C "$RUNNER_TEMP/repo-scripts" rev-parse HEAD
+          npm pack '@postar/apktool-node@0.3.4' --pack-destination "$RUNNER_TEMP" >/dev/null
+          tar -xzf "$RUNNER_TEMP/postar-apktool-node-0.3.4.tgz" -C "$RUNNER_TEMP" package/lib/apktool.jar
+          java -jar "$RUNNER_TEMP/package/lib/apktool.jar" d -f "$RUNNER_TEMP/skin.apk" -o "$RUNNER_TEMP/decoded"
+          python3 tools/android/patch-splash-for-seed.py "$RUNNER_TEMP/decoded"
+          python3 tools/kodi/stage-smarted-bridge.py "$RUNNER_TEMP/decoded"
+          # A generated local clip is only in the disposable emulator APK.
+          # It tests Kodi's own VideoPlayer independently of third-party streams.
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          ffmpeg -v error -f lavfi -i 'color=c=black:s=320x180:r=10:d=20' -c:v mpeg4 -pix_fmt yuv420p -an -y "$RUNNER_TEMP/decoded/assets/media/smoke-video.mp4"
+          cp tests/kodi/home-carrossel-smoke.py "$RUNNER_TEMP/decoded/assets/addons/plugin.video.smarted/home-carrossel-smoke.py"
+          cat > "$RUNNER_TEMP/decoded/assets/system/keymaps/zzz-home-carrossel-test.xml" <<'EOF'
+          <keymap><global><keyboard><f10>RunScript(special://xbmc/addons/plugin.video.smarted/home-carrossel-smoke.py)</f10></keyboard></global></keymap>
+          EOF
+          mkdir -p "$RUNNER_TEMP/decoded/assets/smarted" "$RUNNER_TEMP/sources/org/smartedtv/bootstrap" "$RUNNER_TEMP/classes" "$RUNNER_TEMP/dex"
+          cp tools/android/src/org/smartedtv/bootstrap/*.java "$RUNNER_TEMP/sources/org/smartedtv/bootstrap/"
+          python3 - <<'PY'
+          import base64, hashlib, io, json, os, zipfile
+          from pathlib import Path, PurePosixPath
+          t = Path(os.environ['RUNNER_TEMP'])
+          data = base64.b64decode(json.loads((t/'public-addon.json').read_text())['content'])
+          assert hashlib.sha256(data).hexdigest() == '255e7efa793c92ffb8230012906771652e55537892e83b46d32ac16d05f6ee3d'
+          target = t/'decoded/assets/smarted/profile.zip'
+          with zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED) as out, zipfile.ZipFile(io.BytesIO(data)) as public:
+              out.writestr('files/.kodi/userdata/guisettings.xml', '<settings version="2"><setting id="lookandfeel.skin" default="true">skin.estuary</setting></settings>')
+              out.writestr('files/.kodi/userdata/addon_data/plugin.video.BrazucaPlay.Matrix/favorites.dat',
+                           json.dumps({'canais': [['[B]Canal sintético[/B]', 'fixture-only', '16', '', '', '', '']]}))
+              for entry in public.infolist():
+                  path = PurePosixPath(entry.filename)
+                  if path.is_absolute() or '..' in path.parts or not path.parts or path.parts[0] != 'plugin.video.BrazucaPlay.Matrix':
+                      raise ValueError('unsafe upstream addon archive')
+                  if not entry.is_dir(): out.writestr('files/.kodi/addons/' + str(path), public.read(entry))
+              for addon in sorted((t/'repo-scripts').glob('script.module.*')):
+                  if not (addon/'addon.xml').is_file(): raise ValueError('missing dependency')
+                  for f in addon.rglob('*'):
+                      if f.is_symlink(): raise ValueError('symlink in dependency')
+                      if f.is_file(): out.write(f, 'files/.kodi/addons/' + addon.name + '/' + f.relative_to(addon).as_posix())
+          source = t/'sources/org/smartedtv/bootstrap/ProfileSeed.java'
+          text = source.read_text()
+          pinned = 'e38ee0e23356948a008a895fbefd8b659f62504b72d50712ac91c7305a774cde'
+          assert text.count(pinned) == 1
+          source.write_text(text.replace(pinned, hashlib.sha256(target.read_bytes()).hexdigest()))
+          PY
+          SDK_JAR=$(find "$ANDROID_HOME/platforms" -name android.jar | sort -V | tail -1)
+          TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          javac -source 8 -target 8 -classpath "$SDK_JAR" -d "$RUNNER_TEMP/classes" "$RUNNER_TEMP"/sources/org/smartedtv/bootstrap/*.java
+          "$TOOLS/d8" --min-api 21 --lib "$SDK_JAR" --output "$RUNNER_TEMP/dex" $(find "$RUNNER_TEMP/classes" -name '*.class')
+          java -jar "$RUNNER_TEMP/package/lib/apktool.jar" b "$RUNNER_TEMP/decoded" -o "$RUNNER_TEMP/rebuilt.apk"
+          python3 - <<'PY'
+          import os, zipfile
+          from pathlib import Path
+          t = Path(os.environ['RUNNER_TEMP'])
+          with zipfile.ZipFile(t/'rebuilt.apk', 'a') as apk:
+              assert 'classes3.dex' not in apk.namelist()
+              apk.write(t/'dex/classes.dex', 'classes3.dex', compress_type=zipfile.ZIP_DEFLATED)
+          PY
+          "$TOOLS/zipalign" -f -p 4 "$RUNNER_TEMP/rebuilt.apk" "$RUNNER_TEMP/aligned.apk"
+          keytool -genkeypair -keystore "$RUNNER_TEMP/public-test.jks" -alias debug -dname 'CN=Disposable Emulator' -keyalg RSA -keysize 2048 -validity 2 -storepass android -keypass android
+          "$TOOLS/apksigner" sign --ks "$RUNNER_TEMP/public-test.jks" --ks-pass pass:android --key-pass pass:android --out "$RUNNER_TEMP/home-carrossel-debug.apk" "$RUNNER_TEMP/aligned.apk"
+      - name: Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Abrir a Home e conferir as linhas em perfil sem dados pessoais
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 3072
+          disable-animations: true
+          script: bash tools/android/smoke-home-carrossel.sh
+      - name: Guardar logs do perfil descartável
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: home-carrossel-diagnostics
+          path: ${{ runner.temp }}/public-brazuka-smoke/
+          if-no-files-found: warn
+          retention-days: 3

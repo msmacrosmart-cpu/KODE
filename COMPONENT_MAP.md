@@ -132,3 +132,18 @@ sobrevive a reinício). Nenhum texto, som ou animação é exibido.
 4. nenhum layout alternativo (blade/top10/sports) é removido ao mexer no layout
    principal: as variantes continuam no `Home.xml` e são escolhidas por
    `Skin.String(home_layout,…)`.
+
+## 10. Carrossel de conteúdo (v1.0.34)
+
+Componente que alimenta as linhas da Home com mídia de verdade:
+
+| Peça | Arquivo | Papel |
+|---|---|---|
+| `carousel(rpc, alvo)` | `kodi/addons/plugin.video.smarted/catalogue.py` | escolhe a raiz do addon e percorre até a mídia |
+| `walk(rpc, root, depth, prefer)` | idem | desce uma pasta por nível; para quando há mídia |
+| rota `carrossel` | `default.py` | serve a lista com cache diário e fallback de favoritos |
+| `_widget_cached` | `default.py` + `daily_cache.py` | cache `carrossel-<alvo>` no perfil |
+| linha 9206 | `xml/Home.xml` | favoritos nativos (`favourites://`) |
+
+Contratos: 168×120 por cartaz; `<content target="videos">`; `IsPlayable=true`
+quando o item é mídia; `onup/ondown` encadeando 9206 → 9200 → 9201 → 9202 → 9000.

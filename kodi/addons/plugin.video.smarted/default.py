@@ -31,6 +31,9 @@ def main():
     if route == 'channel-favorites':
         channel_favorites(handle)
         return
+    if route in ('carrossel', 'carousel'):
+        carousel(handle, params)
+        return
     if route.startswith('favoritos-'):
         favorites_window(handle, route.split('-', 1)[1])
         return
@@ -281,6 +284,86 @@ def recent_movies(handle):
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
         return
     _add_movies(handle, results)
+
+
+CARROSSEL_CONTENT = {'series': 'tvshows', 'novelas': 'tvshows', 'animes': 'tvshows',
+                     'doramas': 'tvshows', 'desenhos': 'tvshows'}
+
+
+def _carrossel_ok(value):
+    return (isinstance(value, dict) and isinstance(value.get('items'), list)
+            and all(isinstance(entry, dict) and entry.get('url') and entry.get('label')
+                    for entry in value['items']))
+
+
+def _add_carrossel(handle, items, alvo):
+    xbmcplugin.setContent(handle, CARROSSEL_CONTENT.get(alvo, 'videos'))
+    xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
+    for entry in items:
+        item = xbmcgui.ListItem(label=entry['label'])
+        art = {'thumb': entry.get('thumbnail') or '', 'poster': entry.get('thumbnail') or '',
+               'icon': entry.get('thumbnail') or 'DefaultFolder.png',
+               'fanart': entry.get('fanart') or ''}
+        item.setArt({key: val for key, val in art.items() if val})
+        info = item.getVideoInfoTag()
+        info.setTitle(entry.get('title') or entry['label'])
+        if entry.get('plot'):
+            info.setPlot(entry['plot'])
+        if entry.get('year'):
+            info.setYear(int(entry['year']))
+        if not entry['folder']:
+            info.setMediaType('video')
+        item.setProperty('IsPlayable', 'true' if entry['playable'] else 'false')
+        xbmcplugin.addDirectoryItem(handle, entry['url'], item, isFolder=entry['folder'])
+    xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+
+
+def carousel(handle, params):
+    """Linha da Home com conteúdo real do addon (não a pasta de menu).
+
+    ``alvo`` é canais, filmes, series, novelas, animes, doramas ou desenhos. A
+    árvore do próprio addon é percorrida até o nível que entrega mídia (canais e
+    filmes reproduzem; séries entregam as capas das séries). Se a rede falhar,
+    a linha mostra os favoritos da categoria em vez de ficar vazia.
+    """
+    import xbmc
+    import xbmcvfs
+    from catalogue import carousel as fetch_carousel
+    from favorites import favorite_items
+
+    alvo = params.get('alvo', ['filmes'])[0]
+
+    def fetch():
+        items, origem, found = fetch_carousel(xbmc.executeJSONRPC, alvo)
+        return {'items': items, 'origem': origem, 'found': found}
+
+    try:
+        value = _widget_cached('carrossel-' + alvo, fetch, _carrossel_ok)
+    except Exception:
+        xbmc.log('SMARTED-TV: carrossel %s indisponivel' % alvo, xbmc.LOGWARNING)
+        value = {'items': [], 'origem': '', 'found': False}
+    items = value.get('items') or []
+    if items:
+        xbmc.log('SMARTED-TV: carrossel %s com %d itens (%s)' % (alvo, len(items), value.get('origem')),
+                 xbmc.LOGINFO)
+        _add_carrossel(handle, items, alvo)
+        return
+    # rede indisponível: usa os favoritos reais da categoria (nunca linha vazia)
+    try:
+        path = xbmcvfs.translatePath(FAVORITES_FILE)
+        favoritos = favorite_items(path, alvo)
+    except Exception:
+        favoritos = []
+    if favoritos:
+        xbmc.log('SMARTED-TV: carrossel %s em modo favoritos' % alvo, xbmc.LOGINFO)
+        _add_carrossel(handle, [{'url': item['url'], 'label': item['label'],
+                                 'title': item['label'], 'folder': item['folder'],
+                                 'playable': item['playable'], 'thumbnail': item['thumb'],
+                                 'fanart': item['fanart'], 'plot': item['plot'], 'year': 0}
+                                for item in favoritos], alvo)
+        return
+    xbmc.log('SMARTED-TV: carrossel %s sem dados' % alvo, xbmc.LOGWARNING)
+    xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
 
 
 if __name__ == '__main__':

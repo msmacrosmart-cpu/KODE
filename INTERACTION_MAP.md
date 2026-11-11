@@ -775,3 +775,45 @@ bootstrap real e **executa o addon** para cada nó — 3 passagens, 26/22/22 che
 | 9201 Filmes | 5 | PESQUISE POR FILMES, CATEGORIA: GÊNEROS, CATEGORIA: LANÇAMENTOS |
 | 9202 Séries | 2 | PESQUISAR SÉRIES, TODAS SÉRIES |
 | 9022 Brazuca Play | 10 | FAVORITOS, TV AO VIVO, FILMES, SÉRIES… |
+
+## 19. Rodada 9 (v1.0.34) — linhas da Home com conteúdo real
+
+Seção **aditiva**: as seções 1–18 continuam válidas. O que muda é a **fonte das
+três linhas** e a forma de abrir a navegação interna.
+
+### 19.1 De pasta de menu para conteúdo
+
+| Antes (v1.0.33) | Agora (v1.0.34) |
+|---|---|
+| linha 9200 → `plugin://…BrazucaPlay.Matrix/?mode=21&url=%23menu_canais` (PLUTO TV) | `plugin://plugin.video.smarted/?route=carrossel&alvo=canais` |
+| linha 9201 → `?mode=27&url=%23filmes_menu` ("CATEGORIA: GÊNEROS"…) | `?route=carrossel&alvo=filmes` |
+| linha 9202 → `?mode=27&url=%23series_menu` ("TODAS SÉRIES") | `?route=carrossel&alvo=series` |
+| — | linha **9206 Favoritos** → `favourites://` (nativa, dinâmica) |
+
+O resolver (`catalogue.carousel`) percorre a árvore do addon por
+`Files.GetDirectory` e **para no nível de mídia**:
+
+```
+#filmes_menu ─▶ CATEGORIA: LANÇAMENTOS ─▶ filmes (reproduzem, com pôster)
+#series_menu ─▶ TODAS SÉRIES ────────────▶ séries (capas; OK abre temporadas)
+#todoscanais ─▶ canais (reproduzem)   [#menu_canais ▶ PLUTO TV ▶ #plutotv_N como alternativa]
+```
+
+Regras: no máximo 2–3 chamadas por linha, cache diário
+(`addon_data/plugin.video.smarted/widget-cache/carrossel-<alvo>.json`), e se a
+rede falhar a linha mostra os favoritos reais da categoria — nunca fica vazia.
+
+### 19.2 Navegação interna
+
+Todo botão de categoria e o atalho do addon passaram de
+`ActivateWindow(10025, "…")` para **`ActivateWindow(Videos, "…", return)`**:
+a janela de vídeos abre em tela cheia, o diretório é executado pelo addon e o
+`Back` volta para a Home (o `return` preserva a pilha). Nenhuma rota mudou.
+
+### 19.3 Ordem de foco (D-pad)
+
+```
+9000 (nav) ─▶ 9300 (hero: Assistir/Trailer/Info) ─▶ 9206 (Favoritos)
+     ▲                                                    │
+     └──────────────── 9200 ◀── 9201 ◀── 9202 ◀───────────┘
+```

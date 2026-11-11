@@ -45,7 +45,7 @@ jobs:
       - name: Montar candidato sem assinatura (versão + skin.novatv + ponte)
         run: |
           export PYTHONPATH="$HOME/.cache/kode-build/python:$PYTHONPATH"
-          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.33 --to-code 2103019 "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
+          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.34 --to-code 2103020 "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
           ls -lh "$RUNNER_TEMP/unsigned.apk"
 
       - name: Verificar integridade de boot (simulação do launcher dex)
@@ -72,8 +72,8 @@ jobs:
           base = Path(os.environ["RUNNER_TEMP"]) / "base/SMARTED-TV-v1.0.22-arm64.apk"
           out = Path(os.environ["RUNNER_TEMP"]) / "signed.apk"
           a = APK(str(out))
-          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTED-TV', '1.0.33', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
-          assert int(a.version_code) == 2103019, f"versionCode inesperado: {a.version_code}"
+          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTED-TV', '1.0.34', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
+          assert int(a.version_code) == 2103020, f"versionCode inesperado: {a.version_code}"
           print(f"Identidade: {a.package} {a.get_app_name()} {a.version_name} ({a.version_code})")
           with zipfile.ZipFile(base) as before, zipfile.ZipFile(out) as after:
               assert after.testzip() is None
@@ -140,15 +140,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp "$RUNNER_TEMP/signed.apk" "SMARTED-TV-v1.0.33-arm64.apk"
-          sha256sum "SMARTED-TV-v1.0.33-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
-          TAG=v1.0.33-smarted-arm64
+          cp "$RUNNER_TEMP/signed.apk" "SMARTED-TV-v1.0.34-arm64.apk"
+          sha256sum "SMARTED-TV-v1.0.34-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
+          TAG=v1.0.34-smarted-arm64
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" "SMARTED-TV-v1.0.33-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
+            gh release upload "$TAG" "SMARTED-TV-v1.0.34-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
             gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false
             echo "Release $TAG atualizada com o APK assinado."
           else
-          gh release create v1.0.33-smarted-arm64 "SMARTED-TV-v1.0.33-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTED-TV 1.0.33 ARM64' --notes 'SMARTED-TV 1.0.33 (ARM64, Kodi 21.3, org.xbmc.kodi). Correcao da rodada 8: a Home finalmente ABRE O CONTEUDO do Brazuca Play. Botoes e linhas deixaram de apontar para rotas mortas (mode=15 e a ponte de favoritos) e passaram a usar as rotas reais do add-on: plugin://plugin.video.BrazucaPlay.Matrix/?mode=21&url=%23menu_canais (TV ao vivo), mode=27&url=%23filmes_menu (Filmes) e mode=27&url=%23series_menu (Series), iguais nos quatro layouts e nas tres linhas de cartazes 210x150. O bootstrap 1.0.4 agora configura a skin SMARTEDTV sozinho no primeiro boot (lookandfeel.skin=skin.novatv, com reescrita do guisettings.xml), registra os 10 atalhos em favourites.xml e confere as tres rotas no Home.xml e nos favoritos, tudo sem clique; o skin_setup tambem reconhece a skin instalada nos add-ons de sistema do APK. Ajustes (10004) segue com icone em todas as opcoes, desbloqueio por 5 entradas consecutivas e persistencia, e a barra superior mantem Ajustes e Energia (ShutdownMenu). Validacao: nova simulacao de primeiro boot (tools/kodi/simulate-first-boot.py) executa o add-on real a partir do perfil semeado do APK em 3 passagens, 26/22/22 checks sem falha, provando que TV ao vivo, Filmes, Series e a raiz devolvem itens do add-on na primeira inicializacao (relatorio em docs/simulacao-primeiro-boot.md). Nota: o ambiente de build nao tem KVM, adb nem SDK Android, portanto a validacao e uma simulacao do fluxo do app, nao um AVD. Mantido: perfil semeado byte-identico (7/7 no verify-boot-integrity), assinatura com a mesma chave da 1.0.15+ e apenas ARM64.'
+          gh release create v1.0.34-smarted-arm64 "SMARTED-TV-v1.0.34-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTED-TV 1.0.34 ARM64' --notes 'SMARTED-TV 1.0.34 (ARM64, Kodi 21.3, org.xbmc.kodi). Rodada 9: as tres linhas da Home deixam de mostrar PASTAS de menu ("CATEGORIA: GENEROS", "TODAS SERIES") e passam a trazer o CONTEUDO real do Brazuca Play. A ponte plugin.video.smarted ganhou a rota carrossel&alvo=canais|filmes|series, que percorre a arvore do proprio addon por JSON-RPC (Files.GetDirectory) e para no nivel de midia: canais e filmes reproduzem ao dar OK, series aparecem com as capas. Cada linha tem cache diario e, se a rede falhar, mostra os favoritos da categoria em vez de ficar vazia. A Home ganhou a linha Favoritos (9206, conteudo nativo favourites://), sempre dinamica. A navegacao interna passou a usar ActivateWindow(Videos, "plugin://...", return): Back continua nativo e nenhuma tela fica em branco. As linhas foram compactadas (cartazes 168x120 em 484/630/776/922) para caber a quarta linha sem perder nada. Validacao: novos testes do resolver (desce ate a midia, serie para nas capas, raiz alternativa, nunca inventa item) e workflow home-carrossel-emulator, que instala o APK num emulador Android x86_64 com o addon publico 2.1.4, abre a Home e confere por JSON-RPC que as tres linhas entregam midia com arte, alem de abrir a janela Videos. Mantido: Ajustes com icone, Energia, bootstrap, perfil semeado byte-identico e a mesma chave de assinatura.'
           fi
-          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.31-smarted-arm64/SMARTED-TV-v1.0.33-arm64.apk"
+          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.31-smarted-arm64/SMARTED-TV-v1.0.34-arm64.apk"
 # build-release-apk - disparado para regenerar APK 1.0.26 com skin.novatv = Brazuka Play (correção de boot do 1.0.25)
