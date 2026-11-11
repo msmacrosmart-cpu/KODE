@@ -36,8 +36,9 @@
 | XML | Commit | Status | Alterações |
 |---|---|---|---|
 | **MyVideoNav.xml** | `bd3f374` | ✅ Adaptada | Menu lateral com 7 categorias Brazuka Play + painel de conteúdo |
+| **VideoOSD.xml** | `90271a0` | ✅ Adaptada | Adicionar botão de áudio (70049) entre Info e Marcadores |
 
-**Menu lateral (grouplist 9000, vertical):**
+**MyVideoNav.xml — Menu lateral (grouplist 9000, vertical):**
 1. **TV ao vivo** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=21&url=%23menu_canais")`
 2. **Filmes** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&url=%23filmes_menu")`
 3. **Séries** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&url=%23series_menu")`
@@ -46,11 +47,19 @@
 6. **Doramas** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=31&url=%23doramas_menu")`
 7. **Desenhos** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=28&url=%23desenhos_menu")`
 
-**Painel de conteúdo (à direita):**
+**MyVideoNav.xml — Painel de conteúdo (à direita):**
 - List 50 (lista vertical com thumbnail 180x90 + título + sinopse)
 - List 51 (lista vertical com poster 1000x350 + sinopse lateral)
 - Foco: `onright=50` no menu, `onup/ondown/onleft=9000` na lista
 - Busca/Ajustes/Sair na barra inferior
+
+**VideoOSD.xml — Opções do app durante a reprodução:**
+- Controles de reprodução (grupo 201): Previous, Rewind, Play/Pause, Stop, Forward, Next, Record
+- Opções do app (grupo 202): Home, Channels, Guide, Playlist, Info, **Áudio (NEW)**, Bookmarks, Teletext, Subtitles, Stereoscopic, Settings
+- Barra de progresso (grupo 6000): seek + timeshift
+- Foco: `defaultcontrol=602` (Play/Pause), navegação ←→ entre grupos, ↑↓ entre botões
+
+**VIDEOOSD_MAP.md** documenta o mapeamento completo de todas as opções do VideoOSD.
 
 ### Elementos adicionados em todas as 4 telas do Home
 
