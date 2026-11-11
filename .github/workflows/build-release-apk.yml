@@ -35,11 +35,11 @@ jobs:
           print('APK base 1.0.22 reconstituído e conferido:', out.stat().st_size, 'bytes')
           PY
           ls -lh "$RUNNER_TEMP/base/"
-      - name: Obter chave de assinatura (Dropbox, link temporário)
+      - name: Chave de assinatura (repositório)
         run: |
-          curl --fail --location --retry 3 -o "$RUNNER_TEMP/smarted-tv-test.jks" 'https://www.dropbox.com/scl/fi/wn33tyj3s8g0setdreekw/smarted-tv-test.jks?rlkey=bhg8jql9epw9hcm7yrfgp7zs9&dl=1'
+          cp dropbox/smarted-tv-test.jks "$RUNNER_TEMP/smarted-tv-test.jks"
           test "$(stat -c%s "$RUNNER_TEMP/smarted-tv-test.jks")" = "2730"
-          echo "Chave obtida (2730 bytes). Revogar o link do Dropbox após o build."
+          echo "Chave do repositório usada (2730 bytes)."
       - name: Preparar ferramentas de reempacotamento
         run: ./tools/kodi/setup.sh
       - name: Montar candidato sem assinatura (versão + skin + ponte)
