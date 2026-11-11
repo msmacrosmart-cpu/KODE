@@ -1,0 +1,146 @@
+name: Validar release com Nova TV em emulador
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/7024aff2-kode]
+    paths: [.github/workflows/validate-release-emulator.yml]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Testes unitarios (skin + ativacao + ponte)
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Reconstituir o release candidato por blocos
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/base"
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          ids = json.loads(pathlib.Path('.github/private-apk-chunks.json').read_text())
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'base' / 'base.apk'
+          with out.open('wb') as fh:
+              for sha in ids:
+                  p = subprocess.run(['gh', 'api', '-H', 'Accept: application/vnd.github.raw+json',
+                                      'repos/' + os.environ['GITHUB_REPOSITORY'] + '/git/blobs/' + sha],
+                                     capture_output=True, check=True)
+                  data = p.stdout
+                  if hashlib.sha1(('blob %d\\0' % len(data)).encode() + data).hexdigest() != sha:
+                      raise SystemExit('bloco corrompido')
+                  fh.write(data)
+          assert hashlib.sha256(out.read_bytes()).hexdigest() == '8b58ee878aa0356a268bfa19bb891b079233370c9fd367d54a9a425bcd6d9b2e'
+          print('base ok', out.stat().st_size)
+          PY
+
+      - name: Aplicar skin Nova TV, ponte e perfil descartavel
+        run: |
+          set -euo pipefail
+          npm pack '@postar/apktool-node@0.3.4' --pack-destination "$RUNNER_TEMP" >/dev/null
+          tar -xzf "$RUNNER_TEMP/postar-apktool-node-0.3.4.tgz" -C "$RUNNER_TEMP" package/lib/apktool.jar
+          java -jar "$RUNNER_TEMP/package/lib/apktool.jar" d -f "$RUNNER_TEMP/base/base.apk" -o "$RUNNER_TEMP/decoded"
+          # Ativacao real da skin (settings default + perfil semeado + backups)
+          python3 tools/kodi/activate-novatv.py "$RUNNER_TEMP/decoded"
+          python3 tools/kodi/activate-novatv.py "$RUNNER_TEMP/decoded" --check
+          python3 tools/kodi/stage-smarted-bridge.py "$RUNNER_TEMP/decoded"
+          # Perfil descartavel: sem backup do cliente. Substitui o perfil embarcado
+          # por um minimo que exercita a semeadura do bootstrap do dex.
+          python3 - <<'PY'
+          import os, shutil, zipfile
+          from pathlib import Path
+          t = Path(os.environ['RUNNER_TEMP'])
+          prof = t/'decoded/assets/smarted/profile'
+          shutil.rmtree(prof, ignore_errors=True)
+          (prof/'userdata').mkdir(parents=True)
+          (prof/'userdata/guisettings.xml').write_text(
+              '<settings version="2">\n'
+              '    <setting id="lookandfeel.skin" default="true">skin.estuary</setting>\n'
+              '    <setting id="lookandfeel.font" default="true">Default</setting>\n'
+              '</settings>\n')
+          (prof/'userdata/favourites.xml').write_text('<favourites/>\n')
+          # manifesto coerente com o novo conteudo (formato: sha256\tbytes\tcaminho)
+          lines = []
+          for f in sorted(prof.rglob('*')):
+              if not f.is_file():
+                  continue
+              import hashlib
+              data = f.read_bytes()
+              rel = f.relative_to(prof).as_posix().replace('+', '%2B')
+              lines.append(f'{hashlib.sha256(data).hexdigest()}\t{len(data)}\t{rel}')
+          (t/'decoded/assets/smarted/profile-manifest.txt').write_text('\n'.join(lines) + '\n')
+          print('perfil sintetico:', len(lines), 'arquivos')
+          PY
+          python3 - <<'PY'
+          import hashlib, os, pathlib
+          manifest = pathlib.Path(os.environ['RUNNER_TEMP'])/'decoded/assets/smarted/profile-manifest.txt'
+          digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
+          pin = pathlib.Path('tools/android/src/org/smartedtv/bootstrap/ProfileDirectoryBootstrap.java')
+          text = pin.read_text()
+          old = '1447de816a44ecc11c42c2c315cf20e61c9baa037e914a13293711cf152d1ede'
+          assert text.count(old) == 1
+          pin.write_text(text.replace(old, digest))
+          print('pin do manifesto atualizado:', digest)
+          PY
+          # Recompila o bootstrap com o novo pin.
+          mkdir -p "$RUNNER_TEMP/sources" "$RUNNER_TEMP/classes" "$RUNNER_TEMP/dex"
+          cp tools/android/src/org/smartedtv/bootstrap/*.java "$RUNNER_TEMP/sources/"
+          SDK_JAR=$(find "$ANDROID_HOME/platforms" -name android.jar | sort -V | tail -1)
+          TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          javac -source 8 -target 8 -classpath "$SDK_JAR" -d "$RUNNER_TEMP/classes" "$RUNNER_TEMP"/sources/*.java
+          "$TOOLS/d8" --min-api 21 --lib "$SDK_JAR" --output "$RUNNER_TEMP/dex" $(find "$RUNNER_TEMP/classes" -name '*.class')
+          java -jar "$RUNNER_TEMP/package/lib/apktool.jar" b "$RUNNER_TEMP/decoded" -o "$RUNNER_TEMP/rebuilt.apk"
+          python3 - <<'PY'
+          import os, zipfile
+          from pathlib import Path
+          t = Path(os.environ['RUNNER_TEMP'])
+          with zipfile.ZipFile(t/'rebuilt.apk', 'a') as apk:
+              assert 'classes3.dex' not in apk.namelist()
+              apk.write(t/'dex/classes.dex', 'classes3.dex', compress_type=zipfile.ZIP_DEFLATED)
+          PY
+          # Video local apenas para exercitar o player nativo do Kodi.
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          ffmpeg -v error -f lavfi -i 'color=c=black:s=320x180:r=10:d=20' -c:v mpeg4 -pix_fmt yuv420p -an -y "$RUNNER_TEMP/decoded/assets/media/smoke-video.mp4"
+          java -jar "$RUNNER_TEMP/package/lib/apktool.jar" b "$RUNNER_TEMP/decoded" -o "$RUNNER_TEMP/rebuilt2.apk" >/dev/null
+          python3 - <<'PY'
+          import os, zipfile
+          from pathlib import Path
+          t = Path(os.environ['RUNNER_TEMP'])
+          with zipfile.ZipFile(t/'rebuilt2.apk', 'a') as apk:
+              assert 'classes3.dex' not in apk.namelist()
+              apk.write(t/'dex/classes.dex', 'classes3.dex', compress_type=zipfile.ZIP_DEFLATED)
+          PY
+          "$TOOLS/zipalign" -f -p 4 "$RUNNER_TEMP/rebuilt2.apk" "$RUNNER_TEMP/aligned.apk"
+          keytool -genkeypair -keystore "$RUNNER_TEMP/emu.jks" -alias debug -dname 'CN=Disposable Emulator' -keyalg RSA -keysize 2048 -validity 2 -storepass android -keypass android
+          "$TOOLS/apksigner" sign --ks "$RUNNER_TEMP/emu.jks" --ks-pass pass:android --key-pass pass:android --out "$RUNNER_TEMP/release-debug.apk" "$RUNNER_TEMP/aligned.apk"
+          ls -lh "$RUNNER_TEMP/release-debug.apk"
+
+      - name: Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Abrir a skin e exercitar menus/player no emulador
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 3072
+          disable-animations: true
+          script: bash tools/android/smoke-release.sh
+
+      - name: Guardar capturas e logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-smoke-diagnostics
+          path: ${{ runner.temp }}/release-smoke/
+          if-no-files-found: warn
+          retention-days: 5
