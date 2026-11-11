@@ -46,7 +46,7 @@ adb exec-out screencap -p > "$out/Home.png" 2>/dev/null || true
 
 adb shell input keyevent 140   # F10 -> RunScript(home-carrossel-smoke.py)
 resultado=0
-for _ in $(seq 1 120); do
+for _ in $(seq 1 300); do          # 25 min: o walk do addon e lento na primeira carga
   adb logcat -d -s Kodi:V > "$out/kodi-logcat.txt" 2>/dev/null || true
   if grep -q "${mark}_OK" "$out/kodi-logcat.txt"; then resultado=1; break; fi
   if grep -q "${mark}_FAILED" "$out/kodi-logcat.txt"; then resultado=2; break; fi

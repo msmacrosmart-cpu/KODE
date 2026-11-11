@@ -147,10 +147,19 @@ CARROSSEL = {
 MAX_ENTRIES = 20
 
 
+# Pastas que não levam a conteúdo: buscar, configurar ou verificar abrem
+# teclado/diálogo e devolvem diretório vazio. Se houver alternativa, ficam por
+# último para o carrossel nunca descer por elas.
+DESVIO = ('pesquis', 'buscar', 'search', 'configura', 'ajuste', 'definicao',
+          'verificar', 'adulto', 'login', 'conta')
+
+
 def _order(folders, prefer):
     """Coloca primeiro as pastas cujo rótulo casa com o alvo."""
     def score(entry):
         label = normalize(entry.get('label', ''))
+        if any(word in label for word in DESVIO):
+            return len(prefer) + 1
         for position, word in enumerate(prefer):
             if word and word in label:
                 return position

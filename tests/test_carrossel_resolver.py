@@ -88,6 +88,19 @@ class WalkTest(unittest.TestCase):
         self.assertEqual([entry['label'] for entry in items], ['Série A', 'Série B'])
         self.assertNotIn('TODAS SÉRIES', [entry['label'] for entry in items])
 
+    def test_pesquisar_nunca_ganha_de_todas_quando_o_alvo_casa_com_ambos(self):
+        # novelas: PESQUISAR NOVELAS e TODAS NOVELAS casam com "novela", mas a
+        # pasta de busca abre teclado e volta vazia -- o carrossel precisa ir
+        # para TODAS NOVELAS.
+        menu = [item('PESQUISAR NOVELAS', 20, '#pesquisar_novelas'),
+                item('TODAS NOVELAS', 1, 'https://exemplo/novelas.xml')]
+        novelas = [item('Novela A', 25, '#novela_a'), item('Novela B', 25, '#novela_b')]
+        rpc = FakeRpc({url(25, '#novelas_menu'): menu,
+                       url(1, 'https://exemplo/novelas.xml'): novelas})
+        items, found = catalogue.walk(rpc, url(25, '#novelas_menu'), depth=2, prefer=('novela',))
+        self.assertEqual([entry['label'] for entry in items], ['Novela A', 'Novela B'])
+        self.assertNotIn(url(20, '#pesquisar_novelas'), rpc.calls)
+
     def test_raiz_indisponivel_volta_vazio(self):
         rpc = FakeRpc({})
         self.assertEqual(catalogue.walk(rpc, url(21, '#menu_canais')), ([], False))
