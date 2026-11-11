@@ -346,3 +346,13 @@ do add-on), (4) manter o ícone do botão Add-ons corrigido na 1.0.31.
 - Favoritos: `mode=15&url=canais|filmes|series` devolveu itens reais (canais/filmes `folder=false`, séries `folder=true`).
 - APK candidato `/tmp/unsigned-1032.apk` (240.903.163 B, sha256 `fa8633cd…234e5a`): `verify-boot-integrity.py` **7/7 OK**;
   Home/Settings/ponte/bootstrap conferidos dentro do APK (botão raiz presente, zero `secret-click`, 3 rotas de favoritos).
+
+**Release publicada:** `v1.0.32-smarted-arm64` (run `43008375462`, conclusão `success`,
+commit `ea29165`) — asset `SMARTED-TV-v1.0.32-arm64.apk`, 241.545.788 B.
+URL: `https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.32-smarted-arm64/SMARTED-TV-v1.0.32-arm64.apk`.
+A release 1.0.31 anterior foi preservada intacta (asset 241.541.690 B).
+
+**Observação de CI:** o workflow tinha duas constantes fixas que quebravam/apontavam para a release
+antiga a cada versão (`SKIN_VERSION = "1.0.2"` na verificação de conteúdo e o `TAG` da release). Ambas
+passaram a ser derivadas (`SKIN_VERSION` do script de build; `TAG` acompanha a versão), então a próxima
+release não exige editar o YAML em dois lugares.
