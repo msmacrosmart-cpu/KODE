@@ -57,6 +57,8 @@
 | **MyVideoNav** | `bd3f374` | ✅ Adaptada |
 | **VideoOSD** | `90271a0` | ✅ Adaptada |
 | **MyFavourites** | `dee5403` | ✅ Adaptada |
+| **Settings.xml** | `174b5f7` | ✅ Adaptada | Tema pb_dark/pb_white, botão Busca, 9 categorias |
+| **SettingsCategory.xml** | `174b5f7` | ✅ Adaptada | Tema pb_dark/pb_white, descrições pb_white |
 
 **MyFavourites.xml — Menu lateral (grouplist 9000, vertical):**
 1. **TV ao vivo** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=21&url=%23menu_canais")`
