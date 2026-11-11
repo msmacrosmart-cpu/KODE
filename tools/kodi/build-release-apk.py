@@ -46,9 +46,21 @@ def collect(source: Path, prefix: str):
 
 
 def main():
-    if len(sys.argv) != 3:
-        raise SystemExit("Usage: build-release-apk.py BASE.apk OUTPUT.apk")
-    base, out = Path(sys.argv[1]), Path(sys.argv[2])
+    argv = sys.argv[1:]
+    from_version = to_version = to_code = None
+    while len(argv) >= 2 and argv[0].startswith("--"):
+        opt = argv.pop(0)
+        if opt == "--from-version":
+            from_version = argv.pop(0)
+        elif opt == "--to-version":
+            to_version = argv.pop(0)
+        elif opt == "--to-code":
+            to_code = int(argv.pop(0))
+        else:
+            raise SystemExit(f"Unknown option: {opt}")
+    if len(argv) != 2:
+        raise SystemExit("Usage: build-release-apk.py [--from-version V] [--to-version V] [--to-code N] BASE.apk OUTPUT.apk")
+    base, out = Path(argv[0]), Path(argv[1])
     if base.resolve() == out.resolve():
         raise SystemExit("Input and output must differ")
     if out.exists():
@@ -61,12 +73,17 @@ def main():
     if apk.package != "org.xbmc.kodi":
         raise SystemExit(f"Unexpected package: {apk.package}")
     old_name, old_code = apk.version_name, int(apk.version_code)
-    if old_name != "1.0.22":
-        raise SystemExit(f"Unexpected base versionName: {old_name} (expected 1.0.22)")
-    # Bump patch version: 1.0.22 -> 1.0.23
-    parts = old_name.split(".")
-    new_name = ".".join(parts[:-1] + [str(int(parts[-1]) + 1)])
-    new_code = old_code + 1
+    if from_version is not None and old_name != from_version:
+        raise SystemExit(f"Unexpected base versionName: {old_name} (expected {from_version})")
+    # Determine target version: explicit --to-version/--to-code or auto-bump.
+    if to_version is not None:
+        new_name = to_version
+    elif from_version is not None and old_name == from_version:
+        parts = old_name.split(".")
+        new_name = ".".join(parts[:-1] + [str(int(parts[-1]) + 1)])
+    else:
+        raise SystemExit("Provide --to-version (and --to-code) or a matching --from-version")
+    new_code = to_code if to_code is not None else old_code + 1
     print(f"Version: {old_name} ({old_code}) -> {new_name} ({new_code})")
 
     skin_files = collect(SKIN, "assets/addons/skin.novatv/")

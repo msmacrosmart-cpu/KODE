@@ -2,7 +2,7 @@ name: Validar release com Nova TV em emulador
 on:
   workflow_dispatch:
   push:
-    branches: [arena/7024aff2-kode]
+    branches: [arena/1a97faf9-kode]
     paths: [.github/workflows/validate-release-emulator.yml]
 permissions:
   contents: read
@@ -32,7 +32,7 @@ jobs:
                                       'repos/' + os.environ['GITHUB_REPOSITORY'] + '/git/blobs/' + sha],
                                      capture_output=True, check=True)
                   data = p.stdout
-                  if hashlib.sha1(('blob %d\\0' % len(data)).encode() + data).hexdigest() != sha:
+                  if hashlib.sha1(b'blob %d\x00' % len(data) + data).hexdigest() != sha:
                       raise SystemExit('bloco corrompido')
                   fh.write(data)
           assert hashlib.sha256(out.read_bytes()).hexdigest() == '8b58ee878aa0356a268bfa19bb891b079233370c9fd367d54a9a425bcd6d9b2e'
@@ -48,7 +48,8 @@ jobs:
           # Ativacao real da skin (settings default + perfil semeado + backups)
           python3 tools/kodi/activate-novatv.py "$RUNNER_TEMP/decoded"
           python3 tools/kodi/activate-novatv.py "$RUNNER_TEMP/decoded" --check
-          python3 tools/kodi/stage-smarted-bridge.py "$RUNNER_TEMP/decoded"
+          # A ponte plugin.video.smarted ja existe no APK de producao; nao usar
+          # stage-smarted-bridge.py (quebra o build ao refazer o manifesto).
           # Perfil descartavel: sem backup do cliente. Substitui o perfil embarcado
           # por um minimo que exercita a semeadura do bootstrap do dex.
           python3 - <<'PY'
