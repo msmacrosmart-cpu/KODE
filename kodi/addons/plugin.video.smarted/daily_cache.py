@@ -13,7 +13,7 @@ MAX_BYTES = 2 * 1024 * 1024
 
 
 def cached(directory, name, fetch, successful, today=None):
-    if name not in ('recent-movies', 'recent-series'):
+    if name not in ('recent-movies', 'recent-series') and not name.startswith('carrossel-'):
         raise ValueError('Invalid widget cache name')
     today = (today or date.today()).isoformat()
     try:

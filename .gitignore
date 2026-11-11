@@ -3,3 +3,5 @@ dropbox/
 __pycache__/
 *.pyc
 *.jks
+build/
+*.apk

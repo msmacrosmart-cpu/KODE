@@ -32,6 +32,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('base', type=Path)
     parser.add_argument('output', type=Path)
+    parser.add_argument('--skin', type=Path, default=None,
+                        help='pasta da skin (padrao kodi/skin.novatv); a do '
+                             'repositorio pode ser usada via kodi/skin.estilo.personalizado')
     args = parser.parse_args()
     if args.base.resolve() == args.output.resolve():
         raise SystemExit('Input and output must differ')
@@ -39,9 +42,12 @@ def main():
         raise SystemExit('Unexpected base APK')
     if args.output.exists():
         raise SystemExit('Output already exists')
-    skin_files = sorted(p for p in SKIN.rglob('*') if p.is_file())
-    if not skin_files or ET.parse(SKIN / 'addon.xml').getroot().get('id') != 'skin.novatv':
+    skin_dir = args.skin or SKIN
+    skin_files = sorted(p for p in skin_dir.rglob('*') if p.is_file())
+    skin_root = ET.parse(skin_dir / 'addon.xml').getroot() if (skin_dir / 'addon.xml').is_file() else None
+    if not skin_files or skin_root is None or skin_root.get('id') not in ('skin.novatv', 'skin.estilo.personalizado'):
         raise SystemExit('Skin is missing or has the wrong ID')
+    skin_version = skin_root.get('version') or '1.0.0'
     for path in skin_files:
         if path.is_symlink():
             raise SystemExit('Symlink in skin is not allowed')
@@ -78,7 +84,13 @@ def main():
                     with src.open(entry) as inp, dst.open(entry, 'w') as out:
                         shutil.copyfileobj(inp, out, 1024 * 1024)
             for path in skin_files:
-                name = 'assets/addons/skin.novatv/' + path.relative_to(SKIN).as_posix()
+                name = 'assets/addons/skin.novatv/' + path.relative_to(skin_dir).as_posix()
+                if name.endswith('/addon.xml') and path.parent == skin_dir:
+                    # a skin do repositorio tem id proprio; no APK ela e skin.novatv
+                    texto = path.read_text(encoding='utf-8')
+                    texto = re.sub(r'(<addon[^>]*?)id="skin\.estilo\.personalizado"', r'\1id="skin.novatv"', texto, count=1)
+                    dst.writestr(name, texto)
+                    continue
                 dst.write(path, name, compress_type=zipfile.ZIP_DEFLATED)
     except BaseException:
         args.output.unlink(missing_ok=True)

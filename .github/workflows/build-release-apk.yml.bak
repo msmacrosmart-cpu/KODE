@@ -1,0 +1,121 @@
+name: Build SMARTED-TV release APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/1a97faf9-kode]
+    paths: [.github/workflows/build-release-apk.yml]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Obter APK final anterior (v1.0.22, blocos versionados)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/base"
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          ids = json.loads(pathlib.Path('.github/private-apk-chunks.json').read_text())
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'base' / 'SMARTED-TV-v1.0.22-arm64.apk'
+          with out.open('wb') as fh:
+              for sha in ids:
+                  p = subprocess.run(['gh', 'api', '-H', 'Accept: application/vnd.github.raw+json',
+                                      'repos/' + os.environ['GITHUB_REPOSITORY'] + '/git/blobs/' + sha],
+                                     capture_output=True, check=True)
+                  data = p.stdout
+                  if hashlib.sha1(('blob %d\0' % len(data)).encode() + data).hexdigest() != sha:
+                      raise SystemExit('Falha na integridade de um bloco')
+                  fh.write(data)
+          if hashlib.sha256(out.read_bytes()).hexdigest() != '8b58ee878aa0356a268bfa19bb891b079233370c9fd367d54a9a425bcd6d9b2e':
+              raise SystemExit('Hash do APK base não confere')
+          print('APK base 1.0.22 reconstituído e conferido:', out.stat().st_size, 'bytes')
+          PY
+          ls -lh "$RUNNER_TEMP/base/"
+      - name: Chave de assinatura (repositório)
+        run: |
+          cp dropbox/smarted-tv-test.jks "$RUNNER_TEMP/smarted-tv-test.jks"
+          test "$(stat -c%s "$RUNNER_TEMP/smarted-tv-test.jks")" = "2730"
+          echo "Chave do repositório usada (2730 bytes)."
+      - name: Preparar ferramentas de reempacotamento
+        run: ./tools/kodi/setup.sh
+      - name: Montar candidato sem assinatura (versão + skin + ponte)
+        run: |
+          export PYTHONPATH="$HOME/.cache/kode-build/python:$PYTHONPATH"
+          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.24 --to-code 2103010 "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
+          ls -lh "$RUNNER_TEMP/unsigned.apk"
+
+      - name: Ativar Nova TV no perfil semeado e backups (nível ZIP)
+        run: |
+          set -euo pipefail
+          python3 tools/kodi/activate-novatv-in-apk.py "$RUNNER_TEMP/unsigned.apk" "$RUNNER_TEMP/activated.apk"
+          ls -lh "$RUNNER_TEMP/activated.apk"
+      - name: Alinhar e assinar (mesma chave da linha 1.0.15+)
+        run: |
+          set -e
+          CACHE="$HOME/.cache/kode-build"
+          JAVA="$CACHE/python/jdk4py/java-runtime/bin/java"
+          SIGNER="$CACHE/tools/apksigner.jar"
+          python3 tools/kodi/align-apk.py "$RUNNER_TEMP/activated.apk" "$RUNNER_TEMP/aligned.apk"
+          "$JAVA" -jar "$SIGNER" sign --ks "$RUNNER_TEMP/smarted-tv-test.jks" --ks-pass pass:android --key-pass pass:android --ks-key-alias smarted-tv-test --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false --out "$RUNNER_TEMP/signed.apk" "$RUNNER_TEMP/aligned.apk"
+          "$JAVA" -jar "$SIGNER" verify --verbose --print-certs "$RUNNER_TEMP/signed.apk" | tee "$RUNNER_TEMP/verify.txt"
+          grep -qi "^Signer #1 certificate SHA-256 digest: 855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a$" "$RUNNER_TEMP/verify.txt"
+      - name: Verificar identidade, tamanho e conteúdo
+        env:
+          PYTHONPATH: /home/runner/.cache/kode-build/python
+        run: |
+          python3 - <<'PY'
+          import hashlib, os, zipfile
+          from pathlib import Path
+          from pyaxmlparser import APK
+          base = Path(os.environ["RUNNER_TEMP"]) / "base/SMARTED-TV-v1.0.22-arm64.apk"
+          out = Path(os.environ["RUNNER_TEMP"]) / "signed.apk"
+          a = APK(str(out))
+          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTED-TV', '1.0.24', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
+          assert int(a.version_code) == 2103010, f"versionCode inesperado: {a.version_code}"
+          print(f"Identidade: {a.package} {a.get_app_name()} {a.version_name} ({a.version_code})")
+          with zipfile.ZipFile(base) as before, zipfile.ZipFile(out) as after:
+              assert after.testzip() is None
+              oldlibs = {n for n in before.namelist() if n.startswith('lib/') and n.endswith('.so')}
+              newlibs = {n for n in after.namelist() if n.startswith('lib/') and n.endswith('.so')}
+              assert oldlibs == newlibs and oldlibs, "Bibliotecas alteradas"
+              def digest(z, n):
+                  h = hashlib.sha256()
+                  with z.open(n) as f:
+                      for c in iter(lambda: f.read(1024*1024), b''):
+                          h.update(c)
+                  return h.digest()
+              for n in sorted(oldlibs | {'classes.dex'}):
+                  assert digest(before, n) == digest(after, n), f"Código alterado: {n}"
+              print(f"Motor preservado: {len(oldlibs)} bibliotecas + classes.dex idênticos")
+              # Skin/ponte do APK devem ser idênticos ao repositório
+              import xml.etree.ElementTree as ET
+              for prefix, src in (('assets/addons/skin.novatv/', Path('kodi/skin.novatv')), ('assets/addons/plugin.video.smarted/', Path('kodi/addons/plugin.video.smarted'))):
+                  for p in sorted(src.rglob('*')):
+                      if p.is_file() and '__pycache__' not in p.parts and p.suffix != '.pyc':
+                          arc = prefix + p.relative_to(src).as_posix()
+                          assert after.read(arc) == p.read_bytes(), f"Divergência: {arc}"
+              print("Skin + ponte no APK idênticos ao repositório")
+          print(f"Tamanho base: {base.stat().st_size} -> final: {out.stat().st_size}")
+          print(f"SHA-256 final: {hashlib.sha256(out.read_bytes()).hexdigest()}")
+          PY
+          ls -lh "$RUNNER_TEMP/signed.apk"
+      - name: Publicar release final
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp "$RUNNER_TEMP/signed.apk" "SMARTED-TV-v1.0.24-arm64.apk"
+          sha256sum "SMARTED-TV-v1.0.24-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
+          TAG=v1.0.24-smarted-arm64
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" "SMARTED-TV-v1.0.24-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false
+            echo "Release $TAG atualizada com o APK assinado."
+          else
+          gh release create v1.0.24-smarted-arm64 "SMARTED-TV-v1.0.24-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTED-TV 1.0.24 ARM64' --notes 'Release final ARM64 baseada no Kodi 21.3, com identidade SMARTED-TV, skin Nova TV e ponte SMARTED-TV atualizadas do repositório. Skin Nova TV ativada no perfil semeado e nos backups do wizard (My_Builds/*.zip, SaveData.zip). Motor nativo e Dex preservados; assinatura com a mesma chave da linha 1.0.15+ (atualização direta). Tamanho mantido (~238 MB, com backup/perfil). Não foi testado em dispositivo nesta etapa; validação estática (assinatura, identidade, motor e conteúdo) executada no workflow. Apenas ARM64, pacote org.xbmc.kodi. Código do Kodi: https://github.com/xbmc/xbmc/tree/21.3-Omega .'
+          fi
+          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.24-smarted-arm64/SMARTED-TV-v1.0.24-arm64.apk"
+# build-release-apk - disparado para regenerar APK 1.0.24 com skin SKIN_KODI_OMEGA21
