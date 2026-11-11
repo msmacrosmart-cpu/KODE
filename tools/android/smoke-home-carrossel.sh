@@ -57,7 +57,8 @@ for _ in $(seq 1 120); do
   sleep 5
 done
 
-grep -E "$mark|ADDONS" "$out/kodi-logcat.txt" | sed 's/^.*Kodi: V //' | tail -40 || true
+grep -E "$mark|ADDONS|SMARTED-TV: carrossel" "$out/kodi-logcat.txt" > "$out/marcadores.txt" 2>/dev/null || true
+sed 's/^.*Kodi: V //' "$out/marcadores.txt" | head -60 || true
 if [ "$resultado" -ne 1 ]; then
   echo "::error::carrossel da Home nao validou (codigo $resultado); ver docs/emulador-diagnostico.md"
   exit 1

@@ -43,12 +43,22 @@ def rpc(method, params):
     return response.get('result') or {}
 
 
-def directory(path):
-    files = rpc('Files.GetDirectory', {'directory': path, 'media': 'video',
-                                       'properties': ['title', 'thumbnail', 'fanart', 'art']}).get('files', [])
-    if not isinstance(files, list):
-        raise RuntimeError('resposta inesperada para ' + path)
-    return files
+def directory(path, tentativas=1, espera=2.0):
+    """Files.GetDirectory com novas tentativas (o Kodi pode estar ocupado)."""
+    import time
+    ultimo = None
+    for tentativa in range(max(1, tentativas)):
+        try:
+            files = rpc('Files.GetDirectory', {'directory': path, 'media': 'video',
+                                               'properties': ['title', 'thumbnail', 'fanart', 'art']}).get('files', [])
+            if not isinstance(files, list):
+                raise RuntimeError('resposta inesperada para ' + path)
+            return files
+        except Exception as error:  # noqa: BLE001
+            ultimo = error
+            if tentativa + 1 < tentativas:
+                time.sleep(espera)
+    raise ultimo
 
 
 def art_of(item):
@@ -87,7 +97,12 @@ def main():
     problemas = []
     for alvo in ALVOS:
         rota = 'plugin://plugin.video.smarted/?route=carrossel&alvo=%s' % alvo
-        files = directory(rota)
+        try:
+            files = directory(rota, tentativas=3, espera=3.0)
+        except Exception as error:  # noqa: BLE001
+            log('%s vazio (%s)' % (alvo.upper(), error))
+            problemas.append('%s: linha vazia (%s)' % (alvo, error))
+            continue
         midia = [f for f in files if f.get('filetype') == 'file']
         arte = [f for f in files if art_of(f)]
         menu = [f for f in files
@@ -117,8 +132,12 @@ def main():
             break
         if monitor.waitForAbort(0.5):
             break
-    interno = directory(brazuca)
-    log('NAVEGACAO janela=%s itens=%d' % ('videos' if ativo else 'nao', len(interno)))
+    try:
+        interno = directory(brazuca, tentativas=4, espera=3.0)
+        log('NAVEGACAO janela=%s itens=%d' % ('videos' if ativo else 'nao', len(interno)))
+    except Exception as error:  # noqa: BLE001
+        interno = []
+        log('NAVEGACAO janela=%s itens=? (%s)' % ('videos' if ativo else 'nao', error))
     if not ativo:
         problemas.append('ActivateWindow(Videos) nao abriu a janela de videos')
     if len(interno) < 4:
