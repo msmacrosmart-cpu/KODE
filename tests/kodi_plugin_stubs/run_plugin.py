@@ -53,7 +53,10 @@ def main():
     os.environ['SMARTED_STUB_ADDON_DATA'] = data_dir
     os.environ['SMARTED_STUB_HOME'] = profile
 
-    sys.argv = ['plugin://%s/' % PLUGIN_ID, '1', '?'] + sys.argv[2:]
+    query = sys.argv[2] if len(sys.argv) > 2 else ''
+    if query and not query.startswith('?'):
+        query = '?' + query
+    sys.argv = ['plugin://%s/' % PLUGIN_ID, '1', query or '?']
     status = 0
     try:
         runpy.run_path(os.path.join(plugin, 'default.py'), run_name='__main__')

@@ -221,3 +221,44 @@
 - `tests/test_brazucaplay_runtime.py` — roda o `default.py` real do plugin fora do Kodi
   (`SMARTED_PROFILE=<perfil>`) e exige o menu principal completo sem exceção.
 - `tools/kodi/verify-boot-integrity.py` — perfil byte-idêntico ao manifesto do dex.
+
+---
+
+## v1.0.29 — Brazuca Play abrindo + Ajustes sem corte + tela cheia (2026-11-11)
+
+### Diagnóstico (log do aparelho + harness offline)
+- **Brazuca Play**: `TypeError: quote_from_bytes() expected bytes` em
+  `addDir` (`<string>` linha 7236 → 5633 → `urllib.parse.quote_plus`). A causa
+  não é o addon: a skin abria o plugin apenas com `mode`/`url`/`name`. O plugin
+  faz `iconimage = params.get('iconimage', None)` e depois
+  `quote_plus(iconimage)` → `None` estoura. Reproduzido em
+  `tests/kodi_plugin_stubs/run_plugin.py` e corrigido passando
+  `iconimage`/`fanart`/`description` em **todas** as 39 chamadas do plugin.
+- **Unlock secreto**: `Skin.SetSetting` **não existe** no Kodi 21 (o keymapper
+  acusa `no such action`); `Skin.GetSetting` também não é infolabel válida. Os
+  contadores nunca subiam.
+- **Ajustes**: dois painéis com altura fixa (350/550) e tiles de 400x260 → a
+  última linha era cortada na borda inferior; o botão "Voltar" (largura 1800)
+  cobria o título "AJUSTES".
+- **Tela cheia**: no aparelho o canvas da GUI é a resolução real do display
+  (2400x1080). Controles com `<width>1920</width>` fixo deixavam ~480 px vazios
+  à direita (confirmado medindo o screenshot: tile de 400 px renderizado com
+  400 px).
+
+### Correções
+| Item | Onde | O que faz |
+|---|---|---|
+| `iconimage`/`fanart`/`description` em toda chamada do plugin | `xml/Home.xml`, `MyVideoNav.xml`, `MyFavourites.xml` (39 URLs) | Elimina o `quote_plus(None)`; Filmes/Séries/Canais/Animes/Novelas/Desenhos/Doramas abrem |
+| Ponte do unlock secreto | `xml/Home.xml`, `Includes_SecretUnlock.xml`, `Settings.xml` + `service.smarted.bootstrap/check.py` | `RunScript(service.smarted.bootstrap,secret-click|secret-cycle)` faz a soma em Python e grava com `Skin.SetString`; a skin lê com `Skin.String(...)` |
+| Grade de Ajustes | `xml/Settings.xml` + include `SettingsTile` (`xml/Includes.xml`) | Um único painel ancorado em `left/right/top/bottom`, tiles 320x180 (6 colunas em 2400, 5 em 1920, sem corte), 17 opções todas com ícone, cabeçalho Voltar/título/Buscar sem sobreposição |
+| Tela cheia / responsivo | `addon.xml` (res única 1920x1080), `Home.xml` e demais janelas | Fundos em `100%`, scrims ancorados, barra superior (Busca/Ajustes/Energia) ancorada à direita, listas do Home esticando até a borda |
+
+### Testes
+- `tests/test_skin_phone_layout.py` — URLs do plugin com `iconimage`/`fanart`
+  (e prova de que sem eles o addon quebra), ausência de `Skin.SetSetting`,
+  grade de Ajustes ancorada + ícones + tiles 320x180, resolução única e
+  controles de sangria.
+- `run_plugin.py` agora aceita a query do plugin
+  (`run_plugin.py <perfil> 'mode=27&url=%23filmes_menu&name=Filmes'`).
+- Suíte: 92 testes (9 skipped sem `SMARTED_PROFILE`); com perfil real os testes
+  de runtime passam (18/18) e o menu de Filmes lista "PESQUISE POR FILMES".

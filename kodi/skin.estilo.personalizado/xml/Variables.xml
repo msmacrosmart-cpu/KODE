@@ -800,11 +800,11 @@
 		<value>$INFO[ListItem.Duration,$LOCALIZE[180]: ][CR]$VAR[VideoCodecVar,, ]$INFO[ListItem.VideoResolution,| , ]$VAR[VideoResolutionTypeVar,, ]$VAR[VideoHDRVar,| , ]$INFO[ListItem.VideoAspect,| ,:1 ]$VAR[AudioCodecVar,| , ]$VAR[AudioChannelsVar]</value>
 	</variable>
 	<variable name="SecretClickLabelVar">
-		<value condition="Integer.IsGreater(Skin.GetSetting(secret_click_count),0)">$INFO[Skin.GetSetting(secret_click_count)]/8</value>
+		<value condition="Integer.IsGreater(Skin.String(secret_click_count),0)">$INFO[Skin.String(secret_click_count)]/8</value>
 		<value>0/8</value>
 	</variable>
 	<variable name="SecretUnlockedVar">
-		<value condition="Integer.IsGreaterOrEqual(Skin.GetSetting(secret_click_count),8) + Integer.IsGreaterOrEqual(Skin.GetSetting(secret_settings_cycle),2)">1</value>
+		<value condition="Integer.IsGreaterOrEqual(Skin.String(secret_click_count),8) + Integer.IsGreaterOrEqual(Skin.String(secret_settings_cycle),2)">1</value>
 		<value>0</value>
 	</variable>
 </includes>
