@@ -31,13 +31,32 @@
 | **Top10** | `4f52102` | ✅ Adaptada | Hero com botões "Detalhes"/"+ Minha lista" + atalhos principais |
 | **Sports** | `62ad9f2` | ✅ Adaptada | Hero com botões "Detalhes"/"+ Minha lista" + atalhos principais |
 
-### MyVideoNav.xml adaptado para Brazuka Play
+### Phase 3: Brazuka Play Integration (EM PROGRESSO)
 
-| XML | Commit | Status | Alterações |
-|---|---|---|---|
-| **MyVideoNav.xml** | `bd3f374` | ✅ Adaptada | Menu lateral com 7 categorias Brazuka Play + painel de conteúdo |
-| **VideoOSD.xml** | `90271a0` | ✅ Adaptada | Adicionar botão de áudio (70049) entre Info e Marcadores |
-| **MyFavourites.xml** | `dee5403` | ✅ Adaptada | Menu lateral com 7 categorias Brazuka Play + Favoritos Kodi |
+**Ordem fixa do Home (Aurora) implementada** — commit `999ff98`:
+
+| # | Seção | List ID | Conteúdo | Tipo Cartão |
+|---|---|---|---|---|
+| 1 | Continuar assistindo | 9200 | `special://skin/playlists/inprogress_movies.xsp` | Landscape 16:9 |
+| 2 | Filmes — 10 mais recentes | 9201 | `videodb://recentlyaddedmovies/` (sortby=dateadded desc, limit=10) | Portrait 2:3 |
+| 3 | Séries — 10 mais recentes | 9202 | `videodb://recentlyaddedepisodes/` (sortby=dateadded desc, limit=10) | Landscape 16:9 |
+| 4 | Canais favoritos | 9203 | `favourites://` | Landscape 16:9 |
+| 5 | Filmes — 10 mais votados | 9204 | `videodb://movies/titles/` (sortby=rating desc, limit=10) | Portrait 2:3 |
+| 6 | Séries — 10 mais vistas | 9205 | `videodb://tvshows/titles/` (sortby=rating desc, limit=10) | Landscape 16:9 |
+
+**Foco:** `onup=9200→9201→9202→9203→9204→9205`, `ondown=9400→9200` (atalhos → continue watching), `ondown=9205→9400` (última seção → atalhos)
+
+### Phase 2: Visual/Estrutura (CONCLUÍDA)
+
+| Tela | Commit | Status |
+|---|---|---|
+| **Aurora** | `f51e944` + `999ff98` | ✅ Adaptada + Ordem fixa |
+| **Blade** | `8937eea` | ✅ Adaptada |
+| **Top10** | `4f52102` | ✅ Adaptada |
+| **Sports** | `62ad9f2` | ✅ Adaptada |
+| **MyVideoNav** | `bd3f374` | ✅ Adaptada |
+| **VideoOSD** | `90271a0` | ✅ Adaptada |
+| **MyFavourites** | `dee5403` | ✅ Adaptada |
 
 **MyFavourites.xml — Menu lateral (grouplist 9000, vertical):**
 1. **TV ao vivo** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=21&url=%23menu_canais")`
