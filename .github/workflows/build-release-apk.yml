@@ -45,7 +45,7 @@ jobs:
       - name: Montar candidato sem assinatura (versão + skin + ponte)
         run: |
           export PYTHONPATH="$HOME/.cache/kode-build/python:$PYTHONPATH"
-          python3 tools/kodi/build-release-apk.py --from-version 1.0.23 --to-version 1.0.25 --to-code 2103011 "$RUNNER_TEMP/base/SMARTED-TV-v1.0.23-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
+          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.25 --to-code 2103011 "$RUNNER_TEMP/base/SMARTED-TV-v1.0.23-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
           ls -lh "$RUNNER_TEMP/unsigned.apk"
 
       - name: Ativar Brazuka Play no perfil semeado e backups (nível ZIP)

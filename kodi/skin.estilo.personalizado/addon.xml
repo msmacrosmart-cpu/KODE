@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="skin.estilo.personalizado" version="1.0.0" name="Nova TV" provider-name="Nova TV">
+	<requires>
+		<import addon="xbmc.gui" version="5.17.0"/>
+	</requires>
+	<extension point="xbmc.gui.skin" debugging="false">
+		<res width="1920" height="1440" aspect="4:3" default="false" folder="xml" />
+		<res width="1920" height="1280" aspect="3:2" default="false" folder="xml" />
+		<res width="1920" height="1200" aspect="16:10" default="false" folder="xml" />
+		<res width="2040" height="1080" aspect="17:9" default="false" folder="xml" />
+		<res width="1920" height="1080" aspect="16:9" default="true" folder="xml" />
+		<res width="2560" height="1080" aspect="21:9" default="false" folder="xml" />
+		<res width="2338" height="1080" aspect="19.5:9" default="false" folder="xml" />
+		<res width="2160" height="1080" aspect="18:9" default="false" folder="xml" />
+	</extension>
+	<extension point="xbmc.addon.metadata">
+		<platform>all</platform>
+		<license>GPL-2.0-or-later, CC BY-SA 4.0 (base: Estuary, Team Kodi)</license>
+		<summary lang="pt_BR">Skin IPTV premium em preto fosco, branco e cinza</summary>
+		<summary lang="en_GB">Premium IPTV skin in matte black, white and grey</summary>
+		<description lang="pt_BR">Skin monocromática com Home em 4 layouts (Aurora, Blade, Top 10, Esportes) e todas as janelas do Kodi Omega 21. Baseada no Estuary (Team Kodi).</description>
+		<description lang="en_GB">Monochrome skin with 4 Home layouts (Aurora, Blade, Top 10, Sports) and every Kodi Omega 21 window. Based on Estuary (Team Kodi).</description>
+		<assets>
+			<icon>resources/icon.png</icon>
+			<fanart>resources/fanart.jpg</fanart>
+		</assets>
+	</extension>
+</addon>
