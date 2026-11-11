@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+	<defaultcontrol>9000</defaultcontrol>
+	<backgroundcolor>background</backgroundcolor>
+	<controls>
+		<include>DefaultBackground</include>
+		<control type="image"><left>0</left><top>0</top><width>1920</width><height>1080</height><texture colordiffuse="pb_dark">pb_white.png</texture></control>
+		<control type="label"><left>60</left><top>40</top><width>400</width><height>40</height><font>font12</font><textcolor>pb_white</textcolor><label>AJUSTES</label></control>
+		<control type="group">
+			<centerleft>50%</centerleft>
+			<width>1800</width>
+			<top>100</top>
+			<bottom>100</bottom>
+			<control type="panel" id="9000">
+				<left>60</left>
+				<width>850</width>
+				<top>100</top>
+				<height>350</height>
+				<onup>noop</onup>
+				<ondown>Control.SetFocus(9001,$INFO[Container(9000).Position],absolute)</ondown>
+				<include>SettingsPanel</include>
+				<content>
+					<item>
+						<label>File Manager</label>
+						<onclick>ActivateWindow(filemanager)</onclick>
+						<icon>icons/settings/filemanager.png</icon>
+					</item>
+					<item>
+						<label>Add-ons</label>
+						<onclick>ActivateWindow(addonbrowser)</onclick>
+						<icon>icons/settings/addons.png</icon>
+					</item>
+					<item>
+						<label>Informações do Sistema</label>
+						<onclick>ActivateWindow(systeminfo)</onclick>
+						<icon>icons/settings/sysinfo.png</icon>
+					</item>
+					<item>
+						<label>Event Log</label>
+						<onclick>ActivateWindow(eventlog)</onclick>
+						<icon>icons/settings/eventlog.png</icon>
+					</item>
+				</content>
+			</control>
+			<control type="panel" id="9001">
+				<left>60</left>
+				<right>60</right>
+				<top>470</top>
+				<bottom>60</bottom>
+				<onup>Control.SetFocus(9000,$INFO[Container(9001).Position],absolute)</onup>
+				<ondown>noop</ondown>
+				<include>SettingsPanel</include>
+				<content>
+					<item>
+						<label>Reprodutor</label>
+						<onclick>ActivateWindow(PlayerSettings)</onclick>
+						<icon>icons/settings/player.png</icon>
+					</item>
+					<item>
+						<label>Mídia</label>
+						<onclick>ActivateWindow(MediaSettings)</onclick>
+						<icon>icons/settings/media.png</icon>
+					</item>
+					<item>
+						<label>TV ao vivo</label>
+						<onclick>ActivateWindow(PVRSettings)</onclick>
+						<icon>icons/settings/livetv.png</icon>
+					</item>
+					<item>
+						<label>Serviços</label>
+						<onclick>ActivateWindow(ServiceSettings)</onclick>
+						<icon>icons/settings/network.png</icon>
+					</item>
+					<item>
+						<label>Jogos</label>
+						<onclick>ActivateWindow(GameSettings)</onclick>
+						<icon>icons/settings/games.png</icon>
+						<visible>System.GetBool(gamesgeneral.enable)</visible>
+					</item>
+					<item>
+						<label>Interface</label>
+						<onclick>ActivateWindow(InterfaceSettings)</onclick>
+						<icon>icons/settings/interface.png</icon>
+					</item>
+					<item>
+						<label>Perfis</label>
+						<onclick>ActivateWindow(Profiles)</onclick>
+						<icon>icons/settings/profiles.png</icon>
+					</item>
+					<item>
+						<label>Sistema</label>
+						<onclick>ActivateWindow(SystemSettings)</onclick>
+						<icon>icons/settings/system.png</icon>
+					</item>
+					<item>
+						<label>LibreELEC</label>
+						<onclick>RunAddon(service.libreelec.settings)</onclick>
+						<icon>icons/settings/libreelec.png</icon>
+						<visible>System.AddonIsEnabled(service.libreelec.settings)</visible>
+					</item>
+				</content>
+			</control>
+		</control>
+		<control type="button" id="9050"><left>60</left><top>60</top><width>1800</width><height>40</height><font>font12</font><textoffsetx>28</textoffsetx><textcolor>pb_muted</textcolor><focusedcolor>pb_dark</focusedcolor><aligny>center</aligny><label>Voltar</label><texturefocus colordiffuse="pb_white" border="16">pb_rounded.png</texturefocus><texturenofocus/><onclick>Action(Back)</onclick><ondown>Control.SetFocus(9000,$INFO[Container(9050).Position],absolute)</ondown></control>
+		<control type="button" id="9051"><right>60</right><top>60</top><width>180</width><height>40</height><font>font12</font><textoffsetx>14</textoffsetx><align>center</align><aligny>center</aligny><textcolor>pb_white</textcolor><focusedcolor>pb_dark</focusedcolor><label>Búscula</label><texturefocus colordiffuse="pb_white" border="16">pb_rounded.png</texturefocus><texturenofocus colordiffuse="pb_panel2" border="16">pb_rounded.png</texturenofocus><onclick>ActivateWindow(1107)</onclick><onleft>9050</onleft><ondown>Control.SetFocus(9000,$INFO[Container(9051).Position],absolute)</ondown></control>
+	</controls>
+</window>
