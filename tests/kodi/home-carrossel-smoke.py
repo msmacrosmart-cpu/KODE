@@ -11,6 +11,7 @@ pessoais. Cada verificacao deixa um marcador no log:
 import json
 import os
 import sys
+from urllib.parse import urlencode
 
 import xbmc
 
@@ -24,6 +25,19 @@ ADDONS = ('script.module.six', 'script.module.kodi-six', 'script.module.certifi'
           'plugin.video.BrazucaPlay.Matrix', 'plugin.video.smarted')
 MENU_HINTS = ('categoria', 'pesquis', 'ordem', 'todas', 'menu', 'configura', 'verificar')
 ALVOS = ('canais', 'filmes', 'series')
+
+
+def brazuca(mode, path):
+    """URL do addon no mesmo formato da skin.
+
+    O Brazuca 2.1.4 faz quote_plus em iconimage/fanart; quando o parametro nao
+    vem na URL o valor e None e o menu estoura com
+    "quote_from_bytes() expected bytes". A skin sempre manda DefaultFolder.png.
+    """
+    query = urlencode({'url': path, 'mode': mode, 'name': '',
+                       'iconimage': 'DefaultFolder.png', 'fanart': 'DefaultFolder.png',
+                       'description': 'Menu'})
+    return 'plugin://plugin.video.BrazucaPlay.Matrix/?' + query
 # abas superiores: o botao da skin abre o menu nativo do addon (nao o
 # carrossel), entao basta o menu responder com as pastas do Brazuca Play
 ABAS = {'novelas': 25, 'animes': 22, 'doramas': 31, 'desenhos': 28}
@@ -125,8 +139,18 @@ def main():
             problemas.append('%s: linha só com pastas de menu' % alvo)
 
     # Navegacao interna em tela cheia: a janela de videos abre o diretorio real
-    brazuca = 'plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&url=%23filmes_menu'
-    xbmc.executebuiltin('ActivateWindow(Videos, "%s", return)' % brazuca)
+    menu_filmes = brazuca(27, '#filmes_menu')
+    # confere o diretorio antes de abrir a janela: com a janela de videos ativa
+    # o addon fica ocupado e a mesma chamada volta vazia
+    try:
+        interno = directory(menu_filmes, tentativas=4, espera=3.0)
+        log('MENU FILMES itens=%d' % len(interno))
+    except Exception as error:  # noqa: BLE001
+        interno = []
+        log('MENU FILMES falhou (%s)' % error)
+    if len(interno) < 4:
+        problemas.append('menu de filmes com %d itens' % len(interno))
+    xbmc.executebuiltin('ActivateWindow(Videos, "%s", return)' % menu_filmes)
     monitor = xbmc.Monitor()
     ativo = False
     for _ in range(40):
@@ -135,22 +159,15 @@ def main():
             break
         if monitor.waitForAbort(0.5):
             break
-    try:
-        interno = directory(brazuca, tentativas=4, espera=3.0)
-        log('NAVEGACAO janela=%s itens=%d' % ('videos' if ativo else 'nao', len(interno)))
-    except Exception as error:  # noqa: BLE001
-        interno = []
-        log('NAVEGACAO janela=%s itens=? (%s)' % ('videos' if ativo else 'nao', error))
+    log('NAVEGACAO janela=%s' % ('videos' if ativo else 'nao'))
     if not ativo:
         problemas.append('ActivateWindow(Videos) nao abriu a janela de videos')
-    if len(interno) < 4:
-        problemas.append('menu de filmes com %d itens' % len(interno))
 
     # Abas superiores (9013-9016): cada botao abre o menu nativo do addon; o
     # menu precisa responder com as pastas do Brazuca Play, senao a tela fica
     # vazia no aparelho.
     for aba, modo in sorted(ABAS.items()):
-        raiz = 'plugin://plugin.video.BrazucaPlay.Matrix/?mode=%d&url=%%23%s_menu' % (modo, aba)
+        raiz = brazuca(modo, '#%s_menu' % aba)
         try:
             menu = directory(raiz, tentativas=2, espera=2.0)
             log('ABA %s itens=%d' % (aba.upper(), len(menu)))

@@ -157,6 +157,20 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
             self.assertNotIn('mode=15', texto, botao)
             self.assertNotIn('plugin.video.smarted/?route=', texto, botao)
 
+    def test_toda_url_do_addon_leva_icone_para_nao_estourar_o_menu(self):
+        """Brazuca 2.1.4 faz quote_plus(iconimage); sem o parametro o menu cai.
+
+        A URL precisa sair completa, como nos botoes do topo, senao o addon
+        levanta "quote_from_bytes() expected bytes" e a tela fica vazia.
+        """
+        urls = re.findall(r'plugin://plugin\.video\.BrazucaPlay\.Matrix/\?[^"<]*', self.home)
+        self.assertTrue(urls, 'Home sem chamadas ao Brazuca Play')
+        for url in urls:
+            self.assertIn('iconimage=', url, url)
+            self.assertIn('fanart=', url, url)
+            icone = re.search(r'iconimage=([^&]*)', url).group(1)
+            self.assertNotEqual(icone, '', url)
+
     def test_linhas_da_home_usam_o_carrossel_de_conteudo(self):
         esperado = {'9200': 'canais', '9201': 'filmes', '9202': 'series'}
         for lista, alvo in esperado.items():
