@@ -93,6 +93,12 @@
 						<icon>icons/settings/system.png</icon>
 					</item>
 					<item>
+						<label>Configurações Avançadas</label>
+						<onclick>ActivateWindow(SkinSettings)</onclick>
+						<icon>icons/settings/interface.png</icon>
+						<visible>Integer.IsGreaterOrEqual(Skin.GetSetting(secret_click_count),8) + Integer.IsGreaterOrEqual(Skin.GetSetting(secret_settings_cycle),2)</visible>
+					</item>
+					<item>
 						<label>LibreELEC</label>
 						<onclick>RunAddon(service.libreelec.settings)</onclick>
 						<icon>icons/settings/libreelec.png</icon>
@@ -103,5 +109,6 @@
 		</control>
 		<control type="button" id="9050"><left>60</left><top>60</top><width>1800</width><height>40</height><font>font12</font><textoffsetx>28</textoffsetx><textcolor>pb_muted</textcolor><focusedcolor>pb_dark</focusedcolor><aligny>center</aligny><label>Voltar</label><texturefocus colordiffuse="pb_white" border="16">pb_rounded.png</texturefocus><texturenofocus/><onclick>Action(Back)</onclick><ondown>Control.SetFocus(9000,$INFO[Container(9050).Position],absolute)</ondown></control>
 		<control type="button" id="9051"><right>60</right><top>60</top><width>180</width><height>40</height><font>font12</font><textoffsetx>14</textoffsetx><align>center</align><aligny>center</aligny><textcolor>pb_white</textcolor><focusedcolor>pb_dark</focusedcolor><label>Búscula</label><texturefocus colordiffuse="pb_white" border="16">pb_rounded.png</texturefocus><texturenofocus colordiffuse="pb_panel2" border="16">pb_rounded.png</texturenofocus><onclick>ActivateWindow(1107)</onclick><onleft>9050</onleft><ondown>Control.SetFocus(9000,$INFO[Container(9051).Position],absolute)</ondown></control>
-	</controls>
+	<control type="button"><visible>false</visible><onclick>Skin.SetSetting(secret_settings_cycle,Skin.GetSetting(secret_settings_cycle)+1)</onclick></control>
+</controls>
 </window>
