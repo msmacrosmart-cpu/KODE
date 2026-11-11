@@ -48,11 +48,22 @@ adb shell am force-stop "$app"
 sleep 3
 
 # --- addon publico por adb (Kodi desabilita addons copiados para o perfil) -
-adb shell "mkdir -p $base/addons"
-adb push "${RUNNER_TEMP:?}/addons/." "$base/addons/" > "$out/push-addons.txt" 2>&1 || true
-tail -3 "$out/push-addons.txt" || true
-adb shell "chmod -R 777 $base/addons" || true
-adb shell "ls $base/addons" > "$out/addons-pos-push.txt" 2>/dev/null || true
+# O perfil pode estar no armazenamento externo ou no interno; copiamos para os
+# dois e deixamos o Kodi escanear de onde ele realmente le (diagnostico abaixo).
+interna="/data/user/0/$app/files/.kodi"
+: > "$out/push-addons.txt"
+for alvo in "$base" "$interna"; do
+  echo "== $alvo" >> "$out/push-addons.txt"
+  adb shell "mkdir -p $alvo/addons" >> "$out/push-addons.txt" 2>&1 || true
+  adb push "${RUNNER_TEMP:?}/addons/." "$alvo/addons/" >> "$out/push-addons.txt" 2>&1 || true
+  adb shell "chmod -R 777 $alvo/addons" >> "$out/push-addons.txt" 2>&1 || true
+done
+tail -6 "$out/push-addons.txt" || true
+{ echo '== externo'; adb shell "ls $base/addons" 2>/dev/null || true
+  echo '== interno'; adb shell "ls $interna/addons" 2>/dev/null || true
+  echo '== guisettings internos'; adb shell "ls -l $interna/userdata/guisettings.xml" 2>/dev/null || true
+  echo '== guisettings externos'; adb shell "ls -l $base/userdata/guisettings.xml" 2>/dev/null || true
+} > "$out/addons-pos-push.txt" 2>&1 || true
 cat "$out/addons-pos-push.txt" || true
 
 # --- 2a partida: Home com o addon disponivel ------------------------------
