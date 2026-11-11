@@ -56,9 +56,33 @@ def art_of(item):
     return item.get('thumbnail') or art.get('poster') or art.get('thumb') or art.get('icon') or ''
 
 
+def perfis_addons():
+    """Diagnostico: o que existe em special://home/addons e no addon manager."""
+    import xbmcvfs
+    pasta = xbmcvfs.translatePath('special://home/addons')
+    try:
+        nomes = sorted(xbmcvfs.listdir(pasta)[0])
+    except Exception as error:  # noqa: BLE001
+        nomes = ['ERRO ' + repr(error)]
+    presentes = [n for n in nomes if n.startswith('plugin.video.Brazuca')]
+    log('ADDONS pasta=%s total=%d brazuca=%s' % (pasta, len(nomes), presentes))
+    try:
+        detalhes = rpc('Addons.GetAddonDetails', {'addonid': 'plugin.video.BrazucaPlay.Matrix',
+                                                  'properties': ['version', 'enabled', 'broken']})
+        log('ADDONS manager=%s' % json.dumps(detalhes.get('addon', {}), ensure_ascii=False))
+    except Exception as error:  # noqa: BLE001
+        log('ADDONS manager=ausente (%s)' % error)
+
+
 def main():
+    perfis_addons()
     for addon in ADDONS:
-        rpc('Addons.SetAddonEnabled', {'addonid': addon, 'enabled': True})
+        try:
+            rpc('Addons.SetAddonEnabled', {'addonid': addon, 'enabled': True})
+        except Exception as error:  # noqa: BLE001
+            log('ADDONS enable falhou %s: %s' % (addon, error))
+    xbmc.executebuiltin('UpdateLocalAddons()')
+    perfis_addons()
 
     problemas = []
     for alvo in ALVOS:

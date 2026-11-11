@@ -47,11 +47,19 @@ jobs:
           assert any(n.endswith('default.py') for n in names), 'zip do addon sem default.py'
           assert 'version="2.1.4"' in addon_xml, 'versao do addon mudou: ' + addon_xml[:200]
           open(t + '/public-addon.zip', 'wb').write(data)
+          with zipfile.ZipFile(t + '/public-addon.zip') as z:
+              z.extractall(t + '/addons')
           print('addon publico ok')
           PY
           git clone --depth 1 --filter=blob:none --sparse -b matrix https://github.com/xbmc/repo-scripts.git "$RUNNER_TEMP/repo-scripts"
           git -C "$RUNNER_TEMP/repo-scripts" sparse-checkout set script.module.six script.module.kodi-six script.module.certifi script.module.chardet script.module.idna script.module.urllib3 script.module.requests script.module.simplejson
-          ls "$RUNNER_TEMP/repo-scripts" | head -20
+          mkdir -p "$RUNNER_TEMP/addons"
+          for dep in "$RUNNER_TEMP"/repo-scripts/script.module.*; do
+            [ -d "$dep" ] || continue
+            cp -a "$dep" "$RUNNER_TEMP/addons/"
+          done
+          chmod -R a+rX "$RUNNER_TEMP/addons"
+          ls "$RUNNER_TEMP/addons"
 
       - name: 4. Decodificar, semear perfil e ponte
         run: |
@@ -159,9 +167,12 @@ jobs:
             echo
             for f in "$RUNNER_TEMP"/home-carrossel-smoke/*; do
               [ -f "$f" ] || continue
+              size=$(stat -c%s "$f")
               case "$f" in
                 *.png) echo "## $(basename "$f") (imagem, ver artefato)";;
-                *) echo "## $(basename "$f")"; echo '```'; tail -c 12000 "$f"; echo '```';;
+                *) echo "## $(basename "$f") ($size bytes)"; echo '```'
+                   if [ "$size" -lt 24000 ]; then cat "$f"; else tail -c 16000 "$f"; fi
+                   echo '```';;
               esac
               echo
             done
