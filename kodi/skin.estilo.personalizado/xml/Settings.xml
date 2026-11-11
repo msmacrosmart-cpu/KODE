@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <window>
+	<!-- Ciclo de Ajustes: conta aberturas para o unlock secreto (8 cliques no logo + 2 ciclos) -->
+	<onload>Skin.SetSetting(secret_settings_cycle,Skin.GetSetting(secret_settings_cycle)+1)</onload>
 	<defaultcontrol>9000</defaultcontrol>
 	<backgroundcolor>background</backgroundcolor>
 	<controls>
@@ -39,6 +41,16 @@
 						<label>Event Log</label>
 						<onclick>ActivateWindow(eventlog)</onclick>
 						<icon>icons/settings/eventlog.png</icon>
+					</item>
+					<item>
+						<label>Aparência</label>
+						<onclick>ActivateWindow(SkinSettings)</onclick>
+						<icon>icons/settings/appearance.png</icon>
+					</item>
+					<item>
+						<label>Energia</label>
+						<onclick>ActivateWindow(ShutdownMenu)</onclick>
+						<icon>icons/settings/energy.png</icon>
 					</item>
 				</content>
 			</control>
@@ -97,6 +109,12 @@
 						<onclick>ActivateWindow(SkinSettings)</onclick>
 						<icon>icons/settings/interface.png</icon>
 						<visible>Integer.IsGreaterOrEqual(Skin.GetSetting(secret_click_count),8) + Integer.IsGreaterOrEqual(Skin.GetSetting(secret_settings_cycle),2)</visible>
+					</item>
+					<item>
+						<label>Diagnóstico Brazuca Play</label>
+						<onclick>RunAddon(service.smarted.bootstrap)</onclick>
+						<icon>icons/settings/diagnostics.png</icon>
+						<visible>System.HasAddon(service.smarted.bootstrap)</visible>
 					</item>
 					<item>
 						<label>LibreELEC</label>

@@ -193,3 +193,31 @@
 | `8937eea` | Adaptar tela Blade |
 | `4f52102` | Adaptar tela Top10 |
 | `62ad9f2` | Adaptar tela Sports |
+
+---
+
+## v1.0.27 — Brazuca Play no primeiro boot + Ajustes/Energia (2026-11-11)
+
+### Diagnóstico
+- O perfil semeado (`assets/smarted/profile/`) já contém o plugin e as dependências,
+  mas o Kodi só monta o banco de addons depois do primeiro boot. Sem o addon
+  registrado/habilitado e sem os dados de addon, a janela do Brazuca Play abria
+  vazia e o Kodi avisava que o addon não pôde ser carregado.
+- O próprio plugin baixa `cloudrequest` da internet na primeira execução; se esse
+  download falha, o menu não monta (o código do plugin mostra "Erro ao importar plugin!").
+
+### Correções
+| Item | Onde | O que faz |
+|---|---|---|
+| `service.smarted.bootstrap` | `kodi/addons/service.smarted.bootstrap/` | Serviço de startup que verifica o `plugin.video.BrazucaPlay.Matrix` e a cadeia de dependências obrigatórias, reinstala a partir de `addons/packages/*.zip` quando falta/está corrompido, cria `userdata/addon_data/...`, habilita os addons via JSON-RPC e descompacta o `cloudrequest` embutido |
+| Payload `cloudrequest-py3.zip` | `.../payload/` | Pacote oficial do repositório do Brazuca (v1.0.0 de requests_toolbelt), agora entregue pronto — o plugin não depende de rede no primeiro boot |
+| Relatório | `userdata/smarted-bootstrap.log` | Registro do que foi verificado/restaurado, para diagnóstico |
+| Ajustes/Energia na Home | `xml/Home.xml` | Barra fixa (Busca, Ajustes, Energia) em todos os layouts; "Energia" abre o menu de energia do Kodi |
+| Ciclo de Ajustes | `xml/Settings.xml` | `<onload>` incrementa `secret_settings_cycle` (o controle anterior era invisível e nunca disparava o unlock) |
+| Ícones de Ajustes | `media/icons/settings/` | Novos ícones (Aparência, Energia, Diagnóstico) + itens "Diagnóstico Brazuca Play" e "Energia" na tela de Ajustes |
+
+### Testes
+- `tests/test_smarted_bootstrap.py` — reparo, dependências, path traversal, payload, build.
+- `tests/test_brazucaplay_runtime.py` — roda o `default.py` real do plugin fora do Kodi
+  (`SMARTED_PROFILE=<perfil>`) e exige o menu principal completo sem exceção.
+- `tools/kodi/verify-boot-integrity.py` — perfil byte-idêntico ao manifesto do dex.

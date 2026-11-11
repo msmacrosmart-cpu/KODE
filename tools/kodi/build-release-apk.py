@@ -34,6 +34,9 @@ from xml.etree import ElementTree as ET
 ROOT = Path(__file__).resolve().parents[2]
 SKIN = ROOT / "kodi" / "skin.estilo.personalizado"
 BRIDGE = ROOT / "kodi" / "addons" / "plugin.video.smarted"
+# Addons do repositório injetados como addons de sistema (assets/addons/).
+# service.smarted.bootstrap garante o Brazuca Play registrado no primeiro boot.
+BRIDGE_ADDONS = [BRIDGE, ROOT / "kodi" / "addons" / "service.smarted.bootstrap"]
 SIG = re.compile(r"^META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC))$", re.I)
 MANIFEST = "assets/system/addon-manifest.xml"
 
@@ -122,9 +125,14 @@ def main():
     print(f"Version: {old_name} ({old_code}) -> {new_name} ({new_code})")
 
     skin_files = skin_payload()
-    bridge_files = collect(BRIDGE, "assets/addons/plugin.video.smarted/")
-    if ET.parse(BRIDGE / "addon.xml").getroot().get("id") != "plugin.video.smarted":
-        raise SystemExit("Bridge ID mismatch")
+    bridge_files = {}
+    bridge_ids = []
+    for addon_dir in BRIDGE_ADDONS:
+        addon_id = ET.parse(addon_dir / "addon.xml").getroot().get("id")
+        if addon_id != addon_dir.name:
+            raise SystemExit(f"Addon ID mismatch: {addon_dir.name} declares {addon_id}")
+        bridge_ids.append(addon_id)
+        bridge_files.update(collect(addon_dir, f"assets/addons/{addon_id}/"))
 
     with zipfile.ZipFile(base) as src:
         names = [e.filename for e in src.infolist() if not e.is_dir()]
@@ -144,7 +152,7 @@ def main():
         addon_manifest = src.read(MANIFEST)
         if addon_manifest.count(b"</addons>") != 1:
             raise SystemExit("Unexpected addon manifest")
-        for addon_id in (SKIN_ADDON_ID, "plugin.video.smarted"):
+        for addon_id in [SKIN_ADDON_ID] + bridge_ids:
             if f">{addon_id}<".encode() not in addon_manifest:
                 addon_manifest = addon_manifest.replace(
                     b"</addons>",
@@ -188,6 +196,7 @@ def main():
             raise
 
     print(f"Unsigned candidate: {out} ({out.stat().st_size} bytes, SHA-256 {sha256(out)})")
+    print("Bridge addons: " + ", ".join(bridge_ids))
     print("Profile (assets/smarted/profile/) left untouched — launcher dex applies the default skin at first boot.")
     print("Run tools/kodi/verify-boot-integrity.py on the candidate before signing.")
 
