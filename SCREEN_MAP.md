@@ -92,3 +92,10 @@ nada quebra se o sistema bloquear o desligamento.
 | Back | retorna/Ajustes | volta ao grupo anterior | sobe um nível |
 | Info | `Informações` (9303) | — | `Action(info)` |
 | Home | nativo | nativo | nativo |
+
+## 8. Home (v1.0.35)
+
+Uma única tela com hero de 400 px (160–560) e seis carrosséis; o grupo `9400`
+desliza para revelar as linhas abaixo de 1080 px. Não há bloco de Favoritos na
+Home — a aba correspondente fica no menu superior. Prévia de geometria:
+`docs/preview-home-1920.png` e `docs/preview-home-2400.png`.

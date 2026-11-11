@@ -7,6 +7,10 @@ on:
       - .github/workflows/home-carrossel-emulator.yml
       - tools/android/smoke-home-carrossel.sh
       - tests/kodi/home-carrossel-smoke.py
+      - kodi/skin.estilo.personalizado/xml/Home.xml
+      - kodi/addons/plugin.video.smarted/**
+      - tools/android/stage-public-addons.py
+      - tools/kodi/make-novatv-emulator-apk.py
 permissions:
   contents: write
 jobs:

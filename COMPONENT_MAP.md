@@ -147,3 +147,18 @@ Componente que alimenta as linhas da Home com mídia de verdade:
 
 Contratos: 168×120 por cartaz; `<content target="videos">`; `IsPlayable=true`
 quando o item é mídia; `onup/ondown` encadeando 9206 → 9200 → 9201 → 9202 → 9000.
+
+## 11. Home rolável e cache diário (v1.0.35)
+
+| item | arquivo | papel |
+|------|---------|-------|
+| `9400` | `xml/Home.xml` | grupo que contém hero + linhas e recebe as animações de deslocamento |
+| hero `160–560` | `xml/Home.xml` | capa, título, sinopse (120 px), metadados e botões `Assistir`/`Trailer`/`Informações` |
+| `Container(9201)` | `xml/Home.xml` | fonte do hero: linha de LANÇAMENTOS do Brazuca Play |
+| `9200`…`9205` | `xml/Home.xml` | canais, filmes/LANÇAMENTOS, séries, séries recentes, filmes e séries da biblioteca |
+| `daily_cache.py` | `plugin.video.smarted` | cache por alvo com reserva do dia anterior quando a rede falha |
+| `preview-home-layout.py` | `tools/kodi` | desenha a Home a partir do XML para conferir geometria antes do build |
+
+Contratos: nenhum `favourites://` na Home; título de linha sempre condicionado a
+`!String.IsEmpty(Container(N).ListItem.Label)`; `onup/ondown` em cadeia de 9000
+até 9205; cache com no máximo uma requisição por dia e por alvo.

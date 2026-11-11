@@ -172,19 +172,53 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
             self.assertIn('$VAR[ItemArt]', texto)
             self.assertIn('<aspectratio>keep</aspectratio>', texto)
 
-    def test_home_tem_carrossel_de_favoritos(self):
-        bloco = re.search(r'<control type="list" id="9206">.*?</control>\n', self.home, re.S)
-        self.assertIsNotNone(bloco, 'falta a linha de favoritos')
-        self.assertIn('<content target="videos">favourites://</content>', bloco.group(0))
+    def test_home_nao_tem_bloco_de_favoritos(self):
+        # v1.0.35: a Home mostra so carrosseis de midia; favoritos ficam no menu
+        self.assertNotIn('favourites://', self.home, 'a Home nao deve listar favoritos')
+        self.assertIsNone(re.search(r'<control type="list" id="9206">', self.home),
+                          'a linha 9206 de favoritos deveria ter saido')
+        # a aba Favoritos continua no menu (9019); o que sai e o bloco de cards
         self.assertIn('<label>Favoritos</label>', self.home)
 
-    def test_linhas_visiveis_dentro_da_tela(self):
-        for lista, teto in (('9206', 620), ('9200', 770), ('9201', 920), ('9202', 1060)):
+    def test_primeiras_linhas_cabem_na_tela(self):
+        # as duas primeiras linhas aparecem sem rolar; as demais ficam abaixo
+        for lista, teto in (('9200', 1080), ('9201', 1080)):
             bloco = re.search(r'<control type="list" id="%s"><left>\d+</left><top>(\d+)</top>'
                               r'<right>\d+</right><height>(\d+)</height>' % lista, self.home)
             self.assertIsNotNone(bloco, lista)
             top, altura = int(bloco.group(1)), int(bloco.group(2))
-            self.assertLessEqual(top + altura, teto + 20, '%s passa da tela' % lista)
+            self.assertLessEqual(top + altura, teto, '%s passa da tela' % lista)
+
+    def test_home_rola_na_vertical(self):
+        self.assertIn('id="9400"', self.home, 'falta o grupo rolavel da Home')
+        animacoes = re.findall(r'<animation[^>]*end="0,(-\d+)"[^>]*condition="Control\.HasFocus\((\d+)\)"',
+                               self.home)
+        self.assertGreaterEqual(len(animacoes), 3, 'rolagem vertical precisa animar as linhas de baixo')
+        alvos = {cid for _, cid in animacoes}
+        self.assertTrue({'9202', '9203', '9204', '9205'} <= alvos, alvos)
+        # o grupo abrange o hero (9300) e as linhas ate 9205
+        self.assertLess(self.home.index('id="9400"'), self.home.index('id="9300"'))
+        self.assertLess(self.home.index('id="9300"'), self.home.index('id="9205"'))
+        # as animacoes vem antes do conteudo que rolam
+        self.assertLess(self.home.index('<animation effect="slide"'), self.home.index('id="9300"'))
+
+    def test_hero_expandido_mostra_lancamentos(self):
+        hero = re.search(r'<control type="textbox">(.*?)</control>', self.home, re.S).group(1)
+        self.assertIn('Container(9201).ListItem.Plot', hero)
+        altura = int(re.search(r'<height>(\d+)</height>', hero).group(1))
+        self.assertGreaterEqual(altura, 100, 'sinopse do hero precisa de mais linhas')
+        # nada de "LANÇAMENTO" fixo antes de o destaque carregar
+        self.assertIn('!String.IsEmpty(Container(9201).ListItem.Label)', hero)
+
+    def test_titulos_so_aparecem_com_conteudo(self):
+        for lista in ('9200', '9201', '9202', '9203'):
+            padrao = (r'<control type="label"><left>60</left><top>(\d+)</top>.*?</control>')
+            achado = None
+            for m in re.finditer(padrao, self.home, re.S):
+                if 'Container(%s)' % lista in m.group(0):
+                    achado = m.group(0)
+            self.assertIsNotNone(achado, lista)
+            self.assertIn('!String.IsEmpty(Container(%s).ListItem.Label)' % lista, achado, lista)
 
     def test_navegacao_real_dentro_do_addon(self):
         # o menu completo do addon (pastas, subpastas, canais, filmes, series) continua acessivel

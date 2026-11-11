@@ -460,3 +460,35 @@ de vídeos); o check foi refeito com novas tentativas no commit seguinte e o run
 
 **Release:** `v1.0.34-smarted-arm64` (run `43081018007`, success) —
 `SMARTED-TV-v1.0.34-arm64.apk`, 241.549.982 B, sha256 `3b8aa840…bd3f`.
+
+### v1.0.35 — ajuste definitivo de roteamento, carrosséis e layout da Home (rodada 10)
+
+Escopo entregue (skin 1.0.6 · plugin 0.2.4 · APK 1.0.35 / versionCode 2103021):
+
+1. **Abas superiores** — reverificadas: TV ao vivo `mode=21&#38;url=%23menu_canais`,
+   Filmes/Séries `mode=27` (`#filmes_menu`/`#series_menu`), Novelas `mode=25`,
+   Animes `mode=22`, Doramas `mode=31`, Desenhos `mode=28`, todas por
+   `ActivateWindow(Videos, "plugin://plugin.video.BrazucaPlay.Matrix/…", return)`,
+   abrindo a pasta nativa do addon (sem nível intermediário vazio).
+2. **Favoritos fora da Home** — removidos `9206` e o título correspondente; zero
+   ocorrências de `favourites://` no `Home.xml`. A aba Favoritos (9019) segue no
+   menu superior.
+3. **Estado inicial vazio** — títulos de linha, badge, título, metadados e sinopse
+   do hero condicionados a `!String.IsEmpty(Container(N).ListItem.Label)`; com o
+   cache frio a Home nasce sem nada escrito.
+4. **Cache diário** — `daily_cache.py` reusa na hora o cache do dia, mantém o cache
+   de outro dia como reserva e faz no máximo uma tentativa de atualização por dia;
+   se a rede (ou o JSON-RPC) falhar, a linha continua com o conteúdo anterior.
+5. **Rolagem vertical** — grupo `9400` desloca −170/−340/−510/−680 px com foco em
+   9202/9203/9204/9205, revelando as linhas que terminam abaixo de 1080 px.
+6. **Hero expandido** — `160–560`, capa 300×450, sinopse de 120 px, botões
+   `Assistir`/`Trailer`/`Informações` em `top=504`, alimentado por
+   `Container(9201)` (linha de LANÇAMENTOS do addon).
+7. **Validação** — `Ran 160 tests … OK (skipped=9)`; novo
+   `tools/kodi/preview-home-layout.py` desenha a Home a partir do XML
+   (`docs/preview-home-1920.png`, `docs/preview-home-2400.png`) e confirma que só
+   9203/9204/9205 exigem rolagem; o smoke do emulador passou a cobrir as sete abas
+   (`canais`, `filmes`, `series`, `novelas`, `animes`, `doramas`, `desenhos`) e a
+   rota `recent-series` usada pela linha 9203; o workflow
+   `home-carrossel-emulator.yml` agora dispara também em mudanças de `Home.xml`,
+   do plugin e do staging de addons.

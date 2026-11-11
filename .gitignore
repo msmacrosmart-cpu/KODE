@@ -5,3 +5,4 @@ __pycache__/
 *.jks
 build/
 *.apk
+*.bak

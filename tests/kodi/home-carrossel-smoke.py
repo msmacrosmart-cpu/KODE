@@ -24,6 +24,9 @@ ADDONS = ('script.module.six', 'script.module.kodi-six', 'script.module.certifi'
           'plugin.video.BrazucaPlay.Matrix', 'plugin.video.smarted')
 MENU_HINTS = ('categoria', 'pesquis', 'ordem', 'todas', 'menu', 'configura', 'verificar')
 ALVOS = ('canais', 'filmes', 'series')
+# abas superiores: precisam responder, mas uma categoria sem novidade nao
+# invalida a Home -- so um conjunto todo vazio indica quebra sistemica
+EXTRAS = ('novelas', 'animes', 'doramas', 'desenhos')
 
 
 def log(message):
@@ -95,7 +98,8 @@ def main():
     perfis_addons()
 
     problemas = []
-    for alvo in ALVOS:
+    vazios = []
+    for alvo in ALVOS + EXTRAS:
         rota = 'plugin://plugin.video.smarted/?route=carrossel&alvo=%s' % alvo
         try:
             files = directory(rota, tentativas=3, espera=3.0)
@@ -112,7 +116,7 @@ def main():
             log('  %s | %s | %s' % (TAGS.sub('', item.get('label', ''))[:52].replace('|', '/'),
                                     item.get('filetype'), art_of(item)[:60].replace('|', '/')))
         if not files:
-            problemas.append(alvo + ': linha vazia')
+            problemas.append(alvo + ': linha vazia') if alvo in ALVOS else vazios.append(alvo)
             continue
         if len(arte) < min(3, len(files)):
             problemas.append('%s: %d/%d itens sem arte' % (alvo, len(files) - len(arte), len(files)))
@@ -142,6 +146,22 @@ def main():
         problemas.append('ActivateWindow(Videos) nao abriu a janela de videos')
     if len(interno) < 4:
         problemas.append('menu de filmes com %d itens' % len(interno))
+
+    if len(vazios) == len(EXTRAS):
+        problemas.append('todas as abas extras vazias: ' + ', '.join(EXTRAS))
+    elif vazios:
+        log('ABAS sem itens agora: %s' % ', '.join(vazios))
+
+    # Linha nova da Home (9203): rota de series recentes precisa responder
+    rota_recentes = 'plugin://plugin.video.smarted/?route=recent-series'
+    try:
+        recentes = directory(rota_recentes, tentativas=3, espera=3.0)
+        log('RECENTES total=%d' % len(recentes))
+        if not recentes:
+            problemas.append('series recentes: linha vazia')
+    except Exception as error:  # noqa: BLE001
+        log('RECENTES falhou (%s)' % error)
+        problemas.append('series recentes: %s' % error)
 
     # Favoritos: linha nativa da Home precisa listar algo quando houver favoritos
     try:

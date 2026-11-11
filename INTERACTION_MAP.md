@@ -817,3 +817,72 @@ a janela de vídeos abre em tela cheia, o diretório é executado pelo addon e o
      ▲                                                    │
      └──────────────── 9200 ◀── 9201 ◀── 9202 ◀───────────┘
 ```
+
+## 20. Rodada 10 (v1.0.35) — Home sem Favoritos, estado inicial vazio e rolagem
+
+Seção aditiva; os diagramas das seções 18 e 19 continuam descrevendo o histórico.
+
+### 20.1 Abas superiores (inalterado, reverificado)
+
+| aba | botão | destino |
+|-----|-------|---------|
+| TV ao vivo | 9010 | `plugin://plugin.video.BrazucaPlay.Matrix/?mode=21&url=%23menu_canais` |
+| Filmes | 9011 | `?mode=27&url=%23filmes_menu` |
+| Séries | 9012 | `?mode=27&url=%23series_menu` |
+| Novelas | 9013 | `?mode=25&url=%23novelas_menu` |
+| Animes | 9014 | `?mode=22&url=%23animes_menu` |
+| Doramas | 9015 | `?mode=31&url=%23doramas_menu` |
+| Desenhos | 9016 | `?mode=28&url=%23desenhos_menu` |
+| Brazuca Play | 9017/9018 | raiz do addon |
+| Favoritos | 9019 | `favourites://` (aba mantida) |
+
+Todas usam `ActivateWindow(Videos, …, return)`: abrem a pasta nativa do addon e
+voltam para a Home no Back.
+
+### 20.2 Linha do tempo da Home (rodada 10)
+
+```
+9000 (nav) ─▶ 9300 (hero: Assistir / Trailer / Informações)
+                   │
+                   ▼
+        9200 TV ao vivo ─▶ 9201 Filmes (LANÇAMENTOS) ─▶ 9202 Séries
+                   ─▶ 9203 Séries recentes ─▶ 9204 Filmes (biblioteca)
+                   ─▶ 9205 Séries (biblioteca) ─▶ 9000
+```
+
+O bloco de Favoritos (`9206`, `favourites://`) **não existe mais** na Home: as
+linhas mostram somente mídia real servida pelo addon. A aba Favoritos do menu
+superior continua funcional.
+
+### 20.3 Grupo rolável `9400`
+
+Hero e as seis linhas vivem dentro de `<control type="group" id="9400">`. Quatro
+animações `slide` reversíveis deslocam o grupo para cima conforme o foco desce:
+
+| foco | deslocamento | o que aparece |
+|------|--------------|---------------|
+| 9200 | 0 | hero + TV ao vivo |
+| 9201 | 0 | Filmes (LANÇAMENTOS) |
+| 9202 | −170 | Séries |
+| 9203 | −340 | Séries recentes |
+| 9204 | −510 | Filmes (biblioteca) |
+| 9205 | −680 | Séries (biblioteca) |
+
+Duração 260 ms, `tween` — a rolagem acompanha o D-pad sem salto. Como as linhas
+9203–9205 terminam abaixo de 1080 px (`docs/preview-home-1920.png`), sem esse
+deslocamento o conteúdo ficaria inalcançável em telas 1080p.
+
+### 20.4 Estado inicial vazio
+
+Nenhum rótulo fixo: títulos de linha (`566/750/934/1118/1302/1696`), badge
+LANÇAMENTO, título, metadados e sinopse do hero só aparecem quando
+`!String.IsEmpty(Container(N).ListItem.Label)`. Os próprios containers têm
+`<visible>` amarrado ao conteúdo, então o primeiro boot não desenha caixas
+vazias nem placeholders — as linhas surgem quando o cache/rota responde.
+
+### 20.5 Cache diário
+
+`daily_cache.py` grava `carrossel-<alvo>` no perfil. No boot: cache do dia →
+devolve na hora; cache de outro dia → mantém como `anterior`, tenta uma única
+requisição do dia e, se falhar, devolve `anterior` (nunca esvazia a linha).
+Resultado: uma atualização por dia, sem laço de requisições.
