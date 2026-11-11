@@ -37,6 +37,22 @@
 |---|---|---|---|
 | **MyVideoNav.xml** | `bd3f374` | ✅ Adaptada | Menu lateral com 7 categorias Brazuka Play + painel de conteúdo |
 | **VideoOSD.xml** | `90271a0` | ✅ Adaptada | Adicionar botão de áudio (70049) entre Info e Marcadores |
+| **MyFavourites.xml** | `dee5403` | ✅ Adaptada | Menu lateral com 7 categorias Brazuka Play + Favoritos Kodi |
+
+**MyFavourites.xml — Menu lateral (grouplist 9000, vertical):**
+1. **TV ao vivo** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=21&url=%23menu_canais")`
+2. **Filmes** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&url=%23filmes_menu")`
+3. **Séries** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&url=%23series_menu")`
+4. **Novelas** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=25&url=%23novelas_menu")`
+5. **Animes** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=22&url=%23animes_menu")`
+6. **Doramas** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=31&url=%23doramas_menu")`
+7. **Desenhos** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=28&url=%23desenhos_menu")`
+8. **Favoritos Kodi** → `ActivateWindow(Favourites)`
+
+**MyFavourites.xml — Painel de conteúdo (à direita):**
+- List 50 (lista vertical com thumbnail 180x90 + título + sinopse)
+- Foco: `onright=50` no menu, `onup/ondown/onleft=9000` na lista
+- Busca/Ajustes/Sair na barra inferior
 
 **MyVideoNav.xml — Menu lateral (grouplist 9000, vertical):**
 1. **TV ao vivo** → `ActivateWindow(10025, "plugin://plugin.video.BrazucaPlay.Matrix/?mode=21&url=%23menu_canais")`
