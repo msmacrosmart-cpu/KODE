@@ -50,7 +50,7 @@
 
 | Tela | Commit | Status |
 |---|---|---|
-| **Aurora** | `f51e944` + `999ff98` | ✅ Adaptada + Ordem fixa |
+| **Aurora** | `f51e944` + `999ff98` + `e611b52` | ✅ Adaptada + Ordem fixa + Hero Brazuka Play |
 | **Blade** | `8937eea` | ✅ Adaptada |
 | **Top10** | `4f52102` | ✅ Adaptada |
 | **Sports** | `62ad9f2` | ✅ Adaptada |
