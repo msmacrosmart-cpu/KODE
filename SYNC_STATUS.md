@@ -1,7 +1,7 @@
-# SYNC_STATUS.md — Sincronização das Abas Principal
+# SYNC_STATUS.md — Sincronização das Abas Principais
 
 > Data: 2026-11-11
-> Commit: `b4ede5d`
+> Commit: `b4ede5d` + `9535b02`
 > Comando: "veja se a sincronização das abas TV, Filmes, Series, Musica e YouTube está com conteudos. Se tiver, pode liberar elas sem o unlock secret."
 
 ---
