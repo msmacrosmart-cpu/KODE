@@ -3,7 +3,10 @@ on:
   workflow_dispatch:
   push:
     branches: [arena/1a97faf9-kode]
-    paths: [.github/workflows/home-carrossel-emulator.yml]
+    paths:
+      - .github/workflows/home-carrossel-emulator.yml
+      - tools/android/smoke-home-carrossel.sh
+      - tests/kodi/home-carrossel-smoke.py
 permissions:
   contents: write
 jobs:
