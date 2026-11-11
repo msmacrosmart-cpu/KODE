@@ -27,6 +27,18 @@
 			<style>lighten</style>
 		</font>
 		<font>
+			<name>font11</name>
+			<filename>NotoSans-Regular.ttf</filename>
+			<size>28</size>
+			<style>lighten</style>
+		</font>
+		<font>
+			<name>font16</name>
+			<filename>NotoSans-Regular.ttf</filename>
+			<size>36</size>
+			<style>lighten</style>
+		</font>
+		<font>
 			<name>font23_narrow</name>
 			<filename>NotoSans-Regular.ttf</filename>
 			<size>23</size>
