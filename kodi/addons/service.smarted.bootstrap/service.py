@@ -17,7 +17,7 @@ import xbmcvfs
 import repair
 from favourites import ensure_favourites
 from performance import ensure_performance
-from menu_smarted import garantir_menu, rodar_validacao_navegacao
+from menu_smarted import garantir_menu, rodar_validacao_navegacao, silenciar_avisos_brazuca
 from skin_setup import ensure_home_nodes, ensure_skin, home_xml_candidates
 
 ADDON = xbmcaddon.Addon()
@@ -269,6 +269,7 @@ def main():
     write_favourites()
     apply_navigation()
     garantir_menu(xbmc, log=log)
+    silenciar_avisos_brazuca(log=log)
     # teste real dos botoes da barra: passa por cada pasta e registra o resultado
     navegacao = rodar_validacao_navegacao(log)
     if navegacao is not None:

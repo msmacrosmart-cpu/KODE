@@ -17,45 +17,76 @@ from pathlib import Path
 BRAZUCA = 'plugin://plugin.video.BrazucaPlay.Matrix/?%s'
 SMARTED = 'plugin://plugin.video.smarted/?%s'
 
-# widget padrao da Home: rota do SMARTED que desce a arvore do addon ate o
-# conteudo real da categoria (posteres/filmes que reproduzem)
-CARROSSEL = SMARTED % 'route=carrossel&alvo=%s'
-LANCAMENTOS = SMARTED % 'route=recent-movies'
-SERIES_NOVAS = SMARTED % 'route=recent-series'
+# Fontes de conteudo reais do Brazuca Play 2.1.4 (lidas do codigo do addon,
+# modo=1 => url = base16(base64(url)) na mesma ordem usada por addDir()).
+GIST_SERIES = 'https://gist.githubusercontent.com/skyrisk/16070347f20c87c72540f9f805b57a66/raw/'
+GIST_NOVELAS = 'https://gist.githubusercontent.com/skyrisk/07f1f4cd1b203cbf2efec959c4e8645a/raw/'
+GIST_FILMES = 'https://gist.githubusercontent.com/skyrisk/5b87797329c7b46422565ffbaab3be7e/raw/'
+
+FILMES = GIST_FILMES + 'lancamentos.xml'
+SERIES = GIST_SERIES + 'SeriesBase'
+DORAMAS = GIST_SERIES + 'DoramasBase'
+ANIMES = GIST_SERIES + 'AnimesBase'
+DESENHOS = GIST_SERIES + 'DesenhosBase'
+NOVELAS = GIST_NOVELAS + 'novelas.xml'
+
+# Favoritos continuam saindo das rotas do plugin.video.smarted
+FAVORITOS = SMARTED % 'route=favoritos-%s'
 
 # rotas legadas que geravam erro no log (addons desligados/playlists ausentes)
 LEGADOS = re.compile(
     r'plugin://script\.skin\.helper\.widgets/[^<\s"\']*'
-    r'|plugin://plugin\.video\.themoviedb\.helper[^<\s"\']*'
+    r'|plugin://plugin\.video\.themoviedb\.helper[^<\s\']*'
     r'|special://skin/(?:playlists|extras/widgetplaylists)/[^<\s"\']*\.xsp')
 
 
-def acao(mode, pasta, nome):
-    """Acao no padrao nativo da Bingie (sem aspas) abrindo a pasta do Brazuca."""
-    return ('ActivateWindow(Videos,%s,return)'
-            % (BRAZUCA % 'mode=%s&url=%%23%s&name=%s&iconimage=DefaultFolder.png'
-               '&fanart=DefaultFolder.png&description=Menu' % (mode, pasta, nome)))
+def codificar(url):
+    """Mesma codificacao do addon: base16(base64(url)) e depois quote_plus."""
+    import base64
+    from urllib.parse import quote_plus
+    return quote_plus(base64.b16encode(base64.b64encode(url.encode('utf-8'))).decode('ascii'))
+
+
+def destino(mode, url, nome):
+    """URL de plugin que cai direto na listagem final do Brazuca Play."""
+    from urllib.parse import quote_plus
+    url = codificar(url) if mode == 1 else quote_plus(url)
+    return (BRAZUCA % 'url=%s&mode=%d&name=%s&iconimage=DefaultFolder.png'
+            '&fanart=DefaultFolder.png&description=Menu'
+            % (url, mode, quote_plus(nome)))
+
+
+def acao(mode, url, nome):
+    """Acao no padrao nativo da Bingie (sem aspas) abrindo a listagem final."""
+    return 'ActivateWindow(Videos,%s,return)' % destino(mode, url, nome)
 
 
 # (rotulo, acao, widget principal, tipo de widget, widgets extras)
-# Oito botoes na ordem nativa da Bingie (Home primeiro), VOD do Brazuca nos
-# carrosseis e TV ao vivo sem carrossel de canais na Home.
+# Oito botoes na ordem nativa da Bingie, cada um indo direto para a listagem
+# final do Brazuca Play (sem menu intermediario de listas):
+#   TV        -> mode=21 url=#todoscanais  (lista de canais; #menu_canais e menu)
+#   Filmes    -> mode=1  lancamentos.xml
+#   Series    -> mode=1  SeriesBase
+#   Doramas   -> mode=1  DoramasBase
+#   Novelas   -> mode=1  novelas.xml
+#   Animes    -> mode=1  AnimesBase
+#   Desenhos  -> mode=1  DesenhosBase
 MENU = [
     ('Home', 'ActivateWindow(home,return)', '', 'video', []),
-    ('TV', acao(21, 'menu_canais', 'TV'), '', 'video', []),
-    ('Filmes', acao(27, 'filmes_menu', 'Filmes'),
-     LANCAMENTOS, 'movies', [CARROSSEL % 'filmes', SMARTED % 'route=favoritos-filmes']),
-    ('Séries', acao(27, 'series_menu', 'S%C3%A9ries'),
-     SERIES_NOVAS, 'tvshows', [CARROSSEL % 'series', SMARTED % 'route=favoritos-series']),
-    ('Doramas', acao(31, 'doramas_menu', 'Doramas'),
-     CARROSSEL % 'doramas', 'tvshows', [SMARTED % 'route=favoritos-doramas']),
-    ('Novelas', acao(25, 'novelas_menu', 'Novelas'),
-     CARROSSEL % 'novelas', 'tvshows', [SMARTED % 'route=favoritos-novelas']),
-    ('Animes', acao(22, 'animes_menu', 'Animes'),
-     CARROSSEL % 'animes', 'tvshows', [SMARTED % 'route=favoritos-animes']),
-    ('Desenhos', acao(28, 'desenhos_menu', 'Desenhos'),
-     CARROSSEL % 'desenhos', 'tvshows', [SMARTED % 'route=favoritos-desenhos']),
-    ('Busca', 'ActivateWindow(1109,return)', '', 'video', []),
+    ('TV', acao(21, '#todoscanais', 'TV'), '', 'video', []),
+    ('Filmes', acao(1, FILMES, 'Filmes'),
+     destino(1, FILMES, 'Filmes'), 'movies', [FAVORITOS % 'filmes']),
+    ('Séries', acao(1, SERIES, 'Séries'),
+     destino(1, SERIES, 'Séries'), 'tvshows', [FAVORITOS % 'series']),
+    ('Doramas', acao(1, DORAMAS, 'Doramas'),
+     destino(1, DORAMAS, 'Doramas'), 'tvshows', [FAVORITOS % 'doramas']),
+    ('Novelas', acao(1, NOVELAS, 'Novelas'),
+     destino(1, NOVELAS, 'Novelas'), 'tvshows', [FAVORITOS % 'novelas']),
+    ('Animes', acao(1, ANIMES, 'Animes'),
+     destino(1, ANIMES, 'Animes'), 'tvshows', [FAVORITOS % 'animes']),
+    ('Desenhos', acao(1, DESENHOS, 'Desenhos'),
+     destino(1, DESENHOS, 'Desenhos'), 'tvshows', [FAVORITOS % 'desenhos']),
+    ('Busca', acao(20, '#pesquisar_filmes', 'Busca'), '', 'video', []),
     ('Ajustes', 'ActivateWindow(Settings)', '', 'video', []),
     ('Sair', 'ActivateWindow(ShutdownMenu)', '', 'video', []),
 ]

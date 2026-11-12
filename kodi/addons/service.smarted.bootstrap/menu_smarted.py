@@ -66,22 +66,42 @@ def garantir_menu(xbmc_module=xbmc, log=None):
 
 
 # --- validacao real dos botoes da barra (roda no aparelho e grava o resultado) --
-BRAZUCA = 'plugin://plugin.video.BrazucaPlay.Matrix/'
+# Destinos finais do Brazuca Play 2.1.4, copiados do codigo do addon:
+#   TV       mode=21 url=#todoscanais            (lista de canais)
+#   Filmes   mode=1  <gist>/lancamentos.xml
+#   Series   mode=1  <gist>/SeriesBase
+#   Doramas  mode=1  <gist>/DoramasBase
+#   Novelas  mode=1  <gist>/novelas.xml
+#   Animes   mode=1  <gist>/AnimesBase
+#   Desenhos mode=1  <gist>/DesenhosBase
+# No modo 1 o addon espera url = base16(base64(url)), igual ao proprio addDir().
+BRAZUCA = 'plugin://plugin.video.BrazucaPlay.Matrix/?%s'
+GIST_SERIES = 'https://gist.githubusercontent.com/skyrisk/16070347f20c87c72540f9f805b57a66/raw/'
+GIST_NOVELAS = 'https://gist.githubusercontent.com/skyrisk/07f1f4cd1b203cbf2efec959c4e8645a/raw/'
+GIST_FILMES = 'https://gist.githubusercontent.com/skyrisk/5b87797329c7b46422565ffbaab3be7e/raw/'
+
+
+def _codificar(url):
+    import base64
+    return base64.b16encode(base64.b64encode(url.encode('utf-8'))).decode('ascii')
+
+
+def _destino(mode, url, nome):
+    from urllib.parse import quote_plus
+    url = _codificar(url) if mode == 1 else quote_plus(url)
+    return BRAZUCA % ('url=%s&mode=%d&name=%s&iconimage=DefaultFolder.png'
+                      '&fanart=DefaultFolder.png&description=Menu'
+                      % (quote_plus(url), mode, quote_plus(nome)))
+
+
 DESTINOS = [
-    ('TV', BRAZUCA + '?mode=21&url=%23menu_canais&name=TV&iconimage=DefaultFolder.png'
-     '&fanart=DefaultFolder.png&description=Menu'),
-    ('Filmes', BRAZUCA + '?mode=27&url=%23filmes_menu&name=Filmes&iconimage=DefaultFolder.png'
-     '&fanart=DefaultFolder.png&description=Menu'),
-    ('Séries', BRAZUCA + '?mode=27&url=%23series_menu&name=Series&iconimage=DefaultFolder.png'
-     '&fanart=DefaultFolder.png&description=Menu'),
-    ('Doramas', BRAZUCA + '?mode=31&url=%23doramas_menu&name=Doramas&iconimage=DefaultFolder.png'
-     '&fanart=DefaultFolder.png&description=Menu'),
-    ('Novelas', BRAZUCA + '?mode=25&url=%23novelas_menu&name=Novelas&iconimage=DefaultFolder.png'
-     '&fanart=DefaultFolder.png&description=Menu'),
-    ('Animes', BRAZUCA + '?mode=22&url=%23animes_menu&name=Animes&iconimage=DefaultFolder.png'
-     '&fanart=DefaultFolder.png&description=Menu'),
-    ('Desenhos', BRAZUCA + '?mode=28&url=%23desenhos_menu&name=Desenhos&iconimage=DefaultFolder.png'
-     '&fanart=DefaultFolder.png&description=Menu'),
+    ('TV', _destino(21, '#todoscanais', 'TV')),
+    ('Filmes', _destino(1, GIST_FILMES + 'lancamentos.xml', 'Filmes')),
+    ('Séries', _destino(1, GIST_SERIES + 'SeriesBase', 'Séries')),
+    ('Doramas', _destino(1, GIST_SERIES + 'DoramasBase', 'Doramas')),
+    ('Novelas', _destino(1, GIST_NOVELAS + 'novelas.xml', 'Novelas')),
+    ('Animes', _destino(1, GIST_SERIES + 'AnimesBase', 'Animes')),
+    ('Desenhos', _destino(1, GIST_SERIES + 'DesenhosBase', 'Desenhos')),
 ]
 MARCADOR_NAV = 'nav-check-v1.done'
 
@@ -144,3 +164,35 @@ def rodar_validacao_navegacao(log, jsonrpc=None):
     except Exception as erro:  # noqa: BLE001
         log('nav-check: nao foi possivel gravar o log (%s)' % erro)
     return linhas
+
+
+AJUSTES_SILENCIOSOS = {'donate_consider': '991231'}
+
+
+def silenciar_avisos_brazuca(xbmcaddon_module=None, log=None):
+    """Desliga o pedido de doacao do Brazuca Play (aviso nao critico).
+
+    O addon mostra um dialogo de doacao sempre que a setting `donate_consider`
+    esta vazia/vencida; e opcional e nao afeta a navegacao nem a reproducao,
+    mas aparecia por cima da Home e travava o carregamento dos widgets.
+    """
+    try:
+        if xbmcaddon_module is None:
+            import xbmcaddon as xbmcaddon_module
+        addon = xbmcaddon_module.Addon('plugin.video.BrazucaPlay.Matrix')
+    except Exception as erro:  # noqa: BLE001
+        if log:
+            log('brazuca: addon ausente (%s)' % erro)
+        return {}
+    aplicados = {}
+    for chave, valor in AJUSTES_SILENCIOSOS.items():
+        try:
+            if addon.getSetting(chave) != valor:
+                addon.setSetting(chave, valor)
+                aplicados[chave] = valor
+        except Exception as erro:  # noqa: BLE001
+            if log:
+                log('brazuca: setting %s nao aplicada (%s)' % (chave, erro))
+    if aplicados and log:
+        log('brazuca: avisos nao criticos silenciados %s' % sorted(aplicados))
+    return aplicados

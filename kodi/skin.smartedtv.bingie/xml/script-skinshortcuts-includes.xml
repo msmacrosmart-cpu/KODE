@@ -22,8 +22,8 @@
 			<thumb />
 			<property name="labelID">2</property>
 			<property name="defaultID">2</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?mode=21&amp;url=%23menu_canais&amp;name=TV&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?mode=21&amp;url=%23menu_canais&amp;name=TV&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=%23todoscanais&amp;mode=21&amp;name=TV&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=%23todoscanais&amp;mode=21&amp;name=TV&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
 			<property name="list">10025</property>
 			<property name="group">mainmenu</property>
 			<property name="hasSubmenu">False</property>
@@ -39,20 +39,15 @@
 			<property name="widget">Filmes</property>
 			<property name="widgetTarget">videos</property>
 			<property name="widgetType">movies</property>
-			<property name="widgetPath">plugin://plugin.video.smarted/?route=recent-movies</property>
+			<property name="widgetPath">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<property name="widgetName">Filmes</property>
 			<property name="widget.1">Filmes</property>
 			<property name="widgetTarget.1">videos</property>
 			<property name="widgetType.1">movies</property>
-			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=favoritos-filmes</property>
 			<property name="widgetName.1">Filmes</property>
-			<property name="widget.2">Filmes</property>
-			<property name="widgetTarget.2">videos</property>
-			<property name="widgetType.2">movies</property>
-			<property name="widgetPath.2">plugin://plugin.video.smarted/?route=favoritos-filmes</property>
-			<property name="widgetName.2">Filmes</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&amp;url=%23filmes_menu&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&amp;url=%23filmes_menu&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
 			<property name="list">10025</property>
 			<property name="group">mainmenu</property>
 			<property name="hasSubmenu">False</property>
@@ -68,20 +63,15 @@
 			<property name="widget">Séries</property>
 			<property name="widgetTarget">videos</property>
 			<property name="widgetType">tvshows</property>
-			<property name="widgetPath">plugin://plugin.video.smarted/?route=recent-series</property>
+			<property name="widgetPath">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A45324D4463774D7A51335A6A4977597A6733597A63794E5451775A6A6C6D4F444131596A5533595459324C334A68647939545A584A705A584E4359584E6C&amp;mode=1&amp;name=S%C3%A9ries&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<property name="widgetName">Séries</property>
 			<property name="widget.1">Séries</property>
 			<property name="widgetTarget.1">videos</property>
 			<property name="widgetType.1">tvshows</property>
-			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=series</property>
+			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=favoritos-series</property>
 			<property name="widgetName.1">Séries</property>
-			<property name="widget.2">Séries</property>
-			<property name="widgetTarget.2">videos</property>
-			<property name="widgetType.2">tvshows</property>
-			<property name="widgetPath.2">plugin://plugin.video.smarted/?route=favoritos-series</property>
-			<property name="widgetName.2">Séries</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&amp;url=%23series_menu&amp;name=S%C3%A9ries&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&amp;url=%23series_menu&amp;name=S%C3%A9ries&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A45324D4463774D7A51335A6A4977597A6733597A63794E5451775A6A6C6D4F444131596A5533595459324C334A68647939545A584A705A584E4359584E6C&amp;mode=1&amp;name=S%C3%A9ries&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A45324D4463774D7A51335A6A4977597A6733597A63794E5451775A6A6C6D4F444131596A5533595459324C334A68647939545A584A705A584E4359584E6C&amp;mode=1&amp;name=S%C3%A9ries&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
 			<property name="list">10025</property>
 			<property name="group">mainmenu</property>
 			<property name="hasSubmenu">False</property>
@@ -97,15 +87,15 @@
 			<property name="widget">Doramas</property>
 			<property name="widgetTarget">videos</property>
 			<property name="widgetType">tvshows</property>
-			<property name="widgetPath">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=doramas</property>
+			<property name="widgetPath">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A45324D4463774D7A51335A6A4977597A6733597A63794E5451775A6A6C6D4F444131596A5533595459324C334A686479394562334A686257467A516D467A5A513D3D&amp;mode=1&amp;name=Doramas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<property name="widgetName">Doramas</property>
 			<property name="widget.1">Doramas</property>
 			<property name="widgetTarget.1">videos</property>
 			<property name="widgetType.1">tvshows</property>
 			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=favoritos-doramas</property>
 			<property name="widgetName.1">Doramas</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?mode=31&amp;url=%23doramas_menu&amp;name=Doramas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?mode=31&amp;url=%23doramas_menu&amp;name=Doramas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A45324D4463774D7A51335A6A4977597A6733597A63794E5451775A6A6C6D4F444131596A5533595459324C334A686479394562334A686257467A516D467A5A513D3D&amp;mode=1&amp;name=Doramas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A45324D4463774D7A51335A6A4977597A6733597A63794E5451775A6A6C6D4F444131596A5533595459324C334A686479394562334A686257467A516D467A5A513D3D&amp;mode=1&amp;name=Doramas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
 			<property name="list">10025</property>
 			<property name="group">mainmenu</property>
 			<property name="hasSubmenu">False</property>
@@ -121,15 +111,15 @@
 			<property name="widget">Novelas</property>
 			<property name="widgetTarget">videos</property>
 			<property name="widgetType">tvshows</property>
-			<property name="widgetPath">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=novelas</property>
+			<property name="widgetPath">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A41335A6A466D4E474E6B4D5749794D444E6A596D59795A575A6C597A6B314F574D305A5467324E4456684C334A686479397562335A6C6247467A4C6E687462413D3D&amp;mode=1&amp;name=Novelas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<property name="widgetName">Novelas</property>
 			<property name="widget.1">Novelas</property>
 			<property name="widgetTarget.1">videos</property>
 			<property name="widgetType.1">tvshows</property>
 			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=favoritos-novelas</property>
 			<property name="widgetName.1">Novelas</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?mode=25&amp;url=%23novelas_menu&amp;name=Novelas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?mode=25&amp;url=%23novelas_menu&amp;name=Novelas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A41335A6A466D4E474E6B4D5749794D444E6A596D59795A575A6C597A6B314F574D305A5467324E4456684C334A686479397562335A6C6247467A4C6E687462413D3D&amp;mode=1&amp;name=Novelas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A41335A6A466D4E474E6B4D5749794D444E6A596D59795A575A6C597A6B314F574D305A5467324E4456684C334A686479397562335A6C6247467A4C6E687462413D3D&amp;mode=1&amp;name=Novelas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
 			<property name="list">10025</property>
 			<property name="group">mainmenu</property>
 			<property name="hasSubmenu">False</property>
@@ -145,15 +135,15 @@
 			<property name="widget">Animes</property>
 			<property name="widgetTarget">videos</property>
 			<property name="widgetType">tvshows</property>
-			<property name="widgetPath">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=animes</property>
+			<property name="widgetPath">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A45324D4463774D7A51335A6A4977597A6733597A63794E5451775A6A6C6D4F444131596A5533595459324C334A6864793942626D6C745A584E4359584E6C&amp;mode=1&amp;name=Animes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<property name="widgetName">Animes</property>
 			<property name="widget.1">Animes</property>
 			<property name="widgetTarget.1">videos</property>
 			<property name="widgetType.1">tvshows</property>
 			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=favoritos-animes</property>
 			<property name="widgetName.1">Animes</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?mode=22&amp;url=%23animes_menu&amp;name=Animes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?mode=22&amp;url=%23animes_menu&amp;name=Animes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A45324D4463774D7A51335A6A4977597A6733597A63794E5451775A6A6C6D4F444131596A5533595459324C334A6864793942626D6C745A584E4359584E6C&amp;mode=1&amp;name=Animes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A45324D4463774D7A51335A6A4977597A6733597A63794E5451775A6A6C6D4F444131596A5533595459324C334A6864793942626D6C745A584E4359584E6C&amp;mode=1&amp;name=Animes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
 			<property name="list">10025</property>
 			<property name="group">mainmenu</property>
 			<property name="hasSubmenu">False</property>
@@ -169,15 +159,15 @@
 			<property name="widget">Desenhos</property>
 			<property name="widgetTarget">videos</property>
 			<property name="widgetType">tvshows</property>
-			<property name="widgetPath">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=desenhos</property>
+			<property name="widgetPath">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A45324D4463774D7A51335A6A4977597A6733597A63794E5451775A6A6C6D4F444131596A5533595459324C334A68647939455A584E6C626D687663304A686332553D&amp;mode=1&amp;name=Desenhos&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<property name="widgetName">Desenhos</property>
 			<property name="widget.1">Desenhos</property>
 			<property name="widgetTarget.1">videos</property>
 			<property name="widgetType.1">tvshows</property>
 			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=favoritos-desenhos</property>
 			<property name="widgetName.1">Desenhos</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?mode=28&amp;url=%23desenhos_menu&amp;name=Desenhos&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?mode=28&amp;url=%23desenhos_menu&amp;name=Desenhos&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A45324D4463774D7A51335A6A4977597A6733597A63794E5451775A6A6C6D4F444131596A5533595459324C334A68647939455A584E6C626D687663304A686332553D&amp;mode=1&amp;name=Desenhos&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A45324D4463774D7A51335A6A4977597A6733597A63794E5451775A6A6C6D4F444131596A5533595459324C334A68647939455A584E6C626D687663304A686332553D&amp;mode=1&amp;name=Desenhos&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
 			<property name="list">10025</property>
 			<property name="group">mainmenu</property>
 			<property name="hasSubmenu">False</property>
@@ -190,8 +180,8 @@
 			<thumb />
 			<property name="labelID">9</property>
 			<property name="defaultID">9</property>
-			<onclick>ActivateWindow(1109,return)</onclick>
-			<property name="path">ActivateWindow(1109,return)</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=%23pesquisar_filmes&amp;mode=20&amp;name=Busca&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=%23pesquisar_filmes&amp;mode=20&amp;name=Busca&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
 			<property name="list">10025</property>
 			<property name="group">mainmenu</property>
 			<property name="hasSubmenu">False</property>

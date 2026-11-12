@@ -47,9 +47,12 @@ class MenuSuperiorTest(unittest.TestCase):
 
     def test_cada_categoria_abre_a_rota_do_brazuca(self):
         acoes = {i.findtext('label'): i.findtext('onclick') for i in itens_do_menu()}
-        esperado = {'TV': 'mode=21', 'Filmes': 'mode=27', 'Séries': 'mode=27',
-                    'Novelas': 'mode=25', 'Animes': 'mode=22', 'Doramas': 'mode=31',
-                    'Desenhos': 'mode=28'}
+        # TV usa a lista de canais; as categorias de VOD usam o modo 1 do
+        # Brazuca (url = base16(base64(<gist>/<base>))), que entrega a listagem
+        # final sem passar pelo menu intermediario de listas.
+        esperado = {'TV': 'mode=21', 'Filmes': 'mode=1', 'Séries': 'mode=1',
+                    'Novelas': 'mode=1', 'Animes': 'mode=1', 'Doramas': 'mode=1',
+                    'Desenhos': 'mode=1'}
         for categoria, modo in esperado.items():
             self.assertIn('plugin.video.BrazucaPlay.Matrix', acoes[categoria], categoria)
             self.assertIn(modo, acoes[categoria], categoria)
@@ -72,15 +75,18 @@ class MenuSuperiorTest(unittest.TestCase):
         texto = MENU.read_text(encoding='utf-8')
         self.assertIn('<label>TV</label>', texto)
         self.assertIn('mode=21', texto)
-        self.assertIn('menu_canais', texto)
+        self.assertIn('%23todoscanais', texto)
         self.assertNotIn('route=carrossel&amp;alvo=canais', texto)
 
-    def test_carrosseis_usam_rotas_do_smarted(self):
+    def test_carrosseis_usam_as_listas_reais_do_brazuca(self):
         texto = MENU.read_text(encoding='utf-8')
-        self.assertIn('route=recent-movies', texto)
+        overlay = carregar('bingie_overlay_menu', ROOT / 'tools/kodi/bingie-overlay.py')
+        # widgets apontam para as listas finais do addon (sem tela intermediaria)
+        for fonte in (overlay.FILMES, overlay.SERIES, overlay.DORAMAS, overlay.NOVELAS,
+                      overlay.ANIMES, overlay.DESENHOS):
+            self.assertIn(overlay.codificar(fonte), texto, fonte.rsplit('/', 1)[-1])
         for alvo in ('filmes', 'series', 'novelas', 'animes', 'doramas', 'desenhos'):
-            self.assertIn('route=carrossel&amp;alvo=' + alvo, texto)
-            self.assertIn('route=favoritos-' + alvo, texto)
+            self.assertIn('route=favoritos-' + alvo, texto, alvo)
 
     def test_widgets_legados_nao_sao_chamados(self):
         texto = MENU.read_text(encoding='utf-8')
@@ -98,8 +104,8 @@ class BuildOverlayTest(unittest.TestCase):
     def test_workflow_publica_versao_com_overlay(self):
         fluxo = FLUXO.read_text(encoding='utf-8')
         self.assertIn('--skin-overlay kodi/skin.smartedtv.bingie', fluxo)
-        self.assertIn('--to-version 1.0.54', fluxo)
-        self.assertIn('v1.0.54-smarted-arm64', fluxo)
+        self.assertIn('--to-version 1.0.55', fluxo)
+        self.assertIn('v1.0.55-smarted-arm64', fluxo)
 
 
 class BootstrapMenuTest(unittest.TestCase):
