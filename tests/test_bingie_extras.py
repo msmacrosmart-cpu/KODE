@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
-"""Build lateral com a skin Bingie: script de download e injecao dos addons."""
+"""Skin Bingie embarcada como skin padrao SMARTEDTV: download, injecao e rename."""
 import importlib.util
 import pathlib
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+BUILD = ROOT / 'tools/kodi/build-release-apk.py'
+FLUXO = ROOT / '.github/workflows/build-release-apk.yml'
 
 
 def carregar(nome, caminho):
@@ -28,17 +31,39 @@ class BingieTest(unittest.TestCase):
         self.assertEqual(fetch.SKIN, 'skin.titan.bingie.mod')
 
 
-class BuildTest(unittest.TestCase):
-    def test_build_aceita_addons_extras(self):
-        script = (ROOT / 'tools/kodi/build-release-apk.py').read_text(encoding='utf-8')
-        self.assertIn('--extra-addons', script)
-        self.assertIn('extra_addons', script)
-        self.assertIn("f\"assets/addons/{addon_id}/\"", script.replace("'", '"'))
+class SkinPadraoTest(unittest.TestCase):
+    """A skin Bingie passa a ser a skin padrao, com nome SMARTEDTV."""
 
-    def test_workflow_baixa_e_injeta(self):
-        fluxo = (ROOT / '.github/workflows/build-release-apk.yml').read_text(encoding='utf-8')
+    def test_build_aceita_skin_padrao_externa(self):
+        script = BUILD.read_text(encoding='utf-8')
+        self.assertIn('--default-skin', script)
+        self.assertIn('default_skin', script)
+        self.assertIn('skin.titan.bingie.mod', script)
+
+    def test_skin_padrao_se_chama_smartedtv(self):
+        script = BUILD.read_text(encoding='utf-8')
+        self.assertIn('SKIN_ADDON_ID = "skin.novatv"', script)
+        self.assertIn('SKIN_NAME = "SMARTEDTV"', script)
+        self.assertIn('SKIN_VERSION = "2.2.3"', script)
+
+    def test_skin_classica_continua_embarcada(self):
+        script = BUILD.read_text(encoding='utf-8')
+        self.assertIn('SKIN_CLASSIC_ID = "skin.smartedtv.classic"', script)
+        self.assertIn('SKIN_CLASSIC_VERSION = "1.0.17"', script)
+
+    def test_versao_do_apk_mantem_tamanho_do_nome(self):
+        """versionName vive no string pool binario: precisa do mesmo tamanho."""
+        script = BUILD.read_text(encoding='utf-8')
+        self.assertIn('len(new_name.encode("utf-16-le")) != len(old_name.encode("utf-16-le"))', script)
+
+    def test_workflow_monta_1_0_48_com_a_skin_padrao(self):
+        fluxo = FLUXO.read_text(encoding='utf-8')
         self.assertIn('fetch-bingie-addons.py', fluxo)
         self.assertIn('--extra-addons "$RUNNER_TEMP/extra"', fluxo)
+        self.assertIn('--default-skin "$RUNNER_TEMP/extra/skin.titan.bingie.mod"', fluxo)
+        self.assertIn('--to-version 1.0.48', fluxo)
+        self.assertIn('--to-code 2103034', fluxo)
+        self.assertIn('v1.0.48-smarted-arm64', fluxo)
 
 
 if __name__ == '__main__':

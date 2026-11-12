@@ -44,8 +44,16 @@ MANIFEST = "assets/system/addon-manifest.xml"
 # Id that the launcher dex applies as default skin at first boot.
 SKIN_ADDON_ID = "skin.novatv"
 SKIN_NAME = "SMARTEDTV"
-SKIN_VERSION = "1.0.17"
+# Versao da skin padrao embarcada. 2.2.3 = skin BINGIE MOD (Kodi 21) renomeada
+# para SMARTEDTV e usada como skin padrao do APK.
+SKIN_VERSION = "2.2.3"
 SKIN_PREFIX = "assets/addons/skin.novatv/"
+# Skin classica do repositorio: vai junto como opcao de volta, para nao deixar o
+# usuario sem alternativa se a skin nova nao agradar (Ajustes > Aparencia > Skin).
+SKIN_CLASSIC_ID = "skin.smartedtv.classic"
+SKIN_CLASSIC_NAME = "SMARTEDTV Classica"
+SKIN_CLASSIC_VERSION = "1.0.17"
+SKIN_CLASSIC_PREFIX = "assets/addons/skin.smartedtv.classic/"
 
 
 def sha256(path: Path) -> str:
@@ -73,27 +81,30 @@ def collect(source: Path, prefix: str, strict: bool = True):
     return {prefix + p.relative_to(source).as_posix(): p for p in files}
 
 
-def skin_payload():
-    """Collect the skin files and rewrite addon.xml to the shipped id."""
-    files = collect(SKIN, "assets/addons/skin.novatv/")
-    root = ET.parse(SKIN / "addon.xml").getroot()
-    if root.get("id") != "skin.estilo.personalizado":
-        raise SystemExit(f"Skin source ID mismatch: {root.get('id')} (expected skin.estilo.personalizado)")
-    root.set("id", SKIN_ADDON_ID)
-    root.set("name", SKIN_NAME)
-    root.set("provider-name", SKIN_NAME)
-    root.set("version", SKIN_VERSION)
+def skin_payload(source: Path = SKIN, addon_id: str = SKIN_ADDON_ID, name: str = SKIN_NAME,
+                 version: str = SKIN_VERSION, expected_id: str = "skin.estilo.personalizado",
+                 strict: bool = True):
+    """Coleta a skin e reescreve addon.xml com o id/nome que o APK usa."""
+    prefix = f"assets/addons/{addon_id}/"
+    files = collect(source, prefix, strict=strict)
+    root = ET.parse(source / "addon.xml").getroot()
+    if root.get("id") != expected_id:
+        raise SystemExit(f"Skin source ID mismatch: {root.get('id')} (expected {expected_id})")
+    root.set("id", addon_id)
+    root.set("name", name)
+    root.set("provider-name", name)
+    root.set("version", version)
     payload = {arcname: path.read_bytes() for arcname, path in files.items()}
-    payload["assets/addons/skin.novatv/addon.xml"] = ET.tostring(root, encoding="UTF-8", xml_declaration=True)
-    if ET.parse(SKIN / "addon.xml").getroot().get("id") == SKIN_ADDON_ID:
+    payload[prefix + "addon.xml"] = ET.tostring(root, encoding="UTF-8", xml_declaration=True)
+    if expected_id == SKIN_ADDON_ID:
         raise SystemExit("Refusing to build: source addon.xml already ships as skin.novatv")
     return payload
-
 
 def main():
     argv = sys.argv[1:]
     from_version = to_version = to_code = None
     extra_addons = []
+    default_skin = None
     while len(argv) >= 2 and argv[0].startswith("--"):
         opt = argv.pop(0)
         if opt == "--from-version":
@@ -106,10 +117,14 @@ def main():
             # pasta com addons extras (ex.: skin Bingie baixada no CI) - nao
             # versionada no repositorio, injetada so no APK desta build
             extra_addons.append(Path(argv.pop(0)))
+        elif opt == "--default-skin":
+            # skin de terceiro (ex.: Bingie) que passa a ser a skin padrao do APK,
+            # renomeada para SMARTEDTV
+            default_skin = Path(argv.pop(0))
         else:
             raise SystemExit(f"Unknown option: {opt}")
     if len(argv) != 2:
-        raise SystemExit("Usage: build-release-apk.py [--from-version V] [--to-version V] [--to-code N] BASE.apk OUTPUT.apk")
+        raise SystemExit("Usage: build-release-apk.py [--from-version V] [--to-version V] [--to-code N] [--extra-addons DIR] [--default-skin DIR] BASE.apk OUTPUT.apk")
     base, out = Path(argv[0]), Path(argv[1])
     if base.resolve() == out.resolve():
         raise SystemExit("Input and output must differ")
@@ -133,9 +148,23 @@ def main():
     else:
         raise SystemExit("Provide --to-version (and --to-code) or a matching --from-version")
     new_code = to_code if to_code is not None else old_code + 1
+    # O AndroidManifest.xml e binario: o versionName vive no string pool, entao o
+    # texto novo precisa ter exatamente o mesmo tamanho do antigo.
+    if len(new_name.encode("utf-16-le")) != len(old_name.encode("utf-16-le")):
+        raise SystemExit(
+            f"versionName novo ({new_name}) precisa ter o mesmo tamanho de {old_name} "
+            f"({len(old_name)} caracteres) - senao o manifest binario quebra"
+        )
     print(f"Version: {old_name} ({old_code}) -> {new_name} ({new_code})")
 
-    skin_files = skin_payload()
+    if default_skin is not None:
+        if not default_skin.is_dir() or not (default_skin / "addon.xml").is_file():
+            raise SystemExit(f"Skin padrao inexistente: {default_skin}")
+        skin_files = skin_payload(default_skin, expected_id="skin.titan.bingie.mod", strict=False)
+        print(f"Skin padrao: {default_skin.name} -> {SKIN_ADDON_ID} ({SKIN_NAME} {SKIN_VERSION})")
+    else:
+        skin_files = skin_payload()
+    skin_files.update(skin_payload(SKIN, SKIN_CLASSIC_ID, SKIN_CLASSIC_NAME, SKIN_CLASSIC_VERSION))
     bridge_files = {}
     bridge_ids = []
     extras = []
@@ -151,6 +180,10 @@ def main():
                         extras.append(neto)
     for addon_dir in list(BRIDGE_ADDONS) + extras:
         addon_id = ET.parse(addon_dir / "addon.xml").getroot().get("id")
+        # a skin que virou skin padrao nao entra duas vezes (ja esta em skin.novatv)
+        if default_skin is not None and addon_id == "skin.titan.bingie.mod":
+            print(f"Addon extra {addon_id} ja embarcado como skin padrao: ignorado")
+            continue
         if addon_id != addon_dir.name:
             raise SystemExit(f"Addon ID mismatch: {addon_dir.name} declares {addon_id}")
         if addon_id in bridge_ids:
@@ -177,7 +210,7 @@ def main():
         addon_manifest = src.read(MANIFEST)
         if addon_manifest.count(b"</addons>") != 1:
             raise SystemExit("Unexpected addon manifest")
-        for addon_id in [SKIN_ADDON_ID] + bridge_ids:
+        for addon_id in [SKIN_ADDON_ID, SKIN_CLASSIC_ID] + bridge_ids:
             if f">{addon_id}<".encode() not in addon_manifest:
                 addon_manifest = addon_manifest.replace(
                     b"</addons>",
@@ -201,7 +234,7 @@ def main():
                         continue
                     if item.filename in seen:
                         raise SystemExit("Duplicate ZIP member")
-                    if item.filename.startswith(SKIN_PREFIX):
+                    if item.filename.startswith(SKIN_PREFIX) or item.filename.startswith(SKIN_CLASSIC_PREFIX):
                         # skin.novatv is replaced wholesale by the repo payload
                         # (the base's skin.novatv entries are dropped).
                         continue
@@ -221,6 +254,8 @@ def main():
             raise
 
     print(f"Unsigned candidate: {out} ({out.stat().st_size} bytes, SHA-256 {sha256(out)})")
+    print("Skin padrao: " + f"{SKIN_ADDON_ID} ({SKIN_NAME} {SKIN_VERSION})")
+    print("Skin classica: " + f"{SKIN_CLASSIC_ID} ({SKIN_CLASSIC_NAME} {SKIN_CLASSIC_VERSION})")
     print("Bridge addons: " + ", ".join(bridge_ids))
     print("Profile (assets/smarted/profile/) left untouched — launcher dex applies the default skin at first boot.")
     print("Run tools/kodi/verify-boot-integrity.py on the candidate before signing.")
