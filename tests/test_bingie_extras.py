@@ -43,7 +43,7 @@ class SkinPadraoTest(unittest.TestCase):
     def test_skin_padrao_se_chama_smartedtv(self):
         script = BUILD.read_text(encoding='utf-8')
         self.assertIn('SKIN_ADDON_ID = "skin.novatv"', script)
-        self.assertIn('SKIN_NAME = "SMARTEDTV"', script)
+        self.assertIn('SKIN_NAME = "SMARTED"', script)
         self.assertIn('SKIN_VERSION = "2.2.3"', script)
 
     def test_skin_classica_continua_embarcada(self):
@@ -61,9 +61,9 @@ class SkinPadraoTest(unittest.TestCase):
         self.assertIn('fetch-bingie-addons.py', fluxo)
         self.assertIn('--extra-addons "$RUNNER_TEMP/extra"', fluxo)
         self.assertIn('--default-skin "$RUNNER_TEMP/extra/skin.titan.bingie.mod"', fluxo)
-        self.assertIn('--to-version 1.0.52', fluxo)
-        self.assertIn('--to-code 2103038', fluxo)
-        self.assertIn('v1.0.52-smarted-arm64', fluxo)
+        self.assertIn('--to-version 1.0.53', fluxo)
+        self.assertIn('--to-code 2103039', fluxo)
+        self.assertIn('v1.0.53-smarted-arm64', fluxo)
 
 
 if __name__ == '__main__':

@@ -38,22 +38,22 @@ def acao(mode, pasta, nome):
 
 
 # (rotulo, acao, widget principal, tipo de widget, widgets extras)
-# Home com VOD do Brazuca + TV ao vivo (pedido do usuario: volta na primeira aba).
+# Barra: TV ao vivo (sem carrossel de canais na Home) + VOD do Brazuca Play.
+# Os carrosseis seguem a ordem pedida: Lancamentos, categoria e Favoritos.
 MENU = [
-    ('TV ao vivo', acao(21, 'menu_canais', 'TV%20ao%20vivo'),
-     CARROSSEL % 'canais', 'video', [SMARTED % 'route=favoritos-tv']),
+    ('TV ao vivo', acao(21, 'menu_canais', 'TV%20ao%20vivo'), '', 'video', []),
     ('Filmes', acao(27, 'filmes_menu', 'Filmes'),
-     LANCAMENTOS, 'movies', [CARROSSEL % 'filmes']),
+     LANCAMENTOS, 'movies', [CARROSSEL % 'filmes', SMARTED % 'route=favoritos-filmes']),
     ('Séries', acao(27, 'series_menu', 'S%C3%A9ries'),
-     CARROSSEL % 'series', 'tvshows', [SERIES_NOVAS]),
+     SERIES_NOVAS, 'tvshows', [CARROSSEL % 'series', SMARTED % 'route=favoritos-series']),
     ('Novelas', acao(25, 'novelas_menu', 'Novelas'),
-     CARROSSEL % 'novelas', 'tvshows', []),
+     CARROSSEL % 'novelas', 'tvshows', [SMARTED % 'route=favoritos-novelas']),
     ('Animes', acao(22, 'animes_menu', 'Animes'),
-     CARROSSEL % 'animes', 'tvshows', []),
+     CARROSSEL % 'animes', 'tvshows', [SMARTED % 'route=favoritos-animes']),
     ('Doramas', acao(31, 'doramas_menu', 'Doramas'),
-     CARROSSEL % 'doramas', 'tvshows', []),
+     CARROSSEL % 'doramas', 'tvshows', [SMARTED % 'route=favoritos-doramas']),
     ('Desenhos', acao(28, 'desenhos_menu', 'Desenhos'),
-     CARROSSEL % 'desenhos', 'tvshows', []),
+     CARROSSEL % 'desenhos', 'tvshows', [SMARTED % 'route=favoritos-desenhos']),
     ('Busca', 'ActivateWindow(1109,return)', '', 'video', []),
     ('Ajustes', 'ActivateWindow(Settings)', '', 'video', []),
     ('Sair', 'ActivateWindow(ShutdownMenu)', '', 'video', []),

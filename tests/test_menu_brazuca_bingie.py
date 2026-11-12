@@ -69,18 +69,19 @@ class MenuSuperiorTest(unittest.TestCase):
     def test_home_nao_regera_o_menu(self):
         self.assertNotIn('type=buildxml', HOME.read_text(encoding='utf-8'))
 
-    def test_tv_ao_vivo_continua_na_home(self):
+    def test_tv_ao_vivo_na_barra_sem_carrossel_de_canais(self):
         texto = MENU.read_text(encoding='utf-8')
         self.assertIn('TV ao vivo', texto)
         self.assertIn('mode=21', texto)
         self.assertIn('menu_canais', texto)
-        self.assertIn('route=carrossel&amp;alvo=canais', texto)
+        self.assertNotIn('route=carrossel&amp;alvo=canais', texto)
 
     def test_carrosseis_usam_rotas_do_smarted(self):
         texto = MENU.read_text(encoding='utf-8')
         self.assertIn('route=recent-movies', texto)
         for alvo in ('filmes', 'series', 'novelas', 'animes', 'doramas', 'desenhos'):
             self.assertIn('route=carrossel&amp;alvo=' + alvo, texto)
+            self.assertIn('route=favoritos-' + alvo, texto)
 
     def test_widgets_legados_nao_sao_chamados(self):
         texto = MENU.read_text(encoding='utf-8')
@@ -98,8 +99,8 @@ class BuildOverlayTest(unittest.TestCase):
     def test_workflow_publica_versao_com_overlay(self):
         fluxo = FLUXO.read_text(encoding='utf-8')
         self.assertIn('--skin-overlay kodi/skin.smartedtv.bingie', fluxo)
-        self.assertIn('--to-version 1.0.52', fluxo)
-        self.assertIn('v1.0.52-smarted-arm64', fluxo)
+        self.assertIn('--to-version 1.0.53', fluxo)
+        self.assertIn('v1.0.53-smarted-arm64', fluxo)
 
 
 class BootstrapMenuTest(unittest.TestCase):

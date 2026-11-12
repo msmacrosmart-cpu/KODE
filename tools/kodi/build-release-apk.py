@@ -43,7 +43,7 @@ MANIFEST = "assets/system/addon-manifest.xml"
 
 # Id that the launcher dex applies as default skin at first boot.
 SKIN_ADDON_ID = "skin.novatv"
-SKIN_NAME = "SMARTEDTV"
+SKIN_NAME = "SMARTED"
 # Versao da skin padrao embarcada. 2.2.3 = skin BINGIE MOD (Kodi 21) renomeada
 # para SMARTEDTV e usada como skin padrao do APK.
 SKIN_VERSION = "2.2.3"
@@ -51,7 +51,7 @@ SKIN_PREFIX = "assets/addons/skin.novatv/"
 # Skin classica do repositorio: vai junto como opcao de volta, para nao deixar o
 # usuario sem alternativa se a skin nova nao agradar (Ajustes > Aparencia > Skin).
 SKIN_CLASSIC_ID = "skin.smartedtv.classic"
-SKIN_CLASSIC_NAME = "SMARTEDTV Classica"
+SKIN_CLASSIC_NAME = "SMARTED Classica"
 SKIN_CLASSIC_VERSION = "1.0.17"
 SKIN_CLASSIC_PREFIX = "assets/addons/skin.smartedtv.classic/"
 

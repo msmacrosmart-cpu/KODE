@@ -8,16 +8,6 @@
 			<thumb />
 			<property name="labelID">1</property>
 			<property name="defaultID">1</property>
-			<property name="widget">TV ao vivo</property>
-			<property name="widgetTarget">videos</property>
-			<property name="widgetType">video</property>
-			<property name="widgetPath">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=canais</property>
-			<property name="widgetName">TV ao vivo</property>
-			<property name="widget.1">TV ao vivo</property>
-			<property name="widgetTarget.1">videos</property>
-			<property name="widgetType.1">video</property>
-			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=favoritos-tv</property>
-			<property name="widgetName.1">TV ao vivo</property>
 			<onclick>ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=21&amp;url=%23menu_canais&amp;name=TV%20ao%20vivo&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</onclick>
 			<property name="path">ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=21&amp;url=%23menu_canais&amp;name=TV%20ao%20vivo&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</property>
 			<property name="list">10025</property>
@@ -42,6 +32,11 @@
 			<property name="widgetType.1">movies</property>
 			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
 			<property name="widgetName.1">Filmes</property>
+			<property name="widget.2">Filmes</property>
+			<property name="widgetTarget.2">videos</property>
+			<property name="widgetType.2">movies</property>
+			<property name="widgetPath.2">plugin://plugin.video.smarted/?route=favoritos-filmes</property>
+			<property name="widgetName.2">Filmes</property>
 			<onclick>ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&amp;url=%23filmes_menu&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</onclick>
 			<property name="path">ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&amp;url=%23filmes_menu&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</property>
 			<property name="list">10025</property>
@@ -59,13 +54,18 @@
 			<property name="widget">Séries</property>
 			<property name="widgetTarget">videos</property>
 			<property name="widgetType">tvshows</property>
-			<property name="widgetPath">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=series</property>
+			<property name="widgetPath">plugin://plugin.video.smarted/?route=recent-series</property>
 			<property name="widgetName">Séries</property>
 			<property name="widget.1">Séries</property>
 			<property name="widgetTarget.1">videos</property>
 			<property name="widgetType.1">tvshows</property>
-			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=recent-series</property>
+			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=series</property>
 			<property name="widgetName.1">Séries</property>
+			<property name="widget.2">Séries</property>
+			<property name="widgetTarget.2">videos</property>
+			<property name="widgetType.2">tvshows</property>
+			<property name="widgetPath.2">plugin://plugin.video.smarted/?route=favoritos-series</property>
+			<property name="widgetName.2">Séries</property>
 			<onclick>ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&amp;url=%23series_menu&amp;name=S%C3%A9ries&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</onclick>
 			<property name="path">ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&amp;url=%23series_menu&amp;name=S%C3%A9ries&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</property>
 			<property name="list">10025</property>
@@ -85,6 +85,11 @@
 			<property name="widgetType">tvshows</property>
 			<property name="widgetPath">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=novelas</property>
 			<property name="widgetName">Novelas</property>
+			<property name="widget.1">Novelas</property>
+			<property name="widgetTarget.1">videos</property>
+			<property name="widgetType.1">tvshows</property>
+			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=favoritos-novelas</property>
+			<property name="widgetName.1">Novelas</property>
 			<onclick>ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=25&amp;url=%23novelas_menu&amp;name=Novelas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</onclick>
 			<property name="path">ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=25&amp;url=%23novelas_menu&amp;name=Novelas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</property>
 			<property name="list">10025</property>
@@ -104,6 +109,11 @@
 			<property name="widgetType">tvshows</property>
 			<property name="widgetPath">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=animes</property>
 			<property name="widgetName">Animes</property>
+			<property name="widget.1">Animes</property>
+			<property name="widgetTarget.1">videos</property>
+			<property name="widgetType.1">tvshows</property>
+			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=favoritos-animes</property>
+			<property name="widgetName.1">Animes</property>
 			<onclick>ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=22&amp;url=%23animes_menu&amp;name=Animes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</onclick>
 			<property name="path">ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=22&amp;url=%23animes_menu&amp;name=Animes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</property>
 			<property name="list">10025</property>
@@ -123,6 +133,11 @@
 			<property name="widgetType">tvshows</property>
 			<property name="widgetPath">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=doramas</property>
 			<property name="widgetName">Doramas</property>
+			<property name="widget.1">Doramas</property>
+			<property name="widgetTarget.1">videos</property>
+			<property name="widgetType.1">tvshows</property>
+			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=favoritos-doramas</property>
+			<property name="widgetName.1">Doramas</property>
 			<onclick>ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=31&amp;url=%23doramas_menu&amp;name=Doramas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</onclick>
 			<property name="path">ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=31&amp;url=%23doramas_menu&amp;name=Doramas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</property>
 			<property name="list">10025</property>
@@ -142,6 +157,11 @@
 			<property name="widgetType">tvshows</property>
 			<property name="widgetPath">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=desenhos</property>
 			<property name="widgetName">Desenhos</property>
+			<property name="widget.1">Desenhos</property>
+			<property name="widgetTarget.1">videos</property>
+			<property name="widgetType.1">tvshows</property>
+			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=favoritos-desenhos</property>
+			<property name="widgetName.1">Desenhos</property>
 			<onclick>ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=28&amp;url=%23desenhos_menu&amp;name=Desenhos&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</onclick>
 			<property name="path">ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=28&amp;url=%23desenhos_menu&amp;name=Desenhos&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</property>
 			<property name="list">10025</property>
