@@ -44,27 +44,43 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: 2. Dependências de sistema
+      - name: 2. Libertar espaço em disco
+        # O runner padrão já vem com ~63 GB de 73 GB ocupados (imagens do SDK
+        # pré-instalado, .NET, Haskell, Docker, etc.). As dependências do Kodi
+        # consomem ~8 GB e a árvore de build mais ~6 GB — sem esta limpeza o
+        # runner chega a 98% e o build falha por falta de espaço.
+        run: |
+          echo "== antes =="; df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android/sdk/ndk/2[5-9]* \
+            /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL \
+            /usr/local/lib/android/sdk/system-images \
+            /usr/share/swift /opt/microsoft /opt/google/chrome \
+            /usr/lib/firefox* /opt/az 2>/dev/null || true
+          sudo apt-get clean
+          docker image prune -af 2>/dev/null || true
+          echo "== depois =="; df -h /
+
+      - name: 3. Dependências de sistema
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq autoconf automake bison build-essential curl flex \
             gawk git gperf lib32stdc++6 lib32z1 lib32z1-dev libcurl4-openssl-dev unzip \
             zip zlib1g-dev libtool pkg-config cmake
 
-      - name: 3. SDK/NDK exatos do Kodi 21.3
+      - name: 4. SDK/NDK exatos do Kodi 21.3
         run: |
           "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install \
             'platforms;android-34' 'build-tools;33.0.1' 'ndk;21.4.7075529'
           echo "ndk: $(ls "$ANDROID_SDK_ROOT/ndk")"
 
-      - name: 4. Artefatos de identidade a partir das artes oficiais
+      - name: 5. Artefatos de identidade a partir das artes oficiais
         run: |
           python3 -m pip install --quiet --disable-pip-version-check 'Pillow==11.3.0' \
             'pyaxmlparser==0.3.31'
           python3 smartedtv/tools/make-brand-assets.py
           ls -l smartedtv/out/media | head
 
-      - name: 5. Idioma pt-BR oficial (repo-resources) para embarcar
+      - name: 6. Idioma pt-BR oficial (repo-resources) para embarcar
         run: |
           set -euo pipefail
           mkdir -p smartedtv/build/lang
@@ -74,7 +90,7 @@ jobs:
           cp -a /tmp/res/repo-resources-omega/resource.language.pt_br smartedtv/build/lang/
           grep -c 'msgid' smartedtv/build/lang/resource.language.pt_br/resources/strings.po
 
-      - name: 6. Kodi 21.3-Omega + identidade SMARTEDTV
+      - name: 7. Kodi 21.3-Omega + identidade SMARTEDTV
         run: |
           set -euo pipefail
           git clone --depth 1 --branch 21.3-Omega https://github.com/xbmc/xbmc.git \
@@ -86,14 +102,14 @@ jobs:
             --brand-dir smartedtv/out \
             --language-addon smartedtv/build/lang/resource.language.pt_br
 
-      - name: 7. Dependências Android (tools/depends)
+      - name: 8. Dependências Android (tools/depends)
         run: ./smartedtv/tools/build-apk.sh
         env:
           JOBS: 4
           SKIP_BRAND: '1'      # passo 6 já aplicou a identidade
           KODI_SRC: ${{ github.workspace }}/smartedtv/build/kodi-21.3-Omega
 
-      - name: 8. Guardar APK e relatório
+      - name: 9. Guardar APK e relatório
         uses: actions/upload-artifact@v4
         with:
           name: smartedtv-apk-arm64
@@ -105,16 +121,44 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
-      - name: 9. Publicar release (opcional)
-        if: inputs.publicar_release == true
+      - name: 10. Publicar release com o APK
+        # Publica sempre que o build der certo. Este é o mesmo método já usado
+        # pelos workflows de release deste repositório (gh release create), e é
+        # o que permite baixar o APK direto pelo GitHub, sem intermediários.
+        # Para desativar numa execução manual, use publicar_release=false.
+        if: github.event_name == 'push' || inputs.publicar_release != false
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           APK=$(ls smartedtv/build/out/*.apk | head -1)
-          TAG="smartedtv-$(date -u +%Y%m%d-%H%M)"
-          gh release create "$TAG" "$APK" \
-            --title "SMARTEDTV $(basename "$APK")" \
-            --notes "Compilado do código-fonte do Kodi 21.3-Omega com identidade SMARTEDTV.
-          Application ID org.xbmc.kodi (preservado). Sem add-ons de conteúdo, sem skin Nova TV.
-          Leia o relatório de integridade em smartedtv/DOCUMENTACAO/RELATORIO-INTEGRIDADE.md."
+          SHA=$(ls smartedtv/build/out/*.sha256 | head -1)
+          VER=$(python3 - <<'EOF'
+          import re, pathlib
+          t = pathlib.Path('smartedtv/build/out/build-report.txt').read_text() \
+              if pathlib.Path('smartedtv/build/out/build-report.txt').exists() else ''
+          m = re.search(r'vers[aã]o:\s*(\d+\.\d+\.\d+)', t, re.I)
+          print(m.group(1) if m else '21.4.0')
+          EOF
+          )
+          TAG="smartedtv-v${VER}-arm64"
+          NOTES="SMARTEDTV ${VER} — APK compilado do código-fonte do Kodi 21.3-Omega (commit a3a448d2).
+
+          - ABI: arm64-v8a (Android 5+)
+          - Application ID: org.xbmc.kodi (preservado)
+          - Assinatura: chave de teste smarted-tv-test (NÃO atualiza o Kodi oficial)
+          - Sem add-ons de conteúdo, sem skin Nova TV, sem perfil pré-configurado
+          - SHA-256 no arquivo .sha256 anexado
+
+          Documentação: smartedtv/DOCUMENTACAO/ (integridade, testes, ambiente)."
+          echo "::notice::publicando release $TAG com $(basename "$APK")"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK" "$SHA" --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" "$APK" "$SHA" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "SMARTEDTV ${VER} (arm64-v8a)" \
+              --notes "$NOTES"
+          fi
+          echo "::notice::link: https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"

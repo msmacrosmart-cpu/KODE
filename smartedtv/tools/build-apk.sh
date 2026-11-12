@@ -89,6 +89,17 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Espaço em disco: sem isto o make falha no meio da compilação com um erro de
+# compilador enganoso (ex.: "No space left on device" dentro de um .o).
+AVAIL_KB=$(df --output=avail "$BUILD" | tail -1 | tr -d ' ')
+AVAIL_GB=$((AVAIL_KB / 1024 / 1024))
+echo "espaço livre em $BUILD: ${AVAIL_GB} GB"
+if [ "$AVAIL_GB" -lt 12 ]; then
+  echo "ERRO: apenas ${AVAIL_GB} GB livres em $BUILD; são necessários >=12 GB." >&2
+  echo "      Em CI, libere espaço antes (ver passo 'Libertar espaço em disco')." >&2
+  exit 1
+fi
+
 step "3. Dependências Android (tools/depends)"
 DEPENDS="$KODI_SRC/tools/depends"
 PREFIX="$BUILD/xbmc-depends"
@@ -110,6 +121,14 @@ else
 fi
 test -f "$PREFIX/lib/kodi/libkodi.so" || test -d "$PREFIX/share/kodi" || {
   echo "dependências incompletas em $PREFIX" >&2; exit 1; }
+AVAIL_KB=$(df --output=avail "$BUILD" | tail -1 | tr -d ' ')
+AVAIL_GB=$((AVAIL_KB / 1024 / 1024))
+echo "espaço livre após dependências: ${AVAIL_GB} GB"
+if [ "$AVAIL_GB" -lt 8 ]; then
+  echo "ERRO: apenas ${AVAIL_GB} GB livres após as dependências; o build do Kodi" >&2
+  echo "      precisa de ~8 GB. Libere espaço ou use um runner maior." >&2
+  exit 1
+fi
 
 # ---------------------------------------------------------------------------
 step "4. Configurar e compilar o Kodi para arm64-v8a"
