@@ -42,6 +42,7 @@ MODULOS = [
     ('script.module.soupsieve', 'soupsieve'),
     ('script.module.musicbrainzngs', 'musicbrainzngs'),
     ('script.module.simplejson', 'simplejson'),
+    ('script.module.pil', 'pillow'),
 ]
 
 # modulos que o Kodi ja entrega (nao precisam de addon)
@@ -54,6 +55,7 @@ OPCIONAIS = {
     'socks', 'h2', 'cchardet', 'html5lib', 'lxml', 'numpy', 'olefile',
     'defusedxml', 'cryptography', 'tzdata', 'typing_extensions', 'OpenSSL',
     'PyQt6', 'PySide6', 'IPython', 'backports', 'compression', 'chardet',
+    'ET', 'AddonSignals', 'six', 'future',
 }
 
 # ids empacotados por este script: nao entram na verificacao (as proprias
@@ -161,16 +163,26 @@ def imports_de(addons: Path) -> dict:
 
 
 def modulos_empacotados(addons: Path) -> set:
+    """Nomes de pacotes/modulos disponiveis no conjunto embarcado.
+
+    O Kodi (e os proprios addons) colocam no sys.path pastas como `lib`,
+    `resources/lib`, `resources/modules` ou a raiz do addon. Por isso qualquer
+    pasta que esteja no caminho de um `.py` conta como pacote disponivel.
+    """
     nomes = set()
     for addon in sorted(addons.iterdir()):
-        lib = addon / 'lib'
-        if not addon.is_dir() or not lib.is_dir():
+        if not addon.is_dir():
             continue
-        for item in lib.iterdir():
-            if item.is_dir():
-                nomes.add(item.name)
-            elif item.suffix in ('.py', '.so'):
-                nomes.add(item.stem.split('.')[0])
+        for arquivo in addon.rglob('*'):
+            if '.dist-info' in arquivo.parts or not arquivo.is_file():
+                continue
+            if arquivo.suffix not in ('.py', '.so'):
+                continue
+            nomes.add(arquivo.stem.split('.')[0])
+            pasta = arquivo.parent
+            while pasta != addon and addon in pasta.parents:
+                nomes.add(pasta.name)
+                pasta = pasta.parent
     return nomes
 
 
