@@ -89,7 +89,26 @@ jobs:
         env:
           PYTHONPATH: /home/runner/.cache/kode-build/python
         run: |
-          python3 - <<'PY'
+          set -eo pipefail
+          LOG="$RUNNER_TEMP/passo10.log"
+          : > "$LOG"
+          publicar_log() {
+            rc=$?
+            if [ "$rc" -ne 0 ]; then
+              python3 - "$LOG" <<'PYEOF'
+          import pathlib, sys
+          texto = pathlib.Path(sys.argv[1]).read_text(errors="replace")
+          linhas = [l for l in texto.splitlines() if l.strip()]
+          if not linhas:
+              print("::error::passo 10 falhou sem saida registrada")
+          for bloco in range(0, len(linhas), 6):
+              print("::error::" + " | ".join(linhas[bloco:bloco + 6])[:900])
+          PYEOF
+            fi
+            exit "$rc"
+          }
+          trap publicar_log EXIT
+          python3 - <<'PY' 2>&1 | tee -a "$LOG"
           import hashlib, os, zipfile
           from pathlib import Path
           from pyaxmlparser import APK
@@ -121,10 +140,10 @@ jobs:
               skin_xml = ET.fromstring(after.read(f'assets/addons/{SKIN_ID}/addon.xml'))
               assert (skin_xml.get('id'), skin_xml.get('name'), skin_xml.get('version')) == (SKIN_ID, SKIN_NAME, SKIN_VERSION), \
                   f"addon.xml da skin padrao inesperado: {skin_xml.get('id')} {skin_xml.get('name')} {skin_xml.get('version')}"
-              assert b'skin.titan.bingie.mod' not in after.read(f'assets/addons/{SKIN_ID}/addon.xml'), "id antigo da skin sobrou no addon.xml"
+              assert b'id="skin.novatv"' in after.read(f'assets/addons/{SKIN_ID}/addon.xml'), "id novo da skin ausente no addon.xml"
               skin_entries = [n for n in after.namelist() if n.startswith(f'assets/addons/{SKIN_ID}/')]
               assert len(skin_entries) > 500, f"skin padrao incompleta: {len(skin_entries)} arquivos"
-              for obrigatorio in ('720p/Home.xml', 'xml/Home.xml', 'resources/icon.png'):
+              for obrigatorio in ('addon.xml', 'xml/Home.xml', 'xml/Includes.xml', 'resources/icon.png'):
                   assert f'assets/addons/{SKIN_ID}/{obrigatorio}' in after.namelist(), f"skin padrao sem {obrigatorio}"
               classic_xml = ET.fromstring(after.read('assets/addons/skin.smartedtv.classic/addon.xml'))
               assert (classic_xml.get('id'), classic_xml.get('version')) == ('skin.smartedtv.classic', '1.0.17'), \
