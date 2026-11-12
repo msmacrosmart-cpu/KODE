@@ -56,14 +56,19 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def collect(source: Path, prefix: str):
+def collect(source: Path, prefix: str, strict: bool = True):
+    """Lista os arquivos do addon. ``strict`` valida cada .xml (addons do repo).
+
+    Addons de terceiros (ex.: skins baixadas no CI) podem ter XML fora do padrao
+    estrito do ElementTree - o Kodi aceita, entao nao barramos a build por isso.
+    """
     files = sorted(p for p in source.rglob("*") if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc")
     if not files:
         raise SystemExit(f"No files in {source}")
     for p in files:
         if p.is_symlink():
             raise SystemExit(f"Symlink not allowed: {p}")
-        if p.suffix == ".xml":
+        if strict and p.suffix == ".xml":
             ET.parse(p)
     return {prefix + p.relative_to(source).as_posix(): p for p in files}
 
@@ -151,7 +156,8 @@ def main():
         if addon_id in bridge_ids:
             continue
         bridge_ids.append(addon_id)
-        bridge_files.update(collect(addon_dir, f"assets/addons/{addon_id}/"))
+        bridge_files.update(collect(addon_dir, f"assets/addons/{addon_id}/",
+                                    strict=addon_dir in BRIDGE_ADDONS))
 
     with zipfile.ZipFile(base) as src:
         names = [e.filename for e in src.infolist() if not e.is_dir()]
