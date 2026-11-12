@@ -478,8 +478,14 @@ def open_navigation(handle, params):
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
         return
     comando = open_command(entrada)
-    xbmc.log('SMARTED-TV: navegacao abrindo %s' % entrada['label'], xbmc.LOGINFO)
+    from navigation import is_channel
+    # TV ao vivo continua na lista original; as categorias de VOD abrem em cards
+    vista = 50 if is_channel(entrada) else 52
+    xbmc.log('SMARTED-TV: navegacao abrindo %s (vista %d)' % (entrada['label'], vista),
+             getattr(xbmc, 'LOGINFO', 20))
     xbmc.executebuiltin(comando)
+    xbmc.sleep(600)
+    xbmc.executebuiltin('Container.SetViewMode(%d)' % vista)
     xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
 
 

@@ -124,20 +124,26 @@ class SlotsDaSkinTest(unittest.TestCase):
                      'playable': False, 'origem': 'menu'} for i in range(1, 4)]
         navigation.apply_skin_strings(entradas, self.execute)
         rotulos = [c for c in self.chamadas
-                   if c.startswith('Skin.SetString(smarted_nav_') and '_url_' not in c]
+                   if c.startswith('Skin.SetString(smarted_nav_')
+                   and '_url_' not in c and '_icon_' not in c]
         urls = [c for c in self.chamadas
                 if c.startswith('Skin.SetString(smarted_nav_url_')]
+        icones = [c for c in self.chamadas
+                  if c.startswith('Skin.SetString(smarted_nav_icon_')]
         self.assertEqual(len(rotulos), 3)
         self.assertEqual(len(urls), 3)
         self.assertEqual(rotulos[0], 'Skin.SetString(smarted_nav_1,Opcao 1)')
         # a virgula fecha o argumento de um builtin: vai escapada
         self.assertEqual(urls[0], 'Skin.SetString(smarted_nav_url_1,plugin://x/?i=1&list=1%2C2)')
         # slots sem pasta sao limpos (rotulo e url)
+        self.assertEqual(len(icones), 3)
+        self.assertIn('icons/nav-pasta.png', icones[0])
         limpos = [c for c in self.chamadas if c.startswith('Skin.Reset(')]
-        self.assertEqual(len(limpos), 2 * (navigation.SLOTS - 3))
+        self.assertEqual(len(limpos), 3 * (navigation.SLOTS - 3))
         for slot in range(4, navigation.SLOTS + 1):
             self.assertIn('Skin.Reset(smarted_nav_%d)' % slot, limpos)
             self.assertIn('Skin.Reset(smarted_nav_url_%d)' % slot, limpos)
+            self.assertIn('Skin.Reset(smarted_nav_icon_%d)' % slot, limpos)
 
     def test_cache_do_dia_volta_e_o_de_ontem_e_ignorado(self):
         tmp = tempfile.TemporaryDirectory()

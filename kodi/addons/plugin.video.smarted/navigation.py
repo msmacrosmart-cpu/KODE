@@ -28,6 +28,39 @@ CACHE_NAME = 'navegacao.json'
 MAX_LABEL = 26
 TAGS = re.compile(r'\[/?(?:B|I|COLOR(?: [^\]]+)?|UPPERCASE|LOWERCASE|CAPITALIZE)\]', re.I)
 
+# icones das categorias (arquivos da skin -> media/icons)
+ICONES = (
+    ('tv', 'icons/nav-tv.png'),
+    ('filme', 'icons/nav-filmes.png'),
+    ('serie', 'icons/nav-series.png'),
+    ('dorama', 'icons/nav-doramas.png'),
+    ('anime', 'icons/nav-animes.png'),
+    ('novela', 'icons/nav-novelas.png'),
+    ('desenho', 'icons/nav-desenhos.png'),
+)
+ICONE_PADRAO = 'icons/nav-pasta.png'
+CANAL = 'mode=21'
+
+
+def icon_for(entry):
+    """Icone da skin que corresponde a categoria daquela pasta."""
+    alvo = ((entry or {}).get('label') or '').lower()
+    url = (entry or {}).get('url') or ''
+    if CANAL in url or 'tv' in alvo.split():
+        return 'icons/nav-tv.png'
+    for chave, arquivo in ICONES:
+        if chave in alvo:
+            return arquivo
+    return ICONE_PADRAO
+
+
+def is_channel(entry):
+    """TV ao vivo: destino de canais e nao de VOD (nao recebe cards)."""
+    url = (entry or {}).get('url') or ''
+    rotulo = ((entry or {}).get('label') or '').lower()
+    return CANAL in url or 'tv ao vivo' in rotulo or rotulo.strip() == 'tv'
+
+
 # ultimo recurso: pastas reais do addon (mesmas rotas que ele publica no menu)
 PASTAS = (
     ('TV ao vivo', 21, '#menu_canais'),
@@ -149,13 +182,16 @@ def apply_skin_strings(entries, execute):
     for slot in range(1, SLOTS + 1):
         nome = 'smarted_nav_%d' % slot
         url = 'smarted_nav_url_%d' % slot
+        icone = 'smarted_nav_icon_%d' % slot
         if slot <= len(entries):
             entrada = entries[slot - 1]
             execute('Skin.SetString(%s,%s)' % (nome, entrada['label']))
             execute('Skin.SetString(%s,%s)' % (url, buildin_url(entrada['url'])))
+            execute('Skin.SetString(%s,%s)' % (icone, icon_for(entrada)))
         else:
             execute('Skin.Reset(%s)' % nome)
             execute('Skin.Reset(%s)' % url)
+            execute('Skin.Reset(%s)' % icone)
 
 
 def buildin_url(url):
@@ -203,4 +239,4 @@ def open_command(entry):
     url = buildin_url(entry['url'])
     if entry['playable']:
         return 'PlayMedia(%s)' % url
-    return 'ActivateWindow(Videos,%s,return)' % url
+    return 'ActivateWindow(Videos,%s)' % url

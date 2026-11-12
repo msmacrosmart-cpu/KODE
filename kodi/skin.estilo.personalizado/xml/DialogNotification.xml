@@ -26,6 +26,7 @@
 				<height>110</height>
 				<aspectratio>stretch</aspectratio>
 			</control>
+			<control type="label"><left>150</left><top>12</top><width>450</width><height>22</height><font>font10</font><textcolor>pb_muted</textcolor><aligny>center</aligny><label>SMARTEDTV</label></control>
 			<control type="fadelabel" id="401">
 				<description>Line 1 Label</description>
 				<left>150</left>

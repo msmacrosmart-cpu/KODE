@@ -153,8 +153,8 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
             texto = bloco.group(0)
             self.assertIn('$INFO[Skin.String(smarted_nav_%d)]' % slot, texto)
             self.assertIn('!String.IsEmpty(Skin.String(smarted_nav_%d))' % slot, texto)
-            self.assertIn('ActivateWindow(Videos,$INFO[Skin.String(smarted_nav_url_%d)])'
-                          % slot, texto)
+            self.assertIn('RunPlugin(plugin://plugin.video.smarted/?route=abrir-nav&#38;indice=%d)'
+                          % (slot - 1), texto)
             self.assertNotIn('mode=21', texto)
             self.assertNotIn('mode=27', texto)
 
@@ -334,9 +334,10 @@ class NavegacaoCompletaTest(unittest.TestCase):
     def test_barra_abre_os_destinos_pelo_plugin(self):
         # o botao abre o diretorio do addon como o proprio Kodi faria
         botao = re.search(r'id="9030">.*?</control>', self.home, re.S).group(0)
-        self.assertIn('ActivateWindow(Videos,$INFO[Skin.String(smarted_nav_url_1)])', botao)
-        # sem ",return": o Kodi sempre abre o diretorio pedido (nao o anterior)
-        self.assertNotIn(',return)', botao)
+        self.assertIn('RunPlugin(plugin://plugin.video.smarted/?route=abrir-nav&#38;indice=0)', botao)
+        # o plugin abre com ActivateWindow sem ",return" (nunca reusa o diretorio anterior)
+        navegacao = (ROOT / 'kodi/addons/plugin.video.smarted/navigation.py').read_text(encoding='utf-8')
+        self.assertNotIn("ActivateWindow(Videos,%s,return)", navegacao)
 
     def test_sem_favoritos_a_barra_usa_o_menu_do_addon(self):
         # ordem: favoritos -> menu raiz do addon -> pastas reais (nunca vazio)
