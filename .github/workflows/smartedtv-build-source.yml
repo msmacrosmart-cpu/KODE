@@ -77,12 +77,30 @@ jobs:
           java-version: '17'
 
       - name: 3. Dependências de sistema
+        # A imagem ubuntu-22.04 do runner já traz quase tudo o que o Kodi usa
+        # (cmake, autoconf, automake, libtool, pkg-config, gperf, bison, flex,
+        # zip/unzip, python3). O apt aqui é complementar e NÃO pode derrubar o
+        # build por um erro transiente de repositório — por isso ele é
+        # best-effort e a exigência real é verificada ferramenta por ferramenta.
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq autoconf automake bison build-essential curl flex \
-            gawk git gperf lib32stdc++6 lib32z1 lib32z1-dev libcurl4-openssl-dev unzip \
-            zip zlib1g-dev libtool pkg-config cmake
-          python3 -m pip install --quiet --break-system-packages PyYAML
+          set -uo pipefail
+          sudo apt-get update -o Acquire::Retries=5 -qq 2>/dev/null || true
+          sudo apt-get install -y -qq --no-install-recommends \
+            autoconf automake bison build-essential curl flex gawk git gperf \
+            lib32stdc++6 lib32z1 libcurl4-openssl-dev unzip zip zlib1g-dev \
+            libtool pkg-config cmake 2>/dev/null || \
+          echo "AVISO: apt parcialmente indisponível; seguindo com o que já existe na imagem"
+
+          missing=""
+          for t in cmake make git curl unzip zip python3 autoconf automake libtool pkg-config gperf bison flex; do
+            command -v "$t" >/dev/null 2>&1 || missing="$missing $t"
+          done
+          if [ -n "$missing" ]; then
+            echo "ERRO: ferramentas ausentes:$missing" >&2
+            exit 1
+          fi
+          echo "ok: todas as ferramentas de build presentes"
+          python3 -m pip install --quiet --break-system-packages PyYAML 2>/dev/null || true
 
       - name: 4. SDK/NDK exatos do Kodi 21.3
         run: |
