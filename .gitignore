@@ -6,3 +6,6 @@ __pycache__/
 build/
 *.apk
 *.bak
+
+# SMARTEDTV: saída de compilação (fonte patchado, dependências, APK)
+smartedtv/build/
