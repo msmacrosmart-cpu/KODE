@@ -32,7 +32,7 @@ def main():
         channel_favorites(handle)
         return
     if route == 'sync-nav':
-        sync_navigation(handle)
+        sync_navigation(handle, force=params.get('force', ['0'])[0] == '1')
         return
     if route == 'abrir-nav':
         open_navigation(handle, params)
@@ -402,36 +402,41 @@ def _nav_paths():
             xbmcvfs.translatePath(NAV_CACHE))
 
 
-def sync_navigation(handle):
-    """Le os favoritos do Brazuca e publica os rotulos na barra superior.
+def sync_navigation(handle, force=False):
+    """Descobre as pastas reais do addon e publica a barra superior.
 
-    Roda no boot (servico) e a cada abertura da Home. Para nao atrasar a Home,
-    a rede so e usada quando o perfil ainda nao tem favoritos nem cache do dia.
+    No boot (``force=True``) consulta o menu raiz do Brazuca Play e guarda o
+    resultado do dia. Abertura da Home reaproveita o cache para nao travar a
+    tela; se o cache nao existir, descobre na hora.
     """
     import os
     import xbmc
-    from navigation import apply_skin_strings, build, favorites_entries, load_cache, save_cache
+    from navigation import apply_skin_strings, build, load_cache, save_cache
 
     favoritos, cache = _nav_paths()
-    entradas = favorites_entries(favoritos)
-    origem = 'favoritos'
-    if entradas:
-        save_cache(cache, entradas, origem)
-    else:
-        entradas = load_cache(cache) or []
-        origem = 'cache'
+    entradas = None if force else load_cache(cache)
+    origem = 'cache'
     if not entradas:
         entradas, origem = build(favoritos, xbmc.executeJSONRPC, xbmc.log)
-        pasta = os.path.dirname(cache)
-        if pasta and not os.path.isdir(pasta):
-            try:
-                os.makedirs(pasta)
-            except OSError:
-                pass
-        save_cache(cache, entradas, origem)
+        if entradas and origem != 'pastas':
+            pasta = os.path.dirname(cache)
+            if pasta and not os.path.isdir(pasta):
+                try:
+                    os.makedirs(pasta)
+                except OSError:
+                    pass
+            save_cache(cache, entradas, origem)
+        elif origem == 'pastas':
+            # sem menu e sem favoritos (rede fora): mantem o ultimo bom
+            antigas = load_cache(cache, aceitar_antigo=True)
+            if antigas:
+                entradas, origem = antigas, 'cache'
     apply_skin_strings(entradas, xbmc.executebuiltin)
     xbmc.log('SMARTED-TV: navegacao com %d opcoes (%s)' % (len(entradas), origem),
-             xbmc.LOGINFO)
+             getattr(xbmc, 'LOGINFO', 20))
+    for indice, entrada in enumerate(entradas[:4]):
+        xbmc.log('SMARTED-TV: barra %d = %s' % (indice + 1, entrada['label']),
+                 getattr(xbmc, 'LOGINFO', 20))
     xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
 
 

@@ -119,16 +119,25 @@ class SlotsDaSkinTest(unittest.TestCase):
     def execute(self, comando):
         self.chamadas.append(comando)
 
-    def test_publica_dez_slots_e_limpa_o_resto(self):
-        entradas = [{'label': 'Opcao %d' % i, 'url': 'plugin://x/?i=%d' % i,
-                     'playable': False, 'origem': 'favoritos'} for i in range(1, 4)]
+    def test_publica_rotulo_e_url_de_cada_slot(self):
+        entradas = [{'label': 'Opcao %d' % i, 'url': 'plugin://x/?i=%d&list=1,2' % i,
+                     'playable': False, 'origem': 'menu'} for i in range(1, 4)]
         navigation.apply_skin_strings(entradas, self.execute)
-        self.assertEqual(len(self.chamadas), navigation.SLOTS)
-        self.assertEqual(self.chamadas[0], 'Skin.SetString(smarted_nav_1,Opcao 1)')
-        self.assertEqual(self.chamadas[2], 'Skin.SetString(smarted_nav_3,Opcao 3)')
-        for comando in self.chamadas[3:]:
-            self.assertTrue(comando.startswith('Skin.Reset(smarted_nav_'))
-            self.assertNotIn('SetString', comando)
+        rotulos = [c for c in self.chamadas
+                   if c.startswith('Skin.SetString(smarted_nav_') and '_url_' not in c]
+        urls = [c for c in self.chamadas
+                if c.startswith('Skin.SetString(smarted_nav_url_')]
+        self.assertEqual(len(rotulos), 3)
+        self.assertEqual(len(urls), 3)
+        self.assertEqual(rotulos[0], 'Skin.SetString(smarted_nav_1,Opcao 1)')
+        # a virgula fecha o argumento de um builtin: vai escapada
+        self.assertEqual(urls[0], 'Skin.SetString(smarted_nav_url_1,plugin://x/?i=1&list=1%2C2)')
+        # slots sem pasta sao limpos (rotulo e url)
+        limpos = [c for c in self.chamadas if c.startswith('Skin.Reset(')]
+        self.assertEqual(len(limpos), 2 * (navigation.SLOTS - 3))
+        for slot in range(4, navigation.SLOTS + 1):
+            self.assertIn('Skin.Reset(smarted_nav_%d)' % slot, limpos)
+            self.assertIn('Skin.Reset(smarted_nav_url_%d)' % slot, limpos)
 
     def test_cache_do_dia_volta_e_o_de_ontem_e_ignorado(self):
         tmp = tempfile.TemporaryDirectory()

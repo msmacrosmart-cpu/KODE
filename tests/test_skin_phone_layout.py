@@ -140,24 +140,32 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
     def setUp(self):
         self.home = (XML / 'Home.xml').read_text(encoding='utf-8')
 
-    def test_barra_superior_vem_dos_favoritos_do_addon(self):
-        """A barra nao tem mais categorias fixas: cada botao e um favorito.
+    def test_barra_superior_usa_as_pastas_reais_do_addon(self):
+        """Cada botao abre a pasta real descoberta no menu do addon.
 
-        O rotulo chega por Skin.String (preenchido pela rota sync-nav, que le o
-        favorites.dat do Brazuca) e o clique chama abrir-nav, que abre o destino
-        real dentro do addon.
+        O rotulo e a URL chegam por Skin.String (rota sync-nav, que le o menu
+        raiz do Brazuca por Files.GetDirectory); o clique e o mesmo builtin
+        nativo que o Kodi usa para abrir um diretorio de plugin.
         """
-        for slot in range(1, 11):
+        for slot in range(1, 9):
             bloco = re.search(r'id="%d">.*?</control>' % (9029 + slot), self.home, re.S)
             self.assertIsNotNone(bloco, 'slot %d ausente' % slot)
             texto = bloco.group(0)
             self.assertIn('$INFO[Skin.String(smarted_nav_%d)]' % slot, texto)
             self.assertIn('!String.IsEmpty(Skin.String(smarted_nav_%d))' % slot, texto)
-            self.assertIn('RunPlugin(plugin://plugin.video.smarted/?route=abrir-nav&#38;indice=%d)'
-                          % (slot - 1), texto)
-            # nenhuma categoria fixa embutida no botao
+            self.assertIn('ActivateWindow(Videos,$INFO[Skin.String(smarted_nav_url_%d)],return)'
+                          % slot, texto)
             self.assertNotIn('mode=21', texto)
             self.assertNotIn('mode=27', texto)
+
+    def test_barra_tem_espacamento_maior(self):
+        barra = re.search(r'<control type="grouplist" id="9000">.*?(?=<control type="group">)',
+                          self.home, re.S).group(0)
+        self.assertIn('<itemgap>22</itemgap>', barra)
+        # mesmo visual: tipografia, cores e textura nao mudaram
+        self.assertIn('<font>font12</font>', barra)
+        self.assertIn('<textcolor>pb_muted</textcolor>', barra)
+        self.assertIn('pb_rounded.png', barra)
 
     def test_barra_superior_nao_tem_mais_categorias_fixas(self):
         for antigo in ('9010', '9011', '9012', '9013', '9014', '9015', '9016'):
@@ -199,7 +207,7 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
                           self.home, re.S)
         self.assertIsNotNone(bloco)
         self.assertIn('route=recent-movies', bloco.group(0))
-        self.assertIn('limit="10"', bloco.group(0))
+        self.assertIn('limit="8"', bloco.group(0))
         # o fundo do HERO acompanha o filme em destaque (linha 9201)
         self.assertIn('$INFO[Container(9201).ListItem.Art(fanart)]', self.home)
         self.assertNotIn('$INFO[Container(9200).ListItem.Art(fanart)]', self.home)
@@ -294,8 +302,9 @@ class NavegacaoCompletaTest(unittest.TestCase):
             encoding='utf-8')
 
     def test_barra_abre_os_destinos_pelo_plugin(self):
+        # o botao abre o diretorio do addon como o proprio Kodi faria
         botao = re.search(r'id="9030">.*?</control>', self.home, re.S).group(0)
-        self.assertIn('RunPlugin(plugin://plugin.video.smarted/?route=abrir-nav&#38;indice=0)', botao)
+        self.assertIn('ActivateWindow(Videos,$INFO[Skin.String(smarted_nav_url_1)],return)', botao)
 
     def test_sem_favoritos_a_barra_usa_o_menu_do_addon(self):
         # ordem: favoritos -> menu raiz do addon -> pastas reais (nunca vazio)

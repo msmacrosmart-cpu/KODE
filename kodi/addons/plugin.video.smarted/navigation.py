@@ -23,7 +23,7 @@ from favorites import CATEGORIES, load, plugin_url
 from routes import brazuca
 
 # slots existentes na Home (cada um e um botao da barra superior)
-SLOTS = 10
+SLOTS = 8
 CACHE_NAME = 'navegacao.json'
 MAX_LABEL = 26
 TAGS = re.compile(r'\[/?(?:B|I|COLOR(?: [^\]]+)?|UPPERCASE|LOWERCASE|CAPITALIZE)\]', re.I)
@@ -70,8 +70,13 @@ def favorites_entries(path):
     return items
 
 
+# o menu raiz do addon tambem publica configuracoes/updates: nao sao pastas de
+# conteudo e nao entram na barra
+IGNORAR = ('configuracoes', 'verificarupdates', 'conteudosbaixados')
+
+
 def root_entries(rpc):
-    """Menu raiz do proprio addon (mode 0), quando nao ha favoritos."""
+    """Pastas reais do menu raiz do addon (mode 0), descobertas ao vivo."""
     if rpc is None:
         return []
     try:
@@ -81,9 +86,12 @@ def root_entries(rpc):
     items = []
     for item in bruto:
         entrada = catalogo_entry(item)
-        if entrada and (entrada['folder'] or entrada['playable']):
-            items.append(_entry(entrada['label'], entrada['url'],
-                                playable=entrada['playable'], origem='menu'))
+        if not entrada or not entrada['folder']:
+            continue
+        if any(chave in clean_label(entrada['label']).lower().replace(' ', '')
+               for chave in IGNORAR):
+            continue
+        items.append(_entry(entrada['label'], entrada['url'], origem='menu'))
     return items
 
 
@@ -107,31 +115,52 @@ def _dedupe(items, limit=SLOTS):
     return resultado
 
 
-def build(path, rpc=None, log=None):
-    """Devolve ``(entradas, origem)``: favoritos, menu do addon ou pastas."""
-    favoritos = favorites_entries(path)
-    if favoritos:
-        if log:
-            log('navegacao: %d favoritos do Brazuca' % len(favoritos))
-        return _dedupe(favoritos), 'favoritos'
+def build(path, rpc=None, log=None, favoritos_primeiro=False):
+    """Devolve ``(entradas, origem)``.
+
+    Ordem: as pastas REAIS do addon (menu raiz que ele mesmo publica, descoberto
+    por Files.GetDirectory), depois os favoritos do Brazuca e, como rede de
+    seguranca, as pastas conhecidas. Cada entrada guarda a URL nativa do addon,
+    entao o OK abre exatamente o diretorio que o addon abriria.
+    """
+    if favoritos_primeiro:
+        favoritos = favorites_entries(path)
+        if favoritos:
+            if log:
+                log('navegacao: %d favoritos do Brazuca' % len(favoritos))
+            return _dedupe(favoritos), 'favoritos'
     menu = root_entries(rpc)
     if menu:
         if log:
-            log('navegacao: sem favoritos, usando o menu do addon (%d)' % len(menu))
+            log('navegacao: %d pastas reais do menu do addon' % len(menu))
         return _dedupe(menu), 'menu'
+    favoritos = favorites_entries(path)
+    if favoritos:
+        if log:
+            log('navegacao: menu indisponivel, usando %d favoritos' % len(favoritos))
+        return _dedupe(favoritos), 'favoritos'
     if log:
-        log('navegacao: sem favoritos e sem menu, usando as pastas do addon')
+        log('navegacao: sem menu e sem favoritos, usando as pastas do addon')
     return _dedupe(folder_entries()), 'pastas'
 
 
 def apply_skin_strings(entries, execute):
-    """Publica rotulos dos botoes da barra e limpa os slots sem favorito."""
+    """Publica rotulo e URL de cada slot da barra (limpa os que sobram)."""
     for slot in range(1, SLOTS + 1):
         nome = 'smarted_nav_%d' % slot
+        url = 'smarted_nav_url_%d' % slot
         if slot <= len(entries):
-            execute('Skin.SetString(%s,%s)' % (nome, entries[slot - 1]['label']))
+            entrada = entries[slot - 1]
+            execute('Skin.SetString(%s,%s)' % (nome, entrada['label']))
+            execute('Skin.SetString(%s,%s)' % (url, buildin_url(entrada['url'])))
         else:
             execute('Skin.Reset(%s)' % nome)
+            execute('Skin.Reset(%s)' % url)
+
+
+def buildin_url(url):
+    """URL pronta para um builtin (virgula fecha o argumento do comando)."""
+    return (url or '').replace(',', '%2C')
 
 
 def save_cache(filename, entries, origem, today=None):
@@ -171,7 +200,7 @@ def resolve(entries, indice):
 
 def open_command(entry):
     """Builtin que abre a pasta (ou toca o video) daquele favorito."""
-    url = entry['url'].replace(',', '%2C')
+    url = buildin_url(entry['url'])
     if entry['playable']:
         return 'PlayMedia(%s)' % url
     return 'ActivateWindow(Videos,%s,return)' % url

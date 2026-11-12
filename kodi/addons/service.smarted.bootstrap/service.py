@@ -7,6 +7,7 @@ habilitado e com o bootstrap interno pronto antes de qualquer tela abrir.
 from __future__ import absolute_import, unicode_literals
 
 import os
+import threading
 import time
 
 import xbmc
@@ -122,12 +123,50 @@ def write_favourites():
 
 
 def apply_navigation():
-    """Publica os favoritos do Brazuca nos botoes da barra superior.
+    """Descobre as pastas reais do Brazuca e publica a barra superior.
 
-    A leitura e feita pelo plugin.video.smarted (mesma fonte da aba Favoritos):
-    aqui so dispara a sincronizacao, para a Home abrir ja com os rotulos.
+    A descoberta (menu raiz do addon por Files.GetDirectory) e feita pelo
+    plugin.video.smarted; aqui disparamos com force=1 para o boot sempre
+    refazer o mapeamento e gravar o cache do dia.
     """
-    xbmc.executebuiltin('RunPlugin(plugin://plugin.video.smarted/?route=sync-nav)')
+    xbmc.executebuiltin('RunPlugin(plugin://plugin.video.smarted/?route=sync-nav&force=1)')
+
+
+HERO_ROTATION = 8.0      # segundos entre um lancamento e outro
+HERO_CONTROL = 9201      # linha de lancamentos que alimenta o HERO
+
+
+def _hero_livre():
+    """O HERO so troca sozinho quando ninguem esta mexendo nele."""
+    if xbmc.getCondVisibility('Player.HasMedia'):
+        return False
+    if not xbmc.getCondVisibility('Window.IsActive(10000)'):
+        return False
+    if xbmc.getCondVisibility('Control.HasFocus(%d) | Control.HasFocus(9300) | '
+                              'Control.HasFocus(9301) | Control.HasFocus(9302) | '
+                              'Control.HasFocus(9303)' % HERO_CONTROL):
+        return False
+    return bool(xbmc.getInfoLabel('Container(%d).ListItem.Label' % HERO_CONTROL))
+
+
+def rotate_hero(monitor, intervalo=HERO_ROTATION):
+    """Alterna o destaque da Home a cada ~8 s, com pausa quando ha interacao."""
+    espera = 0.0
+    passo = 0
+    while not monitor.abortRequested():
+        if monitor.waitForAbort(1):
+            return
+        if not _hero_livre():
+            espera = 0.0
+            continue
+        espera += 1
+        if espera < intervalo:
+            continue
+        espera = 0.0
+        passo += 1
+        xbmc.executebuiltin('Control.Move(%d,1)' % HERO_CONTROL)
+        # pulso que reativa o fade da arte do HERO (transicao suave)
+        xbmc.executebuiltin('Skin.SetString(smarted_hero_tick,%d)' % (passo % 2))
 
 
 def apply_performance():
@@ -203,6 +242,11 @@ def main():
         log('perfil incompleto: %s' % ', '.join(problems), xbmc.LOGWARNING)
         xbmc.executebuiltin(
             'Notification(SMARTEDTV, Brazuca Play incompleto: veja userdata/smarted-bootstrap.log, 8000)')
+
+    # o HERO alterna sozinho entre os lancamentos enquanto a Home esta aberta
+    rotacao = threading.Thread(target=rotate_hero, args=(monitor,), name='hero-rotate')
+    rotacao.daemon = True
+    rotacao.start()
 
     # reavalia de tempos em tempos (addon desabilitado, perfil limpo, etc.)
     while not monitor.abortRequested():

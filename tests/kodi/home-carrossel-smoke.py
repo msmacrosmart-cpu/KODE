@@ -204,9 +204,10 @@ def main():
                          tentativas=3, espera=3.0, propriedades=HERO_PROPS)
         filmes = [f for f in hero if f.get('filetype') == 'file']
         com_arte = [f for f in filmes if art_of(f)]
-        com_ficha = [f for f in filmes if f.get('plot') and f.get('genre')]
-        log('HERO total=%d filmes=%d arte=%d ficha=%d'
-            % (len(hero), len(filmes), len(com_arte), len(com_ficha)))
+        com_sinopse = [f for f in filmes if f.get('plot')]
+        com_genero = [f for f in filmes if f.get('genre')]
+        log('HERO total=%d filmes=%d arte=%d sinopse=%d genero=%d'
+            % (len(hero), len(filmes), len(com_arte), len(com_sinopse), len(com_genero)))
         for item in filmes[:10]:
             log('  HERO %s | ano=%s | nota=%s | data=%s | genero=%s | %s'
                 % (TAGS.sub('', item.get('label', ''))[:44].replace('|', '/'),
@@ -215,8 +216,11 @@ def main():
                    else item.get('genre'), art_of(item)[:52].replace('|', '/')))
         if len(filmes) < 7:
             problemas.append('HERO: apenas %d filmes reais (minimo 7)' % len(filmes))
-        if len(com_ficha) < 7:
-            problemas.append('HERO: %d de %d filmes com ficha' % (len(com_ficha), len(filmes)))
+        if len(filmes) > 8:
+            problemas.append('HERO: %d filmes (o HERO usa no maximo 8)' % len(filmes))
+        if len(com_sinopse) < 7:
+            problemas.append('HERO: %d de %d filmes com sinopse'
+                             % (len(com_sinopse), len(filmes)))
         if len(com_arte) < len(filmes):
             problemas.append('HERO: %d de %d filmes sem arte'
                              % (len(filmes) - len(com_arte), len(filmes)))
@@ -224,90 +228,119 @@ def main():
         log('HERO falhou (%s)' % error)
         problemas.append('HERO: %s' % error)
 
-    # DIAG: onde o addon publica ficha completa (genero/nota/data). Le as
-    # pastas reais e mostra o que existe, para o HERO nao inventar nada.
-    def raio_x(nome, url):
-        try:
-            itens = directory(url, tentativas=2, espera=1.5, propriedades=HERO_PROPS)
-            total = len(itens)
-            conta = {chave: len([i for i in itens if i.get(chave)])
-                     for chave in ('plot', 'genre', 'dateadded', 'premiered',
-                                   'rating', 'year')}
-            log('DIAG %s itens=%d %s' % (nome, total, conta))
-            if itens:
-                log('DIAG %s amostra=%s | plot=%s | genre=%s | date=%s | year=%s'
-                    % (nome, str(itens[0].get('label'))[:34].replace('|', '/'),
-                       str(itens[0].get('plot'))[:40].replace('|', '/'),
-                       itens[0].get('genre'), itens[0].get('dateadded'),
-                       itens[0].get('year')))
-            return itens
-        except Exception as erro:  # noqa: BLE001
-            log('DIAG %s falhou (%s)' % (nome, erro))
-            return []
-
-    def achar(itens, *pedacos):
-        for item in itens:
-            rotulo = normalize(TAGS.sub('', item.get('label', '')))
-            if all(normalize(pedaco) in rotulo for pedaco in pedacos):
-                return item
-        return None
-
-    filmes_menu = raio_x('MENU FILMES', brazuca(27, '#filmes_menu'))
-    lancamentos = achar(filmes_menu, 'lancamentos')
-    if lancamentos:
-        raio_x('LANCAMENTOS', lancamentos.get('file'))
-
-    generos = achar(filmes_menu, 'generos')
-    if generos:
-        lista_generos = raio_x('GENEROS', generos.get('file'))
-        if lista_generos:
-            primeiro_genero = lista_generos[0]
-            itens_genero = raio_x('GENERO ' + str(primeiro_genero.get('label'))[:16],
-                                  primeiro_genero.get('file'))
-            if itens_genero and itens_genero[0].get('filetype') == 'directory':
-                raio_x('GENERO PAGINA', itens_genero[0].get('file'))
-            elif itens_genero:
-                raio_x('GENERO FILMES', primeiro_genero.get('file'))
-
-    alfabetica = achar(filmes_menu, 'alfabetica')
-    if alfabetica:
-        raio_x('ALFABETICA', alfabetica.get('file'))
-
-    series_menu = raio_x('MENU SERIES', brazuca(27, '#series_menu'))
-    lista_series = achar(series_menu, 'series')
-    if lista_series:
-        raio_x('SERIES LISTA', lista_series.get('file'))
-
-    # BARRA superior: sync-nav publica os favoritos do Brazuca; navegacao lista
-    # exatamente as opcoes usadas pela skin (destino real, nunca lista inventada)
+    # BARRA superior: sync-nav descobre as pastas REAIS do addon e publica
+    # rotulo + URL em Skin.String. Uma verificacao por opcao, sem repetir.
     try:
-        directory('plugin://plugin.video.smarted/?route=sync-nav', tentativas=2, espera=2.0)
+        directory('plugin://plugin.video.smarted/?route=sync-nav&force=1',
+                  tentativas=2, espera=2.0)
     except Exception as error:  # noqa: BLE001
         log('BARRA sync-nav falhou (%s)' % error)
         problemas.append('BARRA: sync-nav %s' % error)
+
     try:
-        barra = directory('plugin://plugin.video.smarted/?route=navegacao')
-        reais = [b for b in barra if 'plugin.video.BrazucaPlay' in (b.get('file') or '')]
-        log('BARRA opcoes=%d destinos_reais=%d' % (len(barra), len(reais)))
-        for item in barra[:10]:
-            log('  BARRA %s -> %s' % (TAGS.sub('', item.get('label', ''))[:40].replace('|', '/'),
-                                      (item.get('file') or '')[:70].replace('|', '/')))
-        try:
-            rotulos = rpc('XBMC.GetInfoLabels', {'labels': [
-                'Skin.String(smarted_nav_%d)' % slot for slot in range(1, 11)]})
-            preenchidos = [valor for chave, valor in rotulos.items()
-                           if chave.startswith('Skin.String') and valor]
-            log('BARRA skin_strings=%s' % [r for r in preenchidos][:10])
-        except Exception as error:  # noqa: BLE001
-            log('BARRA skin_strings indisponiveis (%s)' % error)
-        if not barra:
-            problemas.append('BARRA: nenhuma opcao')
-        if len(reais) != len(barra):
-            problemas.append('BARRA: %d de %d opcoes sem destino do addon'
-                             % (len(barra) - len(reais), len(barra)))
+        rotulos = rpc('XBMC.GetInfoLabels', {'labels': [
+            'Skin.String(smarted_nav_%d)' % slot for slot in range(1, 11)]})
+        urls = rpc('XBMC.GetInfoLabels', {'labels': [
+            'Skin.String(smarted_nav_url_%d)' % slot for slot in range(1, 11)]})
+        opcoes = [(rotulos.get('Skin.String(smarted_nav_%d)' % slot, ''),
+                   urls.get('Skin.String(smarted_nav_url_%d)' % slot, ''))
+                  for slot in range(1, 11)]
+        opcoes = [(rotulo, url) for rotulo, url in opcoes if rotulo and url]
+        log('BARRA opcoes=%d %s' % (len(opcoes), [r for r, _ in opcoes]))
+        if not opcoes:
+            problemas.append('BARRA: nenhuma opcao publicada')
+        for rotulo, url in opcoes:
+            url = url.replace('%2C', ',')
+            try:
+                itens = directory(url, tentativas=2, espera=2.0)
+                log('BARRA %s -> itens=%d primeiro=%s'
+                    % (rotulo, len(itens),
+                       str(itens[0].get('label'))[:40] if itens else 'VAZIO'))
+                if not itens:
+                    problemas.append('BARRA %s: pasta vazia' % rotulo)
+            except Exception as error:  # noqa: BLE001
+                log('BARRA %s falhou (%s)' % (rotulo, error))
+                problemas.append('BARRA %s: %s' % (rotulo, error))
     except Exception as error:  # noqa: BLE001
-        log('BARRA falhou (%s)' % error)
+        log('BARRA skin strings falhou (%s)' % error)
         problemas.append('BARRA: %s' % error)
+
+    # ADDONS: entrar em um addon de video (Brazuka), um de programas e no
+    # YouTube, respeitando o tipo de item devolvido por cada um
+    def addons(fonte):
+        try:
+            origem = 'addons://sources/%s/' % fonte
+            return rpc('Files.GetDirectory', {'directory': origem, 'media': 'files',
+                                              'properties': PROPS}).get('files', [])
+        except Exception as error:  # noqa: BLE001
+            log('ADDONS %s falhou (%s)' % (fonte, error))
+            return []
+
+    videos = addons('video')
+    log('ADDONS video=%d %s' % (len(videos),
+                                [str(i.get('addonid')) for i in videos][:8]))
+    if not videos:
+        problemas.append('ADDONS: nenhum addon de video')
+    alvo = next((i for i in videos if 'Brazuca' in str(i.get('addonid'))), None)
+    if alvo:
+        try:
+            raiz = directory('plugin://%s/' % alvo['addonid'], tentativas=2, espera=2.0)
+            pastas = [i for i in raiz if i.get('filetype') == 'directory']
+            log('ADDONS brazuca raiz=%d pastas=%d' % (len(raiz), len(pastas)))
+            if not pastas:
+                problemas.append('ADDONS: raiz do Brazuca sem pastas')
+        except Exception as error:  # noqa: BLE001
+            problemas.append('ADDONS brazuca: %s' % error)
+
+    programas = addons('executable')
+    log('ADDONS programas=%d %s' % (len(programas),
+                                    [str(i.get('addonid')) for i in programas][:8]))
+    if not programas:
+        problemas.append('ADDONS: nenhum addon de programas')
+    for item in programas[:2]:
+        addon_id = str(item.get('addonid'))
+        try:
+            itens = directory('plugin://%s/' % addon_id, tentativas=1, espera=1.5)
+            log('ADDONS programa %s itens=%d' % (addon_id, len(itens)))
+        except Exception as error:  # noqa: BLE001
+            log('ADDONS programa %s sem listagem (%s)' % (addon_id, error))
+
+    youtube = next((i for i in videos if 'youtube' in str(i.get('addonid')).lower()), None)
+    if youtube:
+        try:
+            itens = directory('plugin://%s/' % youtube['addonid'], tentativas=2, espera=2.0)
+            log('ADDONS youtube=%s itens=%d' % (youtube['addonid'], len(itens)))
+            if not itens:
+                problemas.append('ADDONS youtube: sem itens na raiz')
+        except Exception as error:  # noqa: BLE001
+            log('ADDONS youtube falhou (%s)' % error)
+            problemas.append('ADDONS youtube: %s' % error)
+    else:
+        log('ADDONS youtube=ausente neste perfil')
+
+    # HERO: alternancia automatica (~8 s) enquanto a Home esta aberta
+    try:
+        xbmc.executebuiltin('ActivateWindow(Home)')
+        xbmc.sleep(4000)
+        def atual():
+            return rpc('XBMC.GetInfoLabels', {'labels': [
+                'Container(9201).ListItem.Label', 'Container(9201).Position']})
+
+        antes = atual()
+        log('HERO ROTACAO antes=%s' % antes)
+        mudou = False
+        for _ in range(3):
+            xbmc.sleep(9000)
+            agora = atual()
+            log('HERO ROTACAO agora=%s' % agora)
+            if agora.get('Container(9201).ListItem.Label') != antes.get('Container(9201).ListItem.Label'):
+                mudou = True
+                break
+        if not mudou:
+            problemas.append('HERO: nao alternou sozinho em ~30 s')
+    except Exception as error:  # noqa: BLE001
+        log('HERO ROTACAO falhou (%s)' % error)
+        problemas.append('HERO rotacao: %s' % error)
 
     # Favoritos: linha nativa da Home precisa listar algo quando houver favoritos
     try:
