@@ -1,0 +1,116 @@
+name: SMARTEDTV - compilar do código-fonte (arm64)
+
+# Compila o Kodi 21.3-Omega do código-fonte para Android arm64-v8a, aplica a
+# identidade SMARTEDTV (versão.txt + strings + mídia oficiais) e publica o APK.
+#
+# Este é o build "de verdade": `make apk` compila libkodi.so e empacota tudo com
+# Gradle. O tempo típico é ~65 min em ubuntu-22.04 (medido no run 42775900278,
+# que compilou o mesmo Kodi 21.3 com um patch de teclado).
+
+on:
+  workflow_dispatch:
+    inputs:
+      publicar_release:
+        description: 'Publicar o APK como release (precisa da chave do repositório)'
+        type: boolean
+        default: false
+  push:
+    branches: [arena/2e3d223d-kode]
+    paths:
+      - .github/workflows/smartedtv-build-source.yml
+      - smartedtv/**
+
+permissions:
+  contents: write
+
+concurrency:
+  group: smartedtv-source-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  arm64:
+    name: Kodi 21.3-Omega -> SMARTEDTV arm64-v8a
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. JDK 17 (mesmo do build de referência)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: 2. Dependências de sistema
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq autoconf automake bison build-essential curl flex \
+            gawk git gperf lib32stdc++6 lib32z1 lib32z1-dev libcurl4-openssl-dev unzip \
+            zip zlib1g-dev libtool pkg-config cmake
+
+      - name: 3. SDK/NDK exatos do Kodi 21.3
+        run: |
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install \
+            'platforms;android-34' 'build-tools;33.0.1' 'ndk;21.4.7075529'
+          echo "ndk: $(ls "$ANDROID_SDK_ROOT/ndk")"
+
+      - name: 4. Artes oficiais da marca (do repositório, sem inventar nada)
+        run: python3 smartedtv/tools/make-brand-assets.py
+
+      - name: 5. Idioma pt-BR oficial (repo-resources) para embarcar
+        run: |
+          set -euo pipefail
+          mkdir -p smartedtv/build/lang
+          curl -fsSL -o /tmp/res.zip \
+            https://codeload.github.com/xbmc/repo-resources/zip/refs/heads/omega
+          unzip -q /tmp/res.zip -d /tmp/res
+          cp -a /tmp/res/repo-resources-omega/resource.language.pt_br smartedtv/build/lang/
+          grep -c 'msgid' smartedtv/build/lang/resource.language.pt_br/resources/strings.po
+
+      - name: 6. Kodi 21.3-Omega + identidade SMARTEDTV
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch 21.3-Omega https://github.com/xbmc/xbmc.git \
+            smartedtv/build/kodi-21.3-Omega
+          cd smartedtv/build/kodi-21.3-Omega
+          test "$(git rev-parse HEAD)" = 'a3a448d26b8d560a65655dab2cd122994dc4e146'
+          cd -
+          python3 smartedtv/tools/patch-source.py smartedtv/build/kodi-21.3-Omega \
+            --brand-dir smartedtv/out \
+            --language-addon smartedtv/build/lang/resource.language.pt_br
+
+      - name: 7. Dependências Android (tools/depends)
+        run: ./smartedtv/tools/build-apk.sh
+        env:
+          JOBS: 4
+          SKIP_BRAND: '1'      # passo 6 já aplicou a identidade
+          KODI_SRC: ${{ github.workspace }}/smartedtv/build/kodi-21.3-Omega
+
+      - name: 8. Guardar APK e relatório
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartedtv-apk-arm64
+          path: |
+            smartedtv/build/out/*.apk
+            smartedtv/build/out/*.sha256
+            smartedtv/build/out/build-report.txt
+            smartedtv/build/env-report.txt
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: 9. Publicar release (opcional)
+        if: inputs.publicar_release == true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          APK=$(ls smartedtv/build/out/*.apk | head -1)
+          TAG="smartedtv-$(date -u +%Y%m%d-%H%M)"
+          gh release create "$TAG" "$APK" \
+            --title "SMARTEDTV $(basename "$APK")" \
+            --notes "Compilado do código-fonte do Kodi 21.3-Omega com identidade SMARTEDTV.
+          Application ID org.xbmc.kodi (preservado). Sem add-ons de conteúdo, sem skin Nova TV.
+          Leia o relatório de integridade em smartedtv/DOCUMENTACAO/RELATORIO-INTEGRIDADE.md."

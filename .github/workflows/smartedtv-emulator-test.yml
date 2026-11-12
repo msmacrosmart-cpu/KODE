@@ -1,0 +1,106 @@
+name: SMARTEDTV - instalar e abrir no emulador
+
+# Teste de instalação e inicialização real, sem aparelho físico.
+#   - pega o APK do artefato do build de código-fonte (ou de uma release)
+#   - assina com uma chave descartável só para o emulador
+#   - instala, abre, espera a Home do Kodi carregar
+#   - coleta screenshot, kodi.log e logcat como evidência
+#
+# IMPORTANTE: não é uma prova de funcionamento em aparelho real, nem de
+# reprodução de vídeo. É prova de instalação, inicialização, splash e Home.
+
+on:
+  workflow_dispatch:
+    inputs:
+      apk_run_id:
+        description: 'run_id do build de código-fonte que gerou o artefato'
+        required: false
+  push:
+    branches: [arena/2e3d223d-kode]
+    paths:
+      - .github/workflows/smartedtv-emulator-test.yml
+      - smartedtv/tools/smoke-emulador.sh
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  emulador:
+    name: Instalar e abrir (API 30, x86_64)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    env:
+      APP_ID: org.xbmc.kodi
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Baixar o APK compilado
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.apk_run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p apk
+          if [ -n "${RUN_ID:-}" ]; then
+            gh run download "$RUN_ID" -R "$GITHUB_REPOSITORY" -n smartedtv-apk-arm64 -D apk
+          else
+            LATEST=$(gh run list -R "$GITHUB_REPOSITORY" -w smartedtv-build-source.yml \
+                     -s success -L 1 --json databaseId -q '.[0].databaseId')
+            [ -n "$LATEST" ] || { echo '::error::nenhum build concluído com sucesso'; exit 1; }
+            gh run download "$LATEST" -R "$GITHUB_REPOSITORY" -n smartedtv-apk-arm64 -D apk
+          fi
+          find apk -name '*.apk' -exec ls -lh {} +
+
+      - name: 2. Preparar ferramentas de verificação
+        run: |
+          python3 -m pip install --quiet --disable-pip-version-check pyaxmlparser==0.3.31
+
+      - name: 3. Verificar identidade antes de instalar
+        run: |
+          set -euo pipefail
+          APK=$(find apk -name '*.apk' | head -1)
+          python3 smartedtv/tools/verify-apk.py "$APK"
+
+      - name: 4. Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: 5. Instalar, abrir e coletar evidências
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          profile: pixel_c
+          emulator-options: >-
+            -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+            -camera-back none -memory 4096
+          disable-animations: true
+          script: bash smartedtv/tools/smoke-emulador.sh
+
+      - name: 6. Guardar evidências
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartedtv-emulador-evidencias
+          path: smartedtv/build/emulador/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: 7. Resumo
+        if: always()
+        run: |
+          {
+            echo '## Resultado do teste no emulador'
+            for f in smartedtv/build/emulador/*.txt; do
+              [ -f "$f" ] || continue
+              echo "### $(basename "$f")"
+              echo '```'
+              head -60 "$f"
+              echo '```'
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
