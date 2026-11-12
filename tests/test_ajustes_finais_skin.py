@@ -10,17 +10,22 @@ XML = ROOT / 'kodi/skin.estilo.personalizado/xml'
 
 class AjustesFinaisTest(unittest.TestCase):
     def test_pastas_nao_usam_poster(self):
+        # a tela final (com video) e a unica que entra na grade; a intermediaria
+        # fica na lista vertical, e os filtros so existem na grade
+        plugin = (ROOT / 'kodi/addons/plugin.video.smarted/default.py').read_text(encoding='utf-8')
+        self.assertIn("final = bool(tem_video) and not tv", plugin)
+        self.assertIn("Container.SetViewMode(%d)' % (52 if final else 50)", plugin)
         texto = (XML / 'MyVideoNav.xml').read_text(encoding='utf-8')
-        painel = texto[texto.index('<control type="panel" id="52">'):]
-        # a arte do poster so aparece em item reproduzivel; pasta tem cartao proprio
-        self.assertIn('<texture background="true">$VAR[ItemArt]</texture><visible>!ListItem.IsFolder</visible>', painel)
-        self.assertIn('<visible>ListItem.IsFolder</visible>', painel)
-        self.assertIn('icons/filemanager.png', painel)
+        filtros = texto[texto.index('<control type="grouplist" id="9060">'):texto.index('<control type="panel"')]
+        self.assertIn('<visible>Control.IsVisible(52)</visible>', filtros)
+        self.assertEqual(filtros.count('route=pasta'), 6)
 
     def test_menu_lateral_sem_icones(self):
         texto = (XML / 'MyVideoNav.xml').read_text(encoding='utf-8')
+        trilha = texto[texto.index('<control type="grouplist" id="9000">'):
+                       texto.index('<control type="grouplist" id="9050">')]
         self.assertNotIn('smarted_nav_icon_', texto)
-        self.assertNotIn('<left>12</left><top>', texto)
+        self.assertNotIn('type="image"', trilha)
 
     def test_navegacao_silenciosa(self):
         addon = ROOT / 'kodi/addons/resource.uisounds.silencio'

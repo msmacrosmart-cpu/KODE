@@ -1,7 +1,7 @@
 """Kodi directory bridge; does not collect or fabricate catalogue data."""
 import sys
 import os
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlencode
 
 import xbmcgui
 import xbmcplugin
@@ -34,6 +34,9 @@ def main():
     if route == 'sync-nav':
         sync_navigation(handle, force=params.get('force', ['0'])[0] == '1')
         return
+    if route == 'pasta':
+        pasta(handle, params)
+        return
     if route == 'abrir-nav':
         open_navigation(handle, params)
         return
@@ -60,6 +63,105 @@ def main():
             item.setArt({'poster': art, 'thumb': art, 'icon': art})
         xbmcplugin.addDirectoryItem(handle, url, item, isFolder=True)
     xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+
+
+ORDENS = ('todos', 'az', 'za', 'adicionados', 'votados', 'recentes')
+
+
+def _ordenar(entradas, ordem):
+    """Ordena os itens carregados com criterios que EXISTEM neles (sem inventar)."""
+    pastas = [e for e in entradas if e['folder']]
+    videos = [e for e in entradas if not e['folder']]
+    if ordem == 'az':
+        videos = sorted(videos, key=lambda e: (e.get('label') or '').casefold())
+    elif ordem == 'za':
+        videos = sorted(videos, key=lambda e: (e.get('label') or '').casefold(), reverse=True)
+    elif ordem == 'adicionados':
+        if any(e.get('dateadded') for e in videos):
+            videos = sorted(videos, key=lambda e: e.get('dateadded') or '', reverse=True)
+    elif ordem == 'votados':
+        if any(e.get('votes') for e in videos):
+            videos = sorted(videos, key=lambda e: (e.get('votes') or 0, e.get('rating') or 0),
+                            reverse=True)
+        elif any(e.get('rating') for e in videos):
+            videos = sorted(videos, key=lambda e: e.get('rating') or 0, reverse=True)
+    elif ordem == 'recentes':
+        if any(e.get('year') for e in videos):
+            videos = sorted(videos, key=lambda e: e.get('year') or 0, reverse=True)
+    return pastas + videos
+
+
+def pasta(handle, params):
+    """Navegacao de pastas do addon: a TELA FINAL (com video) abre em grade + filtros.
+
+    As pastas intermediarias continuam na lista vertical, sem cards e sem filtros.
+    TV ao vivo nunca entra no modo grade.
+    """
+    import xbmc
+    import catalogue
+    from routes import SMARTED
+    from urllib.parse import quote
+
+    url = params.get('url', [''])[0]
+    ordem = params.get('ordem', ['todos'])[0]
+    if ordem not in ORDENS:
+        ordem = 'todos'
+    tv = params.get('tv', ['0'])[0] == '1' or 'mode=21' in url
+    if not url:
+        xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
+        return
+    try:
+        brutos = catalogue.directory(xbmc.executeJSONRPC, url)
+    except Exception as erro:
+        xbmc.log('SMARTED-TV: pasta indisponivel (%s) %s' % (url, erro), xbmc.LOGWARNING)
+        xbmcgui.Dialog().notification('SMARTEDTV', 'Nao foi possivel abrir esta pasta',
+                                      xbmcgui.NOTIFICATION_ERROR, 4000)
+        xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
+        return
+
+    entradas = [entrada for entrada in (catalogue._entry(item) for item in brutos) if entrada]
+    tem_video = any(not entrada['folder'] for entrada in entradas)
+    final = bool(tem_video) and not tv
+
+    xbmc.executebuiltin('Skin.SetString(smarted_ordem_url,%s)' % quote(url, safe=''))
+    xbmc.executebuiltin('Skin.SetString(smarted_ordem_atual,%s)' % ordem)
+
+    for entrada in _ordenar(entradas, ordem if final else 'todos'):
+        item = xbmcgui.ListItem(label=entrada['title'] or entrada['label'])
+        arte = {}
+        if entrada['thumbnail']:
+            arte['poster'] = arte['thumb'] = entrada['thumbnail']
+        if entrada['fanart']:
+            arte['fanart'] = entrada['fanart']
+        if arte:
+            item.setArt(arte)
+        ficha = {'title': entrada['title'], 'plot': entrada['plot'], 'year': entrada['year'],
+                 'genre': entrada['genre'], 'duration': entrada['duration']}
+        if entrada['rating']:
+            ficha['rating'] = entrada['rating']
+        if entrada['premiered']:
+            ficha['premiered'] = entrada['premiered']
+        ficha = {chave: valor for chave, valor in ficha.items() if valor}
+        try:
+            item.setInfo('video', ficha)
+        except Exception:
+            pass
+        if entrada['folder']:
+            dados = {'route': 'pasta', 'url': entrada['url']}
+            if tv:
+                dados['tv'] = '1'
+            xbmcplugin.addDirectoryItem(handle, SMARTED + '?' + urlencode(dados), item,
+                                        isFolder=True)
+        else:
+            xbmcplugin.addDirectoryItem(handle, entrada['url'], item, isFolder=False)
+
+    xbmcplugin.setContent(handle, 'movies' if final else 'files')
+    xbmcplugin.endOfDirectory(handle, cacheToDisc=False)
+    # a tela final usa a grade de cards; a intermediaria fica na lista vertical
+    xbmc.sleep(150)
+    xbmc.executebuiltin('Container.SetViewMode(%d)' % (52 if final else 50))
+    xbmc.log('SMARTED-TV: pasta %s -> vista %d (%d itens)' % (url, 52 if final else 50,
+                                                             len(entradas)), xbmc.LOGINFO)
 
 
 def search_series(handle):
@@ -478,14 +580,9 @@ def open_navigation(handle, params):
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
         return
     comando = open_command(entrada)
-    from navigation import is_channel
-    # TV ao vivo continua na lista original; as categorias de VOD abrem em cards
-    vista = 50 if is_channel(entrada) else 52
-    xbmc.log('SMARTED-TV: navegacao abrindo %s (vista %d)' % (entrada['label'], vista),
+    xbmc.log('SMARTED-TV: navegacao abrindo %s' % entrada['label'],
              getattr(xbmc, 'LOGINFO', 20))
     xbmc.executebuiltin(comando)
-    xbmc.sleep(600)
-    xbmc.executebuiltin('Container.SetViewMode(%d)' % vista)
     xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
 
 

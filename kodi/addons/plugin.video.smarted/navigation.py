@@ -16,6 +16,7 @@ falhar, usa as pastas reais do addon. Nunca uma lista inventada.
 import json
 import re
 import time
+from urllib.parse import urlencode
 
 from catalogue import _entry as catalogo_entry
 from catalogue import directory as catalogo_directory
@@ -194,6 +195,17 @@ def apply_skin_strings(entries, execute):
             execute('Skin.Reset(%s)' % icone)
 
 
+SMARTED_BASE = 'plugin://plugin.video.smarted/'
+
+
+def pasta_url(url, tv=False):
+    """Link da ponte: a propria pasta decide se a tela e lista ou grade de cards."""
+    dados = {'route': 'pasta', 'url': url}
+    if tv:
+        dados['tv'] = '1'
+    return SMARTED_BASE + '?' + urlencode(dados)
+
+
 def buildin_url(url):
     """URL pronta para um builtin (virgula fecha o argumento do comando)."""
     return (url or '').replace(',', '%2C')
@@ -239,4 +251,7 @@ def open_command(entry):
     url = buildin_url(entry['url'])
     if entry['playable']:
         return 'PlayMedia(%s)' % url
-    return 'ActivateWindow(Videos,%s)' % url
+    if not (entry['url'] or '').startswith('plugin://'):
+        return 'ActivateWindow(Videos,%s)' % url
+    # pasta do addon: abre pela ponte para a tela final poder virar grade
+    return 'ActivateWindow(Videos,%s)' % buildin_url(pasta_url(entry['url'], tv=is_channel(entry)))

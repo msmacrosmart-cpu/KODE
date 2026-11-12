@@ -22,8 +22,8 @@ def directory(rpc, url):
     request = {'jsonrpc': '2.0', 'id': 1, 'method': 'Files.GetDirectory',
                'params': {'directory': url, 'media': 'video',
                           'properties': ['title', 'plot', 'year', 'thumbnail', 'fanart', 'art',
-                                         'genre', 'rating', 'premiered', 'dateadded',
-                                         'duration']}}
+                                         'genre', 'rating', 'votes', 'premiered', 'dateadded',
+                                         'sorttitle', 'duration']}}
     response = json.loads(rpc(json.dumps(request)))
     if not isinstance(response, dict) or 'error' in response or not isinstance(response.get('result'), dict):
         raise ValueError('Brazuca directory unavailable')
@@ -31,6 +31,27 @@ def directory(rpc, url):
     if not isinstance(files, list):
         raise ValueError('Unexpected directory response')
     return files
+
+
+def _votos(valor):
+    """Votos como numero (o addon manda '1,200', '12k', '1.2 mi' ou inteiro)."""
+    try:
+        if isinstance(valor, int):
+            return valor
+        if not isinstance(valor, str):
+            return 0
+        texto = valor.strip().lower().replace(' ', '')
+        multiplicador = 1
+        if texto.endswith('mil'):
+            multiplicador, texto = 1000, texto[:-3]
+        elif texto.endswith('mi'):
+            multiplicador, texto = 1000000, texto[:-2]
+        elif texto.endswith('k'):
+            multiplicador, texto = 1000, texto[:-1]
+        texto = texto.replace('.', '').replace(',', '')
+        return int(float(texto)) * multiplicador if texto else 0
+    except (TypeError, ValueError):
+        return 0
 
 
 def _entry(item):
@@ -55,6 +76,8 @@ def _entry(item):
             'genre': _genre(item.get('genre')),
             'rating': _rating(item.get('rating')),
             'premiered': _premiered(item),
+            'votes': _votos(item.get('votes')),
+            'dateadded': item.get('dateadded') if isinstance(item.get('dateadded'), str) else '',
             'duration': item.get('duration') if isinstance(item.get('duration'), int) else 0}
 
 
