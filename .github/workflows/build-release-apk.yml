@@ -1,4 +1,4 @@
-# v1.0.41: rodada 14 - cards em grade para as 6 categorias de VOD, filtros de ordenacao, icones das categorias e notificacoes SMARTEDTV.
+# v1.0.42: rodada 14 - cards em grade para as 6 categorias de VOD, filtros de ordenacao, icones das categorias e notificacoes SMARTEDTV.
 name: Build SMARTED-TV release APK
 on:
   workflow_dispatch:
@@ -46,7 +46,7 @@ jobs:
       - name: Montar candidato sem assinatura (versão + skin.novatv + ponte)
         run: |
           export PYTHONPATH="$HOME/.cache/kode-build/python:$PYTHONPATH"
-          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.41 --to-code 2103027 "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
+          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.42 --to-code 2103028 "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
           ls -lh "$RUNNER_TEMP/unsigned.apk"
 
       - name: Verificar integridade de boot (simulação do launcher dex)
@@ -73,8 +73,8 @@ jobs:
           base = Path(os.environ["RUNNER_TEMP"]) / "base/SMARTED-TV-v1.0.22-arm64.apk"
           out = Path(os.environ["RUNNER_TEMP"]) / "signed.apk"
           a = APK(str(out))
-          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTED-TV', '1.0.41', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
-          assert int(a.version_code) == 2103027, f"versionCode inesperado: {a.version_code}"
+          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTED-TV', '1.0.42', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
+          assert int(a.version_code) == 2103028, f"versionCode inesperado: {a.version_code}"
           print(f"Identidade: {a.package} {a.get_app_name()} {a.version_name} ({a.version_code})")
           with zipfile.ZipFile(base) as before, zipfile.ZipFile(out) as after:
               assert after.testzip() is None
@@ -141,15 +141,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp "$RUNNER_TEMP/signed.apk" "SMARTED-TV-v1.0.41-arm64.apk"
-          sha256sum "SMARTED-TV-v1.0.41-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
-          TAG=v1.0.41-smarted-arm64
+          cp "$RUNNER_TEMP/signed.apk" "SMARTED-TV-v1.0.42-arm64.apk"
+          sha256sum "SMARTED-TV-v1.0.42-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
+          TAG=v1.0.42-smarted-arm64
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" "SMARTED-TV-v1.0.41-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
+            gh release upload "$TAG" "SMARTED-TV-v1.0.42-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
             gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false
             echo "Release $TAG atualizada com o APK assinado."
           else
-          gh release create v1.0.41-smarted-arm64 "SMARTED-TV-v1.0.41-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTED-TV 1.0.41 ARM64' --notes 'SMARTED-TV 1.0.41 (ARM64, Kodi 21.3, org.xbmc.kodi) - atualiza por cima da 1.0.40, mesma assinatura e mesmos dados. Correcao do player: sai a bolinha branca do controle de reproducao (o "nib" da barra de progresso ficou transparente, sem mudar o desenho da barra nem os controles). Reproduzir, pausar, avancar, retroceder, barra de progresso e demais controles seguem iguais em todas as categorias (TV ao vivo, Filmes, Series, Doramas, Novelas, Desenhos e Animes). O progresso de cada conteudo continua sendo gravado pelo Kodi por URL do video, entao pausar e sair permite voltar de onde parou (quando o provedor mantem o mesmo endereco). Nada mais foi alterado: layout, categorias, navegacao, HERO, TV ao vivo, cards, filtros e configuracoes permanecem como na 1.0.40.'
+          gh release create v1.0.42-smarted-arm64 "SMARTED-TV-v1.0.42-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTED-TV 1.0.42 ARM64' --notes 'SMARTED-TV 1.0.42 (ARM64, Kodi 21.3, org.xbmc.kodi) - build unico com TODAS as mudancas, atualiza por cima da anterior (mesma assinatura e mesmos dados). PLAYER: sai a bolinha branca do controle de reproducao (nib transparente); reproduzir, pausar, avancar, retroceder, barra de progresso e demais controles iguais em todas as categorias; o progresso continua gravado por conteudo, entao pausar e sair permite voltar de onde parou quando o provedor mantem o mesmo endereco. CARDS: Filmes, Series, Doramas, Novelas, Desenhos e Animes abrem em grade (poster 190x285 2:3 dentro de card 220x400, cantos arredondados, fundo escuro, titulo em ate duas linhas, nota sobreposta quando o addon informa, anel no focado, 5-6 colunas em Full HD); OK/Enter respeita o tipo do item (pasta entra, video toca). FILTROS: barra discreta no topo da grade com Todos, A a Z, Z a A, Ultimos adicionados e Mais recentes (so criterios que existem nos dados, nada inventado), valendo para a pasta atual. ICONES: as sete categorias usam os icones da referencia enviada (quadrado escuro, moldura metalica, glifo branco) na trilha lateral, publicados por categoria. NOTIFICACOES: identidade SMARTEDTV no dialogo da skin, preservando titulo e mensagem. TV AO VIVO permanece exatamente como estava (lista original, sem cards e sem filtros). Preservados HERO e alternancia, barra e mapeamento das pastas reais, player, YouTube, navegacao dos addons, busca, ajustes, favoritos e sincronizacao.'
           fi
-          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.41-smarted-arm64/SMARTED-TV-v1.0.41-arm64.apk"
+          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.42-smarted-arm64/SMARTED-TV-v1.0.42-arm64.apk"
 # Os blocos do APK base ficam em .github/private-apk-chunks.json; a assinatura usa dropbox/smarted-tv-test.jks.
