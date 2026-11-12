@@ -44,7 +44,7 @@ MANIFEST = "assets/system/addon-manifest.xml"
 # Id that the launcher dex applies as default skin at first boot.
 SKIN_ADDON_ID = "skin.novatv"
 SKIN_NAME = "SMARTEDTV"
-SKIN_VERSION = "1.0.14"
+SKIN_VERSION = "1.0.15"
 SKIN_PREFIX = "assets/addons/skin.novatv/"
 
 

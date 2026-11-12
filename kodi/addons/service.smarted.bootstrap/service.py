@@ -136,7 +136,7 @@ def write_favourites():
         log('não foi possível gravar os favoritos: %s' % error, xbmc.LOGWARNING)
         return []
     if added:
-        xbmc.executebuiltin('Notification(SMARTEDTV, Atalhos adicionados aos favoritos, 3000)')
+        xbmc.executebuiltin('Notification(SMARTED, Atalhos adicionados aos favoritos, 3000)')
     return added
 
 
@@ -247,7 +247,7 @@ def repair_until_ready(monitor):
 def main():
     monitor = xbmc.Monitor()
     log('startup: preparando o Brazuca Play')
-    xbmc.executebuiltin('Notification(SMARTEDTV, Preparando o Brazuca Play..., 4000)')
+    xbmc.executebuiltin('Notification(SMARTED, Preparando o conteudo..., 4000)')
 
     waited = 0
     while waited < WAIT_SECONDS and not monitor.abortRequested():
@@ -284,12 +284,12 @@ def main():
         log('pronto após %d tentativa(s): %d addons verificados, %d otimizações' % (
             attempts, len(report['required']), len(performance['applied'])))
         xbmc.executebuiltin(
-            'Notification(SMARTEDTV, Brazuca Play pronto para usar, 4000)')
+            'Notification(SMARTED, Conteudo pronto para usar, 4000)')
     else:
         problems = report['missing'] + failed
         log('perfil incompleto: %s' % ', '.join(problems), xbmc.LOGWARNING)
         xbmc.executebuiltin(
-            'Notification(SMARTEDTV, Brazuca Play incompleto: veja userdata/smarted-bootstrap.log, 8000)')
+            'Notification(SMARTED, Conteudo incompleto: veja userdata/smarted-bootstrap.log, 8000)')
 
     # o HERO alterna sozinho entre os lancamentos enquanto a Home esta aberta
     rotacao = threading.Thread(target=rotate_hero, args=(monitor,), name='hero-rotate')

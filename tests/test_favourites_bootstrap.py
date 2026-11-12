@@ -9,6 +9,7 @@ Requisitos do usuário (2026-11-11):
 * precisa existir um caminho nativo para navegar nos addons (fallback).
 """
 from pathlib import Path
+import re
 import sys
 import tempfile
 import unittest
@@ -115,8 +116,13 @@ class BootServiceTest(unittest.TestCase):
         self.assertIn('ensure_favourites', self.source)
 
     def test_avisa_o_usuario_no_boot(self):
-        self.assertIn('Preparando o Brazuca Play', self.source)
-        self.assertIn('Brazuca Play pronto para usar', self.source)
+        self.assertIn('Preparando o conteudo', self.source)
+        self.assertIn('Conteudo pronto para usar', self.source)
+        # nenhuma notificacao cita o addon nem repete "SMARTED"
+        for aviso in re.findall(r'Notification\(([^)]*)\)', self.source):
+            self.assertNotIn('Brazuca', aviso)
+            self.assertNotIn('SMARTEDTV', aviso)
+        self.assertIn("Notification(SMARTED,", self.source)
 
     def test_check_py_restaura_atalhos_sob_demanda(self):
         source = (BOOTSTRAP / 'check.py').read_text()

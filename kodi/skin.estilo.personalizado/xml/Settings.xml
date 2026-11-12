@@ -161,7 +161,7 @@
 					<visible>Skin.HasSetting(secret_unlocked)</visible>
 				</item>
 				<item>
-					<label>Diagnóstico Brazuca Play</label>
+					<label>Diagnóstico SMARTED</label>
 					<onclick>RunScript(service.smarted.bootstrap,diagnostico)</onclick>
 					<icon>icons/settings/diagnostics.png</icon>
 					<visible>(System.HasAddon(service.smarted.bootstrap)) + Skin.HasSetting(secret_unlocked)</visible>

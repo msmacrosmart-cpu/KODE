@@ -114,7 +114,7 @@ def pasta(handle, params):
         brutos = catalogue.directory(xbmc.executeJSONRPC, url)
     except Exception as erro:
         xbmc.log('SMARTED-TV: pasta indisponivel (%s) %s' % (url, erro), xbmc.LOGWARNING)
-        xbmcgui.Dialog().notification('SMARTEDTV', 'Nao foi possivel abrir esta pasta',
+        xbmcgui.Dialog().notification('SMARTED', 'Nao foi possivel abrir esta pasta',
                                       xbmcgui.NOTIFICATION_ERROR, 4000)
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
         return
@@ -174,10 +174,10 @@ def search_series(handle):
         return
     results, failed = search(query)
     if failed:
-        dialog.notification('SMARTED-TV', 'Fontes indisponíveis: ' + ', '.join(failed),
+        dialog.notification('SMARTED', 'Fontes indisponíveis: ' + ', '.join(failed),
                             xbmcgui.NOTIFICATION_WARNING, 8000)
     if not results and len(failed) < len(SOURCES):
-        dialog.notification('SMARTED-TV', 'Nenhum resultado nas fontes disponíveis.',
+        dialog.notification('SMARTED', 'Nenhum resultado nas fontes disponíveis.',
                             xbmcgui.NOTIFICATION_INFO, 5000)
     xbmcplugin.setContent(handle, 'tvshows')
     for result in results:
@@ -218,13 +218,13 @@ def search_channels(handle):
         except Exception:
             failures.append(source)
     if failures:
-        dialog.notification('SMARTED-TV', 'Fontes indisponíveis: ' + ', '.join(failures),
+        dialog.notification('SMARTED', 'Fontes indisponíveis: ' + ', '.join(failures),
                             xbmcgui.NOTIFICATION_WARNING, 7000)
     if len(failures) == len(sources):
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
         return
     if not results:
-        dialog.notification('SMARTED-TV', 'Nenhum canal encontrado nas fontes disponíveis.', xbmcgui.NOTIFICATION_INFO, 5000)
+        dialog.notification('SMARTED', 'Nenhum canal encontrado nas fontes disponíveis.', xbmcgui.NOTIFICATION_INFO, 5000)
     xbmcplugin.setContent(handle, 'videos')
     for result in results:
         item = xbmcgui.ListItem(label=result['label'])
@@ -356,12 +356,12 @@ def movies(handle):
     try:
         results, failed = movie_overview(xbmc.executeJSONRPC)
     except Exception:
-        xbmcgui.Dialog().notification('SMARTED-TV', 'Menu de filmes indisponível.',
+        xbmcgui.Dialog().notification('SMARTED', 'Menu de filmes indisponível.',
                                       xbmcgui.NOTIFICATION_WARNING, 7000)
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
         return
     if failed:
-        xbmcgui.Dialog().notification('SMARTED-TV', 'Abertura direta disponível para: ' + ', '.join(failed),
+        xbmcgui.Dialog().notification('SMARTED', 'Abertura direta disponível para: ' + ', '.join(failed),
                                       xbmcgui.NOTIFICATION_WARNING, 7000)
     _add_movies(handle, results)
 

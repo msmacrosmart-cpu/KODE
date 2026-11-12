@@ -823,7 +823,7 @@
 		<!-- a pasta Lancamentos do addon publica titulo, capa e sinopse; quando
 		     ela nao traz ano/genero/nota/data nada e inventado: a linha mostra a
 		     origem do destaque -->
-		<value>Lançamentos  ·  Brazuca Play</value>
+		<value>Lançamentos</value>
 	</variable>
 	<variable name="ItemLand">
 		<value condition="!String.IsEmpty(ListItem.Art(landscape))">$INFO[ListItem.Art(landscape)]</value>

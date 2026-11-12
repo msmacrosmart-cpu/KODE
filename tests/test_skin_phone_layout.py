@@ -104,7 +104,7 @@ class SecretUnlockTest(unittest.TestCase):
     def test_modo_basico_esconde_opcoes_administrativas(self):
         settings = (XML / 'Settings.xml').read_text(encoding='utf-8')
         avancados = ('File Manager', 'Informa\u00e7\u00f5es do Sistema', 'Event Log', 'Perfis',
-                     'Configura\u00e7\u00f5es Avan\u00e7adas', 'Diagn\u00f3stico Brazuca Play',
+                     'Configura\u00e7\u00f5es Avan\u00e7adas', 'Diagn\u00f3stico SMARTED',
                      'Restaurar atalhos', 'LibreELEC')
         for rotulo in avancados:
             bloco = re.search(r'<item>\s*<label>%s</label>.*?</item>' % re.escape(rotulo), settings, re.S)
@@ -163,7 +163,7 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
         opcoes = re.search(r'<control type="grouplist" id="9300">.*?(?=<control type="button")',
                            self.home, re.S).group(0)
         self.assertIn('<itemgap>38</itemgap>', opcoes)
-        self.assertIn('<top>504</top>', opcoes)
+        self.assertIn('<top>460</top>', opcoes)
 
     def test_espacamento_da_barra_superior(self):
         """A barra de pastas tambem ganhou mais distancia entre os nomes."""
@@ -176,23 +176,27 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
         self.assertIn('pb_rounded.png', barra)
 
     def test_fileiras_com_espaco_vertical_e_sem_sobreposicao(self):
-        alturas = {'9200': 120, '9201': 120, '9202': 120, '9203': 194, '9204': 354, '9205': 194}
+        # rodada 17: Home com apenas Filmes e Series abaixo do HERO
+        alturas = {'9202': 200, '9203': 200}
         tops = {}
         for cid in alturas:
             m = re.search(r'<control type="list" id="%s"><left>60</left><top>(\d+)</top>' % cid,
                           self.home)
             tops[cid] = int(m.group(1))
-        titulos = {top - 24: top for top in tops.values()}
+        titulos = {top - 52: top for top in tops.values()}
         ordenadas = sorted(tops.items(), key=lambda par: par[1])
         for (cid, top), (proximo, top_seguinte) in zip(ordenadas, ordenadas[1:]):
             fim = top + alturas[cid]
             self.assertGreaterEqual(top_seguinte, fim + 26,
                                     'fileira %s encosta na seguinte' % cid)
-        # a primeira fileira comeca depois das opcoes do HERO (504 + 56)
+        # a primeira fileira comeca depois dos botoes do HERO (460 + 60)
         primeira = min(tops.values())
         self.assertGreaterEqual(primeira, 600)
         # posters com respiro horizontal
-        self.assertIn('<itemgap>16</itemgap>', self.home)
+        self.assertIn('<itemgap>28</itemgap>', self.home)
+        # nada de Canais nem das linhas da biblioteca do Kodi
+        for fora in ('9200', '9204', '9205'):
+            self.assertNotIn('<control type="list" id="%s">' % fora, self.home, fora)
         # HERO alterna sozinho de verdade (rolagem nativa, sem roubar foco)
         hero = re.search(r'<control type="list" id="9201">.*?</control>', self.home, re.S).group(0)
         self.assertIn('<autoscroll>8000</autoscroll>', hero)
@@ -218,19 +222,22 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
                       self.home)
 
     def test_linhas_da_home_usam_o_carrossel_de_conteudo(self):
-        esperado = {'9200': 'canais', '9202': 'series'}
+        esperado = {'9202': 'filmes', '9203': 'recent-series'}
         for lista, alvo in esperado.items():
-            bloco = re.search(r'<control type="list" id="%s">.*?</control>\n' % lista, self.home, re.S)
+            bloco = re.search(r'<control type="list" id="%s">.{0,9000}?</content>' % lista, self.home, re.S)
             self.assertIsNotNone(bloco, lista)
             texto = bloco.group(0)
             # a linha nao aponta mais para a pasta de menu do addon
-            self.assertIn('plugin://plugin.video.smarted/?route=carrossel&amp;alvo=%s' % alvo, texto, lista)
+            if alvo == 'recent-series':
+                self.assertIn('route=recent-series', texto, lista)
+            else:
+                self.assertIn('plugin://plugin.video.smarted/?route=carrossel&amp;alvo=%s' % alvo, texto, lista)
             self.assertNotIn('url=%23filmes_menu', texto, lista)
             self.assertNotIn('url=%23series_menu', texto, lista)
             self.assertIn('<content target="videos">', texto, lista)
-            # cards com poster, como a grade do addon
-            self.assertIn('$VAR[ItemArt]', texto)
-            self.assertIn('<aspectratio>keep</aspectratio>', texto)
+            # cards com arte real do addon (poster no carrossel, paisagem na linha de series)
+            self.assertTrue('$VAR[ItemArt]' in texto or '$VAR[ItemLand]' in texto, lista)
+            self.assertIn('<aspectratio', texto, lista)
 
     def test_hero_e_alimentado_pela_pasta_lancamentos(self):
         bloco = re.search(r'<control type="list" id="9201">.*?<content[^>]*>[^<]*</content>',
@@ -242,7 +249,7 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
         self.assertIn('$INFO[Container(9201).ListItem.Art(fanart)]', self.home)
         self.assertNotIn('$INFO[Container(9200).ListItem.Art(fanart)]', self.home)
         # titulo da linha coerente com a fonte
-        self.assertIn('Lançamentos  ·  Brazuca Play', self.home)
+        self.assertIn('Filmes', self.home)
 
     def test_hero_mostra_ano_genero_nota_e_data(self):
         variables = (XML / 'Variables.xml').read_text(encoding='utf-8')
@@ -265,7 +272,7 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
 
     def test_primeiras_linhas_cabem_na_tela(self):
         # as duas primeiras linhas aparecem sem rolar; as demais ficam abaixo
-        for lista, teto in (('9200', 1080), ('9201', 1080)):
+        for lista, teto in (('9201', 1080), ('9202', 1080)):
             bloco = re.search(r'<control type="list" id="%s"><left>\d+</left><top>(\d+)</top>'
                               r'<right>\d+</right><height>(\d+)</height>' % lista, self.home)
             self.assertIsNotNone(bloco, lista)
@@ -276,12 +283,12 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
         self.assertIn('id="9400"', self.home, 'falta o grupo rolavel da Home')
         animacoes = re.findall(r'<animation[^>]*end="0,(-\d+)"[^>]*condition="Control\.HasFocus\((\d+)\)"',
                                self.home)
-        self.assertGreaterEqual(len(animacoes), 3, 'rolagem vertical precisa animar as linhas de baixo')
+        self.assertGreaterEqual(len(animacoes), 2, 'rolagem vertical precisa animar as linhas de baixo')
         alvos = {cid for _, cid in animacoes}
-        self.assertTrue({'9202', '9203', '9204', '9205'} <= alvos, alvos)
-        # o grupo abrange o hero (9300) e as linhas ate 9205
+        self.assertTrue({'9202', '9203'} <= alvos, alvos)
+        # o grupo abrange o hero (9300) e as duas fileiras
         self.assertLess(self.home.index('id="9400"'), self.home.index('id="9300"'))
-        self.assertLess(self.home.index('id="9300"'), self.home.index('id="9205"'))
+        self.assertLess(self.home.index('id="9300"'), self.home.index('id="9203"'))
         # as animacoes vem antes do conteudo que rolam
         self.assertLess(self.home.index('<animation effect="slide"'), self.home.index('id="9300"'))
 
@@ -294,7 +301,7 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
         self.assertIn('!String.IsEmpty(Container(9201).ListItem.Label)', hero)
 
     def test_titulos_so_aparecem_com_conteudo(self):
-        for lista in ('9200', '9201', '9202', '9203'):
+        for lista in ('9201', '9202', '9203'):
             padrao = (r'<control type="label"><left>60</left><top>(\d+)</top>.*?</control>')
             achado = None
             for m in re.finditer(padrao, self.home, re.S):
