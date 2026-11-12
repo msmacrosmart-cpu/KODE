@@ -83,8 +83,8 @@
 				<width>100%</width>
 				<height>26</height>
 				<texturesliderbar colordiffuse="00FFFFFF">osd/progress/nub_bar.png</texturesliderbar>
-				<textureslidernib colordiffuse="pb_white">osd/progress/nub_bar.png</textureslidernib>
-				<textureslidernibfocus colordiffuse="pb_white">colors/white.png</textureslidernibfocus>
+				<textureslidernib colordiffuse="00FFFFFF">osd/progress/nub_bar.png</textureslidernib>
+				<textureslidernibfocus colordiffuse="00FFFFFF">colors/white.png</textureslidernibfocus>
 				<info>Player.Seekbar</info>
 				<visible>!VideoPlayer.Content(LiveTV) + [Player.Seeking | Player.HasPerformedSeek(3) | Player.Paused]</visible>
 			</control>
@@ -120,8 +120,8 @@
 				<width>100%</width>
 				<height>26</height>
 				<texturesliderbar colordiffuse="00FFFFFF">osd/progress/nub_bar.png</texturesliderbar>
-				<textureslidernib colordiffuse="pb_white">osd/progress/nub_bar.png</textureslidernib>
-				<textureslidernibfocus colordiffuse="pb_white">colors/white.png</textureslidernibfocus>
+				<textureslidernib colordiffuse="00FFFFFF">osd/progress/nub_bar.png</textureslidernib>
+				<textureslidernibfocus colordiffuse="00FFFFFF">colors/white.png</textureslidernibfocus>
 				<info>PVR.TimeShiftSeekbar</info>
 				<visible>VideoPlayer.Content(LiveTV) + [Player.Seeking | Player.HasPerformedSeek(3) | Player.Paused] + !Player.ChannelPreviewActive</visible>
 			</control>

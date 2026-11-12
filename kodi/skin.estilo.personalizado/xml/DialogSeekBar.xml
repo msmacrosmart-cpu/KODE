@@ -213,8 +213,8 @@
 					<width>100%</width>
 					<height>26</height>
 					<texturesliderbar colordiffuse="00FFFFFF">osd/progress/nub_bar.png</texturesliderbar>
-					<textureslidernib colordiffuse="pb_white">osd/progress/nub_bar.png</textureslidernib>
-					<textureslidernibfocus colordiffuse="pb_white">colors/white.png</textureslidernibfocus>
+					<textureslidernib colordiffuse="00FFFFFF">osd/progress/nub_bar.png</textureslidernib>
+					<textureslidernibfocus colordiffuse="00FFFFFF">colors/white.png</textureslidernibfocus>
 					<visible>Player.SeekEnabled + !Player.ChannelPreviewActive</visible>
 				</control>
 			</control>
@@ -244,8 +244,8 @@
 					<width>100%</width>
 					<height>26</height>
 					<texturesliderbar colordiffuse="00FFFFFF">osd/progress/nub_bar.png</texturesliderbar>
-					<textureslidernib colordiffuse="pb_white">osd/progress/nub_bar.png</textureslidernib>
-					<textureslidernibfocus colordiffuse="pb_white">colors/white.png</textureslidernibfocus>
+					<textureslidernib colordiffuse="00FFFFFF">osd/progress/nub_bar.png</textureslidernib>
+					<textureslidernibfocus colordiffuse="00FFFFFF">colors/white.png</textureslidernibfocus>
 					<visible>Player.SeekEnabled</visible>
 				</control>
 			</control>
