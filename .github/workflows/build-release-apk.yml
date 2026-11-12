@@ -1,6 +1,7 @@
 # build 1.0.55 (rodada 27b) - mapeamento real do Brazuca Play: botoes abrem a
 # listagem final (mode=1 base16/base64 das bases do addon; TV em #todoscanais),
 # widgets da Home nas mesmas listas e nav-check no aparelho.
+# O gatilho por push observa este arquivo; alteracoes no APK exigem commit aqui.
 # (historico) rodada 14 - cards em grade para as 6 categorias de VOD, filtros de ordenacao, icones das categorias e notificacoes SMARTEDTV.
 name: Build SMARTED-TV release APK
 on:
