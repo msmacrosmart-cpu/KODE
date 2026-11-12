@@ -88,6 +88,7 @@ def skin_payload():
 def main():
     argv = sys.argv[1:]
     from_version = to_version = to_code = None
+    extra_addons = []
     while len(argv) >= 2 and argv[0].startswith("--"):
         opt = argv.pop(0)
         if opt == "--from-version":
@@ -96,6 +97,10 @@ def main():
             to_version = argv.pop(0)
         elif opt == "--to-code":
             to_code = int(argv.pop(0))
+        elif opt == "--extra-addons":
+            # pasta com addons extras (ex.: skin Bingie baixada no CI) - nao
+            # versionada no repositorio, injetada so no APK desta build
+            extra_addons.append(Path(argv.pop(0)))
         else:
             raise SystemExit(f"Unknown option: {opt}")
     if len(argv) != 2:
@@ -128,10 +133,23 @@ def main():
     skin_files = skin_payload()
     bridge_files = {}
     bridge_ids = []
-    for addon_dir in BRIDGE_ADDONS:
+    extras = []
+    for pasta in extra_addons:
+        if not pasta.is_dir():
+            raise SystemExit(f"Pasta de addons extras inexistente: {pasta}")
+        for filho in sorted(pasta.iterdir()):
+            if (filho / "addon.xml").is_file():
+                extras.append(filho)
+            elif filho.is_dir():
+                for neto in sorted(filho.iterdir()):
+                    if (neto / "addon.xml").is_file():
+                        extras.append(neto)
+    for addon_dir in list(BRIDGE_ADDONS) + extras:
         addon_id = ET.parse(addon_dir / "addon.xml").getroot().get("id")
         if addon_id != addon_dir.name:
             raise SystemExit(f"Addon ID mismatch: {addon_dir.name} declares {addon_id}")
+        if addon_id in bridge_ids:
+            continue
         bridge_ids.append(addon_id)
         bridge_files.update(collect(addon_dir, f"assets/addons/{addon_id}/"))
 

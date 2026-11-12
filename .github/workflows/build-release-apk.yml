@@ -1,4 +1,4 @@
-# v1.0.47: rodada 14 - cards em grade para as 6 categorias de VOD, filtros de ordenacao, icones das categorias e notificacoes SMARTEDTV.
+# v1.1.0: rodada 14 - cards em grade para as 6 categorias de VOD, filtros de ordenacao, icones das categorias e notificacoes SMARTEDTV.
 name: Build SMARTED-TV release APK
 on:
   workflow_dispatch:
@@ -43,10 +43,12 @@ jobs:
           echo "Chave do repositório usada (2730 bytes)."
       - name: Preparar ferramentas de reempacotamento
         run: ./tools/kodi/setup.sh
+      - name: Baixar addons extras (skin Bingie Mod)
+        run: python3 tools/kodi/fetch-bingie-addons.py "$RUNNER_TEMP/extra"
       - name: Montar candidato sem assinatura (versão + skin.novatv + ponte)
         run: |
           export PYTHONPATH="$HOME/.cache/kode-build/python:$PYTHONPATH"
-          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.47 --to-code 2103033 "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
+          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.1.0 --to-code 2104000 --extra-addons "$RUNNER_TEMP/extra" "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
           ls -lh "$RUNNER_TEMP/unsigned.apk"
 
       - name: Verificar integridade de boot (simulação do launcher dex)
@@ -73,8 +75,8 @@ jobs:
           base = Path(os.environ["RUNNER_TEMP"]) / "base/SMARTED-TV-v1.0.22-arm64.apk"
           out = Path(os.environ["RUNNER_TEMP"]) / "signed.apk"
           a = APK(str(out))
-          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTED-TV', '1.0.47', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
-          assert int(a.version_code) == 2103033, f"versionCode inesperado: {a.version_code}"
+          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTED-TV', '1.1.0', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
+          assert int(a.version_code) == 2104000, f"versionCode inesperado: {a.version_code}"
           print(f"Identidade: {a.package} {a.get_app_name()} {a.version_name} ({a.version_code})")
           with zipfile.ZipFile(base) as before, zipfile.ZipFile(out) as after:
               assert after.testzip() is None
@@ -154,15 +156,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp "$RUNNER_TEMP/signed.apk" "SMARTED-TV-v1.0.47-arm64.apk"
-          sha256sum "SMARTED-TV-v1.0.47-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
-          TAG=v1.0.47-smarted-arm64
+          cp "$RUNNER_TEMP/signed.apk" "SMARTED-TV-v1.1.0-arm64.apk"
+          sha256sum "SMARTED-TV-v1.1.0-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
+          TAG=v1.1.0-smarted-arm64
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" "SMARTED-TV-v1.0.47-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
+            gh release upload "$TAG" "SMARTED-TV-v1.1.0-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
             gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false
             echo "Release $TAG atualizada com o APK assinado."
           else
-          gh release create v1.0.47-smarted-arm64 "SMARTED-TV-v1.0.47-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTED-TV 1.0.47 ARM64' --notes 'SMARTED-TV 1.0.47 (ARM64, Kodi 21.3, org.xbmc.kodi) - CORRETIVA: restaura o motor de carregamento da Home e a barra superior com as sete categorias. A ponte de navegacao introduzida nas rodadas 16-18 foi removida: cada aba da barra volta a abrir direto a rota do addon (ActivateWindow(Videos,<pasta real>)) e as pastas de VOD voltam ao comportamento padrao do addon, como na versao validada. Home restaurada a partir do layout que funcionava e reaplicada com: apenas Filmes e Series abaixo do HERO, titulos 48 px acima das fileiras, respiro de 28 px entre cards, HERO com folga (sem corte) e rolagem vertical animada. Consolidado: navegacao silenciosa, menu lateral so texto (sem icones/quadros), barra superior sem o botao de addons (Busca, Ajustes e Sair), notificacoes SMARTED uma unica vez, sem Kodi/Brazuca nas telas, player sem a bolinha e grade de posters disponivel como vista opcional (52) - o padrao segue a lista 50 com poster a esquerda e ficha a direita. FILTROS: Todos, A a Z, Z a A, Ultimos adicionados, Mais votados e Mais recentes usando a ordenacao nativa do Kodi na listagem aberta; a barra de filtros nao aparece na TV AO VIVO, que permanece intocada.'
+          gh release create v1.1.0-smarted-arm64 "SMARTED-TV-v1.1.0-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTED-TV 1.1.0 ARM64' --notes 'SMARTED-TV 1.1.0 (ARM64, Kodi 21.3, org.xbmc.kodi) - EDICAO DE TESTE DA SKIN BINGIE MOD. Esta versao e paralela a linha 1.0.x: o SMARTEDTV continua sendo a skin padrao e tudo que ja funcionava segue igual. Novidade: a skin BINGIE MOD 2.2.3 (Titan Bingie mod de AchillesPunks, para Kodi 21/Omega) vai embutida no APK junto com as dependencias que ela precisa (script.bingie.helper, script.skinshortcuts, script.skin.helper.service, script.skin.helper.widgets, script.skin.helper.backgrounds, plugin.video.themoviedb.helper, script.module.* e resource.images.*). Nada precisa ser baixado no aparelho. Para testar: Ajustes > Aparencia > Skin > BINGIE MOD (o Kodi reinicia a interface para carregar a nova skin). Tres dependencias opcionais que nao existem nesse repositorio (plugin.video.youtube, plugin.program.autocompletion e resource.images.studios.coloured) foram liberadas do addon.xml: a skin carrega sem elas; apenas widgets que usam esses addons ficam sem conteudo. Para voltar ao SMARTEDTV, escolha a skin SMARTEDTV no mesmo menu. Nenhuma outra mudanca foi feita nesta versao.'
           fi
-          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.47-smarted-arm64/SMARTED-TV-v1.0.47-arm64.apk"
+          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.1.0-smarted-arm64/SMARTED-TV-v1.1.0-arm64.apk"
 # Os blocos do APK base ficam em .github/private-apk-chunks.json; a assinatura usa dropbox/smarted-tv-test.jks.
