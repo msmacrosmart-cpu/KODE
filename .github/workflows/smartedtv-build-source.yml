@@ -162,6 +162,17 @@ jobs:
           echo "build em: $SMARTEDTV_BUILD_DIR  (livre: $(df -h --output=avail "$SMARTEDTV_BUILD_DIR" | tail -1))"
           ./smartedtv/tools/build-apk.sh
 
+      - name: 8b. Guardar log da compilação (sempre)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartedtv-build-log
+          path: |
+            ${{ github.workspace }}/smartedtv-build/build.log
+            /mnt/smartedtv-build/build.log
+          retention-days: 14
+          if-no-files-found: warn
+
       - name: 9. Verificar o APK (26 checagens)
         run: |
           python3 -m pip install --quiet --break-system-packages pyaxmlparser==0.3.31
