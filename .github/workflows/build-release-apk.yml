@@ -165,8 +165,8 @@ jobs:
               # modulos Python que faltavam nos logs do Kodi (ModuleNotFoundError)
               nomes_apk = set(after.namelist())
               for modulo in ('arrow', 'unidecode', 'simplejson', 'requests', 'simpleeval', 'dateutil'):
-                  base = f'assets/addons/script.module.{modulo}/lib/'
-                  candidatos = [base + modulo + '/__init__.py', base + modulo + '.py']
+                  prefixo = f'assets/addons/script.module.{modulo}/lib/'
+                  candidatos = [prefixo + modulo + '/__init__.py', prefixo + modulo + '.py']
                   assert any(c in nomes_apk for c in candidatos), f"modulo ausente no APK: {modulo}"
                   assert f'>script.module.{modulo}<' in after.read('assets/system/addon-manifest.xml').decode(), \
                       f"modulo fora do manifesto: {modulo}"
