@@ -370,6 +370,8 @@ def main():
                 break
         if not mudou:
             problemas.append('HERO: nao alternou sozinho em ~30 s')
+        else:
+            log('HERO ROTACAO alternou sozinho')
     except Exception as error:  # noqa: BLE001
         log('HERO ROTACAO falhou (%s)' % error)
         problemas.append('HERO rotacao: %s' % error)

@@ -149,8 +149,31 @@ def _hero_livre():
     return bool(xbmc.getInfoLabel('Container(%d).ListItem.Label' % HERO_CONTROL))
 
 
+def _posicao_hero():
+    try:
+        return int(xbmc.getInfoLabel('Container(%d).Position' % HERO_CONTROL) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _avanca_hero():
+    """Passa o HERO para o proximo lancamento sem depender do foco do usuario."""
+    antes = _posicao_hero()
+    xbmc.executebuiltin('Control.Move(%d,1)' % HERO_CONTROL)
+    time.sleep(0.4)
+    if _posicao_hero() != antes:
+        return 'move'
+    # alguns builds do Kodi so movem o cursor de um container com foco: usa o
+    # foco por um instante (fora dos controles do HERO) e devolve na hora
+    atual = xbmc.getInfoLabel('System.CurrentControlId') or ''
+    xbmc.executebuiltin('SetFocus(%d)' % HERO_CONTROL)
+    xbmc.executebuiltin('Action(Right)')
+    xbmc.executebuiltin('SetFocus(%s)' % (atual if atual.isdigit() else '9000'))
+    return 'foco'
+
+
 def rotate_hero(monitor, intervalo=HERO_ROTATION):
-    """Acompanha a alternancia nativa do HERO e pulsa o fade a cada ~8 s."""
+    """Alterna o destaque do HERO a cada ~8 s, pausando quando ha interacao."""
     espera = 0.0
     passo = 0
     while not monitor.abortRequested():
@@ -164,9 +187,15 @@ def rotate_hero(monitor, intervalo=HERO_ROTATION):
             continue
         espera = 0.0
         passo += 1
-        # a troca do filme e feita pelo <autoscroll> da linha 9201 (nativo, sem
-        # roubar foco); aqui so pulsamos o fade da arte para a transicao suave
+        try:
+            modo = _avanca_hero()
+        except Exception as erro:  # noqa: BLE001
+            modo = 'erro %s' % erro
+        # pulso que reativa o fade da arte do HERO (transicao suave)
         xbmc.executebuiltin('Skin.SetString(smarted_hero_tick,%d)' % (passo % 2))
+        if passo in (1, 5) or passo % 30 == 0:
+            xbmc.log('SMARTED-TV: hero rotacao %d (%s) posicao=%d'
+                     % (passo, modo, _posicao_hero()), getattr(xbmc, 'LOGINFO', 20))
 
 
 def apply_performance():
