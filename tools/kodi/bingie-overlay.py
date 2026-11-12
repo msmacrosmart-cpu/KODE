@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Gera o overlay SMARTEDTV para a skin BINGIE MOD.
 
-O overlay nao recria a skin: ele troca apenas o menu superior gerado pelo
-script.skinshortcuts e desliga a regeracao automatica desse menu, para que a
-barra superior mostre as categorias do Brazuca Play em vez das entradas
-genericas do Kodi (Filmes, Series, TV/PVR, Add-ons...).
+O overlay nao recria a skin: troca o menu superior gerado pelo
+script.skinshortcuts por uma barra fixa com as categorias de VOD do Brazuca Play
+e neutraliza os widgets das bibliotecas legadas (Skin Helper Widgets, TMDb Helper
+e playlists .xsp que a skin nao entrega), que eram a origem dos erros
+"GetDirectory" no log.
 
 Uso:
     python3 tools/kodi/bingie-overlay.py <pasta-da-skin-bingie> <pasta-do-overlay>
@@ -14,7 +15,19 @@ import sys
 from pathlib import Path
 
 BRAZUCA = 'plugin://plugin.video.BrazucaPlay.Matrix/?%s'
-SMARTED = 'plugin://plugin.video.smarted/?route=%s'
+SMARTED = 'plugin://plugin.video.smarted/?%s'
+
+# widget padrao da Home: rota do SMARTED que desce a arvore do addon ate o
+# conteudo real da categoria (posteres/filmes que reproduzem)
+CARROSSEL = SMARTED % 'route=carrossel&alvo=%s'
+LANCAMENTOS = SMARTED % 'route=recent-movies'
+SERIES_NOVAS = SMARTED % 'route=recent-series'
+
+# rotas legadas que geravam erro no log (addons desligados/playlists ausentes)
+LEGADOS = re.compile(
+    r'plugin://script\.skin\.helper\.widgets/[^<\s"\']*'
+    r'|plugin://plugin\.video\.themoviedb\.helper[^<\s"\']*'
+    r'|special://skin/(?:playlists|extras/widgetplaylists)/[^<\s"\']*\.xsp')
 
 
 def acao(mode, pasta, nome):
@@ -25,21 +38,20 @@ def acao(mode, pasta, nome):
 
 
 # (rotulo, acao, widget principal, tipo de widget, widgets extras)
+# Home so com VOD: TV ao vivo saiu da barra e dos carrosseis.
 MENU = [
-    ('TV ao vivo', acao(21, 'menu_canais', 'TV%20ao%20vivo'),
-     SMARTED % 'favoritos-tv', 'video', [SMARTED % 'tv']),
     ('Filmes', acao(27, 'filmes_menu', 'Filmes'),
-     SMARTED % 'recent-movies', 'movies', [SMARTED % 'movies', SMARTED % 'favoritos-filmes']),
+     LANCAMENTOS, 'movies', [CARROSSEL % 'filmes']),
     ('Séries', acao(27, 'series_menu', 'S%C3%A9ries'),
-     SMARTED % 'recent-series', 'tvshows', [SMARTED % 'favoritos-series']),
+     CARROSSEL % 'series', 'tvshows', [SERIES_NOVAS]),
     ('Novelas', acao(25, 'novelas_menu', 'Novelas'),
-     SMARTED % 'favoritos-novelas', 'tvshows', []),
+     CARROSSEL % 'novelas', 'tvshows', []),
     ('Animes', acao(22, 'animes_menu', 'Animes'),
-     SMARTED % 'favoritos-animes', 'tvshows', []),
+     CARROSSEL % 'animes', 'tvshows', []),
     ('Doramas', acao(31, 'doramas_menu', 'Doramas'),
-     SMARTED % 'favoritos-doramas', 'tvshows', []),
+     CARROSSEL % 'doramas', 'tvshows', []),
     ('Desenhos', acao(28, 'desenhos_menu', 'Desenhos'),
-     SMARTED % 'favoritos-desenhos', 'tvshows', []),
+     CARROSSEL % 'desenhos', 'tvshows', []),
     ('Busca', 'ActivateWindow(1109,return)', '', 'video', []),
     ('Ajustes', 'ActivateWindow(Settings)', '', 'video', []),
     ('Sair', 'ActivateWindow(ShutdownMenu)', '', 'video', []),
@@ -83,7 +95,12 @@ def item(indice, rotulo, acao_, widget, tipo, extras):
 
 def bloco_menu():
     itens = '\n'.join(item(i, *entrada) for i, entrada in enumerate(MENU, start=1))
-    return ('\t<include name="skinshortcuts-mainmenu">\n' + itens + '\n\t</include>')
+    return '\t<include name="skinshortcuts-mainmenu">\n' + itens + '\n\t</include>'
+
+
+def limpar_widgets_legados(texto: str) -> str:
+    """Troca widgets de addons legados/playlists ausentes pelos do SMARTED."""
+    return LEGADOS.sub('plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes', texto)
 
 
 def gerar_includes(origem: Path) -> str:
@@ -91,17 +108,18 @@ def gerar_includes(origem: Path) -> str:
     padrao = re.compile(r'\t<include name="skinshortcuts-mainmenu">.*?\n\t</include>', re.S)
     if not padrao.search(texto):
         raise SystemExit('menu superior do skinshortcuts nao encontrado em %s' % origem)
-    return padrao.sub(lambda _: bloco_menu(), texto, count=1)
+    texto = padrao.sub(lambda _: bloco_menu(), texto, count=1)
+    return limpar_widgets_legados(texto)
 
 
 def gerar_home(origem: Path) -> str:
     texto = origem.read_text(encoding='utf-8')
     # 1) o menu e estatico: nada de o skinshortcuts regerar por cima
     texto = re.sub(r'\n[ \t]*<onload>[^<]*script\.skinshortcuts[^<]*</onload>', '', texto)
-    # 2) garante o layout Bingie ativo mesmo em perfil novo
     texto = texto.replace(
         '\t<!-- Build Menu -->',
         '\t<!-- Build Menu (menu estatico SMARTEDTV: nao regerar) -->', 1)
+    # 2) garante o layout Bingie ativo mesmo em perfil novo
     if 'Skin.SetString(HomeLayout,bingie)' not in texto:
         texto = texto.replace(
             '\t<onload>Skin.SetBool(tmdbhelper.directcallauto)</onload>',

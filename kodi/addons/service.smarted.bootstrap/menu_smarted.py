@@ -14,7 +14,7 @@ import os
 import xbmc
 import xbmcvfs
 
-MARCADOR = 'menu-smarted-v1.done'
+MARCADOR = 'menu-smarted-v2.done'
 
 
 def _perfil(*partes):

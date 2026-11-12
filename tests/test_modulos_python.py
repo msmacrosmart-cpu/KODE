@@ -80,7 +80,7 @@ class FluxoTest(unittest.TestCase):
         self.assertIn('vendor-python-modules.py "$RUNNER_TEMP/extra"', fluxo)
         self.assertLess(fluxo.index('vendor-python-modules.py'),
                         fluxo.index('build-release-apk.py --from-version'))
-        self.assertIn('--to-version 1.0.50', fluxo)
+        self.assertIn('--to-version 1.0.51', fluxo)
 
 
 if __name__ == '__main__':

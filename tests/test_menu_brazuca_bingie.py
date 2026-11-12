@@ -16,7 +16,8 @@ HOME = OVERLAY / 'xml/Home.xml'
 BUILD = ROOT / 'tools/kodi/build-release-apk.py'
 FLUXO = ROOT / '.github/workflows/build-release-apk.yml'
 
-CATEGORIAS = ['TV ao vivo', 'Filmes', 'Séries', 'Novelas', 'Animes', 'Doramas', 'Desenhos']
+# Home so com VOD do Brazuca Play: TV ao vivo saiu da barra e dos carrosseis
+CATEGORIAS = ['Filmes', 'Séries', 'Novelas', 'Animes', 'Doramas', 'Desenhos']
 
 
 def carregar(nome, caminho):
@@ -47,7 +48,7 @@ class MenuSuperiorTest(unittest.TestCase):
 
     def test_cada_categoria_abre_a_rota_do_brazuca(self):
         acoes = {i.findtext('label'): i.findtext('onclick') for i in itens_do_menu()}
-        esperado = {'TV ao vivo': 'mode=21', 'Filmes': 'mode=27', 'Séries': 'mode=27',
+        esperado = {'Filmes': 'mode=27', 'Séries': 'mode=27',
                     'Novelas': 'mode=25', 'Animes': 'mode=22', 'Doramas': 'mode=31',
                     'Desenhos': 'mode=28'}
         for categoria, modo in esperado.items():
@@ -68,11 +69,23 @@ class MenuSuperiorTest(unittest.TestCase):
     def test_home_nao_regera_o_menu(self):
         self.assertNotIn('type=buildxml', HOME.read_text(encoding='utf-8'))
 
+    def test_sem_tv_ao_vivo_na_home(self):
+        texto = MENU.read_text(encoding='utf-8')
+        self.assertNotIn('TV ao vivo', texto)
+        self.assertNotIn('mode=21', texto)
+        self.assertNotIn('menu_canais', texto)
+
     def test_carrosseis_usam_rotas_do_smarted(self):
         texto = MENU.read_text(encoding='utf-8')
-        self.assertIn('plugin.video.smarted', texto)
         self.assertIn('route=recent-movies', texto)
-        self.assertIn('route=recent-series', texto)
+        for alvo in ('filmes', 'series', 'novelas', 'animes', 'doramas', 'desenhos'):
+            self.assertIn('route=carrossel&amp;alvo=' + alvo, texto)
+
+    def test_widgets_legados_nao_sao_chamados(self):
+        texto = MENU.read_text(encoding='utf-8')
+        self.assertNotIn('plugin://script.skin.helper.widgets/', texto)
+        self.assertNotIn('plugin://plugin.video.themoviedb.helper', texto)
+        self.assertNotIn('special://skin/playlists/', texto)
 
 
 class BuildOverlayTest(unittest.TestCase):
@@ -84,8 +97,8 @@ class BuildOverlayTest(unittest.TestCase):
     def test_workflow_publica_versao_com_overlay(self):
         fluxo = FLUXO.read_text(encoding='utf-8')
         self.assertIn('--skin-overlay kodi/skin.smartedtv.bingie', fluxo)
-        self.assertIn('--to-version 1.0.50', fluxo)
-        self.assertIn('v1.0.50-smarted-arm64', fluxo)
+        self.assertIn('--to-version 1.0.51', fluxo)
+        self.assertIn('v1.0.51-smarted-arm64', fluxo)
 
 
 class BootstrapMenuTest(unittest.TestCase):

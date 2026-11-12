@@ -2,36 +2,12 @@
 	<include name="skinshortcuts-mainmenu">
 		<item id="1">
 			<property name="id">1</property>
-			<label>TV ao vivo</label>
-			<label2>TV ao vivo</label2>
-			<icon></icon>
-			<thumb />
-			<property name="labelID">1</property>
-			<property name="defaultID">1</property>
-			<property name="widget">TV ao vivo</property>
-			<property name="widgetTarget">videos</property>
-			<property name="widgetType">video</property>
-			<property name="widgetPath">plugin://plugin.video.smarted/?route=favoritos-tv</property>
-			<property name="widgetName">TV ao vivo</property>
-			<property name="widget.1">TV ao vivo</property>
-			<property name="widgetTarget.1">videos</property>
-			<property name="widgetType.1">video</property>
-			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=tv</property>
-			<property name="widgetName.1">TV ao vivo</property>
-			<onclick>ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=21&amp;url=%23menu_canais&amp;name=TV%20ao%20vivo&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</onclick>
-			<property name="path">ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=21&amp;url=%23menu_canais&amp;name=TV%20ao%20vivo&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</property>
-			<property name="list">10025</property>
-			<property name="group">mainmenu</property>
-			<property name="hasSubmenu">False</property>
-		</item>
-		<item id="2">
-			<property name="id">2</property>
 			<label>Filmes</label>
 			<label2>Filmes</label2>
 			<icon></icon>
 			<thumb />
-			<property name="labelID">2</property>
-			<property name="defaultID">2</property>
+			<property name="labelID">1</property>
+			<property name="defaultID">1</property>
 			<property name="widget">Filmes</property>
 			<property name="widgetTarget">videos</property>
 			<property name="widgetType">movies</property>
@@ -40,36 +16,31 @@
 			<property name="widget.1">Filmes</property>
 			<property name="widgetTarget.1">videos</property>
 			<property name="widgetType.1">movies</property>
-			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=movies</property>
+			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
 			<property name="widgetName.1">Filmes</property>
-			<property name="widget.2">Filmes</property>
-			<property name="widgetTarget.2">videos</property>
-			<property name="widgetType.2">movies</property>
-			<property name="widgetPath.2">plugin://plugin.video.smarted/?route=favoritos-filmes</property>
-			<property name="widgetName.2">Filmes</property>
 			<onclick>ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&amp;url=%23filmes_menu&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</onclick>
 			<property name="path">ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&amp;url=%23filmes_menu&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</property>
 			<property name="list">10025</property>
 			<property name="group">mainmenu</property>
 			<property name="hasSubmenu">False</property>
 		</item>
-		<item id="3">
-			<property name="id">3</property>
+		<item id="2">
+			<property name="id">2</property>
 			<label>Séries</label>
 			<label2>Séries</label2>
 			<icon></icon>
 			<thumb />
-			<property name="labelID">3</property>
-			<property name="defaultID">3</property>
+			<property name="labelID">2</property>
+			<property name="defaultID">2</property>
 			<property name="widget">Séries</property>
 			<property name="widgetTarget">videos</property>
 			<property name="widgetType">tvshows</property>
-			<property name="widgetPath">plugin://plugin.video.smarted/?route=recent-series</property>
+			<property name="widgetPath">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=series</property>
 			<property name="widgetName">Séries</property>
 			<property name="widget.1">Séries</property>
 			<property name="widgetTarget.1">videos</property>
 			<property name="widgetType.1">tvshows</property>
-			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=favoritos-series</property>
+			<property name="widgetPath.1">plugin://plugin.video.smarted/?route=recent-series</property>
 			<property name="widgetName.1">Séries</property>
 			<onclick>ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&amp;url=%23series_menu&amp;name=S%C3%A9ries&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</onclick>
 			<property name="path">ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=27&amp;url=%23series_menu&amp;name=S%C3%A9ries&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</property>
@@ -77,18 +48,18 @@
 			<property name="group">mainmenu</property>
 			<property name="hasSubmenu">False</property>
 		</item>
-		<item id="4">
-			<property name="id">4</property>
+		<item id="3">
+			<property name="id">3</property>
 			<label>Novelas</label>
 			<label2>Novelas</label2>
 			<icon></icon>
 			<thumb />
-			<property name="labelID">4</property>
-			<property name="defaultID">4</property>
+			<property name="labelID">3</property>
+			<property name="defaultID">3</property>
 			<property name="widget">Novelas</property>
 			<property name="widgetTarget">videos</property>
 			<property name="widgetType">tvshows</property>
-			<property name="widgetPath">plugin://plugin.video.smarted/?route=favoritos-novelas</property>
+			<property name="widgetPath">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=novelas</property>
 			<property name="widgetName">Novelas</property>
 			<onclick>ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=25&amp;url=%23novelas_menu&amp;name=Novelas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</onclick>
 			<property name="path">ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=25&amp;url=%23novelas_menu&amp;name=Novelas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</property>
@@ -96,18 +67,18 @@
 			<property name="group">mainmenu</property>
 			<property name="hasSubmenu">False</property>
 		</item>
-		<item id="5">
-			<property name="id">5</property>
+		<item id="4">
+			<property name="id">4</property>
 			<label>Animes</label>
 			<label2>Animes</label2>
 			<icon></icon>
 			<thumb />
-			<property name="labelID">5</property>
-			<property name="defaultID">5</property>
+			<property name="labelID">4</property>
+			<property name="defaultID">4</property>
 			<property name="widget">Animes</property>
 			<property name="widgetTarget">videos</property>
 			<property name="widgetType">tvshows</property>
-			<property name="widgetPath">plugin://plugin.video.smarted/?route=favoritos-animes</property>
+			<property name="widgetPath">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=animes</property>
 			<property name="widgetName">Animes</property>
 			<onclick>ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=22&amp;url=%23animes_menu&amp;name=Animes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</onclick>
 			<property name="path">ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=22&amp;url=%23animes_menu&amp;name=Animes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</property>
@@ -115,18 +86,18 @@
 			<property name="group">mainmenu</property>
 			<property name="hasSubmenu">False</property>
 		</item>
-		<item id="6">
-			<property name="id">6</property>
+		<item id="5">
+			<property name="id">5</property>
 			<label>Doramas</label>
 			<label2>Doramas</label2>
 			<icon></icon>
 			<thumb />
-			<property name="labelID">6</property>
-			<property name="defaultID">6</property>
+			<property name="labelID">5</property>
+			<property name="defaultID">5</property>
 			<property name="widget">Doramas</property>
 			<property name="widgetTarget">videos</property>
 			<property name="widgetType">tvshows</property>
-			<property name="widgetPath">plugin://plugin.video.smarted/?route=favoritos-doramas</property>
+			<property name="widgetPath">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=doramas</property>
 			<property name="widgetName">Doramas</property>
 			<onclick>ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=31&amp;url=%23doramas_menu&amp;name=Doramas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</onclick>
 			<property name="path">ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=31&amp;url=%23doramas_menu&amp;name=Doramas&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</property>
@@ -134,18 +105,18 @@
 			<property name="group">mainmenu</property>
 			<property name="hasSubmenu">False</property>
 		</item>
-		<item id="7">
-			<property name="id">7</property>
+		<item id="6">
+			<property name="id">6</property>
 			<label>Desenhos</label>
 			<label2>Desenhos</label2>
 			<icon></icon>
 			<thumb />
-			<property name="labelID">7</property>
-			<property name="defaultID">7</property>
+			<property name="labelID">6</property>
+			<property name="defaultID">6</property>
 			<property name="widget">Desenhos</property>
 			<property name="widgetTarget">videos</property>
 			<property name="widgetType">tvshows</property>
-			<property name="widgetPath">plugin://plugin.video.smarted/?route=favoritos-desenhos</property>
+			<property name="widgetPath">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=desenhos</property>
 			<property name="widgetName">Desenhos</property>
 			<onclick>ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=28&amp;url=%23desenhos_menu&amp;name=Desenhos&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</onclick>
 			<property name="path">ActivateWindow(Videos, &quot;plugin://plugin.video.BrazucaPlay.Matrix/?mode=28&amp;url=%23desenhos_menu&amp;name=Desenhos&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu&quot;, return)</property>
@@ -153,42 +124,42 @@
 			<property name="group">mainmenu</property>
 			<property name="hasSubmenu">False</property>
 		</item>
-		<item id="8">
-			<property name="id">8</property>
+		<item id="7">
+			<property name="id">7</property>
 			<label>Busca</label>
 			<label2>Busca</label2>
 			<icon></icon>
 			<thumb />
-			<property name="labelID">8</property>
-			<property name="defaultID">8</property>
+			<property name="labelID">7</property>
+			<property name="defaultID">7</property>
 			<onclick>ActivateWindow(1109,return)</onclick>
 			<property name="path">ActivateWindow(1109,return)</property>
 			<property name="list">10025</property>
 			<property name="group">mainmenu</property>
 			<property name="hasSubmenu">False</property>
 		</item>
-		<item id="9">
-			<property name="id">9</property>
+		<item id="8">
+			<property name="id">8</property>
 			<label>Ajustes</label>
 			<label2>Ajustes</label2>
 			<icon></icon>
 			<thumb />
-			<property name="labelID">9</property>
-			<property name="defaultID">9</property>
+			<property name="labelID">8</property>
+			<property name="defaultID">8</property>
 			<onclick>ActivateWindow(Settings)</onclick>
 			<property name="path">ActivateWindow(Settings)</property>
 			<property name="list">10025</property>
 			<property name="group">mainmenu</property>
 			<property name="hasSubmenu">False</property>
 		</item>
-		<item id="10">
-			<property name="id">10</property>
+		<item id="9">
+			<property name="id">9</property>
 			<label>Sair</label>
 			<label2>Sair</label2>
 			<icon></icon>
 			<thumb />
-			<property name="labelID">10</property>
-			<property name="defaultID">10</property>
+			<property name="labelID">9</property>
+			<property name="defaultID">9</property>
 			<onclick>ActivateWindow(ShutdownMenu)</onclick>
 			<property name="path">ActivateWindow(ShutdownMenu)</property>
 			<property name="list">10025</property>
@@ -240,9 +211,9 @@
 			<thumb />
 			<property name="labelID">31035</property>
 			<property name="defaultID">135</property>
-			<onclick>ActivateWindow(Videos,special://skin/extras/widgetplaylists/inprogressmovies.xsp,return)</onclick>
-			<property name="path">ActivateWindow(Videos,special://skin/extras/widgetplaylists/inprogressmovies.xsp,return)</property>
-			<property name="list">special://skin/extras/widgetplaylists/inprogressmovies.xsp</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</property>
+			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Container(900).ListItem.Property(submenuVisibility),movies)</visible>
 			<property name="group">movies</property>
 			<property name="isSubmenu">True</property>
@@ -256,9 +227,9 @@
 			<thumb />
 			<property name="labelID">16101</property>
 			<property name="defaultID">135</property>
-			<onclick>ActivateWindow(Videos,special://skin/extras/widgetplaylists/unwatchedmovies.xsp,return)</onclick>
-			<property name="path">ActivateWindow(Videos,special://skin/extras/widgetplaylists/unwatchedmovies.xsp,return)</property>
-			<property name="list">special://skin/extras/widgetplaylists/unwatchedmovies.xsp</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</property>
+			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Container(900).ListItem.Property(submenuVisibility),movies)</visible>
 			<property name="group">movies</property>
 			<property name="isSubmenu">True</property>
@@ -339,9 +310,9 @@
 			<thumb />
 			<property name="labelID">addon-script-skin-helper-widgets32045</property>
 			<property name="defaultID">369</property>
-			<onclick>ActivateWindow(Videos,plugin://script.skin.helper.widgets/?action=recent&amp;mediatype=tvshows&amp;limit=250,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://script.skin.helper.widgets/?action=recent&amp;mediatype=tvshows&amp;limit=250,return)</property>
-			<property name="list">plugin://script.skin.helper.widgets/?action=recent&amp;mediatype=tvshows&amp;limit=250</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Container(900).ListItem.Property(submenuVisibility),tvshows)</visible>
 			<property name="group">tvshows</property>
 			<property name="isSubmenu">True</property>
@@ -404,9 +375,9 @@
 			<thumb />
 			<property name="labelID">addon-script-skin-helper-widgets32043</property>
 			<property name="defaultID">369</property>
-			<onclick>ActivateWindow(Videos,plugin://script.skin.helper.widgets/?action=nextaired&amp;mediatype=episodes&amp;limit=250,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://script.skin.helper.widgets/?action=nextaired&amp;mediatype=episodes&amp;limit=250,return)</property>
-			<property name="list">plugin://script.skin.helper.widgets/?action=nextaired&amp;mediatype=episodes&amp;limit=250</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Container(900).ListItem.Property(submenuVisibility),tvshows)</visible>
 			<property name="group">tvshows</property>
 			<property name="isSubmenu">True</property>
@@ -587,9 +558,9 @@
 			<thumb />
 			<property name="labelID">31035</property>
 			<property name="defaultID">135</property>
-			<onclick>ActivateWindow(Videos,special://skin/extras/widgetplaylists/inprogressmovies.xsp,return)</onclick>
-			<property name="path">ActivateWindow(Videos,special://skin/extras/widgetplaylists/inprogressmovies.xsp,return)</property>
-			<property name="list">special://skin/extras/widgetplaylists/inprogressmovies.xsp</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</property>
+			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
 			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
 			<property name="group">movies</property>
 			<property name="isSubmenu">True</property>
@@ -603,9 +574,9 @@
 			<thumb />
 			<property name="labelID">16101</property>
 			<property name="defaultID">135</property>
-			<onclick>ActivateWindow(Videos,special://skin/extras/widgetplaylists/unwatchedmovies.xsp,return)</onclick>
-			<property name="path">ActivateWindow(Videos,special://skin/extras/widgetplaylists/unwatchedmovies.xsp,return)</property>
-			<property name="list">special://skin/extras/widgetplaylists/unwatchedmovies.xsp</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</property>
+			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
 			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
 			<property name="group">movies</property>
 			<property name="isSubmenu">True</property>
@@ -704,9 +675,9 @@
 			<thumb />
 			<property name="labelID">31035</property>
 			<property name="defaultID">135</property>
-			<onclick>ActivateWindow(Videos,special://skin/extras/widgetplaylists/inprogressmovies.xsp,return)</onclick>
-			<property name="path">ActivateWindow(Videos,special://skin/extras/widgetplaylists/inprogressmovies.xsp,return)</property>
-			<property name="list">special://skin/extras/widgetplaylists/inprogressmovies.xsp</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</property>
+			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Window(10000).Property(submenuVisibility),movies)</visible>
 			<property name="group">movies</property>
 			<property name="isSubmenu">True</property>
@@ -720,9 +691,9 @@
 			<thumb />
 			<property name="labelID">16101</property>
 			<property name="defaultID">135</property>
-			<onclick>ActivateWindow(Videos,special://skin/extras/widgetplaylists/unwatchedmovies.xsp,return)</onclick>
-			<property name="path">ActivateWindow(Videos,special://skin/extras/widgetplaylists/unwatchedmovies.xsp,return)</property>
-			<property name="list">special://skin/extras/widgetplaylists/unwatchedmovies.xsp</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</property>
+			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Window(10000).Property(submenuVisibility),movies)</visible>
 			<property name="group">movies</property>
 			<property name="isSubmenu">True</property>
@@ -811,9 +782,9 @@
 			<thumb />
 			<property name="labelID">addon-script-skin-helper-widgets32045</property>
 			<property name="defaultID">369</property>
-			<onclick>ActivateWindow(Videos,plugin://script.skin.helper.widgets/?action=recent&amp;mediatype=tvshows&amp;limit=250,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://script.skin.helper.widgets/?action=recent&amp;mediatype=tvshows&amp;limit=250,return)</property>
-			<property name="list">plugin://script.skin.helper.widgets/?action=recent&amp;mediatype=tvshows&amp;limit=250</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
 			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
 			<property name="group">tvshows</property>
 			<property name="isSubmenu">True</property>
@@ -876,9 +847,9 @@
 			<thumb />
 			<property name="labelID">addon-script-skin-helper-widgets32043</property>
 			<property name="defaultID">369</property>
-			<onclick>ActivateWindow(Videos,plugin://script.skin.helper.widgets/?action=nextaired&amp;mediatype=episodes&amp;limit=250,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://script.skin.helper.widgets/?action=nextaired&amp;mediatype=episodes&amp;limit=250,return)</property>
-			<property name="list">plugin://script.skin.helper.widgets/?action=nextaired&amp;mediatype=episodes&amp;limit=250</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
 			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
 			<property name="group">tvshows</property>
 			<property name="isSubmenu">True</property>
@@ -927,9 +898,9 @@
 			<thumb />
 			<property name="labelID">addon-script-skin-helper-widgets32045</property>
 			<property name="defaultID">369</property>
-			<onclick>ActivateWindow(Videos,plugin://script.skin.helper.widgets/?action=recent&amp;mediatype=tvshows&amp;limit=250,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://script.skin.helper.widgets/?action=recent&amp;mediatype=tvshows&amp;limit=250,return)</property>
-			<property name="list">plugin://script.skin.helper.widgets/?action=recent&amp;mediatype=tvshows&amp;limit=250</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Window(10000).Property(submenuVisibility),tvshows)</visible>
 			<property name="group">tvshows</property>
 			<property name="isSubmenu">True</property>
@@ -992,9 +963,9 @@
 			<thumb />
 			<property name="labelID">addon-script-skin-helper-widgets32043</property>
 			<property name="defaultID">369</property>
-			<onclick>ActivateWindow(Videos,plugin://script.skin.helper.widgets/?action=nextaired&amp;mediatype=episodes&amp;limit=250,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://script.skin.helper.widgets/?action=nextaired&amp;mediatype=episodes&amp;limit=250,return)</property>
-			<property name="list">plugin://script.skin.helper.widgets/?action=nextaired&amp;mediatype=episodes&amp;limit=250</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Window(10000).Property(submenuVisibility),tvshows)</visible>
 			<property name="group">tvshows</property>
 			<property name="isSubmenu">True</property>
@@ -1257,7 +1228,7 @@
 			<param name="submenuid" value="num-10000" />
 			<param name="widgetTags" value="WidgetTagOverlayAuto" />
 			<param name="widgetTarget" value="videos" />
-			<param name="widgetPath" value="plugin://script.skin.helper.widgets/?action=inprogressshowsandmovies&amp;mediatype=media&amp;limit=25&amp;reload=$INFO[Window(Home).Property(widgetreload)]" />
+			<param name="widgetPath" value="plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes" />
 			<param name="widgetStyle" value="widget_layout_default" />
 			<param name="widgetSortBy" value="" />
 			<param name="widgetSortOrder" value="" />
@@ -1278,7 +1249,7 @@
 			<param name="submenuid" value="num-10000" />
 			<param name="widgetTags" value="WidgetTagOverlayAuto" />
 			<param name="widgetTarget" value="videos" />
-			<param name="widgetPath" value="plugin://script.skin.helper.widgets/?action=recentshowsandmovies&amp;mediatype=media&amp;limit=25&amp;reload=$INFO[Window(Home).Property(widgetreload)]" />
+			<param name="widgetPath" value="plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes" />
 			<param name="widgetStyle" value="widget_layout_default" />
 			<param name="widgetSortBy" value="" />
 			<param name="widgetSortOrder" value="" />
@@ -1299,7 +1270,7 @@
 			<param name="submenuid" value="num-10000" />
 			<param name="widgetTags" value="WidgetTagOverlayAuto" />
 			<param name="widgetTarget" value="videos" />
-			<param name="widgetPath" value="special://skin/playlists/4kultrahdmovies.xsp" />
+			<param name="widgetPath" value="plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes" />
 			<param name="widgetStyle" value="widget_layout_highlight" />
 			<param name="widgetSortBy" value="random" />
 			<param name="widgetSortOrder" value="" />
@@ -1320,7 +1291,7 @@
 			<param name="submenuid" value="num-10000" />
 			<param name="widgetTags" value="WidgetTagOverlayAuto" />
 			<param name="widgetTarget" value="videos" />
-			<param name="widgetPath" value="special://skin/extras/widgetplaylists/recentlyaddedtvshows.xsp" />
+			<param name="widgetPath" value="plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes" />
 			<param name="widgetStyle" value="widget_layout_default" />
 			<param name="widgetSortBy" value="" />
 			<param name="widgetSortOrder" value="" />
@@ -1341,7 +1312,7 @@
 			<param name="submenuid" value="num-10000" />
 			<param name="widgetTags" value="WidgetTagOverlayAuto" />
 			<param name="widgetTarget" value="videos" />
-			<param name="widgetPath" value="special://skin/playlists/criticallyacclaimedmovies.xsp" />
+			<param name="widgetPath" value="plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes" />
 			<param name="widgetStyle" value="widget_layout_default" />
 			<param name="widgetSortBy" value="" />
 			<param name="widgetSortOrder" value="" />
@@ -1362,7 +1333,7 @@
 			<param name="submenuid" value="num-10000" />
 			<param name="widgetTags" value="WidgetTagOverlayAuto" />
 			<param name="widgetTarget" value="videos" />
-			<param name="widgetPath" value="plugin://script.skin.helper.widgets/?action=similarshowsandmovies&amp;mediatype=media&amp;limit=25&amp;reload=$INFO[Window(Home).Property(widgetreload)]" />
+			<param name="widgetPath" value="plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes" />
 			<param name="widgetStyle" value="widget_layout_default" />
 			<param name="widgetSortBy" value="" />
 			<param name="widgetSortOrder" value="" />
@@ -1404,7 +1375,7 @@
 			<param name="submenuid" value="num-10000" />
 			<param name="widgetTags" value="WidgetTagOverlayAuto" />
 			<param name="widgetTarget" value="videos" />
-			<param name="widgetPath" value="plugin://script.skin.helper.widgets/?action=forgenre&amp;mediatype=media&amp;limit=25&amp;reload=$INFO[Window(Home).Property(widgetreload)]" />
+			<param name="widgetPath" value="plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes" />
 			<param name="widgetStyle" value="widget_layout_default" />
 			<param name="widgetSortBy" value="" />
 			<param name="widgetSortOrder" value="" />
@@ -1417,7 +1388,7 @@
 		<value condition="!String.IsEmpty(Window(Home).property(skinhelper-refreshvideowidgetsbusy))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="!String.IsEmpty(Window(Home).property(favwidgetrefresh))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="Window.isactive(fullscreenvideo)">special://skin/extras/emptywidget.xsp</value>
-		<value>plugin://script.skin.helper.widgets/?action=inprogressshowsandmovies&amp;mediatype=media&amp;limit=25&amp;reload=$INFO[Window(Home).Property(widgetreload)]</value>
+		<value>plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</value>
 	</variable>
 	<variable name="widgetinfolabel-2510">
 		<value condition="String.Contains(Container(2510).ListItem.Property(DBTYPE), systeminfo)">$INFO[Container(2510).ListItem.label] $INFO[Container(2510).ListItem.label2]</value>
@@ -1438,7 +1409,7 @@
 		<value condition="!String.IsEmpty(Window(Home).property(skinhelper-refreshvideowidgetsbusy))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="!String.IsEmpty(Window(Home).property(favwidgetrefresh))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="Window.IsActive(fullscreenvideo)">special://skin/extras/emptywidget.xsp</value>
-		<value>plugin://script.skin.helper.widgets/?action=recentshowsandmovies&amp;mediatype=media&amp;limit=25&amp;reload=$INFO[Window(Home).Property(widgetreload)]</value>
+		<value>plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</value>
 	</variable>
 	<variable name="widgetinfolabel-2520">
 		<value condition="String.Contains(Container(2520).ListItem.Property(DBTYPE), systeminfo)">$INFO[Container(2520).ListItem.label] $INFO[Container(2520).ListItem.label2]</value>
@@ -1459,7 +1430,7 @@
 		<value condition="!String.IsEmpty(Window(Home).property(skinhelper-refreshvideowidgetsbusy))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="!String.IsEmpty(Window(Home).property(favwidgetrefresh))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="Window.IsActive(fullscreenvideo)">special://skin/extras/emptywidget.xsp</value>
-		<value>special://skin/playlists/4kultrahdmovies.xsp</value>
+		<value>plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</value>
 	</variable>
 	<variable name="widgetinfolabel-2530">
 		<value condition="String.Contains(Container(2530).ListItem.Property(DBTYPE), systeminfo)">$INFO[Container(2530).ListItem.label] $INFO[Container(2530).ListItem.label2]</value>
@@ -1480,7 +1451,7 @@
 		<value condition="!String.IsEmpty(Window(Home).property(skinhelper-refreshvideowidgetsbusy))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="!String.IsEmpty(Window(Home).property(favwidgetrefresh))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="Window.IsActive(fullscreenvideo)">special://skin/extras/emptywidget.xsp</value>
-		<value>special://skin/extras/widgetplaylists/recentlyaddedtvshows.xsp</value>
+		<value>plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</value>
 	</variable>
 	<variable name="widgetinfolabel-2540">
 		<value condition="String.Contains(Container(2540).ListItem.Property(DBTYPE), systeminfo)">$INFO[Container(2540).ListItem.label] $INFO[Container(2540).ListItem.label2]</value>
@@ -1501,7 +1472,7 @@
 		<value condition="!String.IsEmpty(Window(Home).property(skinhelper-refreshvideowidgetsbusy))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="!String.IsEmpty(Window(Home).property(favwidgetrefresh))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="Window.IsActive(fullscreenvideo)">special://skin/extras/emptywidget.xsp</value>
-		<value>special://skin/playlists/criticallyacclaimedmovies.xsp</value>
+		<value>plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</value>
 	</variable>
 	<variable name="widgetinfolabel-2550">
 		<value condition="String.Contains(Container(2550).ListItem.Property(DBTYPE), systeminfo)">$INFO[Container(2550).ListItem.label] $INFO[Container(2550).ListItem.label2]</value>
@@ -1522,7 +1493,7 @@
 		<value condition="!String.IsEmpty(Window(Home).property(skinhelper-refreshvideowidgetsbusy))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="!String.IsEmpty(Window(Home).property(favwidgetrefresh))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="Window.IsActive(fullscreenvideo)">special://skin/extras/emptywidget.xsp</value>
-		<value>plugin://script.skin.helper.widgets/?action=similarshowsandmovies&amp;mediatype=media&amp;limit=25&amp;reload=$INFO[Window(Home).Property(widgetreload)]</value>
+		<value>plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</value>
 	</variable>
 	<variable name="widgetinfolabel-2560">
 		<value condition="String.Contains(Container(2560).ListItem.Property(DBTYPE), systeminfo)">$INFO[Container(2560).ListItem.label] $INFO[Container(2560).ListItem.label2]</value>
@@ -1564,7 +1535,7 @@
 		<value condition="!String.IsEmpty(Window(Home).property(skinhelper-refreshvideowidgetsbusy))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="!String.IsEmpty(Window(Home).property(favwidgetrefresh))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="Window.IsActive(fullscreenvideo)">special://skin/extras/emptywidget.xsp</value>
-		<value>plugin://script.skin.helper.widgets/?action=forgenre&amp;mediatype=media&amp;limit=25&amp;reload=$INFO[Window(Home).Property(widgetreload)]</value>
+		<value>plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</value>
 	</variable>
 	<variable name="widgetinfolabel-2580">
 		<value condition="String.Contains(Container(2580).ListItem.Property(DBTYPE), systeminfo)">$INFO[Container(2580).ListItem.label] $INFO[Container(2580).ListItem.label2]</value>
