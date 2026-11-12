@@ -31,27 +31,28 @@ LEGADOS = re.compile(
 
 
 def acao(mode, pasta, nome):
-    """Acao nativa: abre a pasta real do add-on Brazuca Play."""
-    return ('ActivateWindow(Videos, "%s", return)'
+    """Acao no padrao nativo da Bingie (sem aspas) abrindo a pasta do Brazuca."""
+    return ('ActivateWindow(Videos,%s,return)'
             % (BRAZUCA % 'mode=%s&url=%%23%s&name=%s&iconimage=DefaultFolder.png'
                '&fanart=DefaultFolder.png&description=Menu' % (mode, pasta, nome)))
 
 
 # (rotulo, acao, widget principal, tipo de widget, widgets extras)
-# Barra: TV ao vivo (sem carrossel de canais na Home) + VOD do Brazuca Play.
-# Os carrosseis seguem a ordem pedida: Lancamentos, categoria e Favoritos.
+# Oito botoes na ordem nativa da Bingie (Home primeiro), VOD do Brazuca nos
+# carrosseis e TV ao vivo sem carrossel de canais na Home.
 MENU = [
-    ('TV ao vivo', acao(21, 'menu_canais', 'TV%20ao%20vivo'), '', 'video', []),
+    ('Home', 'ActivateWindow(home,return)', '', 'video', []),
+    ('TV', acao(21, 'menu_canais', 'TV'), '', 'video', []),
     ('Filmes', acao(27, 'filmes_menu', 'Filmes'),
      LANCAMENTOS, 'movies', [CARROSSEL % 'filmes', SMARTED % 'route=favoritos-filmes']),
     ('Séries', acao(27, 'series_menu', 'S%C3%A9ries'),
      SERIES_NOVAS, 'tvshows', [CARROSSEL % 'series', SMARTED % 'route=favoritos-series']),
+    ('Doramas', acao(31, 'doramas_menu', 'Doramas'),
+     CARROSSEL % 'doramas', 'tvshows', [SMARTED % 'route=favoritos-doramas']),
     ('Novelas', acao(25, 'novelas_menu', 'Novelas'),
      CARROSSEL % 'novelas', 'tvshows', [SMARTED % 'route=favoritos-novelas']),
     ('Animes', acao(22, 'animes_menu', 'Animes'),
      CARROSSEL % 'animes', 'tvshows', [SMARTED % 'route=favoritos-animes']),
-    ('Doramas', acao(31, 'doramas_menu', 'Doramas'),
-     CARROSSEL % 'doramas', 'tvshows', [SMARTED % 'route=favoritos-doramas']),
     ('Desenhos', acao(28, 'desenhos_menu', 'Desenhos'),
      CARROSSEL % 'desenhos', 'tvshows', [SMARTED % 'route=favoritos-desenhos']),
     ('Busca', 'ActivateWindow(1109,return)', '', 'video', []),

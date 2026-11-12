@@ -17,7 +17,7 @@ import xbmcvfs
 import repair
 from favourites import ensure_favourites
 from performance import ensure_performance
-from menu_smarted import garantir_menu
+from menu_smarted import garantir_menu, rodar_validacao_navegacao
 from skin_setup import ensure_home_nodes, ensure_skin, home_xml_candidates
 
 ADDON = xbmcaddon.Addon()
@@ -269,6 +269,11 @@ def main():
     write_favourites()
     apply_navigation()
     garantir_menu(xbmc, log=log)
+    # teste real dos botoes da barra: passa por cada pasta e registra o resultado
+    navegacao = rodar_validacao_navegacao(log)
+    if navegacao is not None:
+        falhas = [linha for linha in navegacao if linha.startswith('FALHA')]
+        log('nav-check: %d destinos testados, %d falha(s)' % (len(navegacao), len(falhas)))
     performance = apply_performance()
 
     # 1º arranque: skin SMARTEDTV ativa + nós da Home ligados às rotas do addon

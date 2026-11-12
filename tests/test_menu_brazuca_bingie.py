@@ -17,7 +17,7 @@ BUILD = ROOT / 'tools/kodi/build-release-apk.py'
 FLUXO = ROOT / '.github/workflows/build-release-apk.yml'
 
 # Home com VOD do Brazuca Play + TV ao vivo na primeira aba
-CATEGORIAS = ['TV ao vivo', 'Filmes', 'Séries', 'Novelas', 'Animes', 'Doramas', 'Desenhos']
+CATEGORIAS = ['Home', 'TV', 'Filmes', 'Séries', 'Doramas', 'Novelas', 'Animes', 'Desenhos']
 
 
 def carregar(nome, caminho):
@@ -41,14 +41,13 @@ class MenuSuperiorTest(unittest.TestCase):
         ET.parse(MENU)
         ET.parse(HOME)
 
-    def test_sete_categorias_na_barra_superior(self):
+    def test_oito_botoes_nativos_na_ordem_pedida(self):
         rotulos = [i.findtext('label') for i in itens_do_menu()]
-        for categoria in CATEGORIAS:
-            self.assertIn(categoria, rotulos)
+        self.assertEqual(rotulos[:len(CATEGORIAS)], list(CATEGORIAS), rotulos)
 
     def test_cada_categoria_abre_a_rota_do_brazuca(self):
         acoes = {i.findtext('label'): i.findtext('onclick') for i in itens_do_menu()}
-        esperado = {'TV ao vivo': 'mode=21', 'Filmes': 'mode=27', 'Séries': 'mode=27',
+        esperado = {'TV': 'mode=21', 'Filmes': 'mode=27', 'Séries': 'mode=27',
                     'Novelas': 'mode=25', 'Animes': 'mode=22', 'Doramas': 'mode=31',
                     'Desenhos': 'mode=28'}
         for categoria, modo in esperado.items():
@@ -69,9 +68,9 @@ class MenuSuperiorTest(unittest.TestCase):
     def test_home_nao_regera_o_menu(self):
         self.assertNotIn('type=buildxml', HOME.read_text(encoding='utf-8'))
 
-    def test_tv_ao_vivo_na_barra_sem_carrossel_de_canais(self):
+    def test_tv_na_barra_sem_carrossel_de_canais(self):
         texto = MENU.read_text(encoding='utf-8')
-        self.assertIn('TV ao vivo', texto)
+        self.assertIn('<label>TV</label>', texto)
         self.assertIn('mode=21', texto)
         self.assertIn('menu_canais', texto)
         self.assertNotIn('route=carrossel&amp;alvo=canais', texto)
@@ -99,8 +98,8 @@ class BuildOverlayTest(unittest.TestCase):
     def test_workflow_publica_versao_com_overlay(self):
         fluxo = FLUXO.read_text(encoding='utf-8')
         self.assertIn('--skin-overlay kodi/skin.smartedtv.bingie', fluxo)
-        self.assertIn('--to-version 1.0.53', fluxo)
-        self.assertIn('v1.0.53-smarted-arm64', fluxo)
+        self.assertIn('--to-version 1.0.54', fluxo)
+        self.assertIn('v1.0.54-smarted-arm64', fluxo)
 
 
 class BootstrapMenuTest(unittest.TestCase):
