@@ -1,0 +1,81 @@
+name: SMARTEDTV - diagnóstico das dependências
+
+# Roda só o passo de dependências e publica as últimas linhas do log, para
+# identificar exatamente qual biblioteca falhou (o log da CI é grande demais
+# para ser lido inteiro pela API).
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/2e3d223d-kode]
+    paths:
+      - .github/workflows/smartedtv-diag-depends.yml
+
+permissions:
+  contents: read
+
+jobs:
+  diag:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependências de sistema
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq autoconf automake bison build-essential curl flex \
+            gawk git gperf lib32stdc++6 lib32z1 lib32z1-dev libcurl4-openssl-dev unzip \
+            zip zlib1g-dev libtool pkg-config cmake
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: SDK/NDK
+        env:
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+        run: |
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install \
+            'platforms;android-34' 'build-tools;33.0.1' 'ndk;21.4.7075529' > /dev/null
+
+      - name: Kodi 21.3 limpo (sem patch, para isolar o problema no upstream)
+        run: |
+          git clone --depth 1 --branch 21.3-Omega https://github.com/xbmc/xbmc.git kodi
+          cd kodi && git rev-parse HEAD
+
+      - name: Dependências com log controlado
+        env:
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+          ANDROID_HOME: /usr/local/lib/android/sdk
+        run: |
+          set +e
+          cd kodi/tools/depends
+          ./bootstrap > /tmp/boot.log 2>&1 || { echo '::error::bootstrap falhou'; tail -40 /tmp/boot.log; exit 1; }
+          ./configure --with-tarballs=/tmp/tarballs --host=aarch64-linux-android \
+            --with-sdk-path="$ANDROID_SDK_ROOT" \
+            --with-ndk-path="$ANDROID_SDK_ROOT/ndk/21.4.7075529" \
+            --prefix=/tmp/xbmc-depends > /tmp/conf.log 2>&1 \
+            || { echo '::error::configure falhou'; tail -60 /tmp/conf.log; exit 1; }
+          make -j4 > /tmp/depends.log 2>&1
+          rc=$?
+          echo "make exit=$rc"
+          echo "=== últimas 120 linhas ==="
+          tail -120 /tmp/depends.log
+          if [ $rc -ne 0 ]; then
+            echo "=== linhas de erro ==="
+            grep -nE "Error [0-9]|error:|No such file|undefined reference|failed" /tmp/depends.log | tail -40
+          fi
+          exit $rc
+
+      - name: Guardar logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: depends-logs
+          path: |
+            /tmp/depends.log
+            /tmp/conf.log
+            /tmp/boot.log
+          retention-days: 7
+          if-no-files-found: warn
