@@ -21,7 +21,9 @@ def _brazuca_url(value):
 def directory(rpc, url):
     request = {'jsonrpc': '2.0', 'id': 1, 'method': 'Files.GetDirectory',
                'params': {'directory': url, 'media': 'video',
-                          'properties': ['title', 'plot', 'year', 'thumbnail', 'fanart', 'art']}}
+                          'properties': ['title', 'plot', 'year', 'thumbnail', 'fanart', 'art',
+                                         'genre', 'rating', 'premiered', 'dateadded',
+                                         'duration']}}
     response = json.loads(rpc(json.dumps(request)))
     if not isinstance(response, dict) or 'error' in response or not isinstance(response.get('result'), dict):
         raise ValueError('Brazuca directory unavailable')
@@ -49,7 +51,36 @@ def _entry(item):
             'thumbnail': item.get('thumbnail') if isinstance(item.get('thumbnail'), str) else '',
             'fanart': item.get('fanart') if isinstance(item.get('fanart'), str) else '',
             'plot': item.get('plot') if isinstance(item.get('plot'), str) else '',
-            'year': item.get('year') if isinstance(item.get('year'), int) else 0}
+            'year': item.get('year') if isinstance(item.get('year'), int) else 0,
+            'genre': _genre(item.get('genre')),
+            'rating': _rating(item.get('rating')),
+            'premiered': _premiered(item),
+            'duration': item.get('duration') if isinstance(item.get('duration'), int) else 0}
+
+
+def _genre(value):
+    """O Kodi devolve genero como lista; o addon manda um texto so."""
+    if isinstance(value, (list, tuple)):
+        nomes = [nome for nome in value if isinstance(nome, str) and nome]
+        return ', '.join(nomes)
+    return value if isinstance(value, str) else ''
+
+
+def _rating(value):
+    try:
+        nota = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    return round(nota, 1) if 0 < nota <= 10 else 0.0
+
+
+def _premiered(item):
+    """Data real do addon (ele grava a data em ``dateadded``)."""
+    for chave in ('premiered', 'dateadded'):
+        valor = item.get(chave)
+        if isinstance(valor, str) and valor.strip():
+            return valor.strip()[:10]
+    return ''
 
 
 def movie_overview(rpc):
@@ -120,3 +151,88 @@ def recent_movies(rpc, limit=10):
         if len(result) >= limit:
             break
     return result
+
+
+# --- carrossel: desce a árvore do addon até o nível de conteúdo real ---------
+#
+# As linhas da Home não podem listar pastas de menu ("CATEGORIA: GÊNEROS",
+# "TODAS SÉRIES"): o usuário quer pôsteres de filmes, séries e canais que
+# reproduzem ao dar OK. O caminho até o conteúdo é definido pelo próprio addon
+# e pode mudar entre versões, por isso ele é percorrido em tempo de execução
+# por ``walk`` (poucas chamadas JSON-RPC, sem inventar item nenhum).
+
+CARROSSEL = {
+    # alvo: (raiz, profundidade máxima, palavras que escolhem o ramo)
+    'canais': ((21, '#todoscanais'), (21, '#menu_canais'), 3,
+               ('pluto', 'canais', 'aovivo', 'brasil', 'filmes')),
+    'filmes': ((27, '#filmes_menu'), None, 2,
+               ('lancamento', 'recente', 'filmes', 'categoria')),
+    'series': ((27, '#series_menu'), None, 2,
+               ('todas', 'series', 'novelas')),
+    'novelas': ((25, '#novelas_menu'), None, 2, ('novela',)),
+    'animes': ((22, '#animes_menu'), None, 2, ('anime',)),
+    'doramas': ((31, '#doramas_menu'), None, 2, ('dorama',)),
+    'desenhos': ((28, '#desenhos_menu'), None, 2, ('desenho',)),
+}
+
+MAX_ENTRIES = 20
+
+
+# Pastas que não levam a conteúdo: buscar, configurar ou verificar abrem
+# teclado/diálogo e devolvem diretório vazio. Se houver alternativa, ficam por
+# último para o carrossel nunca descer por elas.
+DESVIO = ('pesquis', 'buscar', 'search', 'configura', 'ajuste', 'definicao',
+          'verificar', 'adulto', 'login', 'conta')
+
+
+def _order(folders, prefer):
+    """Coloca primeiro as pastas cujo rótulo casa com o alvo."""
+    def score(entry):
+        label = normalize(entry.get('label', ''))
+        if any(word in label for word in DESVIO):
+            return len(prefer) + 1
+        for position, word in enumerate(prefer):
+            if word and word in label:
+                return position
+        return len(prefer)
+    return sorted(folders, key=score)
+
+
+def walk(rpc, root, depth=2, prefer=(), limit=MAX_ENTRIES):
+    """Desce ``root`` até achar mídia; devolve (itens, achou_midia).
+
+    - se o nível atual já tem mídia (arquivos), devolve só a mídia;
+    - senão desce pela pasta preferida (uma por nível, no máximo ``depth``);
+    - se chegar ao fim sem mídia, devolve o nível mais fundo (nunca vazio).
+    """
+    url, level = root, 0
+    while True:
+        try:
+            entries = [entry for entry in (_entry(item) for item in directory(rpc, url)) if entry]
+        except Exception:
+            return [], False
+        if not entries:
+            return [], False
+        media = [entry for entry in entries if not entry['folder']]
+        folders = _order([entry for entry in entries if entry['folder']], prefer)
+        if media and (len(media) * 2 >= len(entries) or not folders or level >= depth - 1):
+            return media[:limit], True
+        if not folders or level + 1 >= depth:
+            # limite atingido: entrega o nível de conteúdo mais próximo
+            return (media or entries)[:limit], bool(media)
+        url, level = folders[0]['url'], level + 1
+
+
+def carousel(rpc, alvo):
+    """Percorre a árvore do addon para o alvo e devolve (itens, origem, achou_midia)."""
+    if alvo not in CARROSSEL:
+        raise ValueError('alvo desconhecido')
+    roots = CARROSSEL[alvo]
+    depth, prefer = roots[2], roots[3]
+    for root in roots[:2]:
+        if not root:
+            continue
+        items, found = walk(rpc, brazuca(*root), depth=depth, prefer=prefer)
+        if items:
+            return items, root[1], found
+    return [], '', False

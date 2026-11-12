@@ -84,6 +84,11 @@ class CatalogueTest(unittest.TestCase):
             def setTitle(self, value): self.title = value
             def setPlot(self, value): self.plot = value
             def setYear(self, value): self.year = value
+            def __getattr__(self, nome):
+                # genero/nota/data/duracao/mediatype: a skin usa o que existir
+                if nome.startswith('set'):
+                    return lambda *a, **k: None
+                raise AttributeError(nome)
         class Item:
             def __init__(self, label): self.label = label; self.info = Info()
             def setArt(self, value): self.art = value
