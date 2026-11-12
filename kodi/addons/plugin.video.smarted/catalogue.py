@@ -120,3 +120,88 @@ def recent_movies(rpc, limit=10):
         if len(result) >= limit:
             break
     return result
+
+
+# --- carrossel: desce a árvore do addon até o nível de conteúdo real ---------
+#
+# As linhas da Home não podem listar pastas de menu ("CATEGORIA: GÊNEROS",
+# "TODAS SÉRIES"): o usuário quer pôsteres de filmes, séries e canais que
+# reproduzem ao dar OK. O caminho até o conteúdo é definido pelo próprio addon
+# e pode mudar entre versões, por isso ele é percorrido em tempo de execução
+# por ``walk`` (poucas chamadas JSON-RPC, sem inventar item nenhum).
+
+CARROSSEL = {
+    # alvo: (raiz, profundidade máxima, palavras que escolhem o ramo)
+    'canais': ((21, '#todoscanais'), (21, '#menu_canais'), 3,
+               ('pluto', 'canais', 'aovivo', 'brasil', 'filmes')),
+    'filmes': ((27, '#filmes_menu'), None, 2,
+               ('lancamento', 'recente', 'filmes', 'categoria')),
+    'series': ((27, '#series_menu'), None, 2,
+               ('todas', 'series', 'novelas')),
+    'novelas': ((25, '#novelas_menu'), None, 2, ('novela',)),
+    'animes': ((22, '#animes_menu'), None, 2, ('anime',)),
+    'doramas': ((31, '#doramas_menu'), None, 2, ('dorama',)),
+    'desenhos': ((28, '#desenhos_menu'), None, 2, ('desenho',)),
+}
+
+MAX_ENTRIES = 20
+
+
+# Pastas que não levam a conteúdo: buscar, configurar ou verificar abrem
+# teclado/diálogo e devolvem diretório vazio. Se houver alternativa, ficam por
+# último para o carrossel nunca descer por elas.
+DESVIO = ('pesquis', 'buscar', 'search', 'configura', 'ajuste', 'definicao',
+          'verificar', 'adulto', 'login', 'conta')
+
+
+def _order(folders, prefer):
+    """Coloca primeiro as pastas cujo rótulo casa com o alvo."""
+    def score(entry):
+        label = normalize(entry.get('label', ''))
+        if any(word in label for word in DESVIO):
+            return len(prefer) + 1
+        for position, word in enumerate(prefer):
+            if word and word in label:
+                return position
+        return len(prefer)
+    return sorted(folders, key=score)
+
+
+def walk(rpc, root, depth=2, prefer=(), limit=MAX_ENTRIES):
+    """Desce ``root`` até achar mídia; devolve (itens, achou_midia).
+
+    - se o nível atual já tem mídia (arquivos), devolve só a mídia;
+    - senão desce pela pasta preferida (uma por nível, no máximo ``depth``);
+    - se chegar ao fim sem mídia, devolve o nível mais fundo (nunca vazio).
+    """
+    url, level = root, 0
+    while True:
+        try:
+            entries = [entry for entry in (_entry(item) for item in directory(rpc, url)) if entry]
+        except Exception:
+            return [], False
+        if not entries:
+            return [], False
+        media = [entry for entry in entries if not entry['folder']]
+        folders = _order([entry for entry in entries if entry['folder']], prefer)
+        if media and (len(media) * 2 >= len(entries) or not folders or level >= depth - 1):
+            return media[:limit], True
+        if not folders or level + 1 >= depth:
+            # limite atingido: entrega o nível de conteúdo mais próximo
+            return (media or entries)[:limit], bool(media)
+        url, level = folders[0]['url'], level + 1
+
+
+def carousel(rpc, alvo):
+    """Percorre a árvore do addon para o alvo e devolve (itens, origem, achou_midia)."""
+    if alvo not in CARROSSEL:
+        raise ValueError('alvo desconhecido')
+    roots = CARROSSEL[alvo]
+    depth, prefer = roots[2], roots[3]
+    for root in roots[:2]:
+        if not root:
+            continue
+        items, found = walk(rpc, brazuca(*root), depth=depth, prefer=prefer)
+        if items:
+            return items, root[1], found
+    return [], '', False

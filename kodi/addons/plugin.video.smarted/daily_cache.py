@@ -13,7 +13,7 @@ MAX_BYTES = 2 * 1024 * 1024
 
 
 def cached(directory, name, fetch, successful, today=None):
-    if name not in ('recent-movies', 'recent-series'):
+    if name not in ('recent-movies', 'recent-series') and not name.startswith('carrossel-'):
         raise ValueError('Invalid widget cache name')
     today = (today or date.today()).isoformat()
     try:
@@ -32,9 +32,18 @@ def cached(directory, name, fetch, successful, today=None):
             if (isinstance(data, dict) and data.get('version') == 1 and
                     data.get('date') == today and successful(data.get('value'))):
                 return data['value']
+            # cache de outro dia: so serve de reserva se a atualizacao falhar
+            anterior = data.get('value') if isinstance(data, dict) else None
+            if not successful(anterior):
+                anterior = None
         except (OSError, ValueError, TypeError):
-            pass
-        value = fetch()
+            anterior = None
+        try:
+            value = fetch()
+        except Exception:
+            if anterior is not None:
+                return anterior
+            raise
         if successful(value):
             tmp = None
             try:
