@@ -38,8 +38,10 @@ def acao(mode, pasta, nome):
 
 
 # (rotulo, acao, widget principal, tipo de widget, widgets extras)
-# Home so com VOD: TV ao vivo saiu da barra e dos carrosseis.
+# Home com VOD do Brazuca + TV ao vivo (pedido do usuario: volta na primeira aba).
 MENU = [
+    ('TV ao vivo', acao(21, 'menu_canais', 'TV%20ao%20vivo'),
+     CARROSSEL % 'canais', 'video', [SMARTED % 'route=favoritos-tv']),
     ('Filmes', acao(27, 'filmes_menu', 'Filmes'),
      LANCAMENTOS, 'movies', [CARROSSEL % 'filmes']),
     ('Séries', acao(27, 'series_menu', 'S%C3%A9ries'),
