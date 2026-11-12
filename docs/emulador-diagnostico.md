@@ -1,8 +1,8 @@
 # Diagnostico do emulador
 
-- run: `43106951079`
-- commit: `6d6d6cb9b3f05fe09acd9654ef0ac8c52c72f128`
-- quando: 2026-11-11T22:02:28Z
+- run: `43131656658`
+- commit: `78efd87aa1267299172a5898f45b1b253194fbf3`
+- quando: 2026-11-12T01:17:39Z
 
 ## Home.png (imagem, ver artefato)
 
@@ -21,7 +21,7 @@ true">false</setting>
     <setting id="pvrtimers.hidedisabledtimers" default="true">false</setting>
     <setting id="services.devicename" default="true">Kodi</setting>
     <setting id="services.zeroconf" default="true">true</setting>
-    <setting id="services.deviceuuid">7fc23016-6dc8-4faa-8e6c-89dfdbcbf950</setting>
+    <setting id="services.deviceuuid">e80db7fa-47bf-4f44-9cc5-941874de9c06</setting>
     <setting id="services.webserver" default="true">false</setting>
     <setting id="services.webserverport" default="true">8080</setting>
     <setting id="services.webserverauthentication" default="true">true</setting>
@@ -324,245 +324,525 @@ true">false</setting>
 
 ## kodi-addons.txt (9291 bytes)
 ```
-2026-11-11 21:57:41.835 T:3994     info <general>: special://xbmcbinaddons/ is mapped to: /data/user/0/org.xbmc.kodi/cache/apk/assets/addons
-2026-11-11 21:57:42.588 T:3994     info <general>: create addons table
-2026-11-11 21:57:42.592 T:3994     info <general>: create addonlinkrepo table
-2026-11-11 21:57:43.222 T:3994     info <general>: CAddonMgr::FindAddons: audioencoder.kodi.builtin.aac v1.0.2 installed
-2026-11-11 21:57:43.225 T:3994     info <general>: CAddonMgr::FindAddons: audioencoder.kodi.builtin.wma v1.0.2 installed
-2026-11-11 21:57:43.226 T:3994     info <general>: CAddonMgr::FindAddons: game.controller.default v1.0.46 installed
-2026-11-11 21:57:43.227 T:3994     info <general>: CAddonMgr::FindAddons: game.controller.keyboard v1.1.47 installed
-2026-11-11 21:57:43.228 T:3994     info <general>: CAddonMgr::FindAddons: game.controller.mouse v1.0.30 installed
-2026-11-11 21:57:43.229 T:3994     info <general>: CAddonMgr::FindAddons: game.controller.snes v1.0.46 installed
-2026-11-11 21:57:43.230 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.global.audioengine v1.1.1 installed
-2026-11-11 21:57:43.231 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.global.filesystem v1.1.9 installed
-2026-11-11 21:57:43.232 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.global.general v1.0.5 installed
-2026-11-11 21:57:43.233 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.global.gui v5.15.0 installed
-2026-11-11 21:57:43.234 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.global.main v2.0.2 installed
-2026-11-11 21:57:43.235 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.global.network v1.0.4 installed
-2026-11-11 21:57:43.235 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.global.tools v1.0.4 installed
-2026-11-11 21:57:43.237 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.audiodecoder v4.0.0 installed
-2026-11-11 21:57:43.238 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.audioencoder v3.0.0 installed
-2026-11-11 21:57:43.239 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.game v3.0.2 installed
-2026-11-11 21:57:43.240 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.imagedecoder v3.0.1 installed
-2026-11-11 21:57:43.241 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.inputstream v3.3.0 installed
-2026-11-11 21:57:43.242 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.peripheral v3.0.2 installed
-2026-11-11 21:57:43.243 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.pvr v8.3.0 installed
-2026-11-11 21:57:43.244 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.screensaver v2.2.0 installed
-2026-11-11 21:57:43.246 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.vfs v3.0.1 installed
-2026-11-11 21:57:43.247 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.videocodec v2.1.0 installed
-2026-11-11 21:57:43.248 T:3994     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.visualization v4.0.0 installed
-2026-11-11 21:57:43.249 T:3994     info <general>: CAddonMgr::FindAddons: kodi.resource v1.0.0 installed
-2026-11-11 21:57:43.250 T:3994     info <general>: CAddonMgr::FindAddons: metadata.album.universal v3.1.4 installed
-2026-11-11 21:57:43.251 T:3994     info <general>: CAddonMgr::FindAddons: metadata.artists.universal v4.3.3 installed
-2026-11-11 21:57:43.251 T:3994     info <general>: CAddonMgr::FindAddons: metadata.common.allmusic.com v3.2.2 installed
-2026-11-11 21:57:43.252 T:3994     info <general>: CAddonMgr::FindAddons: metadata.common.fanart.tv v3.6.3 installed
-2026-11-11 21:57:43.253 T:3994     info <general>: CAddonMgr::FindAddons: metadata.common.musicbrainz.org v2.2.4 installed
-2026-11-11 21:57:43.257 T:3994     info <general>: CAddonMgr::FindAddons: metadata.common.theaudiodb.com v2.0.3 installed
-2026-11-11 21:57:43.258 T:3994     info <general>: CAddonMgr::FindAddons: metadata.generic.albums v1.0.14 installed
-2026-11-11 21:57:43.259 T:3994     info <general>: CAddonMgr::FindAddons: metadata.generic.artists v1.0.18 installed
-2026-11-11 21:57:43.259 T:3994     info <general>: CAddonMgr::FindAddons: metadata.local v1.0.1 installed
-2026-11-11 21:57:43.261 T:3994     info <general>: CAddonMgr::FindAddons: metadata.themoviedb.org.python v1.3.1+matrix.1 installed
-2026-11-11 21:57:43.262 T:3994     info <general>: CAddonMgr::FindAddons: metadata.tvshows.themoviedb.org.python v1.6.0 installed
-2026-11-11 21:57:43.263 T:3994     info <general>: CAddonMgr::FindAddons: peripheral.joystick v21.1.23 installed
-2026-11-11 21:57:43.264 T:3994     info <general>: CAddonMgr::FindAddons: plugin.video.BrazucaPlay.Matrix v2.1.4 installed
-2026-11-11 21:57:43.264 T:3994     info <general>: CAddonMgr::FindAddons: plugin.video.smarted v0.2.5 installed
-2026-11-11 21:57:43.265 T:3994     info <general>: CAddonMgr::FindAddons: repository.xbmc.org v3.4.0 installed
-2026-11-11 21:57:43.266 T:3994     info <general>: CAddonMgr::FindAddons: resource.images.weathericons.default v1.1.9 installed
-2026-11-11 21:57:43.267 T:3994     info <general>: CAddonMgr::FindAddons: resource.language.en_gb v2.0.2 installed
-2026-11-11 21:57:43.268 T:3994     info <general>: CAddonMgr::FindAddons: resource.uisounds.kodi v1.0.1 installed
-2026-11-11 21:57:43.268 T:3994     info <general>: CAddonMgr::FindAddons: screensaver.xbmc.builtin.black v1.0.34 installed
-2026-11-11 21:57:43.269 T:3994     info <general>: CAddonMgr::FindAddons: screensaver.xbmc.builtin.dim v1.0.66 installed
-2026-11-11 21:57:43.270 T:3994     info <general>: CAddonMgr::FindAddons: script.module.certifi v2023.5.7 installed
-2026-11-11 21:57:43.270 T:3994     info <general>: CAddonMgr::FindAddons: script.module.chardet v5.1.0 installed
-2026-11-11 21:57:43.271 T:3994     info <general>: CAddonMgr::FindAddons: script.module.idna v3.10.0 installed
-2026-11-11 21:57:43.272 T:3994     info <general>: CAddonMgr::FindAddons: script.module.kodi-six v0.1.3.1 installed
-2026-11-11 21:57:43.273 T:3994     info <general>: CAddonMgr::FindAddons: script.module.pil v5.1.0 installed
-2026-11-11 21:57:43.274 T:3994     info <general>: CAddonMgr::FindAddons: script.module.pycryptodome v3.4.3 installed
-2026-11-11 21:57:43.278 T:3994     info <general>: CAddonMgr::FindAddons: script.module.requests v2.31.0 installed
-2026-11-11 21:57:43.279 T:3994     info <general>: CAddonMgr::FindAddons: script.module.simplejson v3.19.1+matrix.1 installed
-2026-11-11 21:57:43.280 T:3994     info <general>: CAddonMgr::FindAddons: script.module.six v1.16.0+matrix.1 installed
-2026-11-11 21:57:43.280 T:3994     info <general>: CAddonMgr::FindAddons: script.module.urllib3 v2.2.3 installed
-2026-11-11 21:57:43.281 T:3994     info <general>: CAddonMgr::FindAddons: service.xbmc.versioncheck v0.5.27+matrix.1 installed
-2026-11-11 21:57:43.282 T:3994     info <general>: CAddonMgr::FindAddons: skin.estuary v4.0.0 installed
-2026-11-11 21:57:43.283 T:3994     info <general>: CAddonMgr::FindAddons: skin.novatv v1.0.6 installed
-2026-11-11 21:57:43.284 T:3994     info <general>: CAddonMgr::FindAddons: webinterface.default v21.x-1.0.1 installed
-2026-11-11 21:57:43.285 T:3994     info <general>: CAddonMgr::FindAddons: xbmc.addon v21.3.0 installed
-2026-11-11 21:57:43.285 T:3994     info <general>: CAddonMgr::FindAddons: xbmc.core v0.1.0 installed
-2026-11-11 21:57:43.286 T:3994     info <general>: CAddonMgr::FindAddons: xbmc.gui v5.17.0 installed
-2026-11-11 21:57:43.287 T:3994     info <general>: CAddonMgr::FindAddons: xbmc.json v13.5.0 installed
-2026-11-11 21:57:43.288 T:3994     info <general>: CAddonMgr::FindAddons: xbmc.metadata v2.1.0 installed
-2026-11-11 21:57:43.289 T:3994     info <general>: CAddonMgr::FindAddons: xbmc.python v3.0.1 installed
-2026-11-11 21:57:43.289 T:3994     info <general>: CAddonMgr::FindAddons: xbmc.webinterface v1.0.0 installed
-2026-11-11 21:57:50.796 T:5175     info <general>: Running database version Addons33
-2026-11-11 21:57:51.897 T:3994     info <general>: Unloaded skin
-2026-11-11 21:57:51.906 T:3994     info <general>:   load skin from: /data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/ (version: 1.0.6)
-2026-11-11 21:57:51.906 T:3994     info <general>:   load fonts for skin...
-2026-11-11 21:57:51.917 T:3994     info <general>: Loading skin includes from /data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/xml/Includes.xml
-2026-11-11 21:57:52.302 T:3994     info <general>: LoadFontsFromFile: Loading <fontset> with name 'Default' from '/data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/xml/Font.xml'
-2026-11-11 21:57:52.451 T:3994     info <general>: LoadTimers: Trying to load skin timers from /data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/xml/Timers.xml
-2026-11-11 21:57:52.500 T:3994     info <general>:   load new skin...
-2026-11-11 21:57:52.502 T:3994     info <general>: Loading custom window XMLs from skin path /data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/xml
-2026-11-11 21:57:52.568 T:3994     info <general>:   initialize new skin...
-2026-11-11 21:57:52.572 T:3994     info <general>: Loading skin file: DialogBusy.xml, load type: LOAD_ON_GUI_INIT
+2026-11-12 01:08:12.365 T:3919     info <general>: special://xbmcbinaddons/ is mapped to: /data/user/0/org.xbmc.kodi/cache/apk/assets/addons
+2026-11-12 01:08:13.374 T:3919     info <general>: create addons table
+2026-11-12 01:08:13.380 T:3919     info <general>: create addonlinkrepo table
+2026-11-12 01:08:14.934 T:3919     info <general>: CAddonMgr::FindAddons: audioencoder.kodi.builtin.aac v1.0.2 installed
+2026-11-12 01:08:14.937 T:3919     info <general>: CAddonMgr::FindAddons: audioencoder.kodi.builtin.wma v1.0.2 installed
+2026-11-12 01:08:14.938 T:3919     info <general>: CAddonMgr::FindAddons: game.controller.default v1.0.46 installed
+2026-11-12 01:08:14.940 T:3919     info <general>: CAddonMgr::FindAddons: game.controller.keyboard v1.1.47 installed
+2026-11-12 01:08:14.941 T:3919     info <general>: CAddonMgr::FindAddons: game.controller.mouse v1.0.30 installed
+2026-11-12 01:08:14.942 T:3919     info <general>: CAddonMgr::FindAddons: game.controller.snes v1.0.46 installed
+2026-11-12 01:08:14.944 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.global.audioengine v1.1.1 installed
+2026-11-12 01:08:14.945 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.global.filesystem v1.1.9 installed
+2026-11-12 01:08:14.946 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.global.general v1.0.5 installed
+2026-11-12 01:08:14.948 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.global.gui v5.15.0 installed
+2026-11-12 01:08:14.949 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.global.main v2.0.2 installed
+2026-11-12 01:08:14.950 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.global.network v1.0.4 installed
+2026-11-12 01:08:14.951 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.global.tools v1.0.4 installed
+2026-11-12 01:08:14.952 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.audiodecoder v4.0.0 installed
+2026-11-12 01:08:14.954 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.audioencoder v3.0.0 installed
+2026-11-12 01:08:14.955 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.game v3.0.2 installed
+2026-11-12 01:08:14.956 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.imagedecoder v3.0.1 installed
+2026-11-12 01:08:14.957 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.inputstream v3.3.0 installed
+2026-11-12 01:08:14.959 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.peripheral v3.0.2 installed
+2026-11-12 01:08:14.960 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.pvr v8.3.0 installed
+2026-11-12 01:08:14.962 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.screensaver v2.2.0 installed
+2026-11-12 01:08:14.965 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.vfs v3.0.1 installed
+2026-11-12 01:08:14.973 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.videocodec v2.1.0 installed
+2026-11-12 01:08:14.974 T:3919     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.visualization v4.0.0 installed
+2026-11-12 01:08:14.975 T:3919     info <general>: CAddonMgr::FindAddons: kodi.resource v1.0.0 installed
+2026-11-12 01:08:14.977 T:3919     info <general>: CAddonMgr::FindAddons: metadata.album.universal v3.1.4 installed
+2026-11-12 01:08:14.978 T:3919     info <general>: CAddonMgr::FindAddons: metadata.artists.universal v4.3.3 installed
+2026-11-12 01:08:14.979 T:3919     info <general>: CAddonMgr::FindAddons: metadata.common.allmusic.com v3.2.2 installed
+2026-11-12 01:08:14.981 T:3919     info <general>: CAddonMgr::FindAddons: metadata.common.fanart.tv v3.6.3 installed
+2026-11-12 01:08:14.982 T:3919     info <general>: CAddonMgr::FindAddons: metadata.common.musicbrainz.org v2.2.4 installed
+2026-11-12 01:08:14.983 T:3919     info <general>: CAddonMgr::FindAddons: metadata.common.theaudiodb.com v2.0.3 installed
+2026-11-12 01:08:14.984 T:3919     info <general>: CAddonMgr::FindAddons: metadata.generic.albums v1.0.14 installed
+2026-11-12 01:08:14.985 T:3919     info <general>: CAddonMgr::FindAddons: metadata.generic.artists v1.0.18 installed
+2026-11-12 01:08:14.986 T:3919     info <general>: CAddonMgr::FindAddons: metadata.local v1.0.1 installed
+2026-11-12 01:08:14.988 T:3919     info <general>: CAddonMgr::FindAddons: metadata.themoviedb.org.python v1.3.1+matrix.1 installed
+2026-11-12 01:08:14.989 T:3919     info <general>: CAddonMgr::FindAddons: metadata.tvshows.themoviedb.org.python v1.6.0 installed
+2026-11-12 01:08:14.990 T:3919     info <general>: CAddonMgr::FindAddons: peripheral.joystick v21.1.23 installed
+2026-11-12 01:08:14.992 T:3919     info <general>: CAddonMgr::FindAddons: plugin.video.BrazucaPlay.Matrix v2.1.4 installed
+2026-11-12 01:08:14.993 T:3919     info <general>: CAddonMgr::FindAddons: plugin.video.smarted v0.2.5 installed
+2026-11-12 01:08:14.995 T:3919     info <general>: CAddonMgr::FindAddons: repository.xbmc.org v3.4.0 installed
+2026-11-12 01:08:14.997 T:3919     info <general>: CAddonMgr::FindAddons: resource.images.weathericons.default v1.1.9 installed
+2026-11-12 01:08:14.998 T:3919     info <general>: CAddonMgr::FindAddons: resource.language.en_gb v2.0.2 installed
+2026-11-12 01:08:14.999 T:3919     info <general>: CAddonMgr::FindAddons: resource.uisounds.kodi v1.0.1 installed
+2026-11-12 01:08:15.000 T:3919     info <general>: CAddonMgr::FindAddons: screensaver.xbmc.builtin.black v1.0.34 installed
+2026-11-12 01:08:15.002 T:3919     info <general>: CAddonMgr::FindAddons: screensaver.xbmc.builtin.dim v1.0.66 installed
+2026-11-12 01:08:15.003 T:3919     info <general>: CAddonMgr::FindAddons: script.module.certifi v2023.5.7 installed
+2026-11-12 01:08:15.004 T:3919     info <general>: CAddonMgr::FindAddons: script.module.chardet v5.1.0 installed
+2026-11-12 01:08:15.006 T:3919     info <general>: CAddonMgr::FindAddons: script.module.idna v3.10.0 installed
+2026-11-12 01:08:15.007 T:3919     info <general>: CAddonMgr::FindAddons: script.module.kodi-six v0.1.3.1 installed
+2026-11-12 01:08:15.008 T:3919     info <general>: CAddonMgr::FindAddons: script.module.pil v5.1.0 installed
+2026-11-12 01:08:15.009 T:3919     info <general>: CAddonMgr::FindAddons: script.module.pycryptodome v3.4.3 installed
+2026-11-12 01:08:15.010 T:3919     info <general>: CAddonMgr::FindAddons: script.module.requests v2.31.0 installed
+2026-11-12 01:08:15.012 T:3919     info <general>: CAddonMgr::FindAddons: script.module.simplejson v3.19.1+matrix.1 installed
+2026-11-12 01:08:15.013 T:3919     info <general>: CAddonMgr::FindAddons: script.module.six v1.16.0+matrix.1 installed
+2026-11-12 01:08:15.014 T:3919     info <general>: CAddonMgr::FindAddons: script.module.urllib3 v2.2.3 installed
+2026-11-12 01:08:15.015 T:3919     info <general>: CAddonMgr::FindAddons: service.xbmc.versioncheck v0.5.27+matrix.1 installed
+2026-11-12 01:08:15.017 T:3919     info <general>: CAddonMgr::FindAddons: skin.estuary v4.0.0 installed
+2026-11-12 01:08:15.018 T:3919     info <general>: CAddonMgr::FindAddons: skin.novatv v1.0.6 installed
+2026-11-12 01:08:15.019 T:3919     info <general>: CAddonMgr::FindAddons: webinterface.default v21.x-1.0.1 installed
+2026-11-12 01:08:15.021 T:3919     info <general>: CAddonMgr::FindAddons: xbmc.addon v21.3.0 installed
+2026-11-12 01:08:15.022 T:3919     info <general>: CAddonMgr::FindAddons: xbmc.core v0.1.0 installed
+2026-11-12 01:08:15.028 T:3919     info <general>: CAddonMgr::FindAddons: xbmc.gui v5.17.0 installed
+2026-11-12 01:08:15.030 T:3919     info <general>: CAddonMgr::FindAddons: xbmc.json v13.5.0 installed
+2026-11-12 01:08:15.031 T:3919     info <general>: CAddonMgr::FindAddons: xbmc.metadata v2.1.0 installed
+2026-11-12 01:08:15.032 T:3919     info <general>: CAddonMgr::FindAddons: xbmc.python v3.0.1 installed
+2026-11-12 01:08:15.034 T:3919     info <general>: CAddonMgr::FindAddons: xbmc.webinterface v1.0.0 installed
+2026-11-12 01:08:25.343 T:4317     info <general>: Running database version Addons33
+2026-11-12 01:08:27.356 T:3919     info <general>: Unloaded skin
+2026-11-12 01:08:27.377 T:3919     info <general>:   load skin from: /data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/ (version: 1.0.6)
+2026-11-12 01:08:27.379 T:3919     info <general>:   load fonts for skin...
+2026-11-12 01:08:27.408 T:3919     info <general>: Loading skin includes from /data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/xml/Includes.xml
+2026-11-12 01:08:28.156 T:3919     info <general>: LoadFontsFromFile: Loading <fontset> with name 'Default' from '/data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/xml/Font.xml'
+2026-11-12 01:08:28.343 T:3919     info <general>: LoadTimers: Trying to load skin timers from /data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/xml/Timers.xml
+2026-11-12 01:08:28.454 T:3919     info <general>:   load new skin...
+2026-11-12 01:08:28.456 T:3919     info <general>: Loading custom window XMLs from skin path /data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/xml
+2026-11-12 01:08:28.603 T:3919     info <general>:   initialize new skin...
+2026-11-12 01:08:28.612 T:3919     info <general>: Loading skin file: DialogBusy.xml, load type: LOAD_ON_GUI_INIT
 ```
 
-## kodi-logcat.txt (76175 bytes)
+## kodi-logcat.txt (17584 bytes)
 ```
-dDVdsQk2TZUgbS6oyR+MXf1HzcnLchLD2h11B+OFRzQEQ4L5+ye/1XNdwA/N+FyV3QM3D7qLOb+Te7mJD0zgao5Grvw787nZTp3y6JPxQxMhFCFLMzZMghZ85sidLjd/2Ngzy6ckQ7LTy+SVq4HEMPxBUBTF0vKtKlKzJjFTqyB8QI7AA1Pd1c1iYUlUY3lb5gMcIFNatYlixhJioubOZRE+51eReTwR+6NxYkQbXkZgxSNZyohVDrHXJBNaMf/Y0f/ajnyyB8x/hEddVzHlNgMPzGjozhK7jpsxGUeKzaWuyxM6dhr0w+m17f8rJ/w0chr2boft6IXm0n6ut0PYtWUoK2G5TRwUGlt6bktFXULDL4Rm7GeX6YY4tZXP6ObMvUEow/O897uoY0cvqbDpO1twokRFItqL3EmQy2EnN06chO0gZMOXv3ITUOBlZ88Wif68bCk07D3rbo3pk2shDiSt62N7MnRxYj7RPV2i6/N1ZjpAG/5J93h66ixph0gSBonG3iQaYn5fYMe6EVJU09A3LRq6HDcG5pon+mthgh1EzUluI1nF+Er3mvTMs1KJmnYUmYqLcqo8Wxt/L0CXCilZEKHbxekyufRiX6uMFYMLD5i7/7YHKVuJB/Og0BVIJuyFBXVh3ujDt0ctiexxunWZYeUjuSfXc5mDuT8JtilVoN0xqN8AKP/EQB7ByMUck0h1oLHYjw/MrKYkJ+gxMNso+aPB5Hp3nF6HTfXPlQb2Nbx2sVFd+6crMGu3LOnZh03/lNfJMeXSoU4hv5SQewIBdXHlpgw9ETlYtDTLsnEaZMvgWMJWKw4kJuOxUhvNqnJat1hZ7gA9pjZSm1ltOpoISvEM8LFYRQ/l1B4PxlZDVoS/n+n/WVv4E456HPj+foTTRz6q/wLkyphmV2NL+50Hg9ynZW5lZGCZyOU+s7GmHlMEa/9pTf3dOunIUUmsHBsFDmIvjdoC4cNuHOuac8dunbHw99vYkBwOM4Aqd+841OhaWTpQg7ii28Y85jzhBVUNo5pVnyyqSzC
-11-11 22:01:51.441  3199  6058 E Kodi    : 2026-11-11 22:01:51.441 T:6058    error <general>: GetDirectory - Error getting plugin://plugin.video.BrazucaPlay.Matrix/?mode=31&url=%23doramas_menu
-11-11 22:01:56.320  3199  6639 E Kodi    : 2026-11-11 22:01:56.318 T:6639    error <general>: EXCEPTION Thrown (PythonToCppException) : -->Python callback/script returned the following error<--
-11-11 22:01:56.320  3199  6639 E Kodi    :                                                     - NOTE: IGNORING THIS CAN LEAD TO MEMORY LEAKS!
-11-11 22:01:56.320  3199  6639 E Kodi    :                                                    Error Type: <class 'TypeError'>
-11-11 22:01:56.320  3199  6639 E Kodi    :                                                    Error Contents: quote_from_bytes() expected bytes
-11-11 22:01:56.320  3199  6639 E Kodi    :                                                    Traceback (most recent call last):
-11-11 22:01:56.320  3199  6639 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/plugin.video.BrazucaPlay.Matrix/default.py", line 4, in <module>
-11-11 22:01:56.320  3199  6639 E Kodi    :                                                        exec((_)(b'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
-11-11 22:01:56.623  3199  6058 E Kodi    : 2026-11-11 22:01:56.623 T:6058    error <general>: GetDirectory - Error getting plugin://plugin.video.BrazucaPlay.Matrix/?mode=31&url=%23doramas_menu
-11-11 22:01:56.627  3199  6058 I Kodi    : 2026-11-11 22:01:56.627 T:6058     info <general>: SMARTED_TEST_CARROSSEL ABA DORAMAS falhou (Files.GetDirectory: Invalid params.)
-11-11 22:01:59.629  3199  6640 E Kodi    : 2026-11-11 22:01:59.627 T:6640    error <general>: EXCEPTION Thrown (PythonToCppException) : -->Python callback/script returned the following error<--
-11-11 22:01:59.629  3199  6640 E Kodi    :                                                     - NOTE: IGNORING THIS CAN LEAD TO MEMORY LEAKS!
-11-11 22:01:59.629  3199  6640 E Kodi    :                                                    Error Type: <class 'TypeError'>
-11-11 22:01:59.629  3199  6640 E Kodi    :                                                    Error Contents: quote_from_bytes() expected bytes
-11-11 22:01:59.629  3199  6640 E Kodi    :                                                    Traceback (most recent call last):
-11-11 22:01:59.629  3199  6640 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/plugin.video.BrazucaPlay.Matrix/default.py", line 4, in <module>
-11-11 22:01:59.629  3199  6640 E Kodi    :                                                        exec((_)(b'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
-11-11 22:01:59.906  3199  6058 E Kodi    : 2026-11-11 22:01:59.906 T:6058    error <general>: GetDirectory - Error getting plugin://plugin.video.BrazucaPlay.Matrix/?mode=25&url=%23novelas_menu
-11-11 22:02:04.861  3199  6646 E Kodi    : 2026-11-11 22:02:04.859 T:6646    error <general>: EXCEPTION Thrown (PythonToCppException) : -->Python callback/script returned the following error<--
-11-11 22:02:04.861  3199  6646 E Kodi    :                                                     - NOTE: IGNORING THIS CAN LEAD TO MEMORY LEAKS!
-11-11 22:02:04.861  3199  6646 E Kodi    :                                                    Error Type: <class 'TypeError'>
-11-11 22:02:04.861  3199  6646 E Kodi    :                                                    Error Contents: quote_from_bytes() expected bytes
-11-11 22:02:04.861  3199  6646 E Kodi    :                                                    Traceback (most recent call last):
-11-11 22:02:04.861  3199  6646 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/plugin.video.BrazucaPlay.Matrix/default.py", line 4, in <module>
-11-11 22:02:04.861  3199  6646 E Kodi    :                                                        exec((_)(b'JkALe+x+97//LPV/uyveS43Ward+RH2IdJ9bol0s6/83P2iTvX8hvalo7yCgQ20yokHyriZO0K0GkttWTkxV2vVtkkuGh4FZw0kjbEIh4DeVrw9smA4tBwFovfZcf9u6ZTNyzCDwc5cE2MnxRHxTIKqVmIwOWKbtZHFJmhfQAZAI3yRf6jTulLCcCmGoUcl2jBtfi3cPUONIH5h3IdEIuanKKMwht/lo+dmR5M8pCjaKqj7B4tlXPUM9+fTjQmTH0frFUJaiToREhsXs/43REUMN30vucCdzS9g9Na2ecGHAtydWqVfsSFb2EuQLQYJ6id7kS8CvEFLQvaeYQsOmAFeFKAtn28yiq5X2Ohh2qTo0UYMSjKFpGUenGgTMixqs6STZaUIxR4kpkB5DjZgSLV7C01NTUEY6Zm8WcyVojfKbP+ATdnNrxBMy6Vv5US39MvTT5QHkihvhK10QEGMzwku5c1Smhc0T8QTmu2MBoBQScP4QRtJBucpXN+4UjJySIedkoAZ5Jl47DpIsKpvpu4JB8M7giY7O89uZQqEbScr88tFq8zdc/+8n0H3Mqh45L7WhBFzZDp/hIOg/rI0pjjTplEz7+VSPxoVceC9YVlL3aHRkhWRPX57K2AzFnaN5HFb6E5H74tVPdz81Giqox8Zq3K03UTGe9O7/VlGV2PE9YfZhJBTSE615928155+/Dw8BWGXqr+zhbH9OccTnVFFyu8IzftX9Uv4AMwTU35+ZZq01wrus37YwuHLEAVB5hM7EJLQ8ZoR1EAX/nNhYfYBorDBSD6D6o+2Gi4NlcclcXCn/XhoOF5uNB5ls+ioOb3NK6dQFWhi2CFwfViQVaE8ZROkbvFACvR3ETveOBKByjsHPAvizuzlQ9J5DL14lAdrqMHnA7VlCjrcAXoEBJGhjCxKwoD4qLQL/ysPSPJ9BQLAriHjHxB+fl0qhRMPU4FXe8vXvcO4BjLAP3lKlb4clGEsfo5oD7LR6DHWp6U9s6PpPZfaH+DHjEF/MjhXqBtfXZRf/tVIjXadg1sNuoqycYMtkwPUPK89PCQIMsKxE1K5LRqaHZASNDz/ifySrjf2wjf74JovLbjxAHE43uYEL9X02P04oD0wbvv6NJEEJvE4Kts6NSENuSEzxy6sKLqPHS9IyJkMKv++XQzq0N2XoUZVNooftFFhL6tpQvnN5amich/E2yKdYcbUCVopS9xpGBIY0+fC0+wxay4Wll/XhHfY4aoQhm/Bpd0atWdiSnQTqDpkA06cR4OeBIyRCPLDVmEQPH6mIgkEu4k1M3dMRbHWlyRSCLRA0gttp+Xb0pPk8Z/4kpQEd1w7QmKKlOMk0P6h+ALLGSbokszJAgQgkz7bHGe4p6JGNu6FArNgNsAeWCD8Vg/tEBsAzKAda+vQOc3nXjnOcurhLSB43rnGPkRILzG4DQsVPrWr2dObJZGpFtbJSVv2zZ41c2GpSl1H2p09qz+MN+oWqZ5P2h0NAXaeeiAIBSJgjYRzRNuqrsJ0B9AuuQsKuJ85r/iiOEF5ZV0Kxu6+LrnIIOMF26v3H1sfqZK5nOS0+aWO9dXqp6Xj/leT9pp4q/u5C99yV0WoMMqa73YsQePqi37ZCKRa9vTQB1U3HqdjdYzpeMmN1VyN1eXr5rS/Y0ss1puN9Vh3niFOcv8CCl6BH3ysGTVZGL1KSkwuDcPa6wQ0bg4/1gbZMu20/G1syIIthZ7Yim3Xcw54lIFQ+FPuQIMtAHMdIpxnlT93Sjq4/CdQf9eKIJetXsdyZmPVm5TPX5OhBIRtoiRvwxR2AFGdy/Y6yxFLh1jeu0gxERkKRoDwzcr3Ij9bTWJFAJSKlD18Lx6YEf2l4i+x89UQxYionKdTyTZrL0Taqnk2kNrWN5TTpNJUgj9w9JTtxYqXE7leBhJ+L2KmQ/WUtEI6q1z8ef7ETkxQAz39b+t+4GaXRHozWDModNHBJYv2REAl9ksrr3c/jrXq9whGwyAMpFzbxR4hVBqL53CC2J9kkdYtIrVa9RGqu1CBYt0A5+5GppFSPU1Enq+kmDXY6w/xE4svxNpOOfFCnUaHbza3NvDP9x+dZOeGXo/1zDbVNfEyidtDowwpjZcNabZUJMYEJwWNUff/tno8ycjwbuWgOdXOFNZTWorkALacs6CmTmbrJV3cN7pGiOxon4q7zAsmEMNbJ6LJoT+KcUfrbupOMU/UpxFj7IGRp261zD4/61X7DPiQdKTrTuzxFIdDVdsQk2TZUgbS6oyR+MXf1HzcnLchLD2h11B+OFRzQEQ4L5+ye/1XNdwA/N+FyV3QM3D7qLOb+Te7mJD0zgao5Grvw787nZTp3y6JPxQxMhFCFLMzZMghZ85sidLjd/2Ngzy6ckQ7LTy+SVq4HEMPxBUBTF0vKtKlKzJjFTqyB8QI7AA1Pd1c1iYUlUY3lb5gMcIFNatYlixhJioubOZRE+51eReTwR+6NxYkQbXkZgxSNZyohVDrHXJBNaMf/Y0f/ajnyyB8x/hEddVzHlNgMPzGjozhK7jpsxGUeKzaWuyxM6dhr0w+m17f8rJ/w0chr2boft6IXm0n6ut0PYtWUoK2G5TRwUGlt6bktFXULDL4Rm7GeX6YY4tZXP6ObMvUEow/O897uoY0cvqbDpO1twokRFItqL3EmQy2EnN06chO0gZMOXv3ITUOBlZ88Wif68bCk07D3rbo3pk2shDiSt62N7MnRxYj7RPV2i6/N1ZjpAG/5J93h66ixph0gSBonG3iQaYn5fYMe6EVJU09A3LRq6HDcG5pon+mthgh1EzUluI1nF+Er3mvTMs1KJmnYUmYqLcqo8Wxt/L0CXCilZEKHbxekyufRiX6uMFYMLD5i7/7YHKVuJB/Og0BVIJuyFBXVh3ujDt0ctiexxunWZYeUjuSfXc5mDuT8JtilVoN0xqN8AKP/EQB7ByMUck0h1oLHYjw/MrKYkJ+gxMNso+aPB5Hp3nF6HTfXPlQb2Nbx2sVFd+6crMGu3LOnZh03/lNfJMeXSoU4hv5SQewIBdXHlpgw9ETlYtDTLsnEaZMvgWMJWKw4kJuOxUhvNqnJat1hZ7gA9pjZSm1ltOpoISvEM8LFYRQ/l1B4PxlZDVoS/n+n/WVv4E456HPj+foTTRz6q/wLkyphmV2NL+50Hg9ynZW5lZGCZyOU+s7GmHlMEa/9pTf3dOunIUUmsHBsFDmIvjdoC4cNuHOuac8dunbHw99vYkBwOM4Aqd+841OhaWTpQg7ii28Y85jzhBVUNo5pVnyyqSzC
-11-11 22:02:05.064  3199  6058 E Kodi    : 2026-11-11 22:02:05.063 T:6058    error <general>: GetDirectory - Error getting plugin://plugin.video.BrazucaPlay.Matrix/?mode=25&url=%23novelas_menu
-11-11 22:02:05.065  3199  6058 I Kodi    : 2026-11-11 22:02:05.065 T:6058     info <general>: SMARTED_TEST_CARROSSEL ABA NOVELAS falhou (Files.GetDirectory: Invalid params.)
-11-11 22:02:05.776  3199  6058 I Kodi    : 2026-11-11 22:02:05.776 T:6058     info <general>: SMARTED_TEST_CARROSSEL RECENTES total=10
-11-11 22:02:06.020  3199  6651 I Kodi    : 2026-11-11 22:02:06.020 T:6651     info <general>: SMARTED-TV: sem favoritos em filmes
-11-11 22:02:06.037  3199  6058 I Kodi    : 2026-11-11 22:02:06.037 T:6058     info <general>: SMARTED_TEST_CARROSSEL FAVORITOS itens=0
-11-11 22:02:06.038  3199  6058 E Kodi    : 2026-11-11 22:02:06.038 T:6058    error <general>: SMARTED_TEST_CARROSSEL_FAILED menu de filmes com 0 itens; aba animes: Files.GetDirectory: Invalid params.; aba desenhos: Files.GetDirectory: Invalid params.; aba doramas: Files.GetDirectory: Invalid params.; aba novelas: Files.GetDirectory: Invalid params.
+--------- beginning of main
+11-12 01:10:29.828  3361  4254 I Kodi    : 2026-11-12 01:10:29.827 T:4254     info <general>: CActiveAESink::OpenSink - initialize sink
+11-12 01:10:29.831  3361  4254 I Kodi    : 2026-11-12 01:10:29.831 T:4254     info <general>: Trying to open: samplerate: 44100, channelMask: 12, encoding: 4
+11-12 01:10:29.832  3361  4254 I Kodi    : 2026-11-12 01:10:29.832 T:4254     info <general>: Minimum size we need for stream: 15648 Bytes
+11-12 01:10:29.833  3361  4254 I Kodi    : 2026-11-12 01:10:29.832 T:4254     info <general>: Audiotrack buffer params are: period time = 44.354 ms, period size = 15648 bytes, num periods = 3
+11-12 01:10:29.833  3361  4254 I Kodi    : 2026-11-12 01:10:29.833 T:4254     info <general>: Created Audiotrackbuffer with playing time of 133.061224 ms min buffer size: 46944 bytes
+11-12 01:10:29.837  3361  4254 I Kodi    : 2026-11-12 01:10:29.837 T:4254     info <general>: CAESinkAUDIOTRACK::Initializing with: m_sampleRate: 44100 format: AE_FMT_FLOAT (AE) method: PCM stream-type: PCM-STREAM min_buffer_size: 46944 m_frames: 1956 m_frameSize: 8 channels: 2
+--------- beginning of kernel
+--------- beginning of system
+11-12 01:11:27.266  3361  4785 I Kodi    : 2026-11-12 01:11:27.265 T:4785     info <general>: SMARTED-TV: carrossel filmes com 20 itens (#filmes_menu)
+11-12 01:11:28.874  3361  4786 I Kodi    : 2026-11-12 01:11:28.874 T:4786     info <general>: SMARTED-TV: carrossel canais com 20 itens (#todoscanais)
+11-12 01:11:28.882  3361  6025 I Kodi    : 2026-11-12 01:11:28.882 T:6025     info <general>: SMARTED-TV: carrossel canais com 20 itens (#todoscanais)
+11-12 01:11:31.862  3361  5464 I Kodi    : 2026-11-12 01:11:31.862 T:5464     info <general>: SMARTED_TEST_CARROSSEL CANAIS total=20 midia=20 arte=20 menu=0
+11-12 01:11:31.863  3361  5464 I Kodi    : 2026-11-12 01:11:31.863 T:5464     info <general>: SMARTED_TEST_CARROSSEL   A&E (8 OPÇÕES ) | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 01:11:31.864  3361  5464 I Kodi    : 2026-11-12 01:11:31.864 T:5464     info <general>: SMARTED_TEST_CARROSSEL   A&E FHD FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 01:11:31.865  3361  5464 I Kodi    : 2026-11-12 01:11:31.865 T:5464     info <general>: SMARTED_TEST_CARROSSEL   A&E HD HD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 01:11:31.865  3361  5464 I Kodi    : 2026-11-12 01:11:31.865 T:5464     info <general>: SMARTED_TEST_CARROSSEL   A&E SD SD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 01:11:31.866  3361  5464 I Kodi    : 2026-11-12 01:11:31.865 T:5464     info <general>: SMARTED_TEST_CARROSSEL   AMC (8 OPÇÕES ) | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 01:11:31.866  3361  5464 I Kodi    : 2026-11-12 01:11:31.866 T:5464     info <general>: SMARTED_TEST_CARROSSEL   AMC FHD FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 01:11:31.866  3361  5464 I Kodi    : 2026-11-12 01:11:31.866 T:5464     info <general>: SMARTED_TEST_CARROSSEL   AMC HD HD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 01:11:31.868  3361  5464 I Kodi    : 2026-11-12 01:11:31.867 T:5464     info <general>: SMARTED_TEST_CARROSSEL   AMC L FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 01:11:42.365  3361  6144 I Kodi    : 2026-11-12 01:11:42.365 T:6144     info <general>: SMARTED-TV: carrossel filmes com 20 itens (#filmes_menu)
+11-12 01:11:44.350  3361  5464 I Kodi    : 2026-11-12 01:11:44.350 T:5464     info <general>: SMARTED_TEST_CARROSSEL FILMES total=20 midia=20 arte=20 menu=0
+11-12 01:11:44.351  3361  5464 I Kodi    : 2026-11-12 01:11:44.351 T:5464     info <general>: SMARTED_TEST_CARROSSEL   OUTRA MAMÃE | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:11:44.352  3361  5464 I Kodi    : 2026-11-12 01:11:44.352 T:5464     info <general>: SMARTED_TEST_CARROSSEL   A ODISSEIA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:11:44.353  3361  5464 I Kodi    : 2026-11-12 01:11:44.353 T:5464     info <general>: SMARTED_TEST_CARROSSEL   GODZILLA MINUS ZERO | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:11:44.353  3361  5464 I Kodi    : 2026-11-12 01:11:44.353 T:5464     info <general>: SMARTED_TEST_CARROSSEL   NO LIMITE DA JUSTIÇA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:11:44.354  3361  5464 I Kodi    : 2026-11-12 01:11:44.354 T:5464     info <general>: SMARTED_TEST_CARROSSEL   CORAÇÃO SELVAGEM | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:11:44.354  3361  5464 I Kodi    : 2026-11-12 01:11:44.354 T:5464     info <general>: SMARTED_TEST_CARROSSEL   FUGA MORTAL | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:11:44.355  3361  5464 I Kodi    : 2026-11-12 01:11:44.355 T:5464     info <general>: SMARTED_TEST_CARROSSEL   RESIDENT EVIL | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:11:44.355  3361  5464 I Kodi    : 2026-11-12 01:11:44.355 T:5464     info <general>: SMARTED_TEST_CARROSSEL   MINHA MELHOR AMIGA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:13:21.686  3361  4317 I Kodi    : 2026-11-12 01:13:21.686 T:4317     info <general>: CAddonMgr::FindAddon: metadata.common.fanart.tv v3.6.5 installed
+11-12 01:13:24.589  3361  4935 I Kodi    : 2026-11-12 01:13:24.589 T:4935     info <general>: ZeroconfAndroid: Kodi (10.0.2.16). now registered and active
+11-12 01:13:30.475  3361  4935 I Kodi    : 2026-11-12 01:13:30.474 T:4935     info <general>: ZeroconfAndroid: Kodi (10.0.2.16). now registered and active
+11-12 01:13:43.314  3361  4317 I Kodi    : 2026-11-12 01:13:43.314 T:4317     info <general>: CAddonMgr::FindAddon: metadata.generic.albums v1.0.20 installed
+11-12 01:14:00.239  3361  4317 I Kodi    : 2026-11-12 01:14:00.239 T:4317     info <general>: CAddonMgr::FindAddon: metadata.generic.artists v1.0.20 installed
+11-12 01:14:17.347  3361  4317 I Kodi    : 2026-11-12 01:14:17.346 T:4317     info <general>: CAddonMgr::FindAddon: metadata.themoviedb.org.python v3.2.2 installed
+11-12 01:14:32.852  3361  4317 I Kodi    : 2026-11-12 01:14:32.852 T:4317     info <general>: CAddonMgr::FindAddon: metadata.tvshows.themoviedb.org.python v1.7.13 installed
+11-12 01:14:34.347  3361  4317 I Kodi    : 2026-11-12 01:14:34.346 T:4317     info <general>: CServiceAddonManager: failed to stop service.xbmc.versioncheck (may have ended)
+11-12 01:14:47.559  3361  4317 I Kodi    : 2026-11-12 01:14:47.559 T:4317     info <general>: CAddonMgr::FindAddon: service.xbmc.versioncheck v0.5.30+matrix.1 installed
+11-12 01:14:49.806  3361  6529 E Kodi    : 2026-11-12 01:14:49.805 T:6529    error <general>: EXCEPTION Thrown (PythonToCppException) : -->Python callback/script returned the following error<--
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                     - NOTE: IGNORING THIS CAN LEAD TO MEMORY LEAKS!
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                    Error Type: <class 'subprocess.CalledProcessError'>
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                    Error Contents: Command '('uname', '-rs')' died with <Signals.SIGSEGV: 11>.
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                    Traceback (most recent call last):
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/runner.py", line 14, in <module>
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                        from version_check import service  # pylint: disable=import-error
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/service.py", line 44, in <module>
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                        DISTRIBUTION = distro.linux_distribution(full_distribution_name=False)[0].lower()
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 123, in linux_distribution
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                        return _distro.linux_distribution(full_distribution_name)
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 677, in linux_distribution
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                        self.name() if full_distribution_name else self.id(),
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                                                                   ^^^^^^^^^
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 703, in id
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                        distro_id = self.uname_attr('id')
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                                    ^^^^^^^^^^^^^^^^^^^^^
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 918, in uname_attr
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                        return self._uname_info.get(attribute, '')
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                               ^^^^^^^^^^^^^^^^
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 553, in __get__
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                        ret = obj.__dict__[self._fname] = self._f(obj)
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                                                          ^^^^^^^^^^^^
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 1048, in _uname_info
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                        stdout = subprocess.check_output(cmd, stderr=devnull)
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11-12 01:14:49.806  3361  6529 E Kodi    :                                                    
+11-12 01:14:49.854  3361  4254 I Kodi    : 2026-11-12 01:14:49.854 T:4254     info <general>: CActiveAESink::OpenSink - initialize sink
+11-12 01:14:49.855  3361  4254 I Kodi    : 2026-11-12 01:14:49.855 T:4254     info <general>: Trying to open: samplerate: 44100, channelMask: 12, encoding: 4
+11-12 01:14:49.858  3361  4254 I Kodi    : 2026-11-12 01:14:49.858 T:4254     info <general>: Minimum size we need for stream: 15648 Bytes
+11-12 01:14:49.858  3361  4254 I Kodi    : 2026-11-12 01:14:49.858 T:4254     info <general>: Audiotrack buffer params are: period time = 44.354 ms, period size = 15648 bytes, num periods = 3
+11-12 01:14:49.858  3361  4254 I Kodi    : 2026-11-12 01:14:49.858 T:4254     info <general>: Created Audiotrackbuffer with playing time of 133.061224 ms min buffer size: 46944 bytes
+11-12 01:14:49.865  3361  4254 I Kodi    : 2026-11-12 01:14:49.865 T:4254     info <general>: CAESinkAUDIOTRACK::Initializing with: m_sampleRate: 44100 format: AE_FMT_FLOAT (AE) method: PCM stream-type: PCM-STREAM min_buffer_size: 46944 m_frames: 1956 m_frameSize: 8 channels: 2
+11-12 01:15:03.512  3361  4317 I Kodi    : 2026-11-12 01:15:03.512 T:4317     info <general>: CAddonMgr::FindAddon: metadata.album.universal v3.1.20 installed
+11-12 01:15:17.739  3361  4317 I Kodi    : 2026-11-12 01:15:17.739 T:4317     info <general>: CAddonMgr::FindAddon: metadata.artists.universal v4.3.24 installed
+11-12 01:16:35.587  3361  4921 I Kodi    : 2026-11-12 01:16:35.587 T:4921     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
+11-12 01:16:35.594  3361  6192 I Kodi    : 2026-11-12 01:16:35.594 T:6192     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
+11-12 01:16:36.908  3361  5464 I Kodi    : 2026-11-12 01:16:36.908 T:5464     info <general>: SMARTED_TEST_CARROSSEL SERIES total=20 midia=0 arte=20 menu=0
+11-12 01:16:36.912  3361  5464 I Kodi    : 2026-11-12 01:16:36.912 T:5464     info <general>: SMARTED_TEST_CARROSSEL   #BLACKAF | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:16:36.912  3361  5464 I Kodi    : 2026-11-12 01:16:36.912 T:5464     info <general>: SMARTED_TEST_CARROSSEL   #LUIMELIA | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:16:36.913  3361  5464 I Kodi    : 2026-11-12 01:16:36.913 T:5464     info <general>: SMARTED_TEST_CARROSSEL   007: ESTRADA PARA O MILHÃO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:16:36.917  3361  5464 I Kodi    : 2026-11-12 01:16:36.917 T:5464     info <general>: SMARTED_TEST_CARROSSEL   1 CONTRA TODOS | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:16:36.924  3361  5464 I Kodi    : 2026-11-12 01:16:36.924 T:5464     info <general>: SMARTED_TEST_CARROSSEL   100 ANOS DA WARNER BROS. | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:16:36.924  3361  5464 I Kodi    : 2026-11-12 01:16:36.924 T:5464     info <general>: SMARTED_TEST_CARROSSEL   100 CODE | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:16:36.925  3361  5464 I Kodi    : 2026-11-12 01:16:36.925 T:5464     info <general>: SMARTED_TEST_CARROSSEL   100 COISAS PARA FAZER ANTES DO HIGH SCHOOL | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:16:36.925  3361  5464 I Kodi    : 2026-11-12 01:16:36.925 T:5464     info <general>: SMARTED_TEST_CARROSSEL   100 DIAS PARA MORAR: COMEÇANDO DO ZERO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:16:48.944  3361  5464 I Kodi    : 2026-11-12 01:16:48.943 T:5464     info <general>: SMARTED_TEST_CARROSSEL MENU FILMES itens=5
+11-12 01:16:48.986  3361  3919 I Kodi    : 2026-11-12 01:16:48.986 T:3919     info <general>: Loading skin file: MyVideoNav.xml, load type: KEEP_IN_MEMORY
+11-12 01:16:49.204  3361  6650 E Kodi    : 2026-11-12 01:16:49.204 T:6650    error <general>: GetDirectory - Error getting $PARAM[content_path]
+11-12 01:16:49.206  3361  6644 E Kodi    : 2026-11-12 01:16:49.206 T:6644    error <general>: GetDirectory - Error getting $PARAM[content_path]
+11-12 01:16:56.047  3361  5464 I Kodi    : 2026-11-12 01:16:56.043 T:5464     info <general>: SMARTED_TEST_CARROSSEL NAVEGACAO janela=videos
+11-12 01:17:07.624  3361  5464 I Kodi    : 2026-11-12 01:17:07.624 T:5464     info <general>: SMARTED_TEST_CARROSSEL ABA ANIMES itens=2
+11-12 01:17:10.500  3361  5464 I Kodi    : 2026-11-12 01:17:10.500 T:5464     info <general>: SMARTED_TEST_CARROSSEL ABA DESENHOS itens=2
+11-12 01:17:13.422  3361  5464 I Kodi    : 2026-11-12 01:17:13.422 T:5464     info <general>: SMARTED_TEST_CARROSSEL ABA DORAMAS itens=2
+11-12 01:17:16.291  3361  5464 I Kodi    : 2026-11-12 01:17:16.291 T:5464     info <general>: SMARTED_TEST_CARROSSEL ABA NOVELAS itens=2
+11-12 01:17:18.236  3361  5464 I Kodi    : 2026-11-12 01:17:18.236 T:5464     info <general>: SMARTED_TEST_CARROSSEL RECENTES total=10
+11-12 01:17:18.874  3361  6704 I Kodi    : 2026-11-12 01:17:18.874 T:6704     info <general>: SMARTED-TV: sem favoritos em filmes
+11-12 01:17:18.906  3361  5464 I Kodi    : 2026-11-12 01:17:18.905 T:5464     info <general>: SMARTED_TEST_CARROSSEL FAVORITOS itens=0
+11-12 01:17:18.906  3361  5464 I Kodi    : 2026-11-12 01:17:18.906 T:5464     info <general>: SMARTED_TEST_CARROSSEL_OK todas as linhas com conteudo real
 ```
 
-## kodi.log (1573612 bytes)
+## kodi.log (63153 bytes)
 ```
-dnvJ/pILtEXxoXZQK00RAW8vmLjyeeBfjImgdC7nERMmLWvfUV6rVTfwrfqM+ld2PSndupjIL47EN1i4Kpvcl5hXErGPA1+EYr6JCAoFXxALB7AEhKyMPqlpWxoF/fYBMcDipB6vd+BezLXulDRA/Ru0kMpbjys4osm9R7CTi8I3I64y0q4r4CHyaTdM/+ChBQVMeekcRgmyxmGoeWkxAWUMpzrDrrS2gRgN+Je8cdvJcTTZEJr6ad3FzdHtw3zaetGz39yPIZrfu+XQJKibUk70Js7XnjqSqM3/+IPu3i1fH7Ele89tOlSnRH7/oBmSLMSc44+hhy5undg4LoMh6peCvHW5ZtAvbrT4UJ5GZIRxNTbmkkL1XpZi3AaTQhnBLXMpT9ZAZglVn/omWqLKvT2FYei2h3/ISqEJlEoVkcLfFG6RGf9AG9FoeCyYubei/pLgow+j9LAByXs2vjmKltLMEnvqgRVPjcNzrtMonuJLlnFsPiJa6yCw0KYiH1N4EQFDUfetuFMBckPEqTCRmRxhIsoRiopSg9V9F/80LnDu9JkhCW6n5FCHpItDe7c+S8WMiYN84gxHAvspSyitaM+SiNLsiRLLlaYnaoOdICn+YIXAPJMwY3nT599mWPTqC5yuNIj2I5i/O18/nw78s/pLQdfyh2is9pTOqmBl17Q5inxFlGmNCPdNes8PEqvQBhsxLUcq3jlifbsAhJYMrkxDdTYxrY0TLwj0s+fh8Ss57LXX2mXNKoPwgWQn0qUDqjDm1HUht36f+qazT7kc5YpWOyb36MyDau1uytA5cTZ9ENzrhhNpng0WNnsLCylTo7H3s4vOyU+oROfgVveM5srAMztC4pPuJDxKKuC5sklpSYz6m2egyXtb9GDtyy6NyJj9IcJ4mOCcmaxN0M3XBp8sEnJyYkSf4IJD4PHBTuiCIRbRA07c/1syE38h9ZASAvDY7FxQdxzruYaBk+HrPGOTZnW8nicFp2JgSFYyKPK8DwAnn+ULc8bpTiZu9MUunG3QvfOhqYfOYtoCJqtxwQv0/kZXOS6QMgyb8ss9C/lAB36lLyjYWHZc3YbKfOtmMzHPst+C0dTGLW2hF05zfc40hVqc6x11HA/+Jlb5AvfP1jgGoteuiMUkT100oTB/yP+PBnNzPdOsvAtszqAVCIjoOGdeJLdlSvUvSt7JfLENF/fs8F+IZMG8nLIr7x0/ArBlwYTVQU3ZUVYabvRJhCRWnCpBPRrYU4yvbAamIZzskHhzfrz/KLLaPbOd3JYgHHS5eEB9OXYYrxGeLDENnvzaq9eJcB7cSefQfLUgvp7X8VzWrCneplK6QtA5Wiv85d/BHmSk2OPfsJX+XweCmgVIAiO7g00U1X+fRItJsusU20nun7os030Pm+a0v6X5VYk7/8bAmfHxgalFRw7F9/Xb9XCoorMIoqlPlkZG23Afcq+6TA5L6YkezC2aVq4lHzD1FHmVOrT9VpllR2ivSjF+qNSjj35GZ1/8KGVe47dM1QsSusg8buOcvXx14WDFC5Xd6zJUGgMF4ZMSYui4H2dS+w3M1Qf0490RwMbn4yWmxE9XWMJa+enRne7BmOVDTnTfXDndTOBYsvC0IT9DPwumcahsskUl6mvackAEpcovq+tHBFAnle9IKrqebFuPy1wlulDeBVtrQs6rzqixLLu6qS5IDCtIOP3spgIE0boH6Nm1fT2rGehBZ7KHFn/IMFdRFon6Zrjn0y7MmebaOl9Wl3HRUj1zC2bh59CfHr6tF6dIofmVkxh7j131j9B6nY1L6MsoUFyzz5cU33MeHjPvhGWrbMH0VL1uw3lltqjwsQDoD4ViqXpyGoeVKHINRVPF2gu0KtTu5RQp5rABd8b99aKbYBdsqwAvw6Two/8TUKeIsT8XOK8O8eF6ZEVdxzw8PROn21VnI4GDUuF8/xIYV5viBCoxGTSszr7uAQatArQC3gaQb14yJPBzZZar8aaqyDLiHZE2PZmm/6k39jZMwntEZFKQ0WHEwJ5wJ8gg5MqgYVhRD1cYavdXBdF9pzJvgEjUat2K7SNFZTmaf6kGQnSlDDnO9wWHAimZaP0z/iVZc5ixR3lxx99I3lv0h3ZpjUkb8FQXoqophGRxcIUt5VyHpbBpdUD7ZoStFnArGFujKoPOT4nllP9Isa8B8ShKFcZ5+SzQZYN2dSiGPBlWs2Eo9DEHLu+FBEqA7uZxkylLu5v7u0vobpTRBZMfEFN4t6N56esDwYqYlXqDw/U2GP4J2MsDRqd7VfYHXA0I7OXzQONqby5NOrJCxmjduUt3243uClvzJuRo8nHVTFpIu+z5kZzpKb2w9FhhiVnXtIO8p3RjFqhz0xwzq0Oqlp5j5gG9VPDGlHTwzvNYPFmHYiMpqIRQ9tGmynxZ2p+GrDEUbq5jYX1mvvih+C19khw4hW4Ps+OkQDyxmwwIbXJnMuUG4KJfpMmwxHyzTpAyVgYCor6NidIFeFVfJ389MgwMu3dPDHDeqqYGZASRfkbOXoJ9hH9EjtbVfx6n6Vjc6XBl6hdIBl/NxI7QM/rddz5nDYGwye10c45fR7mE2CxCe1x3ASrITMmmlSZAGfow6NrwuOHCo2eTkziF1cuhOAjeeNmFFMP+i1Ld3KqxdTR6bGmCVgIIdCyDi8cjlBAOXB8bSlClMhF0XwReGvByM6iO/8NfjWYrzXT4Q3J3+tNZfHk2g418tOGPgWDAeijRLfBKghnCC1wXwrnKCpHb8YfKQQW2/1+NpB4cr7G3CAoTdmZZQR7UW2A80ye4cdQJwhOQVzpNJS6X61j/Bqt0+U7tzFyU5rYDKpi93JgsLjFwoYq9xItUcRIb0IrgmNiFvYpuHu0sxvmHR/ZFBPuf54dCOL8iNkPGnKYJHrEzhLnG5fvLanaBaRq48VoRlRW5+DT5bKXDofjyQ58mzYYtCsQCtzBYOph5Yq1/IDwxBYjES/3Mi12Cc5JiTY8qPfgvngFGUC/E2ObpZujBtEOKdTudFQXoi1Hlsoo7pnwEoSwZUsPnDY+hOZzQ9SesFSY0bIGHqdFKylHXdt3oN92JjYB8k4PgytdEuJL3bYIyn3WRMx2rJlKMFWweihnutieb2sewasM+W3bsfV3ApV2rc0TuaJxDdK02ln935z2OnNtJuB/jsA6rf07e+/XJVWSldWlKN2JlljntV+ULvY+D+DPvOtfnKldn+OtkPcI9Y0prm0d0qoWxHPHXYkNsuHpnrNeCqhCx2PJgwnKM7BT5/oQwlNBrJOUnK/7Uu2ZVmPuWAWSFpY2raYIZ+oiXk9vSoMbpbGaNiMRTQYIrG2t95sWQFgOKANeOBIQQxgVaZSmXm0hMk5+TETKPh6iPwadIVw2OBasp7XiQW1JruK75K06FVgLhRgs7/xPLJUKURsvblFxjpMJ6goNvfKz2XPHrLbLYu38dAJ3BwGKLFk7jH3Rt0UNgp8G3Qb/9tvZAFlgS+eH6aNMbmvg5Ii1EoqhmCWwGW9URIgZyFp8BYaOl0ObqPGgyPJZOLbrFJYRsmHBWOHNY9kA0p4ng3UN3IsmnRQ0j6hHip8jRSCXR7QQ+9M8U28i8ebEsgoN3uXqsm9Q/InWrUuEdGEZHltWzdUV7UfmIQy4KUu7dzePTVDwEN1Xw9yCUJQkAI4dD1qHG6rNhq2qpA82h4qJc4krmIE2q1dsQLOBaGBfKw2NXFwEK/C7ahP3BxPuSCnLl8sdqjb9/I3oF/mKa5zlufuNAcfPuCWTv1TPQdBXwziaib60MmObkVG2N8E5R5czEmjhORZZyJknYZyaN+FCFVGFpcLyN5BH6CLa5fOGyrK04a44m3BHo/LHxXRLZL5fNV5NP1l2RnrtmzKBsDO0nFAXy5UQU3EF6hgqkE5ydbR+SqhcCMo2OflQVb5r5gZlErWU1IxcF4hX7uWUSPALky0wvoouaFIq19UprBs70kBxmWlIfkDRHr0wP6UJb+O4eLBEquy4I7gpd4wvIJnlxmS0t1HuuI1FQRe6U02sukx1h+FOBYlr/hbKxrFNiTuVDxk5BK37Pw0rEck4kikhxGbErjhByPkOCgSBLymuB8KVadz64M6whsYJBfdz2ex6S+JHQCNPY5mExgEziOnj+YFjGDgDSHjk+W2tXtCu+S8JEoaPPNmW/ErRm8ogijj5p3T+6L3ti+ikGob89UKizlJOR8tcWAN46Q+koh75rEWOEYbOjeD7Y5beJzSGxkfglZ7Q9LKrDGM9dTLrNTTVWl7sIyeM1/bM+E1LSiWMD+5U9QznN6QYvapO4nyQqMnjPvLmHrut+j1VN44X9cNbtZVc9MR3Df86DSRlYos9w5XaHD7joKJZTMppEZUE7ezb+HDFK/XcP4+sWtmCjvNKYBbwHs3kk8Jpck9g2SKd6pht0KL0NAaUHFVP2wVqaEMaH8BJSwFgVOqAtctEmmaDI7blHvpxla/+feGZrOTKsET9jfJ6zkN7CENaSKA7QFR3370b5AtvddPJAJDG8HwT3MRGIGqEyr9UrK4JGjjCGuSKBFzJ56AKmvQ63Oy2kfd0rOcgBKxSoKYbthlNldp6yKsysJReh1ZMY2U6crMNwloOurV1ghmNwVIDHmHUPykt8y0pVvU8OABRRlBDogpjfVL/EL65wce4aNIZyaxFV5UYZePnfZEMD2KVFAVR9IKkO1wEthvVOlSSZ9Vupw9wQ3CkALiT33Loq9MFy/selpOdGc/uoIaSuyVNjVkcnNQZzfjq5chRNT7fP55vdfabbhJhW2bfIiRHP9wBPaMxl/+afWxNA1VdGLlkD04saGb3UKc2C9c8w0YV6X/U0MFofnCVo4rcipuJbbDOA9UOf2AcvnxtRt1eitIKTZBeSNqni+eRpWuvArUfxK25m/4xOJ3UyNJfG1bWav17ItCidYlGBOSXBj/KBHSfdpaCUNazK2DBnOoDXs6+GZc1u/0y7jzgw2de0RWkFcxUjnR0E2ZAOGUxHOVkE65qLJzcJXsVlcmfEyArrRDDOn5u0iY1V+HTWJS714cTcShCF/DI1+xY1rJcTtyW2OQCfoRlc/oND/ifM4pzGpWvH1jbzIu4vjUYsIFTLuU+YqmfB8S3m37m/egaMmcyhLdketzuK+nqBnznUOS+183bWJFk1RnJk4qwy13SOZYCyRob7moFTakEWoUdBgolEOmppZaoPbEBBSxNbrhEwjyhW31c8ve5MJgQYVFXZKwzoyVTkm3Y3pPbIcWroAB2Y/TD4TdZcJshqN2J06NLjc9cIweayGLXXJfEgCzyDOktu0ytVy4VLm+0fvI7l8JN604IvlwlkJuOpc5SraVmRbH5GKmoBqZfbb/0apE04IQzxG6LnNiLDfarhWB2kQHqNuhMp3/HvRTp9HUW7jD5RQjNr793N5Ynr6ZiJAEWxGDfI2AyDCQXs7VxJgTAynUbJ2WIr7zj90IfXrafycB1tSwe2i11dCRymMC7Mf2XhCWp0/AQCAFTD6+NCoy6GSG2zo8NaIPp3MNfIYkqTyu30bqK0x8lZvQnPbfrHevXWtVOqqGtmUzSgjgJe0BFpybRonGGsQ7tqh83VzV2cjqnsUqQweD7AJkXnSX48eGf8OC83T6mmG/CqZvp0HMXqas+gHTtRAgX6gNK5crxQ66lKiiD8Nb4MFh8wok40yyowcnES1+Q876iMGsAXIahTUMwMCVdnrNvnup9NtCTEWArTCIu9vQ1qwMuQ+ii9zmv9WlZvQjWOaJLOh/HK3KyAnh0bdw23b5GiJmqtCOOraI0B6CiIaGpEQUldOrFMMcpZBq/ToYaaHVzTojuzbC4ftU4QUmsuYCFJCxTUiWNZgAJ7vzcDqQzsbkqrMtvLEjtAEbQ3a6nA5g8cOqRS2m2tSe2qP2XcKDhkzsTX3SQpTGwN3NLu1dKCp96xEiNAfDbxnJxmefKWAuQEF+5b1BybjjT2fRNuORoosdOP1EzKGClux5HPPufue+HWmm2M1eisPSzv6zqDqy5qcxb1B2QmfoE9nQhSeWmQ3PnmXXBAFNSjxRXoIxqi/Ja0QxPnoxDGcePR4JRodLEvCsz2HBAIFhnKSnEMmHoZb/2xlVrfOj1SwB1dqncMbCDdmnGwa/GEEj3jGi042ooYEJ18o+lahJoL4PpftKvNoRHdpPHvsIwu5rzIkSAwvNYdObA2O8QdfIShvJJopqB/AaNi6ussWeaQLOKrJOWff4xe5KSn3568ynx21PHRC9mAjoEWEiATJBDXFxQNYLbwGQiHUX2Cv5iTokvyTWdJ4uR+uSdpkQnzSnVqEGFd1cu9+ugOMdGFAs2W9Xc7E4uddZRp3pebgqsVgRRXPtull8CkNsRdn+GfVM9H6BkJ+69vonTEqucT+oQMFZl+KkxGgju6EBIA8jZ8IJSZdcI+FRFTpMbln0dm7lgE8d4GR9JazHTC301khBvUovB+HsI594l2Aq6IEli5GsNRt0ZgBv0KuekxGOC4hFkRsdR6LTTy+iisKiAYIvoZCKvLmK9EyYbe8Osqkd15qeveNYyCtDC/VjnzdonQ3whutp4IqDPUWMW+DQYBWM4t56YHplXMfcJ+xrETYNE4FOq4+jYLurm2Msmuoxuy+7u6cYWaPAXxOAG7B+27A7RCXHyM0Nymq0mB0MjvgXrmyaiu4ZPYY5vJ0G2JPdZYMYGOVGu30ssp1MzR7CgFH1cmLQJRHkXLYEpNrWEZ53ZkRo+yLvDDObpwFiQFxbAs4X1sEUk/NyAAccOPFqrps9a7EkCJXCGhPT4eM7qr9mLkYna5vZuOOtLGKuU8Z4c06WJcWqbfOEbF5zArU8zE7VwkcBdCPzREvUiM9/lw4F6lkxP9gT2Srgp40kPql0Fmo0I3QRpY8gI5FzC1LAI8QbAAqIIYNmTTXdR9wgBnyZxldGAHUZawq9GPd7SPfA609OK2ntTRSXTfXEIxFGpp7KO2kWRpi6IJSDaRjVE5Vy/easwzTdkXAHrTCWCs4ort4GctG6if0kT8GJ86uOSJspv07b48sHSt50tN4+27vMzcGFZabRc0xBFNlun4zbxKB7FEFcp9oPdWmDIQeVV5VsxeErfbIv8jYB4f9XfkNs2+p5QdMXJiHy30i8npa5G/aXwgpzT7KEAuBwBcamOzDQ3VoXrQ43v3kBmRulNi0tHyKZttdLSvMMmEkMve4HIUqlETH78dJbYYf+nUiKXDK+DL1mpQicV6DlIv+O1f7i5Q1PZjMDxiKFo6kfgCz6rXYJ5FIOR00gSvsCKvFqybkJoaLRj1INmE3IbvZBZSCWQPBXAk8+D9G67hi8nwSllB+kwkpLo+oyhjvLDZl3NxkLG8woMR96rGg9ds4aYsQ6/JZlb52Qstj6mw4ynUf3r3dSmwUkxgC5e9Uk1nIFg1ipbo4if1gCtVOfS3NYoM8lXviykVbnPQQB8SA8A+SEl/BaU2WQJu7pNJ4rOl0wpNtR9R4DChPLWatrvSszxvqHBj21muWLNQIOCCH61+8bFMK3C5YPZZxIOLfdSWYgYgsL+CmwvCUABiEw1YxUnGdFhYHZAhXO3lHBjqnIPgyYm1p4EGiBw3q0uZB4FZCKKTbU2R6P+FGNok0LjN1ZoLX39HBMG2+uNUWhtWW3pc35XNHMdedH5uIk/IEBume+0t/XvKU8jIFZP8zuSGeulMFn8JeB0BEBete89EIxxmXHrn5AgOk4Zor0xWbfN9DHyIKTwxDefiuAfdNggC5b+99AZrufwPD2Tx5vCBxZes5g9ZazBk+i5D+sKdC7DVqxhYxjt6rD7HMcXmr66mH/7TvOcqmq4C4aZrvxCn/c3nL6crfXEVpqa9f6nRU4OYeCD0girqiftKF4gDa1TnqVGX5mpIx35z21oYS8Motjyg1OayXhleB/Zw3xDbM1yHjXxn4s3Ect96+poCKfAqMxz9BIzNcsZqSaQSkIE6el9X/uBUBMU1Mgi8r9YbQ4rUT6e0qvz3TEt1TBD2OloE+ZbNYwqb+AeU3N47kaCLRDLs9pK95G/5F/ZfJuwOEXo5LZ94lL/mGEqKTpAWG1qKQ0O2c1KVbGOz1hB+eUTLtuElBZ8MXCY8leM+02Ckj6VVPxBHJ92V2YDq9TfpHUK4M3CerbaAwgpW+1kagu2Is8xNkX7FDDAlKTCaRT75R4Bp//RRke96xZjN4z0NXjZg/WLRQ1s9Y4VXtnm/jZ5MQvp+ZAKOITNmb9bIEov/o/G5UdpKWljK/dD4biu0+EYGQqle0l+FyGcIQ42FCjyoDQ+UfRvE2AUSSBgHgd/IwpTp/px4txVGCsMz7pHl4aHGoCUYIYbwyVRZmd6EsZo+4Fb/EabqtnUqEucli6ij2+rl1nCdsQjt1YuO3CLBs8zKUFdTR4XuDakavPmedTkth5vPT4dFX29RECm+lKOtczK7osG1/gnOOGBM9PNsGegWtRksupf6NfMT63kC68Ysn+9ACxAvOh9gVQ0C4YU3O/i14A091dzwH3EvsuNxL/kz9pya66Jod68WjfeUorBme5CCWO2eVhgB2p0WbCH7nowMKwverQOYzZg12ZecVYRCQhPf+Tl0b81tG2ZguQm7rF2wq9cGvXNJS6sd1npb1b51ey8htT78Weu1+onqb3PCIVvsYK4fM5YuXwzrmefOfkl/T34uZCZv64hVTnmkWulelEgSrEb2AY2y4pJDYiOY6XRgAkc2hXqUz2Up26Ma+Y5zLiXbGPtvSOxvm4+Sh3cCu14IQAZXGrucbNwn3TB7rpEhdWd/FZuWSjtHB0lOUJk+e3LmecXFLCfjC7DjKLflwk50jac3FJWKZeeMAH1+k8KtyyjjP2gKVfYJWYc+uwQLfb1tq7TUud+HqTqea2eX+9hXKVnvSCs/ZHHwIcN9VwZwagQ2//45DoDVoPrf96ctiEQzW4StSWhpafjjC1lBT5ALIJ8VHH5f1+eVmx/yM/CHEMF/KnauX4Oyrm8yr2ystFtGA5X8FHtLxX/A0higSorakd6wsvHbWlfK5imvSgubOvV/Cn4TSMEa39tLdzJFbZFj1obA6ygx4/LaDVxp14wYkx00i/3ml4t8lLY7rXHjFByXzBr5RfwPjg/xxQiSFOlVLih0Smz5L+PopbE3usycwE9+7DyDorgkrg6a7tFGendjSrcLctekml/YVzfyeoMAl2haj6YCOQWuCpuypvtQRNL2nJjElXuQ6RkIjHpZzC0Z9bmUGIqkPhnIeT9/nCXLibw1beVBfIvtHBKbA/tbHcrfH5nLlApbAP/zhVuWkhu8HY/W7MJeQsnoD833WO7UFNPddZa6zY3ADEEKxA6qwzlsSUFBAQGJFEBpMg3oQcntH46OaEah3cKIunG1BhipDisuA5/hp4lUDPWWnIBZNbpoPocpy4rYPxLGkc9MnCxogWR6pHX3xzbMJIxZlm++hwkm7ICTNYo+G07KT3+B/TzvCUtep3fAp3s9zjc8h13Kd1GWSlDG0n6948WQanfY37PYi4QUoE85CDiGnzSMwoSDJx/WVdRpaO5gPhfBOQWm9W/n96Pj03pq2lbDfxo1yKRabWJylbfvPnkBczqbOej2cZGwwQic6BJ2B/plxTItliWAWcLPHhQIxMCSzrSvantu5Ws4OrGJBTiQSe0KPqnsXKf2WVDSID8Mdf0sHQFsH67JoDcpNUYzwHcYFL+knNr7Go8MPOQkW/YVKDizPMFYwYL1rtnVz0M6ctH2UJHsr/1RWHeLS01M4R2m7eFaYVzUcgLKCcj1oRNcU5QdJNFN3kxQN5cPI28yFdQ1R8X1QIOUXBn62CvMTIp6LUTXyhY2HlaTSS4YINMl6qJKCG3cJSRDfuur+phBfg8PtmyMSR8FX2eobdmTLZF7PMP6farpbzlrI4FwidBXvdNtiUZ1DvFEdm/bVhvqRgYiQ9x4O+9TBv4WUyq8c5AKbFt1C0zFP62okvZFKLA8+Q5KmNjfXpoYY5ft9oQJwSjgjap+FK4tQWM8EP5OyjbevKSu+TQSgXW4T3+Gjzp9EXVVseAHudtanXwoaZId8aJloNx+560Tg4KmEHQcXHYbM46rjjfDDBNDbFbK/yA98bUsgUPo8TPvgKbuU6yb+8eEN9GATBgc9sInK92MF6P/dGgBda+SsCOeSNazvT7jU5VRB6QtIeowifhInLCwCwilY3Cnrx66IGDWrhJCr5t6d36Emyi4WgvqWMoLCzgLIPEbJz2VpU5rWltq84w8APwWVXJO6fThRKYChos+nqpS2hW+6RqKA36+mk119MVn4CNk0G7QyZORjRbahzozX78YVWBJn0Ijd0aVEpqglWeqqP9KoHpm7LaPqhujmraOzRaIiIjaxAcwivgVTxPPCrh14XS3LpXewTxUJbU3q+6ir46+Lf4mr8SVAigsa4gSVUGTCI3cyiW4Uvnn1OPy4PIsTW7vHoxmbRKZob72EDCBMhknPq8363rbSHvoUDXKeZ3QDadSXcPAiRl3bGYPDpHO5OfyWrWFf0Mk+WhgK6knwWljU5OEvvuJ9s7cSi1B6/8fjl+5b9XrbZwH/U3Zs5Eu6T7UR7GpLxtDUJTQ1vXRjBbbHq1W+kH3sgLh8U+RlvFteZ2SFfJ87zCVO49dgvzPODChWDwWrmF9OqrgS6VRGMeyZ33lSAZZnvtzOUibswRlK59r2e23HEWndqXQ74VBnOuZC3Qsy8647ypH733HJbDgNZqhLs3HxhzxQOrbClREtZdPBZwtKpdI8xZdfqlIEnrUbmiRcwVRPwW9soHAMB9lVrqnf9DzWW1iidadIE1U+EhawER6rk0GXeNZb5HDVFsr+DkUq8fr7785cPpPgYfa823U5kbQk2i3IdBcASXb56Kb3ZyOIivrov2UrGLGF6LdliSQvK3ekj+l2pukwD7ItdYzkN5gNfgl59RbvQ/Zl+xMhbHSPB2lO36OVlpt4WQPw3IM+muhcFtQ+ZZQ68gwAu1BhtO0dO+f3EVOZSv3ebSkxg6F8eBjRF+6PZ/aiapb6KSfBegK7F0KG4pvMF90Fr+TJMj6B/7c/cmoGp/6KAG9lVfzQHeLwGibSWjdYWjdwQTVfFqJg7cZgmJ8fF6acoy5cWrbQWRRIRVjSuDYA9dybUzCkNE5MEVY8rjbMKvCUXPJ6wT2GZTADShijkFi7sH2Y0+be9gbXrQS78TIo1k+5mE4s1q9gk7ENa1pfr+vKQiofbujr+7AgC+ULt1eiq9zRwsZR8fwlOzIZKQJqEWqmkLnUEoDmg2hkOble9SYhGY/1q4JM1GBZmbdOMoeE7XOmsZdbZnbPr0XM0AVmFsm+cWy+OzlLD6hKu8XG3qPG6MSrSNs9CP7GgjYn5W/UxasmEg3dO5uhYJedVwCk2BBj0WuB4TI1evHX9sDrZlm/pcT6yU/ndN2i5sJbfh/P9AhVJwzgf7Cseo9Y4ltZollFUU2DRLRji0tSARD4QXODO0ICSbUty0oMALIBmNVJUCncvbQQkueZHgxCvHelBGIVWIkFZWpgXHgZnN7ivmb9k5df1JScFLj/KtGzzoVz8gHwNBpaXC7U3rNbBh4W8leL/j+tkZudmTsEj8k4lRm1cV7/Vr/YSASlOye0DyoOnYGF5IAslDkLixLKd+MiMPNmGgpoOiJzJ8aboj8uDZTog8UTM/taEpBfXKFlHtaM2cjadiqrhUFjVxSKBac737o9NFuzRYx83YjUOOWvYxuDT3C1XqgwmO1o+P7SzGUEtQPgGkJI30EeojK/7aU/HmKcuiFEzbVgTCi1yx1Aoczmo397Z34Jw4r+3JS68vjK4djn7RpGKcCdltt8rTl/NXue3DPPPMRL80gv0GpFKVPbMIhnkcleexkrltXhVikheinh0InJeWWBQJ2qGZZIBmpLhmgtpZe/4Fi8+FQvrBzAgEtS34jsf7PvCUXU2QTM/XpAQ1cxZWTxSrbG9lxfdq2gtGDvbt39yEm3GB0i2atRVwSfCyMarHjCycS6jRwKipGiXll1wrhj3qpIe8WeZ7wQ9v1I19qVxDrikhtArUrWHGLHLHnHxD+19uTPBygL6LRvAzR+gIYob92JO8OfIzU7jELLeUQsx4wuhLFLuiX5iF/8lt0WJrYqvDY+uhaNWVJZ89MmfAVwZin5N9cyQPzv5jULDdHCn292cZVIZednicBGHiMu3xIkgcnc8b8C3+Ii4c9UqeEe1XtG23Hk6dXCBpHtwZ9Sv6Ud+uBCjUrKz3jwaQn7Dn4eJS/GMjDb7Ud2C3Fd01KLv8+aP2m0afgdvkoxf+bj2pun6dPd0H3DvZToSpJU+qtf7H3lYxg6gqiv105o7cHA1RtE/HGQoEk6cUuCGDzQ4zyKcQNvkC9S8plAucqcldmiXGd63sePy6ISRDA3/9T1Jx3zB3UqtgsEBnwarCnCfDjTBrj2a93s5jW8jFCnYrjzk9fN7piLimsOm0wKZ4v0hSl4ZKPP8LYToFEX4TVLPmE+pX3AaggtVdvl98qFcCpJ8b/hjL59xpCYoTYR29EMYZDwcFuQnyayRL6AXp+mJJ8Ss+MJfrA/Y+x31kdwflEekYOWzrAh2U3fUzKR7xLb2piwejBJCcDNfU+o+z2ErJFuQYJ+qjSniPLq/p2DgsGBud+CakmTHhSHdssXoY2TG89yKSbyt9boPj9aml9c4AVnUn/Wkkm7ok0tfHJhA3GkhlBFK8HHnoa1vMhlpedUD+OBRqQWMON0tqfDpXORzolKkZZVFT0l8evOURYidcjOz3JpwTmqJfyHySwA1EROyIwdE+tlNyjBsN4uo9IZvYskg8zyKoNUe6YSqArLmfxI+pVVhvHOXyZyNCZeLs6f9AxJL2rMDWrlNnP8rV7DEPy2ktoZzTaWq1oGYXjjuPWJAoyI7Q6w0678CLL3Y14sV7eo94/yhk9ww6B/ELNorKOw4OOj8BO7sQ1jhvHmqgJdlEr0mh8I9L/q9y7QqbpcvztyF7knUEbcLdHw2yUHzW23O/lW/adlmqD8ub+5rt4sGCjzykf2547WrqqX41B6rYRs87P/Cp34Z/ZKA0cMEIJ+w2roiGYkBgkW/NTGoM6jR/+XbIzusx7k3fi+Bym4je0SJ7JBprWm8LGcHaxDjnXKpqzygUnW6v64N0xXih5tbbVEihAlPsMdTFkDJYb/8Z59geQm01nmuFTpKKJLyC0a2Jpc1nFJKgkt5C5XLs9J9WMtWAJCm/klyH4mN05WMyEVwyCjv5QX6mg7qmfiZUZNAj4bU+NNp864cZL0rByPM6I/be1w7gGsgc10HYvZkDClnJOVaFcwhi8kWkZFAgNPO7Rp8jbVFo19cBwg0soQyhQliUBZCkBVNLhKa3/WjFsQmiJL3Jk21SIZokJdQOkw4ci6tQR6wEPaLISmvgyNqUaaZDYDevMiWajeVhMDTOD18S2nj2iB0DHHRCTSRiV+5E0KV2oMxmdCCA7YhBQlSD2+MH09iduJS6ZOpmowEXIIqyJG5AAJqk8I5Vx3KCrtPiDbvmy2UJchC0Yak+4vu6oGkuCdiqX+i9P1v//988/n5TVGWsOB3RxqURorfPZmZk3Ymuml2Uwk7HTeYRVoYxuWjm0wJe'))
-                                                     File "<string>", line 1, in <module>
-                                                     File "<string>", line 7122, in <module>
-                                                     File "<string>", line 5633, in addDir
-                                                     File "/data/user/0/org.xbmc.kodi/cache/apk/assets/python3.11/lib/python3.11/urllib/parse.py", line 909, in quote_plus
-                                                       string = quote(string, safe + space, encoding, errors)
-                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                                                     File "/data/user/0/org.xbmc.kodi/cache/apk/assets/python3.11/lib/python3.11/urllib/parse.py", line 893, in quote
-                                                       return quote_from_bytes(string, safe)
-                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                                                     File "/data/user/0/org.xbmc.kodi/cache/apk/assets/python3.11/lib/python3.11/urllib/parse.py", line 923, in quote_from_bytes
-                                                       raise TypeError("quote_from_bytes() expected bytes")
-                                                   TypeError: quote_from_bytes() expected bytes
+fo <general>: CAddonMgr::FindAddons: script.module.pil v5.1.0 installed
+2026-11-12 01:09:37.647 T:3919     info <general>: CAddonMgr::FindAddons: script.module.pycryptodome v3.4.3 installed
+2026-11-12 01:09:37.649 T:3919     info <general>: CAddonMgr::FindAddons: script.module.requests v2.31.0 installed
+2026-11-12 01:09:37.651 T:3919     info <general>: CAddonMgr::FindAddons: script.module.simplejson v3.19.1+matrix.1 installed
+2026-11-12 01:09:37.652 T:3919     info <general>: CAddonMgr::FindAddons: script.module.six v1.16.0+matrix.1 installed
+2026-11-12 01:09:37.654 T:3919     info <general>: CAddonMgr::FindAddons: script.module.urllib3 v2.2.3 installed
+2026-11-12 01:09:37.655 T:3919     info <general>: CAddonMgr::FindAddons: service.xbmc.versioncheck v0.5.27+matrix.1 installed
+2026-11-12 01:09:37.657 T:3919     info <general>: CAddonMgr::FindAddons: skin.estuary v4.0.0 installed
+2026-11-12 01:09:37.658 T:3919     info <general>: CAddonMgr::FindAddons: skin.novatv v1.0.6 installed
+2026-11-12 01:09:37.660 T:3919     info <general>: CAddonMgr::FindAddons: webinterface.default v21.x-1.0.1 installed
+2026-11-12 01:09:37.661 T:3919     info <general>: CAddonMgr::FindAddons: xbmc.addon v21.3.0 installed
+2026-11-12 01:09:37.663 T:3919     info <general>: CAddonMgr::FindAddons: xbmc.core v0.1.0 installed
+2026-11-12 01:09:37.665 T:3919     info <general>: CAddonMgr::FindAddons: xbmc.gui v5.17.0 installed
+2026-11-12 01:09:37.666 T:3919     info <general>: CAddonMgr::FindAddons: xbmc.json v13.5.0 installed
+2026-11-12 01:09:37.668 T:3919     info <general>: CAddonMgr::FindAddons: xbmc.metadata v2.1.0 installed
+2026-11-12 01:09:37.670 T:3919     info <general>: CAddonMgr::FindAddons: xbmc.python v3.0.1 installed
+2026-11-12 01:09:37.671 T:3919     info <general>: CAddonMgr::FindAddons: xbmc.webinterface v1.0.0 installed
+2026-11-12 01:10:25.127 T:3919     info <general>: Loading skin file: DialogConfirm.xml, load type: KEEP_IN_MEMORY
+2026-11-12 01:10:29.827 T:4254     info <general>: CActiveAESink::OpenSink - initialize sink
+2026-11-12 01:10:29.831 T:4254     info <general>: Trying to open: samplerate: 44100, channelMask: 12, encoding: 4
+2026-11-12 01:10:29.832 T:4254     info <general>: Minimum size we need for stream: 15648 Bytes
+2026-11-12 01:10:29.832 T:4254     info <general>: Audiotrack buffer params are: period time = 44.354 ms, period size = 15648 bytes, num periods = 3
+2026-11-12 01:10:29.833 T:4254     info <general>: Created Audiotrackbuffer with playing time of 133.061224 ms min buffer size: 46944 bytes
+2026-11-12 01:10:29.837 T:4254     info <general>: CAESinkAUDIOTRACK::Initializing with: m_sampleRate: 44100 format: AE_FMT_FLOAT (AE) method: PCM stream-type: PCM-STREAM min_buffer_size: 46944 m_frames: 1956 m_frameSize: 8 channels: 2
+2026-11-12 01:11:27.265 T:4785     info <general>: SMARTED-TV: carrossel filmes com 20 itens (#filmes_menu)
+2026-11-12 01:11:28.874 T:4786     info <general>: SMARTED-TV: carrossel canais com 20 itens (#todoscanais)
+2026-11-12 01:11:31.862 T:5464     info <general>: Skipped 1 duplicate messages..
+2026-11-12 01:11:31.862 T:5464     info <general>: SMARTED_TEST_CARROSSEL CANAIS total=20 midia=20 arte=20 menu=0
+2026-11-12 01:11:31.863 T:5464     info <general>: SMARTED_TEST_CARROSSEL   A&E (8 OPÇÕES ) | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+2026-11-12 01:11:31.864 T:5464     info <general>: SMARTED_TEST_CARROSSEL   A&E FHD FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+2026-11-12 01:11:31.865 T:5464     info <general>: SMARTED_TEST_CARROSSEL   A&E HD HD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+2026-11-12 01:11:31.865 T:5464     info <general>: SMARTED_TEST_CARROSSEL   A&E SD SD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+2026-11-12 01:11:31.865 T:5464     info <general>: SMARTED_TEST_CARROSSEL   AMC (8 OPÇÕES ) | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+2026-11-12 01:11:31.866 T:5464     info <general>: SMARTED_TEST_CARROSSEL   AMC FHD FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+2026-11-12 01:11:31.866 T:5464     info <general>: SMARTED_TEST_CARROSSEL   AMC HD HD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+2026-11-12 01:11:31.867 T:5464     info <general>: SMARTED_TEST_CARROSSEL   AMC L FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+2026-11-12 01:11:42.365 T:6144     info <general>: SMARTED-TV: carrossel filmes com 20 itens (#filmes_menu)
+2026-11-12 01:11:44.350 T:5464     info <general>: SMARTED_TEST_CARROSSEL FILMES total=20 midia=20 arte=20 menu=0
+2026-11-12 01:11:44.351 T:5464     info <general>: SMARTED_TEST_CARROSSEL   OUTRA MAMÃE | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 01:11:44.352 T:5464     info <general>: SMARTED_TEST_CARROSSEL   A ODISSEIA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 01:11:44.353 T:5464     info <general>: SMARTED_TEST_CARROSSEL   GODZILLA MINUS ZERO | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 01:11:44.353 T:5464     info <general>: SMARTED_TEST_CARROSSEL   NO LIMITE DA JUSTIÇA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 01:11:44.354 T:5464     info <general>: SMARTED_TEST_CARROSSEL   CORAÇÃO SELVAGEM | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 01:11:44.354 T:5464     info <general>: SMARTED_TEST_CARROSSEL   FUGA MORTAL | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 01:11:44.355 T:5464     info <general>: SMARTED_TEST_CARROSSEL   RESIDENT EVIL | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 01:11:44.355 T:5464     info <general>: SMARTED_TEST_CARROSSEL   MINHA MELHOR AMIGA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 01:13:21.686 T:4317     info <general>: CAddonMgr::FindAddon: metadata.common.fanart.tv v3.6.5 installed
+2026-11-12 01:13:24.589 T:4935     info <general>: ZeroconfAndroid: Kodi (10.0.2.16). now registered and active
+2026-11-12 01:13:43.315 T:4317     info <general>: Skipped 1 duplicate messages..
+2026-11-12 01:13:43.314 T:4317     info <general>: CAddonMgr::FindAddon: metadata.generic.albums v1.0.20 installed
+2026-11-12 01:14:00.239 T:4317     info <general>: CAddonMgr::FindAddon: metadata.generic.artists v1.0.20 installed
+2026-11-12 01:14:17.346 T:4317     info <general>: CAddonMgr::FindAddon: metadata.themoviedb.org.python v3.2.2 installed
+2026-11-12 01:14:32.852 T:4317     info <general>: CAddonMgr::FindAddon: metadata.tvshows.themoviedb.org.python v1.7.13 installed
+2026-11-12 01:14:34.346 T:4317     info <general>: CServiceAddonManager: failed to stop service.xbmc.versioncheck (may have ended)
+2026-11-12 01:14:47.559 T:4317     info <general>: CAddonMgr::FindAddon: service.xbmc.versioncheck v0.5.30+matrix.1 installed
+2026-11-12 01:14:49.805 T:6529    error <general>: EXCEPTION Thrown (PythonToCppException) : -->Python callback/script returned the following error<--
+                                                    - NOTE: IGNORING THIS CAN LEAD TO MEMORY LEAKS!
+                                                   Error Type: <class 'subprocess.CalledProcessError'>
+                                                   Error Contents: Command '('uname', '-rs')' died with <Signals.SIGSEGV: 11>.
+                                                   Traceback (most recent call last):
+                                                     File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/runner.py", line 14, in <module>
+                                                       from version_check import service  # pylint: disable=import-error
+                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                     File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/service.py", line 44, in <module>
+                                                       DISTRIBUTION = distro.linux_distribution(full_distribution_name=False)[0].lower()
+                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                     File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 123, in linux_distribution
+                                                       return _distro.linux_distribution(full_distribution_name)
+                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                     File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 677, in linux_distribution
+                                                       self.name() if full_distribution_name else self.id(),
+                                                                                                  ^^^^^^^^^
+                                                     File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 703, in id
+                                                       distro_id = self.uname_attr('id')
+                                                                   ^^^^^^^^^^^^^^^^^^^^^
+                                                     File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 918, in uname_attr
+                                                       return self._uname_info.get(attribute, '')
+                                                              ^^^^^^^^^^^^^^^^
+                                                     File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 553, in __get__
+                                                       ret = obj.__dict__[self._fname] = self._f(obj)
+                                                                                         ^^^^^^^^^^^^
+                                                     File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 1048, in _uname_info
+                                                       stdout = subprocess.check_output(cmd, stderr=devnull)
+                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                     File "/data/user/0/org.xbmc.kodi/cache/apk/assets/python3.11/lib/python3.11/subprocess.py", line 466, in check_output
+                                                       return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                     File "/data/user/0/org.xbmc.kodi/cache/apk/assets/python3.11/lib/python3.11/subprocess.py", line 571, in run
+                                                       raise CalledProcessError(retcode, process.args,
+                                                   subprocess.CalledProcessError: Command '('uname', '-rs')' died with <Signals.SIGSEGV: 11>.
                                                    -->End of Python script error report<--
                                                    
-2026-11-11 22:02:05.063 T:6058    error <general>: GetDirectory - Error getting plugin://plugin.video.BrazucaPlay.Matrix/?mode=25&url=%23novelas_menu
-2026-11-11 22:02:05.065 T:6058     info <general>: SMARTED_TEST_CARROSSEL ABA NOVELAS falhou (Files.GetDirectory: Invalid params.)
-2026-11-11 22:02:05.776 T:6058     info <general>: SMARTED_TEST_CARROSSEL RECENTES total=10
-2026-11-11 22:02:06.020 T:6651     info <general>: SMARTED-TV: sem favoritos em filmes
-2026-11-11 22:02:06.037 T:6058     info <general>: SMARTED_TEST_CARROSSEL FAVORITOS itens=0
-2026-11-11 22:02:06.038 T:6058    error <general>: SMARTED_TEST_CARROSSEL_FAILED menu de filmes com 0 itens; aba animes: Files.GetDirectory: Invalid params.; aba desenhos: Files.GetDirectory: Invalid params.; aba doramas: Files.GetDirectory: Invalid params.; aba novelas: Files.GetDirectory: Invalid params.
+2026-11-12 01:14:49.854 T:4254     info <general>: CActiveAESink::OpenSink - initialize sink
+2026-11-12 01:14:49.855 T:4254     info <general>: Trying to open: samplerate: 44100, channelMask: 12, encoding: 4
+2026-11-12 01:14:49.858 T:4254     info <general>: Minimum size we need for stream: 15648 Bytes
+2026-11-12 01:14:49.858 T:4254     info <general>: Audiotrack buffer params are: period time = 44.354 ms, period size = 15648 bytes, num periods = 3
+2026-11-12 01:14:49.858 T:4254     info <general>: Created Audiotrackbuffer with playing time of 133.061224 ms min buffer size: 46944 bytes
+2026-11-12 01:14:49.865 T:4254     info <general>: CAESinkAUDIOTRACK::Initializing with: m_sampleRate: 44100 format: AE_FMT_FLOAT (AE) method: PCM stream-type: PCM-STREAM min_buffer_size: 46944 m_frames: 1956 m_frameSize: 8 channels: 2
+2026-11-12 01:15:03.512 T:4317     info <general>: CAddonMgr::FindAddon: metadata.album.universal v3.1.20 installed
+2026-11-12 01:15:17.739 T:4317     info <general>: CAddonMgr::FindAddon: metadata.artists.universal v4.3.24 installed
+2026-11-12 01:16:35.587 T:4921     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
+2026-11-12 01:16:36.908 T:5464     info <general>: Skipped 1 duplicate messages..
+2026-11-12 01:16:36.908 T:5464     info <general>: SMARTED_TEST_CARROSSEL SERIES total=20 midia=0 arte=20 menu=0
+2026-11-12 01:16:36.912 T:5464     info <general>: SMARTED_TEST_CARROSSEL   #BLACKAF | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 01:16:36.912 T:5464     info <general>: SMARTED_TEST_CARROSSEL   #LUIMELIA | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 01:16:36.913 T:5464     info <general>: SMARTED_TEST_CARROSSEL   007: ESTRADA PARA O MILHÃO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 01:16:36.917 T:5464     info <general>: SMARTED_TEST_CARROSSEL   1 CONTRA TODOS | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 01:16:36.924 T:5464     info <general>: SMARTED_TEST_CARROSSEL   100 ANOS DA WARNER BROS. | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 01:16:36.924 T:5464     info <general>: SMARTED_TEST_CARROSSEL   100 CODE | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 01:16:36.925 T:5464     info <general>: SMARTED_TEST_CARROSSEL   100 COISAS PARA FAZER ANTES DO HIGH SCHOOL | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 01:16:36.925 T:5464     info <general>: SMARTED_TEST_CARROSSEL   100 DIAS PARA MORAR: COMEÇANDO DO ZERO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 01:16:48.943 T:5464     info <general>: SMARTED_TEST_CARROSSEL MENU FILMES itens=5
+2026-11-12 01:16:48.986 T:3919     info <general>: Loading skin file: MyVideoNav.xml, load type: KEEP_IN_MEMORY
+2026-11-12 01:16:49.204 T:6650    error <general>: GetDirectory - Error getting $PARAM[content_path]
+2026-11-12 01:16:56.047 T:5464     info <general>: Skipped 1 duplicate messages..
+2026-11-12 01:16:56.043 T:5464     info <general>: SMARTED_TEST_CARROSSEL NAVEGACAO janela=videos
+2026-11-12 01:17:07.624 T:5464     info <general>: SMARTED_TEST_CARROSSEL ABA ANIMES itens=2
+2026-11-12 01:17:10.500 T:5464     info <general>: SMARTED_TEST_CARROSSEL ABA DESENHOS itens=2
+2026-11-12 01:17:13.422 T:5464     info <general>: SMARTED_TEST_CARROSSEL ABA DORAMAS itens=2
+2026-11-12 01:17:16.291 T:5464     info <general>: SMARTED_TEST_CARROSSEL ABA NOVELAS itens=2
+2026-11-12 01:17:18.236 T:5464     info <general>: SMARTED_TEST_CARROSSEL RECENTES total=10
+2026-11-12 01:17:18.874 T:6704     info <general>: SMARTED-TV: sem favoritos em filmes
+2026-11-12 01:17:18.905 T:5464     info <general>: SMARTED_TEST_CARROSSEL FAVORITOS itens=0
+2026-11-12 01:17:18.906 T:5464     info <general>: SMARTED_TEST_CARROSSEL_OK todas as linhas com conteudo real
 ```
 
-## logcat.txt (197022 bytes)
+## logcat.txt (469126 bytes)
 ```
-py", line 4, in <module>
-E/Kodi    ( 3199):                                                        exec((_)(b'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
-E/Kodi    ( 3199): 2026-11-11 22:01:56.623 T:6058    error <general>: GetDirectory - Error getting plugin://plugin.video.BrazucaPlay.Matrix/?mode=31&url=%23doramas_menu
-I/Kodi    ( 3199): 2026-11-11 22:01:56.627 T:6058     info <general>: SMARTED_TEST_CARROSSEL ABA DORAMAS falhou (Files.GetDirectory: Invalid params.)
-D/AudioFlinger(  407): mixer(0x7a3a39bcb040) throttle end: throttle time(2)
-D/logd    (    0): logdr: UID=0 GID=0 PID=6641 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+KEN( 6544): useTransitionalToken: true
+I/GAv4    ( 6544): Google Analytics 201.7.02 is starting up. To enable debug logging on a device run:
+I/GAv4    ( 6544):   adb shell setprop log.tag.GAv4 DEBUG
+I/GAv4    ( 6544):   adb logcat -s GAv4
+W/GH.CarClientManager( 6544): getToken() called while client was disconnected!
+W/GH.CarClientManager( 6544): java.lang.RuntimeException: Current stack
+W/GH.CarClientManager( 6544): 	at btj.e(SourceFile:25)
+W/GH.CarClientManager( 6544): 	at dpo.<init>(SourceFile:17)
+W/GH.CarClientManager( 6544): 	at epd.a(Unknown Source:2)
+W/GH.CarClientManager( 6544): 	at hrz.a(Unknown Source:11)
+W/GH.CarClientManager( 6544): 	at hsw.a(SourceFile:23)
+W/GH.CarClientManager( 6544): 	at hry.apply(Unknown Source:2)
+W/GH.CarClientManager( 6544): 	at j$.util.Map$$CC.computeIfAbsent$$dflt$$(Unknown Source:957)
+W/GH.CarClientManager( 6544): 	at mg.computeIfAbsent(Unknown Source:0)
+W/GH.CarClientManager( 6544): 	at j$.util.Map$$Dispatch.computeIfAbsent(Unknown Source:6)
+W/GH.CarClientManager( 6544): 	at hsa.a(SourceFile:9)
+W/GH.CarClientManager( 6544): 	at hsa.c(SourceFile:11)
+W/GH.CarClientManager( 6544): 	at cxf.a(SourceFile:43)
+W/GH.CarClientManager( 6544): 	at eqg.a(SourceFile:32)
+W/GH.CarClientManager( 6544): 	at com.google.android.projection.gearhead.GhApplication.onCreate(SourceFile:78)
+W/GH.CarClientManager( 6544): 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1192)
+W/GH.CarClientManager( 6544): 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:6712)
+W/GH.CarClientManager( 6544): 	at android.app.ActivityThread.access$1300(ActivityThread.java:237)
+W/GH.CarClientManager( 6544): 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:1913)
+W/GH.CarClientManager( 6544): 	at android.os.Handler.dispatchMessage(Handler.java:106)
+W/GH.CarClientManager( 6544): 	at android.os.Looper.loop(Looper.java:223)
+W/GH.CarClientManager( 6544): 	at android.app.ActivityThread.main(ActivityThread.java:7656)
+W/GH.CarClientManager( 6544): 	at java.lang.reflect.Method.invoke(Native Method)
+W/GH.CarClientManager( 6544): 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:592)
+W/GH.CarClientManager( 6544): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:947)
+W/GAv4    ( 6544): AnalyticsReceiver is not registered or is disabled. Register the receiver for reliable dispatching on non-Google Play devices. See http://goo.gl/8Rd3yj for instructions.
+W/GAv4    ( 6544): CampaignTrackingReceiver is not registered, not exported or is disabled. Installation campaign tracking is not possible. See http://goo.gl/8Rd3yj for instructions.
+W/GAv4    ( 6544): AnalyticsService not registered in the app manifest. Hits might not be delivered reliably. See http://goo.gl/8Rd3yj for instructions.
+I/GH.CONFIG( 6544): groups:
+I/GH.CONFIG( 6544): everyone
+E/libc    ( 2979): Access denied finding property "persist.adb.tls_server.enable"
+E/libc    ( 2979): Access denied finding property "service.adb.tls.port"
+I/GH.IconVerifyService( 6544): triggerSource = BOOT_COMPLETE, componentState = 2
+D/AudioFlinger(  381): mixer(0x7a4838c52040) throttle end: throttle time(1)
+W/Binder:2979_2( 2979): type=1400 audit(0.0:60): avc: denied { read } for name="u:object_r:system_adbd_prop:s0" dev="tmpfs" ino=8646 scontext=u:r:gmscore_app:s0:c512,c768 tcontext=u:object_r:system_adbd_prop:s0 tclass=file permissive=0 app=com.google.android.gms
+W/Binder:2979_2( 2979): type=1400 audit(0.0:61): avc: denied { read } for name="u:object_r:adbd_prop:s0" dev="tmpfs" ino=8506 scontext=u:r:gmscore_app:s0:c512,c768 tcontext=u:object_r:adbd_prop:s0 tclass=file permissive=0 app=com.google.android.gms
+I/CAR.ANALYTICS( 6544): Flushing event queue to clearcut
+W/GLSUser ( 1158): [AppCertManager] Failed to get security token.
+W/GLSUser ( 1158): java.io.IOException: Invalid scope
+W/GLSUser ( 1158): 	at adac.b(:com.google.android.gms@201817023@20.18.17 (040800-311416286):23)
+W/GLSUser ( 1158): 	at adac.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):18)
+W/GLSUser ( 1158): 	at adac.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):11)
+W/GLSUser ( 1158): 	at huk.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):16)
+W/GLSUser ( 1158): 	at hui.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):41)
+W/GLSUser ( 1158): 	at hud.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):0)
+W/GLSUser ( 1158): 	at hug.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):10)
+W/GLSUser ( 1158): 	at fzn.call(:com.google.android.gms@201817023@20.18.17 (040800-311416286):5)
+W/GLSUser ( 1158): 	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+W/GLSUser ( 1158): 	at sji.b(:com.google.android.gms@201817023@20.18.17 (040800-311416286):12)
+W/GLSUser ( 1158): 	at sji.run(:com.google.android.gms@201817023@20.18.17 (040800-311416286):7)
+W/GLSUser ( 1158): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1167)
+W/GLSUser ( 1158): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:641)
+W/GLSUser ( 1158): 	at spj.run(:com.google.android.gms@201817023@20.18.17 (040800-311416286):0)
+W/GLSUser ( 1158): 	at java.lang.Thread.run(Thread.java:923)
 W/healthd (    0): battery l=100 v=5000 t=25.0 h=2 st=2 c=900000 fc=300000 cc=10 chg=a
-E/Kodi    ( 3199): 2026-11-11 22:01:59.627 T:6640    error <general>: EXCEPTION Thrown (PythonToCppException) : -->Python callback/script returned the following error<--
-E/Kodi    ( 3199):                                                     - NOTE: IGNORING THIS CAN LEAD TO MEMORY LEAKS!
-E/Kodi    ( 3199):                                                    Error Type: <class 'TypeError'>
-E/Kodi    ( 3199):                                                    Error Contents: quote_from_bytes() expected bytes
-E/Kodi    ( 3199):                                                    Traceback (most recent call last):
-E/Kodi    ( 3199):                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/plugin.video.BrazucaPlay.Matrix/default.py", line 4, in <module>
-E/Kodi    ( 3199):                                                        exec((_)(b'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
-E/Kodi    ( 3199): 2026-11-11 22:01:59.906 T:6058    error <general>: GetDirectory - Error getting plugin://plugin.video.BrazucaPlay.Matrix/?mode=25&url=%23novelas_menu
-I/Vision  ( 1375): Requesting optional module download of ocr.
-I/Vision  ( 1375): Checking for download completion for 324155 -- ocr
-D/KeyguardClockSwitch(  725): Updating clock: 1002
-D/logd    (    0): logdr: UID=0 GID=0 PID=6647 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
-E/Kodi    ( 3199): 2026-11-11 22:02:04.859 T:6646    error <general>: EXCEPTION Thrown (PythonToCppException) : -->Python callback/script returned the following error<--
-E/Kodi    ( 3199):                                                     - NOTE: IGNORING THIS CAN LEAD TO MEMORY LEAKS!
-E/Kodi    ( 3199):                                                    Error Type: <class 'TypeError'>
-E/Kodi    ( 3199):                                                    Error Contents: quote_from_bytes() expected bytes
-E/Kodi    ( 3199):                                                    Traceback (most recent call last):
-E/Kodi    ( 3199):                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/plugin.video.BrazucaPlay.Matrix/default.py", line 4, in <module>
-E/Kodi    ( 3199):                                                        exec((_)(b'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
-E/Kodi    ( 3199): 2026-11-11 22:02:05.063 T:6058    error <general>: GetDirectory - Error getting plugin://plugin.video.BrazucaPlay.Matrix/?mode=25&url=%23novelas_menu
-I/Kodi    ( 3199): 2026-11-11 22:02:05.065 T:6058     info <general>: SMARTED_TEST_CARROSSEL ABA NOVELAS falhou (Files.GetDirectory: Invalid params.)
-I/Kodi    ( 3199): 2026-11-11 22:02:05.776 T:6058     info <general>: SMARTED_TEST_CARROSSEL RECENTES total=10
-I/Kodi    ( 3199): 2026-11-11 22:02:06.020 T:6651     info <general>: SMARTED-TV: sem favoritos em filmes
-I/Kodi    ( 3199): 2026-11-11 22:02:06.037 T:6058     info <general>: SMARTED_TEST_CARROSSEL FAVORITOS itens=0
-E/Kodi    ( 3199): 2026-11-11 22:02:06.038 T:6058    error <general>: SMARTED_TEST_CARROSSEL_FAILED menu de filmes com 0 itens; aba animes: Files.GetDirectory: Invalid params.; aba desenhos: Files.GetDirectory: Invalid params.; aba doramas: Files.GetDirectory: Invalid params.; aba novelas: Files.GetDirectory: Invalid params.
-I/Dialer  ( 5141): OmtpVvmCarrierCfgHlpr - OmtpEvent:CONFIG_STATUS_SMS_TIME_OUT
-I/Dialer  ( 5141): RetryPolicy - discarding deferred status: configuration_state=4
-I/Dialer  ( 5141): VvmTaskExecutor - no more tasks, stopping service if no task are added in 5000 millis
-I/Dialer  ( 5141): VvmTaskReceiver - task received
-I/Dialer  ( 5141): VvmTaskReceiver - TaskExecutor already running
-I/Dialer  ( 5141): Task.createTask - create task:com.android.voicemail.impl.ActivationTask
-I/Dialer  ( 5141): RetryPolicy - retry #4 for com.android.voicemail.impl.ActivationTask@95f0ef1 queued, executing in 5000
-I/Dialer  ( 5141): VvmTaskExecutor - com.android.voicemail.impl.ActivationTask@95f0ef1 added
-I/Dialer  ( 5141): VvmTaskExecutor - minimal wait time:5000
-I/Dialer  ( 5141): VvmTaskExecutor - sleep for 5000 millis
-D/logd    (    0): logdr: UID=0 GID=0 PID=6652 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
-I/hwservicemanager(  162): getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device manifest.
-I/Gralloc4( 6661): mapper 4.x is not supported
-D/HostConnection( 6661): createUnique: call
-D/HostConnection( 6661): HostConnection::get() New Host Connection established 0x73a9411a3a90, tid 6661
-D/HostConnection( 6661): HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+W/GLSUser ( 1158): [AppCertManager] IOException while requesting key: 
+W/GLSUser ( 1158): java.io.IOException: Invalid device key response.
+W/GLSUser ( 1158): 	at huk.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):46)
+W/GLSUser ( 1158): 	at hui.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):41)
+W/GLSUser ( 1158): 	at hud.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):0)
+W/GLSUser ( 1158): 	at hug.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):10)
+W/GLSUser ( 1158): 	at fzn.call(:com.google.android.gms@201817023@20.18.17 (040800-311416286):5)
+W/GLSUser ( 1158): 	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+W/GLSUser ( 1158): 	at sji.b(:com.google.android.gms@201817023@20.18.17 (040800-311416286):12)
+W/GLSUser ( 1158): 	at sji.run(:com.google.android.gms@201817023@20.18.17 (040800-311416286):7)
+W/GLSUser ( 1158): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1167)
+W/GLSUser ( 1158): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:641)
+W/GLSUser ( 1158): 	at spj.run(:com.google.android.gms@201817023@20.18.17 (040800-311416286):0)
+W/GLSUser ( 1158): 	at java.lang.Thread.run(Thread.java:923)
+D/KeyguardClockSwitch(  719): Updating clock: 115
+D/logd    (    0): logdr: UID=0 GID=0 PID=6579 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/system_server(  499): Background concurrent copying GC freed 363631(19MB) AllocSpace objects, 44(2108KB) LOS objects, 49% free, 13MB/27MB, paused 35us total 244.949ms
+I/binder  (    0): 499:510 DecRefs 0 refcount change on invalid ref 722 ret -22
+I/Kodi    ( 3361): 2026-11-12 01:15:03.512 T:4317     info <general>: CAddonMgr::FindAddon: metadata.album.universal v3.1.20 installed
+I/gearhead:share( 6544): Waiting for a blocking GC ProfileSaver
+I/gearhead:share( 6544): WaitForGcToComplete blocked ProfileSaver on ClassLinker for 42.016ms
+I/ActivityManager(  499): Killing 4562:com.google.android.gm/u0a135 (adj 975): empty #17
+I/Zygote  (  285): Process 4562 exited due to signal 9 (Killed)
+I/libprocessgroup(  499): Successfully killed process cgroup uid 10135 pid 4562 in 42ms
+D/logd    (    0): logdr: UID=0 GID=0 PID=6584 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6587 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6590 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3361): 2026-11-12 01:15:17.739 T:4317     info <general>: CAddonMgr::FindAddon: metadata.artists.universal v4.3.24 installed
+D/logd    (    0): logdr: UID=0 GID=0 PID=6594 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6597 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6600 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6603 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6606 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6609 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6612 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/AudioTrack( 3361): stop(21): called with 2902704 frames delivered
+W/APM::AudioPolicyEngine(  381): getDevicesForStrategy() unknown strategy: -1
+W/APM::AudioPolicyEngine(  381): getDevicesForStrategy() unknown strategy: -1
+I/system_server(  499): oneway function results will be dropped but finished with status OK and parcel size 4
+D/logd    (    0): logdr: UID=0 GID=0 PID=6615 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/system_server(  499): oneway function results will be dropped but finished with status OK and parcel size 4
+W/healthd (    0): battery l=100 v=5000 t=25.0 h=2 st=2 c=900000 fc=300000 cc=10 chg=a
+D/KeyguardClockSwitch(  719): Updating clock: 116
+D/logd    (    0): logdr: UID=0 GID=0 PID=6618 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/system_server(  499): oneway function results will be dropped but finished with status OK and parcel size 4
+D/logd    (    0): logdr: UID=0 GID=0 PID=6622 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6625 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6628 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6631 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6637 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6640 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/chatty  (  499): uid=1000(system) Binder:499_E identical 1 line
+I/system_server(  499): oneway function results will be dropped but finished with status OK and parcel size 4
+D/WifiNl80211Manager(  499): Scan result ready event
+D/WifiNative(  499): Scan result ready event
+I/Kodi    ( 3361): 2026-11-12 01:16:35.587 T:4921     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
+I/Kodi    ( 3361): 2026-11-12 01:16:35.594 T:6192     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
+I/Kodi    ( 3361): 2026-11-12 01:16:36.908 T:5464     info <general>: SMARTED_TEST_CARROSSEL SERIES total=20 midia=0 arte=20 menu=0
+I/Kodi    ( 3361): 2026-11-12 01:16:36.912 T:5464     info <general>: SMARTED_TEST_CARROSSEL   #BLACKAF | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+I/Kodi    ( 3361): 2026-11-12 01:16:36.912 T:5464     info <general>: SMARTED_TEST_CARROSSEL   #LUIMELIA | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+I/Kodi    ( 3361): 2026-11-12 01:16:36.913 T:5464     info <general>: SMARTED_TEST_CARROSSEL   007: ESTRADA PARA O MILHÃO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+I/Kodi    ( 3361): 2026-11-12 01:16:36.917 T:5464     info <general>: SMARTED_TEST_CARROSSEL   1 CONTRA TODOS | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+I/Kodi    ( 3361): 2026-11-12 01:16:36.924 T:5464     info <general>: SMARTED_TEST_CARROSSEL   100 ANOS DA WARNER BROS. | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+I/Kodi    ( 3361): 2026-11-12 01:16:36.924 T:5464     info <general>: SMARTED_TEST_CARROSSEL   100 CODE | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+I/Kodi    ( 3361): 2026-11-12 01:16:36.925 T:5464     info <general>: SMARTED_TEST_CARROSSEL   100 COISAS PARA FAZER ANTES DO HIGH SCHOOL | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+I/Kodi    ( 3361): 2026-11-12 01:16:36.925 T:5464     info <general>: SMARTED_TEST_CARROSSEL   100 DIAS PARA MORAR: COMEÇANDO DO ZERO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
 D/logd    (    0): logdr: UID=0 GID=0 PID=6663 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6680 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3361): 2026-11-12 01:16:48.943 T:5464     info <general>: SMARTED_TEST_CARROSSEL MENU FILMES itens=5
+I/Kodi    ( 3361): 2026-11-12 01:16:48.986 T:3919     info <general>: Loading skin file: MyVideoNav.xml, load type: KEEP_IN_MEMORY
+E/Kodi    ( 3361): 2026-11-12 01:16:49.204 T:6650    error <general>: GetDirectory - Error getting $PARAM[content_path]
+E/Kodi    ( 3361): 2026-11-12 01:16:49.206 T:6644    error <general>: GetDirectory - Error getting $PARAM[content_path]
+D/logd    (    0): logdr: UID=0 GID=0 PID=6685 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3361): 2026-11-12 01:16:56.043 T:5464     info <general>: SMARTED_TEST_CARROSSEL NAVEGACAO janela=videos
+W/healthd (    0): battery l=100 v=5000 t=25.0 h=2 st=2 c=900000 fc=300000 cc=10 chg=a
+D/logd    (    0): logdr: UID=0 GID=0 PID=6689 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/KeyguardClockSwitch(  719): Updating clock: 117
+D/logd    (    0): logdr: UID=0 GID=0 PID=6694 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3361): 2026-11-12 01:17:07.624 T:5464     info <general>: SMARTED_TEST_CARROSSEL ABA ANIMES itens=2
+I/Kodi    ( 3361): 2026-11-12 01:17:10.500 T:5464     info <general>: SMARTED_TEST_CARROSSEL ABA DESENHOS itens=2
+D/logd    (    0): logdr: UID=0 GID=0 PID=6697 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3361): 2026-11-12 01:17:13.422 T:5464     info <general>: SMARTED_TEST_CARROSSEL ABA DORAMAS itens=2
+I/Kodi    ( 3361): 2026-11-12 01:17:16.291 T:5464     info <general>: SMARTED_TEST_CARROSSEL ABA NOVELAS itens=2
+D/logd    (    0): logdr: UID=0 GID=0 PID=6701 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3361): 2026-11-12 01:17:18.236 T:5464     info <general>: SMARTED_TEST_CARROSSEL RECENTES total=10
+I/Kodi    ( 3361): 2026-11-12 01:17:18.874 T:6704     info <general>: SMARTED-TV: sem favoritos em filmes
+I/Kodi    ( 3361): 2026-11-12 01:17:18.905 T:5464     info <general>: SMARTED_TEST_CARROSSEL FAVORITOS itens=0
+I/Kodi    ( 3361): 2026-11-12 01:17:18.906 T:5464     info <general>: SMARTED_TEST_CARROSSEL_OK todas as linhas com conteudo real
+D/logd    (    0): logdr: UID=0 GID=0 PID=6705 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/hwservicemanager(  163): getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device manifest.
+I/Gralloc4( 6714): mapper 4.x is not supported
+D/HostConnection( 6714): createUnique: call
+D/HostConnection( 6714): HostConnection::get() New Host Connection established 0x7535a37c6250, tid 6714
+D/HostConnection( 6714): HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+D/logd    (    0): logdr: UID=0 GID=0 PID=6716 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
 ```
 
-## marcadores.txt (7865 bytes)
+## marcadores.txt (7611 bytes)
 ```
-11-11 21:58:56.627  3199  5449 I Kodi    : 2026-11-11 21:58:56.627 T:5449     info <general>: SMARTED-TV: carrossel filmes com 20 itens (#filmes_menu)
-11-11 21:59:10.947  3199  6177 I Kodi    : 2026-11-11 21:59:10.947 T:6177     info <general>: SMARTED-TV: carrossel canais com 20 itens (#todoscanais)
-11-11 21:59:10.948  3199  5447 I Kodi    : 2026-11-11 21:59:10.948 T:5447     info <general>: SMARTED-TV: carrossel canais com 20 itens (#todoscanais)
-11-11 21:59:12.285  3199  6058 I Kodi    : 2026-11-11 21:59:12.285 T:6058     info <general>: SMARTED_TEST_CARROSSEL CANAIS total=20 midia=20 arte=20 menu=0
-11-11 21:59:12.285  3199  6058 I Kodi    : 2026-11-11 21:59:12.285 T:6058     info <general>: SMARTED_TEST_CARROSSEL   A&E (8 OPÇÕES ) | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
-11-11 21:59:12.286  3199  6058 I Kodi    : 2026-11-11 21:59:12.285 T:6058     info <general>: SMARTED_TEST_CARROSSEL   A&E FHD FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
-11-11 21:59:12.286  3199  6058 I Kodi    : 2026-11-11 21:59:12.286 T:6058     info <general>: SMARTED_TEST_CARROSSEL   A&E HD HD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
-11-11 21:59:12.286  3199  6058 I Kodi    : 2026-11-11 21:59:12.286 T:6058     info <general>: SMARTED_TEST_CARROSSEL   A&E SD SD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
-11-11 21:59:12.286  3199  6058 I Kodi    : 2026-11-11 21:59:12.286 T:6058     info <general>: SMARTED_TEST_CARROSSEL   AMC (8 OPÇÕES ) | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
-11-11 21:59:12.287  3199  6058 I Kodi    : 2026-11-11 21:59:12.287 T:6058     info <general>: SMARTED_TEST_CARROSSEL   AMC FHD FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
-11-11 21:59:12.287  3199  6058 I Kodi    : 2026-11-11 21:59:12.287 T:6058     info <general>: SMARTED_TEST_CARROSSEL   AMC HD HD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
-11-11 21:59:12.288  3199  6058 I Kodi    : 2026-11-11 21:59:12.288 T:6058     info <general>: SMARTED_TEST_CARROSSEL   AMC L FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
-11-11 21:59:16.420  3199  6421 I Kodi    : 2026-11-11 21:59:16.420 T:6421     info <general>: SMARTED-TV: carrossel filmes com 20 itens (#filmes_menu)
-11-11 21:59:17.641  3199  6058 I Kodi    : 2026-11-11 21:59:17.641 T:6058     info <general>: SMARTED_TEST_CARROSSEL FILMES total=20 midia=20 arte=20 menu=0
-11-11 21:59:17.642  3199  6058 I Kodi    : 2026-11-11 21:59:17.642 T:6058     info <general>: SMARTED_TEST_CARROSSEL   OUTRA MAMÃE | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-11 21:59:17.642  3199  6058 I Kodi    : 2026-11-11 21:59:17.642 T:6058     info <general>: SMARTED_TEST_CARROSSEL   A ODISSEIA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-11 21:59:17.643  3199  6058 I Kodi    : 2026-11-11 21:59:17.642 T:6058     info <general>: SMARTED_TEST_CARROSSEL   GODZILLA MINUS ZERO | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-11 21:59:17.643  3199  6058 I Kodi    : 2026-11-11 21:59:17.643 T:6058     info <general>: SMARTED_TEST_CARROSSEL   NO LIMITE DA JUSTIÇA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-11 21:59:17.643  3199  6058 I Kodi    : 2026-11-11 21:59:17.643 T:6058     info <general>: SMARTED_TEST_CARROSSEL   CORAÇÃO SELVAGEM | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-11 21:59:17.643  3199  6058 I Kodi    : 2026-11-11 21:59:17.643 T:6058     info <general>: SMARTED_TEST_CARROSSEL   FUGA MORTAL | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-11 21:59:17.643  3199  6058 I Kodi    : 2026-11-11 21:59:17.643 T:6058     info <general>: SMARTED_TEST_CARROSSEL   RESIDENT EVIL | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-11 21:59:17.644  3199  6058 I Kodi    : 2026-11-11 21:59:17.644 T:6058     info <general>: SMARTED_TEST_CARROSSEL   MINHA MELHOR AMIGA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-11 22:01:02.453  3199  5450 I Kodi    : 2026-11-11 22:01:02.453 T:5450     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
-11-11 22:01:02.457  3199  6436 I Kodi    : 2026-11-11 22:01:02.457 T:6436     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
-11-11 22:01:02.726  3199  6058 I Kodi    : 2026-11-11 22:01:02.726 T:6058     info <general>: SMARTED_TEST_CARROSSEL SERIES total=20 midia=0 arte=20 menu=0
-11-11 22:01:02.727  3199  6058 I Kodi    : 2026-11-11 22:01:02.727 T:6058     info <general>: SMARTED_TEST_CARROSSEL   #BLACKAF | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-11 22:01:02.727  3199  6058 I Kodi    : 2026-11-11 22:01:02.727 T:6058     info <general>: SMARTED_TEST_CARROSSEL   #LUIMELIA | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-11 22:01:02.727  3199  6058 I Kodi    : 2026-11-11 22:01:02.727 T:6058     info <general>: SMARTED_TEST_CARROSSEL   007: ESTRADA PARA O MILHÃO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-11 22:01:02.728  3199  6058 I Kodi    : 2026-11-11 22:01:02.728 T:6058     info <general>: SMARTED_TEST_CARROSSEL   1 CONTRA TODOS | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-11 22:01:02.728  3199  6058 I Kodi    : 2026-11-11 22:01:02.728 T:6058     info <general>: SMARTED_TEST_CARROSSEL   100 ANOS DA WARNER BROS. | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-11 22:01:02.728  3199  6058 I Kodi    : 2026-11-11 22:01:02.728 T:6058     info <general>: SMARTED_TEST_CARROSSEL   100 CODE | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-11 22:01:02.728  3199  6058 I Kodi    : 2026-11-11 22:01:02.728 T:6058     info <general>: SMARTED_TEST_CARROSSEL   100 COISAS PARA FAZER ANTES DO HIGH SCHOOL | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-11 22:01:02.729  3199  6058 I Kodi    : 2026-11-11 22:01:02.729 T:6058     info <general>: SMARTED_TEST_CARROSSEL   100 DIAS PARA MORAR: COMEÇANDO DO ZERO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-11 22:01:31.494  3199  6058 I Kodi    : 2026-11-11 22:01:31.494 T:6058     info <general>: SMARTED_TEST_CARROSSEL NAVEGACAO janela=videos itens=? (Files.GetDirectory: Invalid params.)
-11-11 22:01:39.892  3199  6058 I Kodi    : 2026-11-11 22:01:39.892 T:6058     info <general>: SMARTED_TEST_CARROSSEL ABA ANIMES falhou (Files.GetDirectory: Invalid params.)
-11-11 22:01:48.374  3199  6058 I Kodi    : 2026-11-11 22:01:48.373 T:6058     info <general>: SMARTED_TEST_CARROSSEL ABA DESENHOS falhou (Files.GetDirectory: Invalid params.)
-11-11 22:01:56.627  3199  6058 I Kodi    : 2026-11-11 22:01:56.627 T:6058     info <general>: SMARTED_TEST_CARROSSEL ABA DORAMAS falhou (Files.GetDirectory: Invalid params.)
-11-11 22:02:05.065  3199  6058 I Kodi    : 2026-11-11 22:02:05.065 T:6058     info <general>: SMARTED_TEST_CARROSSEL ABA NOVELAS falhou (Files.GetDirectory: Invalid params.)
-11-11 22:02:05.776  3199  6058 I Kodi    : 2026-11-11 22:02:05.776 T:6058     info <general>: SMARTED_TEST_CARROSSEL RECENTES total=10
-11-11 22:02:06.037  3199  6058 I Kodi    : 2026-11-11 22:02:06.037 T:6058     info <general>: SMARTED_TEST_CARROSSEL FAVORITOS itens=0
-11-11 22:02:06.038  3199  6058 E Kodi    : 2026-11-11 22:02:06.038 T:6058    error <general>: SMARTED_TEST_CARROSSEL_FAILED menu de filmes com 0 itens; aba animes: Files.GetDirectory: Invalid params.; aba desenhos: Files.GetDirectory: Invalid params.; aba doramas: Files.GetDirectory: Invalid params.; aba novelas: Files.GetDirectory: Invalid params.
+11-12 01:11:27.266  3361  4785 I Kodi    : 2026-11-12 01:11:27.265 T:4785     info <general>: SMARTED-TV: carrossel filmes com 20 itens (#filmes_menu)
+11-12 01:11:28.874  3361  4786 I Kodi    : 2026-11-12 01:11:28.874 T:4786     info <general>: SMARTED-TV: carrossel canais com 20 itens (#todoscanais)
+11-12 01:11:28.882  3361  6025 I Kodi    : 2026-11-12 01:11:28.882 T:6025     info <general>: SMARTED-TV: carrossel canais com 20 itens (#todoscanais)
+11-12 01:11:31.862  3361  5464 I Kodi    : 2026-11-12 01:11:31.862 T:5464     info <general>: SMARTED_TEST_CARROSSEL CANAIS total=20 midia=20 arte=20 menu=0
+11-12 01:11:31.863  3361  5464 I Kodi    : 2026-11-12 01:11:31.863 T:5464     info <general>: SMARTED_TEST_CARROSSEL   A&E (8 OPÇÕES ) | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 01:11:31.864  3361  5464 I Kodi    : 2026-11-12 01:11:31.864 T:5464     info <general>: SMARTED_TEST_CARROSSEL   A&E FHD FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 01:11:31.865  3361  5464 I Kodi    : 2026-11-12 01:11:31.865 T:5464     info <general>: SMARTED_TEST_CARROSSEL   A&E HD HD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 01:11:31.865  3361  5464 I Kodi    : 2026-11-12 01:11:31.865 T:5464     info <general>: SMARTED_TEST_CARROSSEL   A&E SD SD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 01:11:31.866  3361  5464 I Kodi    : 2026-11-12 01:11:31.865 T:5464     info <general>: SMARTED_TEST_CARROSSEL   AMC (8 OPÇÕES ) | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 01:11:31.866  3361  5464 I Kodi    : 2026-11-12 01:11:31.866 T:5464     info <general>: SMARTED_TEST_CARROSSEL   AMC FHD FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 01:11:31.866  3361  5464 I Kodi    : 2026-11-12 01:11:31.866 T:5464     info <general>: SMARTED_TEST_CARROSSEL   AMC HD HD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 01:11:31.868  3361  5464 I Kodi    : 2026-11-12 01:11:31.867 T:5464     info <general>: SMARTED_TEST_CARROSSEL   AMC L FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 01:11:42.365  3361  6144 I Kodi    : 2026-11-12 01:11:42.365 T:6144     info <general>: SMARTED-TV: carrossel filmes com 20 itens (#filmes_menu)
+11-12 01:11:44.350  3361  5464 I Kodi    : 2026-11-12 01:11:44.350 T:5464     info <general>: SMARTED_TEST_CARROSSEL FILMES total=20 midia=20 arte=20 menu=0
+11-12 01:11:44.351  3361  5464 I Kodi    : 2026-11-12 01:11:44.351 T:5464     info <general>: SMARTED_TEST_CARROSSEL   OUTRA MAMÃE | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:11:44.352  3361  5464 I Kodi    : 2026-11-12 01:11:44.352 T:5464     info <general>: SMARTED_TEST_CARROSSEL   A ODISSEIA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:11:44.353  3361  5464 I Kodi    : 2026-11-12 01:11:44.353 T:5464     info <general>: SMARTED_TEST_CARROSSEL   GODZILLA MINUS ZERO | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:11:44.353  3361  5464 I Kodi    : 2026-11-12 01:11:44.353 T:5464     info <general>: SMARTED_TEST_CARROSSEL   NO LIMITE DA JUSTIÇA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:11:44.354  3361  5464 I Kodi    : 2026-11-12 01:11:44.354 T:5464     info <general>: SMARTED_TEST_CARROSSEL   CORAÇÃO SELVAGEM | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:11:44.354  3361  5464 I Kodi    : 2026-11-12 01:11:44.354 T:5464     info <general>: SMARTED_TEST_CARROSSEL   FUGA MORTAL | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:11:44.355  3361  5464 I Kodi    : 2026-11-12 01:11:44.355 T:5464     info <general>: SMARTED_TEST_CARROSSEL   RESIDENT EVIL | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:11:44.355  3361  5464 I Kodi    : 2026-11-12 01:11:44.355 T:5464     info <general>: SMARTED_TEST_CARROSSEL   MINHA MELHOR AMIGA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:16:35.587  3361  4921 I Kodi    : 2026-11-12 01:16:35.587 T:4921     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
+11-12 01:16:35.594  3361  6192 I Kodi    : 2026-11-12 01:16:35.594 T:6192     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
+11-12 01:16:36.908  3361  5464 I Kodi    : 2026-11-12 01:16:36.908 T:5464     info <general>: SMARTED_TEST_CARROSSEL SERIES total=20 midia=0 arte=20 menu=0
+11-12 01:16:36.912  3361  5464 I Kodi    : 2026-11-12 01:16:36.912 T:5464     info <general>: SMARTED_TEST_CARROSSEL   #BLACKAF | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:16:36.912  3361  5464 I Kodi    : 2026-11-12 01:16:36.912 T:5464     info <general>: SMARTED_TEST_CARROSSEL   #LUIMELIA | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:16:36.913  3361  5464 I Kodi    : 2026-11-12 01:16:36.913 T:5464     info <general>: SMARTED_TEST_CARROSSEL   007: ESTRADA PARA O MILHÃO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:16:36.917  3361  5464 I Kodi    : 2026-11-12 01:16:36.917 T:5464     info <general>: SMARTED_TEST_CARROSSEL   1 CONTRA TODOS | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:16:36.924  3361  5464 I Kodi    : 2026-11-12 01:16:36.924 T:5464     info <general>: SMARTED_TEST_CARROSSEL   100 ANOS DA WARNER BROS. | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:16:36.924  3361  5464 I Kodi    : 2026-11-12 01:16:36.924 T:5464     info <general>: SMARTED_TEST_CARROSSEL   100 CODE | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:16:36.925  3361  5464 I Kodi    : 2026-11-12 01:16:36.925 T:5464     info <general>: SMARTED_TEST_CARROSSEL   100 COISAS PARA FAZER ANTES DO HIGH SCHOOL | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:16:36.925  3361  5464 I Kodi    : 2026-11-12 01:16:36.925 T:5464     info <general>: SMARTED_TEST_CARROSSEL   100 DIAS PARA MORAR: COMEÇANDO DO ZERO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 01:16:48.944  3361  5464 I Kodi    : 2026-11-12 01:16:48.943 T:5464     info <general>: SMARTED_TEST_CARROSSEL MENU FILMES itens=5
+11-12 01:16:56.047  3361  5464 I Kodi    : 2026-11-12 01:16:56.043 T:5464     info <general>: SMARTED_TEST_CARROSSEL NAVEGACAO janela=videos
+11-12 01:17:07.624  3361  5464 I Kodi    : 2026-11-12 01:17:07.624 T:5464     info <general>: SMARTED_TEST_CARROSSEL ABA ANIMES itens=2
+11-12 01:17:10.500  3361  5464 I Kodi    : 2026-11-12 01:17:10.500 T:5464     info <general>: SMARTED_TEST_CARROSSEL ABA DESENHOS itens=2
+11-12 01:17:13.422  3361  5464 I Kodi    : 2026-11-12 01:17:13.422 T:5464     info <general>: SMARTED_TEST_CARROSSEL ABA DORAMAS itens=2
+11-12 01:17:16.291  3361  5464 I Kodi    : 2026-11-12 01:17:16.291 T:5464     info <general>: SMARTED_TEST_CARROSSEL ABA NOVELAS itens=2
+11-12 01:17:18.236  3361  5464 I Kodi    : 2026-11-12 01:17:18.236 T:5464     info <general>: SMARTED_TEST_CARROSSEL RECENTES total=10
+11-12 01:17:18.906  3361  5464 I Kodi    : 2026-11-12 01:17:18.905 T:5464     info <general>: SMARTED_TEST_CARROSSEL FAVORITOS itens=0
+11-12 01:17:18.906  3361  5464 I Kodi    : 2026-11-12 01:17:18.906 T:5464     info <general>: SMARTED_TEST_CARROSSEL_OK todas as linhas com conteudo real
 ```
 
 ## perfil-addons.txt (443 bytes)
