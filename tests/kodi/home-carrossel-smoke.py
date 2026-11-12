@@ -224,31 +224,59 @@ def main():
         log('HERO falhou (%s)' % error)
         problemas.append('HERO: %s' % error)
 
-    # DIAG: o que a propria pasta Lancamentos do addon publica em cada item
-    # (mostra se sinopse/genero/nota/data existem na fonte, sem inventar nada)
-    try:
-        menu = directory(brazuca(27, '#filmes_menu'), tentativas=2, espera=2.0,
-                         propriedades=HERO_PROPS)
-        lanc = [item for item in menu
-                if 'LANCAMENTOS' in normalize(TAGS.sub('', item.get('label', '')))]
-        if lanc:
-            bruto = directory(lanc[0].get('file'), tentativas=2, espera=2.0,
-                              propriedades=HERO_PROPS)
-            log('DIAG LANCAMENTOS bruto=%d campos_do_item=%s'
-                % (len(bruto), sorted(bruto[0].keys()) if bruto else []))
-            log('DIAG LANCAMENTOS plot=%d genre=%d dateadded=%d premiered=%d rating=%d year=%d'
-                % tuple(len([i for i in bruto if i.get(chave)])
-                        for chave in ('plot', 'genre', 'dateadded', 'premiered',
-                                      'rating', 'year')))
-            if bruto:
-                amostra = bruto[0]
-                log('DIAG AMOSTRA %s | plot=%s | genre=%s | dateadded=%s | year=%s'
-                    % (str(amostra.get('label'))[:40], str(amostra.get('plot'))[:60],
-                       amostra.get('genre'), amostra.get('dateadded'), amostra.get('year')))
-        else:
-            log('DIAG LANCAMENTOS pasta nao encontrada no menu de filmes')
-    except Exception as error:  # noqa: BLE001
-        log('DIAG LANCAMENTOS falhou (%s)' % error)
+    # DIAG: onde o addon publica ficha completa (genero/nota/data). Le as
+    # pastas reais e mostra o que existe, para o HERO nao inventar nada.
+    def raio_x(nome, url):
+        try:
+            itens = directory(url, tentativas=2, espera=1.5, propriedades=HERO_PROPS)
+            total = len(itens)
+            conta = {chave: len([i for i in itens if i.get(chave)])
+                     for chave in ('plot', 'genre', 'dateadded', 'premiered',
+                                   'rating', 'year')}
+            log('DIAG %s itens=%d %s' % (nome, total, conta))
+            if itens:
+                log('DIAG %s amostra=%s | plot=%s | genre=%s | date=%s | year=%s'
+                    % (nome, str(itens[0].get('label'))[:34].replace('|', '/'),
+                       str(itens[0].get('plot'))[:40].replace('|', '/'),
+                       itens[0].get('genre'), itens[0].get('dateadded'),
+                       itens[0].get('year')))
+            return itens
+        except Exception as erro:  # noqa: BLE001
+            log('DIAG %s falhou (%s)' % (nome, erro))
+            return []
+
+    def achar(itens, *pedacos):
+        for item in itens:
+            rotulo = normalize(TAGS.sub('', item.get('label', '')))
+            if all(normalize(pedaco) in rotulo for pedaco in pedacos):
+                return item
+        return None
+
+    filmes_menu = raio_x('MENU FILMES', brazuca(27, '#filmes_menu'))
+    lancamentos = achar(filmes_menu, 'lancamentos')
+    if lancamentos:
+        raio_x('LANCAMENTOS', lancamentos.get('file'))
+
+    generos = achar(filmes_menu, 'generos')
+    if generos:
+        lista_generos = raio_x('GENEROS', generos.get('file'))
+        if lista_generos:
+            primeiro_genero = lista_generos[0]
+            itens_genero = raio_x('GENERO ' + str(primeiro_genero.get('label'))[:16],
+                                  primeiro_genero.get('file'))
+            if itens_genero and itens_genero[0].get('filetype') == 'directory':
+                raio_x('GENERO PAGINA', itens_genero[0].get('file'))
+            elif itens_genero:
+                raio_x('GENERO FILMES', primeiro_genero.get('file'))
+
+    alfabetica = achar(filmes_menu, 'alfabetica')
+    if alfabetica:
+        raio_x('ALFABETICA', alfabetica.get('file'))
+
+    series_menu = raio_x('MENU SERIES', brazuca(27, '#series_menu'))
+    lista_series = achar(series_menu, 'series')
+    if lista_series:
+        raio_x('SERIES LISTA', lista_series.get('file'))
 
     # BARRA superior: sync-nav publica os favoritos do Brazuca; navegacao lista
     # exatamente as opcoes usadas pela skin (destino real, nunca lista inventada)
