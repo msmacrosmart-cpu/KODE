@@ -259,9 +259,9 @@
 			<thumb />
 			<property name="labelID">31035</property>
 			<property name="defaultID">135</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</property>
-			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
+			<property name="list">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Container(900).ListItem.Property(submenuVisibility),movies)</visible>
 			<property name="group">movies</property>
 			<property name="isSubmenu">True</property>
@@ -275,9 +275,9 @@
 			<thumb />
 			<property name="labelID">16101</property>
 			<property name="defaultID">135</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</property>
-			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
+			<property name="list">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Container(900).ListItem.Property(submenuVisibility),movies)</visible>
 			<property name="group">movies</property>
 			<property name="isSubmenu">True</property>
@@ -358,9 +358,9 @@
 			<thumb />
 			<property name="labelID">addon-script-skin-helper-widgets32045</property>
 			<property name="defaultID">369</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
-			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
+			<property name="list">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Container(900).ListItem.Property(submenuVisibility),tvshows)</visible>
 			<property name="group">tvshows</property>
 			<property name="isSubmenu">True</property>
@@ -423,9 +423,9 @@
 			<thumb />
 			<property name="labelID">addon-script-skin-helper-widgets32043</property>
 			<property name="defaultID">369</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
-			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
+			<property name="list">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Container(900).ListItem.Property(submenuVisibility),tvshows)</visible>
 			<property name="group">tvshows</property>
 			<property name="isSubmenu">True</property>
@@ -606,9 +606,9 @@
 			<thumb />
 			<property name="labelID">31035</property>
 			<property name="defaultID">135</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</property>
-			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
+			<property name="list">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
 			<property name="group">movies</property>
 			<property name="isSubmenu">True</property>
@@ -622,9 +622,9 @@
 			<thumb />
 			<property name="labelID">16101</property>
 			<property name="defaultID">135</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</property>
-			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
+			<property name="list">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
 			<property name="group">movies</property>
 			<property name="isSubmenu">True</property>
@@ -723,9 +723,9 @@
 			<thumb />
 			<property name="labelID">31035</property>
 			<property name="defaultID">135</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</property>
-			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
+			<property name="list">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Window(10000).Property(submenuVisibility),movies)</visible>
 			<property name="group">movies</property>
 			<property name="isSubmenu">True</property>
@@ -739,9 +739,9 @@
 			<thumb />
 			<property name="labelID">16101</property>
 			<property name="defaultID">135</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes,return)</property>
-			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu,return)</property>
+			<property name="list">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Window(10000).Property(submenuVisibility),movies)</visible>
 			<property name="group">movies</property>
 			<property name="isSubmenu">True</property>
@@ -830,9 +830,9 @@
 			<thumb />
 			<property name="labelID">addon-script-skin-helper-widgets32045</property>
 			<property name="defaultID">369</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
-			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
+			<property name="list">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
 			<property name="group">tvshows</property>
 			<property name="isSubmenu">True</property>
@@ -895,9 +895,9 @@
 			<thumb />
 			<property name="labelID">addon-script-skin-helper-widgets32043</property>
 			<property name="defaultID">369</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
-			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
+			<property name="list">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
 			<property name="group">tvshows</property>
 			<property name="isSubmenu">True</property>
@@ -946,9 +946,9 @@
 			<thumb />
 			<property name="labelID">addon-script-skin-helper-widgets32045</property>
 			<property name="defaultID">369</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
-			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
+			<property name="list">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Window(10000).Property(submenuVisibility),tvshows)</visible>
 			<property name="group">tvshows</property>
 			<property name="isSubmenu">True</property>
@@ -1011,9 +1011,9 @@
 			<thumb />
 			<property name="labelID">addon-script-skin-helper-widgets32043</property>
 			<property name="defaultID">369</property>
-			<onclick>ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</onclick>
-			<property name="path">ActivateWindow(Videos,plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
-			<property name="list">plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</property>
+			<onclick>ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</onclick>
+			<property name="path">ActivateWindow(Videos,plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
+			<property name="list">plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Window(10000).Property(submenuVisibility),tvshows)</visible>
 			<property name="group">tvshows</property>
 			<property name="isSubmenu">True</property>
@@ -1276,7 +1276,7 @@
 			<param name="submenuid" value="num-10000" />
 			<param name="widgetTags" value="WidgetTagOverlayAuto" />
 			<param name="widgetTarget" value="videos" />
-			<param name="widgetPath" value="plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes" />
+			<param name="widgetPath" value="plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu" />
 			<param name="widgetStyle" value="widget_layout_default" />
 			<param name="widgetSortBy" value="" />
 			<param name="widgetSortOrder" value="" />
@@ -1297,7 +1297,7 @@
 			<param name="submenuid" value="num-10000" />
 			<param name="widgetTags" value="WidgetTagOverlayAuto" />
 			<param name="widgetTarget" value="videos" />
-			<param name="widgetPath" value="plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes" />
+			<param name="widgetPath" value="plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu" />
 			<param name="widgetStyle" value="widget_layout_default" />
 			<param name="widgetSortBy" value="" />
 			<param name="widgetSortOrder" value="" />
@@ -1318,7 +1318,7 @@
 			<param name="submenuid" value="num-10000" />
 			<param name="widgetTags" value="WidgetTagOverlayAuto" />
 			<param name="widgetTarget" value="videos" />
-			<param name="widgetPath" value="plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes" />
+			<param name="widgetPath" value="plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu" />
 			<param name="widgetStyle" value="widget_layout_highlight" />
 			<param name="widgetSortBy" value="random" />
 			<param name="widgetSortOrder" value="" />
@@ -1339,7 +1339,7 @@
 			<param name="submenuid" value="num-10000" />
 			<param name="widgetTags" value="WidgetTagOverlayAuto" />
 			<param name="widgetTarget" value="videos" />
-			<param name="widgetPath" value="plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes" />
+			<param name="widgetPath" value="plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu" />
 			<param name="widgetStyle" value="widget_layout_default" />
 			<param name="widgetSortBy" value="" />
 			<param name="widgetSortOrder" value="" />
@@ -1360,7 +1360,7 @@
 			<param name="submenuid" value="num-10000" />
 			<param name="widgetTags" value="WidgetTagOverlayAuto" />
 			<param name="widgetTarget" value="videos" />
-			<param name="widgetPath" value="plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes" />
+			<param name="widgetPath" value="plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu" />
 			<param name="widgetStyle" value="widget_layout_default" />
 			<param name="widgetSortBy" value="" />
 			<param name="widgetSortOrder" value="" />
@@ -1381,7 +1381,7 @@
 			<param name="submenuid" value="num-10000" />
 			<param name="widgetTags" value="WidgetTagOverlayAuto" />
 			<param name="widgetTarget" value="videos" />
-			<param name="widgetPath" value="plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes" />
+			<param name="widgetPath" value="plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu" />
 			<param name="widgetStyle" value="widget_layout_default" />
 			<param name="widgetSortBy" value="" />
 			<param name="widgetSortOrder" value="" />
@@ -1423,7 +1423,7 @@
 			<param name="submenuid" value="num-10000" />
 			<param name="widgetTags" value="WidgetTagOverlayAuto" />
 			<param name="widgetTarget" value="videos" />
-			<param name="widgetPath" value="plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes" />
+			<param name="widgetPath" value="plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu" />
 			<param name="widgetStyle" value="widget_layout_default" />
 			<param name="widgetSortBy" value="" />
 			<param name="widgetSortOrder" value="" />
@@ -1436,7 +1436,7 @@
 		<value condition="!String.IsEmpty(Window(Home).property(skinhelper-refreshvideowidgetsbusy))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="!String.IsEmpty(Window(Home).property(favwidgetrefresh))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="Window.isactive(fullscreenvideo)">special://skin/extras/emptywidget.xsp</value>
-		<value>plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</value>
+		<value>plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</value>
 	</variable>
 	<variable name="widgetinfolabel-2510">
 		<value condition="String.Contains(Container(2510).ListItem.Property(DBTYPE), systeminfo)">$INFO[Container(2510).ListItem.label] $INFO[Container(2510).ListItem.label2]</value>
@@ -1457,7 +1457,7 @@
 		<value condition="!String.IsEmpty(Window(Home).property(skinhelper-refreshvideowidgetsbusy))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="!String.IsEmpty(Window(Home).property(favwidgetrefresh))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="Window.IsActive(fullscreenvideo)">special://skin/extras/emptywidget.xsp</value>
-		<value>plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</value>
+		<value>plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</value>
 	</variable>
 	<variable name="widgetinfolabel-2520">
 		<value condition="String.Contains(Container(2520).ListItem.Property(DBTYPE), systeminfo)">$INFO[Container(2520).ListItem.label] $INFO[Container(2520).ListItem.label2]</value>
@@ -1478,7 +1478,7 @@
 		<value condition="!String.IsEmpty(Window(Home).property(skinhelper-refreshvideowidgetsbusy))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="!String.IsEmpty(Window(Home).property(favwidgetrefresh))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="Window.IsActive(fullscreenvideo)">special://skin/extras/emptywidget.xsp</value>
-		<value>plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</value>
+		<value>plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</value>
 	</variable>
 	<variable name="widgetinfolabel-2530">
 		<value condition="String.Contains(Container(2530).ListItem.Property(DBTYPE), systeminfo)">$INFO[Container(2530).ListItem.label] $INFO[Container(2530).ListItem.label2]</value>
@@ -1499,7 +1499,7 @@
 		<value condition="!String.IsEmpty(Window(Home).property(skinhelper-refreshvideowidgetsbusy))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="!String.IsEmpty(Window(Home).property(favwidgetrefresh))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="Window.IsActive(fullscreenvideo)">special://skin/extras/emptywidget.xsp</value>
-		<value>plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</value>
+		<value>plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</value>
 	</variable>
 	<variable name="widgetinfolabel-2540">
 		<value condition="String.Contains(Container(2540).ListItem.Property(DBTYPE), systeminfo)">$INFO[Container(2540).ListItem.label] $INFO[Container(2540).ListItem.label2]</value>
@@ -1520,7 +1520,7 @@
 		<value condition="!String.IsEmpty(Window(Home).property(skinhelper-refreshvideowidgetsbusy))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="!String.IsEmpty(Window(Home).property(favwidgetrefresh))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="Window.IsActive(fullscreenvideo)">special://skin/extras/emptywidget.xsp</value>
-		<value>plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</value>
+		<value>plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</value>
 	</variable>
 	<variable name="widgetinfolabel-2550">
 		<value condition="String.Contains(Container(2550).ListItem.Property(DBTYPE), systeminfo)">$INFO[Container(2550).ListItem.label] $INFO[Container(2550).ListItem.label2]</value>
@@ -1541,7 +1541,7 @@
 		<value condition="!String.IsEmpty(Window(Home).property(skinhelper-refreshvideowidgetsbusy))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="!String.IsEmpty(Window(Home).property(favwidgetrefresh))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="Window.IsActive(fullscreenvideo)">special://skin/extras/emptywidget.xsp</value>
-		<value>plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</value>
+		<value>plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</value>
 	</variable>
 	<variable name="widgetinfolabel-2560">
 		<value condition="String.Contains(Container(2560).ListItem.Property(DBTYPE), systeminfo)">$INFO[Container(2560).ListItem.label] $INFO[Container(2560).ListItem.label2]</value>
@@ -1583,7 +1583,7 @@
 		<value condition="!String.IsEmpty(Window(Home).property(skinhelper-refreshvideowidgetsbusy))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="!String.IsEmpty(Window(Home).property(favwidgetrefresh))">special://skin/extras/emptywidget.xsp</value>
 		<value condition="Window.IsActive(fullscreenvideo)">special://skin/extras/emptywidget.xsp</value>
-		<value>plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes</value>
+		<value>plugin://plugin.video.BrazucaPlay.Matrix/?url=6148523063484D364C79396E61584E304C6D647064476831596E567A5A584A6A623235305A5735304C6D4E766253397A61336C7961584E724C7A56694F4463334F54637A4D6A6C6A4E3249304E6A51794D6A55324E575A6D596D4668596A4E695A54646C4C334A68647939735957356A5957316C626E5276637935346257773D&amp;mode=1&amp;name=Filmes&amp;iconimage=DefaultFolder.png&amp;fanart=DefaultFolder.png&amp;description=Menu</value>
 	</variable>
 	<variable name="widgetinfolabel-2580">
 		<value condition="String.Contains(Container(2580).ListItem.Property(DBTYPE), systeminfo)">$INFO[Container(2580).ListItem.label] $INFO[Container(2580).ListItem.label2]</value>

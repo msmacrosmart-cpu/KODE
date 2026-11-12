@@ -134,7 +134,9 @@ def bloco_menu():
 
 def limpar_widgets_legados(texto: str) -> str:
     """Troca widgets de addons legados/playlists ausentes pelos do SMARTED."""
-    return LEGADOS.sub('plugin://plugin.video.smarted/?route=carrossel&amp;alvo=filmes', texto)
+    # qualquer widget legado que tenha sobrado cai na lista real de filmes do
+    # Brazuca Play (nunca em rota generica nem em playlist ausente)
+    return LEGADOS.sub(destino(1, FILMES, 'Filmes').replace('&', '&amp;'), texto)
 
 
 def gerar_includes(origem: Path) -> str:

@@ -88,6 +88,11 @@ class MenuSuperiorTest(unittest.TestCase):
         for alvo in ('filmes', 'series', 'novelas', 'animes', 'doramas', 'desenhos'):
             self.assertIn('route=favoritos-' + alvo, texto, alvo)
 
+    def test_nenhum_widget_usa_bridge_generico(self):
+        texto = MENU.read_text(encoding='utf-8')
+        self.assertNotIn('route=carrossel', texto)
+        self.assertNotIn('route=recent-', texto)
+
     def test_widgets_legados_nao_sao_chamados(self):
         texto = MENU.read_text(encoding='utf-8')
         self.assertNotIn('plugin://script.skin.helper.widgets/', texto)
