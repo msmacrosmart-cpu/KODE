@@ -27,17 +27,20 @@ set -euo pipefail
 # o motivo real (um erro de compilador no meio de 50 min de saída) se perde.
 on_error() {
   local rc=$?
-  echo "---- falhou (exit $rc) ----" >&2
   local logf="${LOG:-}"
+  echo "---- falhou (exit $rc) ----" >&2
   if [ -n "$logf" ] && [ -f "$logf" ]; then
     echo "---- últimas 25 linhas de $logf ----" >&2
     tail -25 "$logf" >&2
     if [ -n "${GITHUB_ACTIONS:-}" ]; then
-      # uma única linha, para caber na anotação
-      local why
-      why=$(grep -E "error:|Error [0-9]|No space|undefined reference|fatal error" "$logf" | tail -3 | tr '\n' '|' | cut -c1-800)
-      [ -n "$why" ] && echo "::error::build-apk falhou: $why"
+      # Publica sempre as últimas linhas, sem depender de casar padrão nenhum:
+      # foi assim que um erro (ERRO: espaço insuficiente) passou despercebido.
+      local tailtxt
+      tailtxt=$(tail -6 "$logf" | tr '\n' '|' | tr -s ' ' | cut -c1-900)
+      echo "::error::build-apk falhou (exit $rc). Fim do log: $tailtxt"
     fi
+  elif [ -n "${GITHUB_ACTIONS:-}" ]; then
+    echo "::error::build-apk falhou (exit $rc) antes de criar o log"
   fi
   exit $rc
 }
