@@ -12,7 +12,11 @@
 #
 # Variáveis (todas opcionais):
 #     KODI_VERSION_TAG   tag do Kodi           (padrão: 21.3-Omega)
-#     KODI_SRC           fonte já clonado      (padrão: smartedtv/build/kodi-21.3-Omega)
+#     SMARTEDTV_BUILD_DIR  onde compilar        (padrão: smartedtv/build)
+#                        Em CI use um disco com espaço (ex.: /mnt/smartedtv-build);
+#                        na raiz do runner (73 GB, ~63 GB já ocupados) o build
+#                        estoura o disco e o make falha.
+#     KODI_SRC           fonte já clonado      (padrão: $BUILD/kodi-21.3-Omega)
 #     JOBS               paralelismo           (padrão: nproc)
 #     SKIP_DEPENDS       =1 pula as dependências (recompilar só o Kodi)
 #     KODI_ANDROID_STORE_FILE / _STORE_PASSWORD / _KEY_ALIAS / _KEY_PASSWORD
@@ -22,7 +26,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT="$(cd "$HERE/../.." && pwd)"
 SMARTED="$PROJECT/smartedtv"
-BUILD="$SMARTED/build"
+BUILD="${SMARTEDTV_BUILD_DIR:-$SMARTED/build}"
 OUT="$BUILD/out"
 KODI_VERSION_TAG="${KODI_VERSION_TAG:-21.3-Omega}"
 KODI_SRC="${KODI_SRC:-$BUILD/kodi-$KODI_VERSION_TAG}"
@@ -81,9 +85,10 @@ else
   step "2. Identidade visual SMARTEDTV (artes oficiais + textos)"
   run python3 "$SMARTED/tools/make-brand-assets.py"
   LANG_ADDON=""
-  if [ -d "$BUILD/lang/resource.language.pt_br" ]; then
-    LANG_ADDON="$BUILD/lang/resource.language.pt_br"
-  fi
+  for cand in "$BUILD/lang/resource.language.pt_br" "$SMARTED/build/lang/resource.language.pt_br"; do
+    [ -d "$cand" ] && { LANG_ADDON="$cand"; break; }
+  done
+  [ -n "$LANG_ADDON" ] || echo "AVISO: pt-BR não encontrado; o APK sairá só com en_gb" | tee -a "$LOG"
   run python3 "$SMARTED/tools/patch-source.py" "$KODI_SRC" \
       --brand-dir "$SMARTED/out" ${LANG_ADDON:+--language-addon "$LANG_ADDON"}
 fi
