@@ -92,10 +92,16 @@ jobs:
           echo "AVISO: apt parcialmente indisponível; seguindo com o que já existe na imagem"
 
           missing=""
-          for t in cmake make git curl unzip zip python3 autoconf automake libtool pkg-config gperf bison flex; do
-            command -v "$t" >/dev/null 2>&1 || missing="$missing $t"
+          for t in cmake make git curl unzip python3 autoconf automake libtool pkg-config gperf bison flex; do
+            if command -v "$t" >/dev/null 2>&1; then
+              echo "  ok      $t"
+            else
+              echo "  FALTA   $t"
+              missing="$missing $t"
+            fi
           done
           if [ -n "$missing" ]; then
+            echo "::error::ferramentas ausentes:$missing"
             echo "ERRO: ferramentas ausentes:$missing" >&2
             exit 1
           fi
