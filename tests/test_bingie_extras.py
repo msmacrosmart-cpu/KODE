@@ -61,9 +61,9 @@ class SkinPadraoTest(unittest.TestCase):
         self.assertIn('fetch-bingie-addons.py', fluxo)
         self.assertIn('--extra-addons "$RUNNER_TEMP/extra"', fluxo)
         self.assertIn('--default-skin "$RUNNER_TEMP/extra/skin.titan.bingie.mod"', fluxo)
-        self.assertIn('--to-version 1.0.49', fluxo)
-        self.assertIn('--to-code 2103035', fluxo)
-        self.assertIn('v1.0.49-smarted-arm64', fluxo)
+        self.assertIn('--to-version 1.0.50', fluxo)
+        self.assertIn('--to-code 2103036', fluxo)
+        self.assertIn('v1.0.50-smarted-arm64', fluxo)
 
 
 if __name__ == '__main__':

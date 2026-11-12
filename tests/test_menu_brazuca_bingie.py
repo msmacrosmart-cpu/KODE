@@ -81,11 +81,11 @@ class BuildOverlayTest(unittest.TestCase):
         self.assertIn('--skin-overlay', script)
         self.assertIn('Overlay aplicado na skin padrao', script)
 
-    def test_workflow_publica_1_0_49_com_overlay(self):
+    def test_workflow_publica_versao_com_overlay(self):
         fluxo = FLUXO.read_text(encoding='utf-8')
         self.assertIn('--skin-overlay kodi/skin.smartedtv.bingie', fluxo)
-        self.assertIn('--to-version 1.0.49', fluxo)
-        self.assertIn('v1.0.49-smarted-arm64', fluxo)
+        self.assertIn('--to-version 1.0.50', fluxo)
+        self.assertIn('v1.0.50-smarted-arm64', fluxo)
 
 
 class BootstrapMenuTest(unittest.TestCase):

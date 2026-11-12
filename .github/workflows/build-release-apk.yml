@@ -1,5 +1,5 @@
-# v1.0.49: rodada 22 - menu superior da skin padrao (base Bingie) aponta para as rotas do
-# Brazuca Play, sem entradas genericas de Filmes/Series/PVR/Add-ons do Kodi.
+# v1.0.50: rodada 23 - modulos Python que faltavam (arrow/unidecode/simplejson/requests)
+# empacotados no APK; sem eles os scripts da skin morriam no boot (logs do Kodi).
 # (historico) rodada 14 - cards em grade para as 6 categorias de VOD, filtros de ordenacao, icones das categorias e notificacoes SMARTEDTV.
 name: Build SMARTED-TV release APK
 on:
@@ -47,10 +47,14 @@ jobs:
         run: ./tools/kodi/setup.sh
       - name: Baixar addons extras (skin Bingie Mod)
         run: python3 tools/kodi/fetch-bingie-addons.py "$RUNNER_TEMP/extra"
+      - name: Empacotar modulos Python dos addons (arrow, unidecode, simplejson...)
+        run: |
+          python3 tools/kodi/vendor-python-modules.py "$RUNNER_TEMP/extra"
+          ls -d "$RUNNER_TEMP/extra"/script.module.* | wc -l
       - name: Montar candidato sem assinatura (versão + skin.novatv + ponte)
         run: |
           export PYTHONPATH="$HOME/.cache/kode-build/python:$PYTHONPATH"
-          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.49 --to-code 2103035 --extra-addons "$RUNNER_TEMP/extra" --default-skin "$RUNNER_TEMP/extra/skin.titan.bingie.mod" --skin-overlay kodi/skin.smartedtv.bingie "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
+          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.50 --to-code 2103036 --extra-addons "$RUNNER_TEMP/extra" --default-skin "$RUNNER_TEMP/extra/skin.titan.bingie.mod" --skin-overlay kodi/skin.smartedtv.bingie "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
           ls -lh "$RUNNER_TEMP/unsigned.apk"
 
       - name: Verificar integridade de boot (simulação do launcher dex)
@@ -116,8 +120,8 @@ jobs:
           base = Path(os.environ["RUNNER_TEMP"]) / "base/SMARTED-TV-v1.0.22-arm64.apk"
           out = Path(os.environ["RUNNER_TEMP"]) / "signed.apk"
           a = APK(str(out))
-          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTED-TV', '1.0.49', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
-          assert int(a.version_code) == 2103035, f"versionCode inesperado: {a.version_code}"
+          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTED-TV', '1.0.50', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
+          assert int(a.version_code) == 2103036, f"versionCode inesperado: {a.version_code}"
           print(f"Identidade: {a.package} {a.get_app_name()} {a.version_name} ({a.version_code})")
           with zipfile.ZipFile(base) as before, zipfile.ZipFile(out) as after:
               assert after.testzip() is None
@@ -158,6 +162,17 @@ jobs:
                                 ('script-skinshortcuts-includes.xml', 'xml/script-skinshortcuts-includes.xml')):
                   origem = Path('kodi/skin.smartedtv.bingie') / rel
                   assert after.read(f'assets/addons/{SKIN_ID}/{rel}') == origem.read_bytes(), f"overlay divergente: {rel}"
+              # modulos Python que faltavam nos logs do Kodi (ModuleNotFoundError)
+              for modulo, alvo in (('arrow', 'arrow/__init__.py'),
+                                   ('unidecode', 'unidecode/__init__.py'),
+                                   ('simplejson', 'simplejson/__init__.py'),
+                                   ('requests', 'requests/__init__.py'),
+                                   ('simpleeval', 'simpleeval/__init__.py'),
+                                   ('dateutil', 'dateutil/__init__.py')):
+                  arc = f'assets/addons/script.module.{modulo}/lib/{alvo}'
+                  assert arc in after.namelist(), f"modulo ausente no APK: {modulo}"
+                  assert f'>script.module.{modulo}<' in after.read('assets/system/addon-manifest.xml').decode(), \
+                      f"modulo fora do manifesto: {modulo}"
               classic_xml = ET.fromstring(after.read('assets/addons/skin.smartedtv.classic/addon.xml'))
               assert (classic_xml.get('id'), classic_xml.get('version')) == ('skin.smartedtv.classic', '1.0.17'), \
                   f"skin classica inesperada: {classic_xml.get('id')} {classic_xml.get('version')}"
@@ -205,15 +220,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp "$RUNNER_TEMP/signed.apk" "SMARTED-TV-v1.0.49-arm64.apk"
-          sha256sum "SMARTED-TV-v1.0.49-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
-          TAG=v1.0.49-smarted-arm64
+          cp "$RUNNER_TEMP/signed.apk" "SMARTED-TV-v1.0.50-arm64.apk"
+          sha256sum "SMARTED-TV-v1.0.50-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
+          TAG=v1.0.50-smarted-arm64
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" "SMARTED-TV-v1.0.49-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
+            gh release upload "$TAG" "SMARTED-TV-v1.0.50-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
             gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false
             echo "Release $TAG atualizada com o APK assinado."
           else
-          gh release create v1.0.49-smarted-arm64 "SMARTED-TV-v1.0.49-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTED-TV 1.0.49 ARM64 - menu Brazuca Play na skin SMARTEDTV' --notes 'SMARTED-TV 1.0.49 (ARM64, Kodi 21.3, org.xbmc.kodi) - ATUALIZACAO com a barra superior da skin padrao (base BINGIE MOD 2.2.3, exibida como SMARTEDTV) refeita: as sete categorias do Brazuca Play - TV ao vivo, Filmes, Series, Novelas, Animes, Doramas e Desenhos - ficam fixas no topo e cada uma abre diretamente a pasta real do add-on plugin.video.BrazucaPlay.Matrix (mode 21/27/25/22/31/28). Saiu o botao de Add-ons e as entradas genericas de Filmes/Series e do PVR do Kodi; ficam Busca, Ajustes e Sair. Os carrosseis da Home passaram a usar as rotas do SMARTED (lancamentos de filmes e series, favoritos por categoria), entao o HERO usa os lancamentos em vez de conteudo vazio do banco do Kodi. O menu e estatico: o script.skinshortcuts nao regrava mais por cima, e o bootstrap da skin limpa os dados antigos do menu no primeiro boot e recarrega a interface. Som continua silenciado (resource.uisounds.silencio). A skin classica segue instalada como SMARTEDTV Classica (Ajustes > Aparencia > Skin) para voltar a interface anterior. Estrutura original da skin base preservada: o overlay troca apenas o menu superior e uma linha do Home.xml.'
+          gh release create v1.0.50-smarted-arm64 "SMARTED-TV-v1.0.50-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTED-TV 1.0.50 ARM64 - modulos Python corrigidos + menu Brazuca' --notes 'SMARTED-TV 1.0.50 (ARM64, Kodi 21.3, org.xbmc.kodi) - CORRECAO DOS ERROS DO LOG + barra superior do Brazuca Play. O log do Kodi mostrava que os servicos da skin morriam com ModuleNotFoundError: script.skin.helper.service e script.skin.helper.backgrounds precisam de arrow; script.skinshortcuts precisa de unidecode e simpleeval (sem isso o menu da skin nem era gerado); script.bingie.helper precisa de simplejson; o TMDb Helper precisa de requests. Todos esses modulos agora vao empacotados no APK como addons script.module.*, com verificacao automatica de imports no build. Mantida a barra superior com as sete categorias do Brazuca Play (TV ao vivo, Filmes, Series, Novelas, Animes, Doramas, Desenhos) abrindo as pastas reais do plugin.video.BrazucaPlay.Matrix, sem o botao de Add-ons, com Busca/Ajustes/Sair, som silenciado e carrosseis/HERO puxando lancamentos e favoritos do SMARTED. Skin classica segue como SMARTEDTV Classica em Ajustes > Aparencia > Skin.''
           fi
-          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.49-smarted-arm64/SMARTED-TV-v1.0.49-arm64.apk"
+          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.50-smarted-arm64/SMARTED-TV-v1.0.50-arm64.apk"
 # Os blocos do APK base ficam em .github/private-apk-chunks.json; a assinatura usa dropbox/smarted-tv-test.jks.
