@@ -109,7 +109,17 @@ jobs:
           SKIP_BRAND: '1'      # passo 6 já aplicou a identidade
           KODI_SRC: ${{ github.workspace }}/smartedtv/build/kodi-21.3-Omega
 
-      - name: 9. Guardar APK e relatório
+      - name: 9. Verificar o APK (26 checagens)
+        # Barreira antes de publicar: se o APK não tiver a identidade SMARTEDTV,
+        # não for arm64, tiver add-on proibido ou não for assinado, ele NÃO é
+        # publicado. O verificador foi validado contra o APK oficial sem marca e
+        # reprova exatamente as 3 checagens de identidade (prova de que detecta).
+        run: |
+          pip install --quiet pyaxmlparser==0.3.31
+          APK=$(ls smartedtv/build/out/*.apk | head -1)
+          python3 smartedtv/tools/verify-apk.py "$APK"
+
+      - name: 10. Guardar APK e relatório
         uses: actions/upload-artifact@v4
         with:
           name: smartedtv-apk-arm64
@@ -121,7 +131,7 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
-      - name: 10. Publicar release com o APK
+      - name: 11. Publicar release com o APK
         # Publica sempre que o build der certo. Este é o mesmo método já usado
         # pelos workflows de release deste repositório (gh release create), e é
         # o que permite baixar o APK direto pelo GitHub, sem intermediários.
