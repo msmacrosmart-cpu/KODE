@@ -9,3 +9,4 @@ build/
 
 # SMARTEDTV: saída de compilação (fonte patchado, dependências, APK)
 smartedtv/build/
+smartedtv/out-apk/

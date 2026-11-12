@@ -1,16 +1,25 @@
 name: SMARTEDTV - compilar do código-fonte (arm64)
 
-# Compila o Kodi 21.3-Omega do código-fonte para Android arm64-v8a, aplica a
-# identidade SMARTEDTV e publica o APK numa release do repositório.
+# Compila o Kodi 21.3-Omega do código-fonte com a identidade SMARTEDTV e publica
+# o APK numa Release do repositório.
 #
-# SOBRE O DISCO: o passo que mais difícil deu certo foi o das dependências.
-# O runner ubuntu-22.04 tem 73 GB na raiz, mas ~63 GB já vêm ocupados pelas
-# imagens pré-instaladas. As dependências do Kodi ocupam ~8 GB e a árvore de
-# build mais ~6 GB, então a compilação estoura a raiz (chega a 98%) e o make
-# morre. Duas medidas, nesta ordem:
-#   1. limpar o que o runner não usa (libera ~25 GB na raiz);
-#   2. compilar em /mnt, que é um disco separado e vazio (BuildDir em CI).
-# Se /mnt não existir com espaço, o script usa a raiz mesmo e avisa.
+# A compilação usa LITERALMENTE a mesma receita do workflow
+# verify-native-keyboard.yml, que já compilou este mesmo Kodi 21.3-Omega neste
+# mesmo tipo de runner (run 42775900278, 1h05m, sucesso):
+#     depends: bootstrap, configure, make -j2
+#     kodi:    cmakebuildsys + make -j2 + make apk
+# As duas diferenças são: (a) limpeza de disco antes, porque a raiz do runner
+# tem 73 GB com ~63 GB já ocupados e as dependências + build do Kodi passam de
+# 14 GB; (b) aplicação da identidade SMARTEDTV no código antes de compilar.
+#
+# Histórico do que já falhou aqui, para não repetir:
+#   43204690500 / 43211889262 — disco cheio (98%) no meio das dependências
+#   43239136360 — limpeza agressiva de /opt quebrou o apt
+#   43240100367 / 43242967517 — verificação exigia "libtool", que não existe na imagem
+#   43245841601 — Pillow instalado em outro interpretador Python
+#   43258375530 — samba falhou ao gerar librpc/idl compilando via script
+#   43272563630 / 43287084066 / 43297325454 — script procurava as dependências
+#                 num prefixo onde elas não ficam (elas ficam em tools/depends/target)
 
 on:
   workflow_dispatch:
@@ -27,245 +36,174 @@ concurrency:
   group: smartedtv-source-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  KODI_TAG: 21.3-Omega
+  KODI_COMMIT: a3a448d26b8d560a65655dab2cd122994dc4e146
+
 jobs:
   arm64:
     name: Kodi 21.3-Omega -> SMARTEDTV arm64-v8a
     runs-on: ubuntu-22.04
     timeout-minutes: 240
-    env:
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-      CI: 'true'
     steps:
       - uses: actions/checkout@v4
 
-      - name: 0. Escolher disco de build
-        # A raiz do runner tem 73 GB mas já vem ~63 GB ocupada. Se houver um
-        # disco separado e grande (/mnt), compilamos nele; senão, na raiz.
+      - name: 1. Libertar espaço em disco
+        # Sem isto o build morre por volta dos 39 min com "No space left on
+        # device" no meio de um .o. Só remove o que sabidamente não é usado:
+        # nada de /opt/az ou /opt/microsoft (isso já quebrou o apt uma vez).
         run: |
-          set -euo pipefail
-          if [ -d /mnt ] && AVAIL=$(df --output=avail /mnt | tail -1) && [ "$AVAIL" -gt 20000000 ]; then
-            BD=/mnt/smartedtv-build
-            echo "usando disco separado /mnt"
-          else
-            BD="$GITHUB_WORKSPACE/smartedtv-build"
-            echo "usando a raiz do runner"
-          fi
-          mkdir -p "$BD"
-          echo "SMARTEDTV_BUILD_DIR=$BD" >> "$GITHUB_ENV"
-          echo "$BD" > "$GITHUB_WORKSPACE/.smartedtv-build-dir"
-          echo "diretório de build: $BD"
-          df -h "$BD"
-
-      - name: 1. Libertar espaço na raiz do runner
-        # Conservador de propósito: só o que sabidamente não é usado e é grande.
-        # Nada de mexer em /opt/az, /opt/microsoft ou repositórios do apt — foi
-        # exatamente isso que quebrou o apt-get de um build anterior.
-        run: |
-          echo "== antes =="; df -h / /mnt 2>/dev/null || df -h /
+          echo "== antes =="; df -h /
           sudo rm -rf /usr/share/dotnet || true
           sudo rm -rf /opt/ghc /usr/local/.ghcup || true
           sudo rm -rf /opt/hostedtoolcache/CodeQL || true
-          sudo rm -rf "$ANDROID_SDK_ROOT/system-images" || true
           sudo rm -rf /usr/local/lib/android/sdk/system-images || true
           sudo apt-get clean
           docker image prune -af 2>/dev/null || true
-          echo "== depois =="; df -h / /mnt 2>/dev/null || df -h /
+          echo "== depois =="; df -h /
 
-      - name: 2. JDK 17 (mesmo do build de referência)
+      - name: 2. JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
       - name: 3. Dependências de sistema
-        # A imagem ubuntu-22.04 do runner já traz quase tudo o que o Kodi usa
-        # (cmake, autoconf, automake, libtool, pkg-config, gperf, bison, flex,
-        # zip/unzip, python3). O apt aqui é complementar e NÃO pode derrubar o
-        # build por um erro transiente de repositório — por isso ele é
-        # best-effort e a exigência real é verificada ferramenta por ferramenta.
+        # O apt é complementar: a imagem do runner já traz o necessário e um
+        # erro transiente de repositório não pode derrubar um build de 1 hora.
         run: |
           set -uo pipefail
           sudo apt-get update -o Acquire::Retries=5 -qq 2>/dev/null || true
           sudo apt-get install -y -qq --no-install-recommends \
             autoconf automake bison build-essential curl flex gawk git gperf \
             lib32stdc++6 lib32z1 libcurl4-openssl-dev unzip zip zlib1g-dev \
-            libtool pkg-config cmake 2>/dev/null || \
-          echo "AVISO: apt parcialmente indisponível; seguindo com o que já existe na imagem"
-
+            libtool pkg-config cmake 2>/dev/null || true
           missing=""
           for t in cmake make git curl unzip python3 autoconf automake libtoolize pkg-config gperf bison flex; do
-            if command -v "$t" >/dev/null 2>&1; then
-              echo "  ok      $t"
-            else
-              echo "  FALTA   $t"
-              missing="$missing $t"
-            fi
+            command -v "$t" >/dev/null 2>&1 || missing="$missing $t"
           done
-          if [ -n "$missing" ]; then
-            echo "::error::ferramentas ausentes:$missing"
-            echo "ERRO: ferramentas ausentes:$missing" >&2
-            exit 1
-          fi
-          echo "ok: todas as ferramentas de build presentes"
-          # libtoolize é o que o configure do Kodi usa; o binário "libtool"
-          # genérico não existe na imagem do runner (verificado no run 43242967517).
-          python3 -m pip install --quiet --break-system-packages PyYAML 2>/dev/null || true
+          [ -z "$missing" ] || { echo "::error::faltando:$missing"; exit 1; }
+          echo "ok: ferramentas presentes"
+          # Pillow no MESMO interpretador que executará o script (o runner tem
+          # mais de um python3 e isso já causou exit 2)
+          python3 -m pip install --quiet --break-system-packages 'Pillow==11.3.0' \
+            || python3 -m pip install --quiet --user 'Pillow==11.3.0'
+          python3 -c 'import PIL,sys;print("Pillow",PIL.__version__,"em",sys.executable)'
 
-      - name: 4. SDK/NDK exatos do Kodi 21.3
+      - name: 4. SDK/NDK do Kodi 21.3
         run: |
-          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install \
-            'platforms;android-34' 'build-tools;33.0.1' 'ndk;21.4.7075529' > /dev/null
-          test -d "$ANDROID_SDK_ROOT/ndk/21.4.7075529"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
+            'platforms;android-34' 'build-tools;33.0.1' 'ndk;21.4.7075529'
+          test -d "$ANDROID_HOME/ndk/21.4.7075529"
           echo "ok: SDK 34, build-tools 33.0.1, NDK 21.4.7075529"
 
-      - name: 5. Artefatos de identidade a partir das artes oficiais
+      - name: 5. Identidade visual SMARTEDTV (artes oficiais)
         run: |
-          set -euo pipefail
-          # A imagem do runner tem mais de um interpretador Python; instalar com
-          # "python3 -m pip" pode cair num que não é o usado depois. Instalar no
-          # interpretador que vai executar o script, e confirmar o import.
-          python3 -c 'import sys' 
-          python3 -m pip install --quiet --break-system-packages 'Pillow==11.3.0' \
-            || python3 -m pip install --quiet --user 'Pillow==11.3.0' \
-            || pip3 install --quiet 'Pillow==11.3.0'
-          python3 -c 'import PIL, sys; print("Pillow", PIL.__version__, "em", sys.executable)'
           python3 smartedtv/tools/make-brand-assets.py
           test -f smartedtv/out/media/splash.jpg
-          ls -la smartedtv/out/media | head -5
+          ls smartedtv/out/media | head -6
 
-      - name: 6. Idioma pt-BR oficial (repo-resources)
+      - name: 6. Código-fonte do Kodi 21.3-Omega + identidade
         run: |
           set -euo pipefail
-          DEST="$SMARTEDTV_BUILD_DIR/lang"
-          mkdir -p "$DEST"
-          git clone --depth 1 -b omega https://github.com/xbmc/repo-resources.git /tmp/res
-          cp -r /tmp/res/resource.language.pt_br "$DEST/"
-          test -f "$DEST/resource.language.pt_br/resources/strings.po"
-          echo "pt-BR: $(wc -l < "$DEST/resource.language.pt_br/resources/strings.po") linhas"
+          git clone --depth 1 --branch "$KODI_TAG" https://github.com/xbmc/xbmc.git "$RUNNER_TEMP/kodi"
+          test "$(git -C "$RUNNER_TEMP/kodi" rev-parse HEAD)" = "$KODI_COMMIT"
+          echo "commit ok: $KODI_COMMIT"
 
-      - name: 7. Obter o código-fonte do Kodi 21.3-Omega
-        # A identidade SMARTEDTV é aplicada no passo 8, pelo próprio
-        # build-apk.sh — um único caminho testado, sem duplicar a lógica aqui.
+          # pt-BR oficial (o Kodi só embarca en_gb)
+          git clone --depth 1 -b omega https://github.com/xbmc/repo-resources.git "$RUNNER_TEMP/res"
+          mkdir -p "$RUNNER_TEMP/lang"
+          cp -r "$RUNNER_TEMP/res/resource.language.pt_br" "$RUNNER_TEMP/lang/"
+
+          python3 smartedtv/tools/patch-source.py "$RUNNER_TEMP/kodi" \
+            --brand-dir smartedtv/out \
+            --language-addon "$RUNNER_TEMP/lang/resource.language.pt_br"
+          grep -q 'app_name">SMARTEDTV<' "$RUNNER_TEMP/kodi/tools/android/packaging/xbmc/strings.xml.in"
+          grep -q '^APP_NAME Kodi' "$RUNNER_TEMP/kodi/version.txt"
+          grep -q '^APP_PACKAGE org.xbmc.kodi' "$RUNNER_TEMP/kodi/version.txt"
+          echo "identidade aplicada; APP_NAME e APP_PACKAGE preservados"
+
+      - name: 7. Dependências Android (receita comprovada)
         run: |
           set -euo pipefail
-          df -h "$SMARTEDTV_BUILD_DIR"
-          KODI_SRC="$SMARTEDTV_BUILD_DIR/kodi-21.3-Omega"
-          rm -rf "$KODI_SRC"
-          git clone --depth 1 --branch 21.3-Omega https://github.com/xbmc/xbmc.git "$KODI_SRC"
-          test "$(git -C "$KODI_SRC" rev-parse HEAD)" = 'a3a448d26b8d560a65655dab2cd122994dc4e146'
-          echo "ok: commit a3a448d2 confirmado"
-
-      - name: 8a. Dependências Android (comandos do diagnóstico que passou)
-        # Estes são EXATAMENTE os comandos que passaram no run 43215437672
-        # (workflow de diagnóstico, 1h08min, make exit=0). Não abstrair: o
-        # build via script falhou no samba mesmo com a mesma árvore, então o
-        # build usa a sequência comprovada, sem variação.
-        run: |
-          set -euo pipefail
-          BD="${SMARTEDTV_BUILD_DIR:-}"
-          if [ -z "$BD" ] || [ ! -d "$BD" ]; then BD=$(cat "$GITHUB_WORKSPACE/.smartedtv-build-dir" 2>/dev/null || true); fi
-          if [ -z "$BD" ] || [ ! -d "$BD" ]; then BD="$GITHUB_WORKSPACE/smartedtv-build"; fi
-          echo "dependências em: $BD"
-          KODI_SRC="$BD/kodi-21.3-Omega"
-          PREFIX="$BD/xbmc-depends"
-          TARBALLS="$BD/tarballs"
-          mkdir -p "$PREFIX" "$TARBALLS"
-          echo "livre antes: $(df -h --output=avail "$BD" | tail -1)"
-          cd "$KODI_SRC/tools/depends"
+          cd "$RUNNER_TEMP/kodi/tools/depends"
           ./bootstrap
-          ./configure --with-tarballs="$TARBALLS" --host=aarch64-linux-android \
-            --with-sdk-path="$ANDROID_SDK_ROOT" \
-            --with-ndk-path="$ANDROID_SDK_ROOT/ndk/21.4.7075529" \
-            --prefix="$PREFIX"
-          make -j4
-          echo "livre depois: $(df -h --output=avail "$BD" | tail -1)"
-          test -d "$PREFIX" && echo "prefix ok: $PREFIX"
+          ./configure --with-tarballs="$RUNNER_TEMP/tarballs" --host=aarch64-linux-android \
+            --with-sdk-path="$ANDROID_HOME" --with-ndk-path="$ANDROID_HOME/ndk/21.4.7075529" \
+            --prefix="$RUNNER_TEMP/xbmc-depends"
+          make -j2
+          echo "livre após dependências: $(df -h --output=avail / | tail -1)"
 
-      - name: 8. Compilar o Kodi e gerar o APK
-        # SKIP_DEPENDS=1: as dependências acabaram de ser compiladas no passo 8a
-        # com a sequência comprovada. Aqui só o Kodi, o empacotamento e a assinatura.
+      - name: 8. Compilar o Kodi para Android
         run: |
           set -euo pipefail
-          # Resolve o diretório na hora: GITHUB_ENV nem sempre atravessa todos os
-          # passos como esperado (foi a causa do run 43287084066, em que o script
-          # procurou em $GITHUB_WORKSPACE/smartedtv-build e não achou as
-          # dependências já compiladas em /mnt).
-          BD="${SMARTEDTV_BUILD_DIR:-}"
-          if [ -z "$BD" ] || [ ! -d "$BD" ]; then
-            BD=$(cat "$GITHUB_WORKSPACE/.smartedtv-build-dir" 2>/dev/null || true)
-          fi
-          if [ -z "$BD" ] || [ ! -d "$BD" ]; then
-            BD="$GITHUB_WORKSPACE/smartedtv-build"
-          fi
-          echo "usando diretório de build: $BD"
-          ls -d "$BD"/* 2>/dev/null | head -5
-          test -d "$BD/xbmc-depends" || { echo "::error::dependências não encontradas em $BD"; exit 1; }
-          export SMARTEDTV_BUILD_DIR="$BD"
-          export SKIP_DEPENDS=1
-          export JOBS=2
-          export KODI_SRC="$BD/kodi-21.3-Omega"
-          echo "livre: $(df -h --output=avail "$BD" | tail -1)"
-          ./smartedtv/tools/build-apk.sh
+          mkdir -p "$RUNNER_TEMP/kodi-build"
+          make -C "$RUNNER_TEMP/kodi/tools/depends/target/cmakebuildsys" \
+            BUILD_DIR="$RUNNER_TEMP/kodi-build"
+          make -C "$RUNNER_TEMP/kodi-build" -j2
+          echo "livre após o Kodi: $(df -h --output=avail / | tail -1)"
 
-      - name: 8b. Guardar log da compilação (sempre)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: smartedtv-build-log
-          path: |
-            ${{ github.workspace }}/smartedtv-build/build.log
-            /mnt/smartedtv-build/build.log
-          retention-days: 14
-          if-no-files-found: warn
+      - name: 9. Empacotar e assinar o APK
+        # Chave de teste do próprio repositório, a mesma das builds de teste
+        # anteriores (versionCode 2104000 permite atualizar 2103001/2103002).
+        env:
+          KODI_ANDROID_STORE_FILE: ${{ github.workspace }}/dropbox/smarted-tv-test.jks
+          KODI_ANDROID_STORE_PASSWORD: android
+          KODI_ANDROID_KEY_ALIAS: smarted-tv-test
+          KODI_ANDROID_KEY_PASSWORD: android
+        run: |
+          set -euo pipefail
+          make -C "$RUNNER_TEMP/kodi-build" apk
+          OUT="$GITHUB_WORKSPACE/smartedtv/out-apk"
+          mkdir -p "$OUT"
+          APK=$(find "$RUNNER_TEMP/kodi-build" "$RUNNER_TEMP/kodi" -type f -name '*.apk' \
+                | grep -v 'unaligned\|unsigned\|intermediate' | head -1)
+          [ -n "$APK" ] || { echo "::error::nenhum APK gerado"; exit 1; }
+          echo "APK: $APK"
+          FINAL="$OUT/SMARTEDTV-21.4.0-arm64-v8a.apk"
+          cp "$APK" "$FINAL"
+          ( cd "$OUT" && sha256sum "$(basename "$FINAL")" > "$(basename "$FINAL").sha256" )
+          ls -la "$OUT"
+          cat "$OUT"/*.sha256
 
-      - name: 9. Verificar o APK (26 checagens)
+      - name: 10. Verificar o APK (26 checagens)
         run: |
           python3 -m pip install --quiet --break-system-packages pyaxmlparser==0.3.31
-          BD="${SMARTEDTV_BUILD_DIR:-}"
-          if [ -z "$BD" ] || [ ! -d "$BD" ]; then BD=$(cat "$GITHUB_WORKSPACE/.smartedtv-build-dir" 2>/dev/null || true); fi
-          if [ -z "$BD" ] || [ ! -d "$BD" ]; then BD="$GITHUB_WORKSPACE/smartedtv-build"; fi
-          APK=$(ls "$BD"/out/*.apk | head -1)
-          python3 smartedtv/tools/verify-apk.py "$APK"
+          python3 smartedtv/tools/verify-apk.py smartedtv/out-apk/SMARTEDTV-21.4.0-arm64-v8a.apk
 
-      - name: 10. Guardar APK e relatório
+      - name: 11. Guardar APK nos artefatos
         uses: actions/upload-artifact@v4
         with:
           name: smartedtv-apk-arm64
           path: |
-            **/out/*.apk
-            **/out/*.sha256
-            **/out/build-report.txt
+            smartedtv/out-apk/*.apk
+            smartedtv/out-apk/*.sha256
           retention-days: 30
           if-no-files-found: error
 
-      - name: 11. Publicar release com o APK
+      - name: 12. Publicar Release com o APK
         # Mesmo método dos outros workflows de release deste repositório.
-        # É o que permite baixar o APK direto pelo GitHub.
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          BD="${SMARTEDTV_BUILD_DIR:-}"
-          if [ -z "$BD" ] || [ ! -d "$BD" ]; then BD=$(cat "$GITHUB_WORKSPACE/.smartedtv-build-dir" 2>/dev/null || true); fi
-          if [ -z "$BD" ] || [ ! -d "$BD" ]; then BD="$GITHUB_WORKSPACE/smartedtv-build"; fi
-          APK=$(ls "$BD"/out/*.apk | head -1)
-          SHA=$(ls "$BD"/out/*.sha256 | head -1)
+          OUT="$GITHUB_WORKSPACE/smartedtv/out-apk"
+          APK="$OUT/SMARTEDTV-21.4.0-arm64-v8a.apk"
+          SHA="$APK.sha256"
           TAG="smartedtv-v21.4.0-arm64"
           NOTES="SMARTEDTV 21.4.0 — APK compilado do código-fonte do Kodi 21.3-Omega (commit a3a448d2).
 
           - ABI: arm64-v8a (Android 5+)
           - Application ID: org.xbmc.kodi (preservado)
-          - Assinatura: chave de teste smarted-tv-test (NÃO atualiza o Kodi oficial)
-          - Sem add-ons de conteúdo, sem skin Nova TV, sem perfil pré-configurado
+          - Assinatura: chave de teste smarted-tv-test (NAO atualiza o Kodi oficial)
+          - Sem add-ons de conteudo, sem skin Nova TV, sem perfil pre-configurado
           - SHA-256 no arquivo .sha256 anexado
 
-          Documentação: smartedtv/DOCUMENTACAO/"
-          echo "::notice::publicando $TAG"
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$APK" "$SHA" --repo "$GITHUB_REPOSITORY" --clobber
+          Documentacao: smartedtv/DOCUMENTACAO/"
+          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK" "$SHA" -R "$GITHUB_REPOSITORY" --clobber
           else
-            gh release create "$TAG" "$APK" "$SHA" \
-              --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title "SMARTEDTV 21.4.0 (arm64-v8a)" --notes "$NOTES"
+            gh release create "$TAG" "$APK" "$SHA" -R "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" --title "SMARTEDTV 21.4.0 (arm64-v8a)" --notes "$NOTES"
           fi
           echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
