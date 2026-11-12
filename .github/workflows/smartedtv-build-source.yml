@@ -56,11 +56,16 @@ jobs:
           df -h "$BD"
 
       - name: 1. Libertar espaço na raiz do runner
+        # Conservador de propósito: só o que sabidamente não é usado e é grande.
+        # Nada de mexer em /opt/az, /opt/microsoft ou repositórios do apt — foi
+        # exatamente isso que quebrou o apt-get de um build anterior.
         run: |
           echo "== antes =="; df -h / /mnt 2>/dev/null || df -h /
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup \
-            /opt/hostedtoolcache/CodeQL /usr/share/swift /opt/microsoft \
-            /opt/az /usr/local/lib/android/sdk/system-images 2>/dev/null || true
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /opt/ghc /usr/local/.ghcup || true
+          sudo rm -rf /opt/hostedtoolcache/CodeQL || true
+          sudo rm -rf "$ANDROID_SDK_ROOT/system-images" || true
+          sudo rm -rf /usr/local/lib/android/sdk/system-images || true
           sudo apt-get clean
           docker image prune -af 2>/dev/null || true
           echo "== depois =="; df -h / /mnt 2>/dev/null || df -h /
