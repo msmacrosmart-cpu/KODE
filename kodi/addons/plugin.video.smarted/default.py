@@ -300,7 +300,9 @@ def recent_movies(handle):
     from catalogue import recent_movies as fetch_recent_movies
 
     try:
-        results = _widget_cached('recent-movies', lambda: fetch_recent_movies(xbmc.executeJSONRPC), _movie_cache_ok)
+        results = _widget_cached('recent-movies',
+                                 lambda: fetch_recent_movies(xbmc.executeJSONRPC, limit=8),
+                                 _movie_cache_ok)[:8]
     except Exception:
         # A widget must not interrupt the Home with a dialog or leak URLs.
         xbmc.log('SMARTED-TV: lançamentos do Brazuca indisponíveis', xbmc.LOGWARNING)

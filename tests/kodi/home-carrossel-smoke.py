@@ -265,6 +265,38 @@ def main():
         log('BARRA skin strings falhou (%s)' % error)
         problemas.append('BARRA: %s' % error)
 
+    # TV AO VIVO aberto duas vezes: o destino tem que continuar sendo o de canais
+    # (nunca cair em Filmes) e nenhum botao pode repetir o destino de outro
+    try:
+        rotulos = rpc('XBMC.GetInfoLabels', {'labels': [
+            'Skin.String(smarted_nav_%d)' % slot for slot in range(1, 11)]})
+        urls = rpc('XBMC.GetInfoLabels', {'labels': [
+            'Skin.String(smarted_nav_url_%d)' % slot for slot in range(1, 11)]})
+        pares = [(rotulos.get('Skin.String(smarted_nav_%d)' % slot, ''),
+                  urls.get('Skin.String(smarted_nav_url_%d)' % slot, ''))
+                 for slot in range(1, 11)]
+        pares = [par for par in pares if par[0] and par[1]]
+        destinos = [url for _, url in pares]
+        log('BARRA destinos_unicos=%d de %d' % (len(set(destinos)), len(destinos)))
+        if len(set(destinos)) != len(destinos):
+            problemas.append('BARRA: dois botoes apontam para o mesmo destino')
+        tv = next((par for par in pares if 'TV' in par[0].upper()), None)
+        if tv:
+            for tentativa in (1, 2):
+                itens = directory(tv[1].replace('%2C', ','), tentativas=2, espera=2.0)
+                primeiro = str(itens[0].get('label', '')) if itens else 'VAZIO'
+                log('TV AO VIVO abertura %d itens=%d primeiro=%s'
+                    % (tentativa, len(itens), primeiro[:44].replace('|', '/')))
+                if not itens:
+                    problemas.append('TV AO VIVO: abertura %d vazia' % tentativa)
+                elif 'FILME' in primeiro.upper():
+                    problemas.append('TV AO VIVO: abriu Filmes na abertura %d' % tentativa)
+        else:
+            problemas.append('BARRA: opcao TV AO VIVO ausente')
+    except Exception as error:  # noqa: BLE001
+        log('TV AO VIVO verificacao falhou (%s)' % error)
+        problemas.append('TV AO VIVO: %s' % error)
+
     # ADDONS: entrar em um addon de video (Brazuka), um de programas e no
     # YouTube, respeitando o tipo de item devolvido por cada um
     def addons(fonte):

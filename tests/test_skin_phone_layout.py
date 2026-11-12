@@ -153,23 +153,49 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
             texto = bloco.group(0)
             self.assertIn('$INFO[Skin.String(smarted_nav_%d)]' % slot, texto)
             self.assertIn('!String.IsEmpty(Skin.String(smarted_nav_%d))' % slot, texto)
-            self.assertIn('ActivateWindow(Videos,$INFO[Skin.String(smarted_nav_url_%d)],return)'
+            self.assertIn('ActivateWindow(Videos,$INFO[Skin.String(smarted_nav_url_%d)])'
                           % slot, texto)
             self.assertNotIn('mode=21', texto)
             self.assertNotIn('mode=27', texto)
 
     def test_espacamento_das_opcoes_abaixo_do_hero(self):
-        """O pedido de espacamento e nas opcoes do meio da tela (abaixo do HERO)."""
+        """As opcoes do meio da tela (abaixo do HERO) ficaram mais espacadas."""
         opcoes = re.search(r'<control type="grouplist" id="9300">.*?(?=<control type="button")',
                            self.home, re.S).group(0)
         self.assertIn('<itemgap>38</itemgap>', opcoes)
         self.assertIn('<top>504</top>', opcoes)
-        # mesmo visual: tipografia, cores e textura nao mudaram
-        self.assertIn('pb_rounded.png', self.home)
-        # a barra de pastas do topo continua com o espacamento original
+
+    def test_espacamento_da_barra_superior(self):
+        """A barra de pastas tambem ganhou mais distancia entre os nomes."""
         barra = re.search(r'<control type="grouplist" id="9000">.*?(?=<control type="group">)',
                           self.home, re.S).group(0)
-        self.assertIn('<itemgap>6</itemgap>', barra)
+        self.assertIn('<itemgap>26</itemgap>', barra)
+        # mesmo visual: tipografia, cores e textura
+        self.assertIn('<font>font12</font>', barra)
+        self.assertIn('<textcolor>pb_muted</textcolor>', barra)
+        self.assertIn('pb_rounded.png', barra)
+
+    def test_fileiras_com_espaco_vertical_e_sem_sobreposicao(self):
+        alturas = {'9200': 120, '9201': 120, '9202': 120, '9203': 194, '9204': 354, '9205': 194}
+        tops = {}
+        for cid in alturas:
+            m = re.search(r'<control type="list" id="%s"><left>60</left><top>(\d+)</top>' % cid,
+                          self.home)
+            tops[cid] = int(m.group(1))
+        titulos = {top - 24: top for top in tops.values()}
+        ordenadas = sorted(tops.items(), key=lambda par: par[1])
+        for (cid, top), (proximo, top_seguinte) in zip(ordenadas, ordenadas[1:]):
+            fim = top + alturas[cid]
+            self.assertGreaterEqual(top_seguinte, fim + 26,
+                                    'fileira %s encosta na seguinte' % cid)
+        # a primeira fileira comeca depois das opcoes do HERO (504 + 56)
+        primeira = min(tops.values())
+        self.assertGreaterEqual(primeira, 600)
+        # posters com respiro horizontal
+        self.assertIn('<itemgap>16</itemgap>', self.home)
+        # HERO alterna sozinho de verdade (rolagem nativa, sem roubar foco)
+        hero = re.search(r'<control type="list" id="9201">.*?</control>', self.home, re.S).group(0)
+        self.assertIn('<autoscroll>8000</autoscroll>', hero)
 
     def test_barra_superior_nao_tem_mais_categorias_fixas(self):
         for antigo in ('9010', '9011', '9012', '9013', '9014', '9015', '9016'):
@@ -308,7 +334,9 @@ class NavegacaoCompletaTest(unittest.TestCase):
     def test_barra_abre_os_destinos_pelo_plugin(self):
         # o botao abre o diretorio do addon como o proprio Kodi faria
         botao = re.search(r'id="9030">.*?</control>', self.home, re.S).group(0)
-        self.assertIn('ActivateWindow(Videos,$INFO[Skin.String(smarted_nav_url_1)],return)', botao)
+        self.assertIn('ActivateWindow(Videos,$INFO[Skin.String(smarted_nav_url_1)])', botao)
+        # sem ",return": o Kodi sempre abre o diretorio pedido (nao o anterior)
+        self.assertNotIn(',return)', botao)
 
     def test_sem_favoritos_a_barra_usa_o_menu_do_addon(self):
         # ordem: favoritos -> menu raiz do addon -> pastas reais (nunca vazio)

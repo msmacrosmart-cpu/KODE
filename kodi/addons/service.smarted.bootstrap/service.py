@@ -150,7 +150,7 @@ def _hero_livre():
 
 
 def rotate_hero(monitor, intervalo=HERO_ROTATION):
-    """Alterna o destaque da Home a cada ~8 s, com pausa quando ha interacao."""
+    """Acompanha a alternancia nativa do HERO e pulsa o fade a cada ~8 s."""
     espera = 0.0
     passo = 0
     while not monitor.abortRequested():
@@ -164,8 +164,8 @@ def rotate_hero(monitor, intervalo=HERO_ROTATION):
             continue
         espera = 0.0
         passo += 1
-        xbmc.executebuiltin('Control.Move(%d,1)' % HERO_CONTROL)
-        # pulso que reativa o fade da arte do HERO (transicao suave)
+        # a troca do filme e feita pelo <autoscroll> da linha 9201 (nativo, sem
+        # roubar foco); aqui so pulsamos o fade da arte para a transicao suave
         xbmc.executebuiltin('Skin.SetString(smarted_hero_tick,%d)' % (passo % 2))
 
 
