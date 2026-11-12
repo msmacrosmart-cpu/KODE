@@ -119,9 +119,18 @@ jobs:
 
       - name: 5. Artefatos de identidade a partir das artes oficiais
         run: |
-          python3 -m pip install --quiet --break-system-packages 'Pillow==11.3.0'
+          set -euo pipefail
+          # A imagem do runner tem mais de um interpretador Python; instalar com
+          # "python3 -m pip" pode cair num que não é o usado depois. Instalar no
+          # interpretador que vai executar o script, e confirmar o import.
+          python3 -c 'import sys' 
+          python3 -m pip install --quiet --break-system-packages 'Pillow==11.3.0' \
+            || python3 -m pip install --quiet --user 'Pillow==11.3.0' \
+            || pip3 install --quiet 'Pillow==11.3.0'
+          python3 -c 'import PIL, sys; print("Pillow", PIL.__version__, "em", sys.executable)'
           python3 smartedtv/tools/make-brand-assets.py
           test -f smartedtv/out/media/splash.jpg
+          ls -la smartedtv/out/media | head -5
 
       - name: 6. Idioma pt-BR oficial (repo-resources)
         run: |
