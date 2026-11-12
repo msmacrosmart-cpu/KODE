@@ -182,7 +182,6 @@ jobs:
                   assert intermediario not in menu, f"menu intermediario voltou: {intermediario}"
               assert 'route=carrossel' not in menu, "widget pelo bridge generico em vez da lista real"
               assert f'assets/addons/{SKIN_ID}/resources/icon.png' in nomes_apk_skin, "icone SMARTED ausente"
-              assert 'route=carrossel&amp;alvo=filmes' in menu, "carrossel de filmes ausente"
               boot = after.read('assets/addons/service.smarted.bootstrap/menu_smarted.py').decode()
               assert 'Files.GetDirectory' in boot and 'nav-check' in boot, \
                   "bootstrap sem validacao dos destinos dos botoes"
