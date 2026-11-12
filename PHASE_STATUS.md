@@ -492,3 +492,40 @@ Escopo entregue (skin 1.0.6 · plugin 0.2.4 · APK 1.0.35 / versionCode 2103021)
    rota `recent-series` usada pela linha 9203; o workflow
    `home-carrossel-emulator.yml` agora dispara também em mudanças de `Home.xml`,
    do plugin e do staging de addons.
+
+#### Evidência do emulador (rodada 10, antes do build final)
+
+Run `43131656658` (commit `78efd87`, APK de teste com a skin do repositório e o
+addon público 2.1.4 num perfil sintético) — step "Abrir a Home e conferir as
+linhas em perfil sem dados pessoais": **sucesso**, com os marcadores:
+
+```
+SMARTED_TEST_CARROSSEL CANAIS total=20 midia=20 arte=20 menu=0
+SMARTED_TEST_CARROSSEL FILMES total=20 midia=20 arte=20 menu=0
+SMARTED_TEST_CARROSSEL SERIES total=20 midia=0 arte=20 menu=0
+SMARTED_TEST_CARROSSEL MENU FILMES itens=5
+SMARTED_TEST_CARROSSEL NAVEGACAO janela=videos
+SMARTED_TEST_CARROSSEL ABA ANIMES itens=2
+SMARTED_TEST_CARROSSEL ABA DESENHOS itens=2
+SMARTED_TEST_CARROSSEL ABA DORAMAS itens=2
+SMARTED_TEST_CARROSSEL ABA NOVELAS itens=2
+SMARTED_TEST_CARROSSEL RECENTES total=10
+SMARTED_TEST_CARROSSEL FAVORITOS itens=0
+SMARTED_TEST_CARROSSEL_OK todas as linhas com conteudo real
+```
+
+Dois defeitos apareceram no caminho e foram corrigidos com causa identificada:
+
+1. `quote_from_bytes() expected bytes` dentro do Brazuca 2.1.4 — o addon faz
+   `quote_plus(iconimage)` ao montar o menu; URL sem `iconimage` deixa o valor
+   `None`. A skin já manda `DefaultFolder.png`; o smoke passou a montar a URL no
+   mesmo formato e um teste agora exige `iconimage`/`fanart` preenchidos em toda
+   URL do addon na Home.
+2. O marcador de sucesso saía como `SMARTED_TEST_CARROSSEL _OK` (com espaço) e
+   o script do emulador procurava `..._OK`: o Kodi validava tudo e o passo
+   falhava. Marcador dedicado + grep tolerante resolveram.
+
+Ressalva registrada: o `Home.png` e o zip de diagnóstico do run não são
+baixáveis deste ambiente (o download dos artefatos cai no blob de resultados do
+Actions). A conferência visual aqui é a prévia de geometria gerada do XML
+(`docs/preview-home-1920.png` / `docs/preview-home-2400.png`).
