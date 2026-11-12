@@ -75,3 +75,26 @@ userdata/addon_data/service.smarted.bootstrap/smarted-nav-check.log
 com uma linha por destino (`PASS Filmes 348 itens` / `FALHA Filmes: <motivo>`), usando
 `Files.GetDirectory` na mesma URL do clique. Também aparece no `kodi.log` como
 `nav-check: ...`.
+
+## O que foi verificado nesta rodada e o que ainda falta
+
+Verificado aqui:
+
+- o despachante do addon (linhas 6136–7819 do `default.py` decodificado) e os branches
+  `#todoscanais`, `mode=1`, `#series_menu`, `#novelas_menu`, `#animes_menu`,
+  `#desenhos_menu`, `#doramas_menu`, `#menu_canais`;
+- existência e tamanho das fontes de conteúdo (API do GitHub): `lancamentos.xml`,
+  `SeriesBase` 9,07 MB, `DoramasBase` 3,49 MB, `AnimesBase` 3,17 MB,
+  `DesenhosBase` 1,16 MB, `channels.xml` 322 KB, `novelas.xml` 774 KB;
+- codificação `base16(base64(url))` do `mode=1` (é o mesmo caminho do `addDir()`);
+- build 1.0.55: 227 testes unitários, teste estático (211 XML), 13/13 etapas verdes,
+  APK 375.937.763 B publicado.
+
+Ainda depende do aparelho (não dá para executar Kodi Android neste ambiente):
+
+- o clique real em cada botão e a abertura do card até a reprodução;
+- a contagem final de itens por categoria.
+
+O primeiro boot da 1.0.55 gera `smarted-nav-check.log` com uma linha por botão
+(`PASS Filmes N itens` / `FALHA Filmes: motivo`), que fecha esse ponto sem nova rodada
+de tentativa às cegas.
