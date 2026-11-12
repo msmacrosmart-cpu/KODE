@@ -154,12 +154,37 @@ jobs:
           test "$(git -C "$KODI_SRC" rev-parse HEAD)" = 'a3a448d26b8d560a65655dab2cd122994dc4e146'
           echo "ok: commit a3a448d2 confirmado"
 
-      - name: 8. Compilar (dependências + Kodi + APK + assinatura)
+      - name: 8a. Dependências Android (comandos do diagnóstico que passou)
+        # Estes são EXATAMENTE os comandos que passaram no run 43215437672
+        # (workflow de diagnóstico, 1h08min, make exit=0). Não abstrair: o
+        # build via script falhou no samba mesmo com a mesma árvore, então o
+        # build usa a sequência comprovada, sem variação.
         run: |
           set -euo pipefail
-          export JOBS=2              # o build de referência que funcionou usava -j2
+          KODI_SRC="$SMARTEDTV_BUILD_DIR/kodi-21.3-Omega"
+          PREFIX="$SMARTEDTV_BUILD_DIR/xbmc-depends"
+          TARBALLS="$SMARTEDTV_BUILD_DIR/tarballs"
+          mkdir -p "$PREFIX" "$TARBALLS"
+          echo "livre antes: $(df -h --output=avail "$SMARTEDTV_BUILD_DIR" | tail -1)"
+          cd "$KODI_SRC/tools/depends"
+          ./bootstrap
+          ./configure --with-tarballs="$TARBALLS" --host=aarch64-linux-android \
+            --with-sdk-path="$ANDROID_SDK_ROOT" \
+            --with-ndk-path="$ANDROID_SDK_ROOT/ndk/21.4.7075529" \
+            --prefix="$PREFIX"
+          make -j4
+          echo "livre depois: $(df -h --output=avail "$SMARTEDTV_BUILD_DIR" | tail -1)"
+          test -d "$PREFIX" && echo "prefix ok: $PREFIX"
+
+      - name: 8. Compilar o Kodi e gerar o APK
+        # SKIP_DEPENDS=1: as dependências acabaram de ser compiladas no passo 8a
+        # com a sequência comprovada. Aqui só o Kodi, o empacotamento e a assinatura.
+        run: |
+          set -euo pipefail
+          export SKIP_DEPENDS=1
+          export JOBS=2
           export KODI_SRC="$SMARTEDTV_BUILD_DIR/kodi-21.3-Omega"
-          echo "build em: $SMARTEDTV_BUILD_DIR  (livre: $(df -h --output=avail "$SMARTEDTV_BUILD_DIR" | tail -1))"
+          echo "livre: $(df -h --output=avail "$SMARTEDTV_BUILD_DIR" | tail -1)"
           ./smartedtv/tools/build-apk.sh
 
       - name: 8b. Guardar log da compilação (sempre)
