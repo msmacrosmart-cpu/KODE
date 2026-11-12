@@ -52,6 +52,7 @@ jobs:
           fi
           mkdir -p "$BD"
           echo "SMARTEDTV_BUILD_DIR=$BD" >> "$GITHUB_ENV"
+          echo "$BD" > "$GITHUB_WORKSPACE/.smartedtv-build-dir"
           echo "diretório de build: $BD"
           df -h "$BD"
 
@@ -161,11 +162,15 @@ jobs:
         # build usa a sequência comprovada, sem variação.
         run: |
           set -euo pipefail
-          KODI_SRC="$SMARTEDTV_BUILD_DIR/kodi-21.3-Omega"
-          PREFIX="$SMARTEDTV_BUILD_DIR/xbmc-depends"
-          TARBALLS="$SMARTEDTV_BUILD_DIR/tarballs"
+          BD="${SMARTEDTV_BUILD_DIR:-}"
+          if [ -z "$BD" ] || [ ! -d "$BD" ]; then BD=$(cat "$GITHUB_WORKSPACE/.smartedtv-build-dir" 2>/dev/null || true); fi
+          if [ -z "$BD" ] || [ ! -d "$BD" ]; then BD="$GITHUB_WORKSPACE/smartedtv-build"; fi
+          echo "dependências em: $BD"
+          KODI_SRC="$BD/kodi-21.3-Omega"
+          PREFIX="$BD/xbmc-depends"
+          TARBALLS="$BD/tarballs"
           mkdir -p "$PREFIX" "$TARBALLS"
-          echo "livre antes: $(df -h --output=avail "$SMARTEDTV_BUILD_DIR" | tail -1)"
+          echo "livre antes: $(df -h --output=avail "$BD" | tail -1)"
           cd "$KODI_SRC/tools/depends"
           ./bootstrap
           ./configure --with-tarballs="$TARBALLS" --host=aarch64-linux-android \
@@ -173,7 +178,7 @@ jobs:
             --with-ndk-path="$ANDROID_SDK_ROOT/ndk/21.4.7075529" \
             --prefix="$PREFIX"
           make -j4
-          echo "livre depois: $(df -h --output=avail "$SMARTEDTV_BUILD_DIR" | tail -1)"
+          echo "livre depois: $(df -h --output=avail "$BD" | tail -1)"
           test -d "$PREFIX" && echo "prefix ok: $PREFIX"
 
       - name: 8. Compilar o Kodi e gerar o APK
@@ -181,10 +186,25 @@ jobs:
         # com a sequência comprovada. Aqui só o Kodi, o empacotamento e a assinatura.
         run: |
           set -euo pipefail
+          # Resolve o diretório na hora: GITHUB_ENV nem sempre atravessa todos os
+          # passos como esperado (foi a causa do run 43287084066, em que o script
+          # procurou em $GITHUB_WORKSPACE/smartedtv-build e não achou as
+          # dependências já compiladas em /mnt).
+          BD="${SMARTEDTV_BUILD_DIR:-}"
+          if [ -z "$BD" ] || [ ! -d "$BD" ]; then
+            BD=$(cat "$GITHUB_WORKSPACE/.smartedtv-build-dir" 2>/dev/null || true)
+          fi
+          if [ -z "$BD" ] || [ ! -d "$BD" ]; then
+            BD="$GITHUB_WORKSPACE/smartedtv-build"
+          fi
+          echo "usando diretório de build: $BD"
+          ls -d "$BD"/* 2>/dev/null | head -5
+          test -d "$BD/xbmc-depends" || { echo "::error::dependências não encontradas em $BD"; exit 1; }
+          export SMARTEDTV_BUILD_DIR="$BD"
           export SKIP_DEPENDS=1
           export JOBS=2
-          export KODI_SRC="$SMARTEDTV_BUILD_DIR/kodi-21.3-Omega"
-          echo "livre: $(df -h --output=avail "$SMARTEDTV_BUILD_DIR" | tail -1)"
+          export KODI_SRC="$BD/kodi-21.3-Omega"
+          echo "livre: $(df -h --output=avail "$BD" | tail -1)"
           ./smartedtv/tools/build-apk.sh
 
       - name: 8b. Guardar log da compilação (sempre)
@@ -201,7 +221,10 @@ jobs:
       - name: 9. Verificar o APK (26 checagens)
         run: |
           python3 -m pip install --quiet --break-system-packages pyaxmlparser==0.3.31
-          APK=$(ls "$SMARTEDTV_BUILD_DIR"/out/*.apk | head -1)
+          BD="${SMARTEDTV_BUILD_DIR:-}"
+          if [ -z "$BD" ] || [ ! -d "$BD" ]; then BD=$(cat "$GITHUB_WORKSPACE/.smartedtv-build-dir" 2>/dev/null || true); fi
+          if [ -z "$BD" ] || [ ! -d "$BD" ]; then BD="$GITHUB_WORKSPACE/smartedtv-build"; fi
+          APK=$(ls "$BD"/out/*.apk | head -1)
           python3 smartedtv/tools/verify-apk.py "$APK"
 
       - name: 10. Guardar APK e relatório
@@ -222,8 +245,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          APK=$(ls "$SMARTEDTV_BUILD_DIR"/out/*.apk | head -1)
-          SHA=$(ls "$SMARTEDTV_BUILD_DIR"/out/*.sha256 | head -1)
+          BD="${SMARTEDTV_BUILD_DIR:-}"
+          if [ -z "$BD" ] || [ ! -d "$BD" ]; then BD=$(cat "$GITHUB_WORKSPACE/.smartedtv-build-dir" 2>/dev/null || true); fi
+          if [ -z "$BD" ] || [ ! -d "$BD" ]; then BD="$GITHUB_WORKSPACE/smartedtv-build"; fi
+          APK=$(ls "$BD"/out/*.apk | head -1)
+          SHA=$(ls "$BD"/out/*.sha256 | head -1)
           TAG="smartedtv-v21.4.0-arm64"
           NOTES="SMARTEDTV 21.4.0 — APK compilado do código-fonte do Kodi 21.3-Omega (commit a3a448d2).
 
