@@ -56,14 +56,14 @@ class SkinPadraoTest(unittest.TestCase):
         script = BUILD.read_text(encoding='utf-8')
         self.assertIn('len(new_name.encode("utf-16-le")) != len(old_name.encode("utf-16-le"))', script)
 
-    def test_workflow_monta_1_0_48_com_a_skin_padrao(self):
+    def test_workflow_monta_a_versao_atual_com_a_skin_padrao(self):
         fluxo = FLUXO.read_text(encoding='utf-8')
         self.assertIn('fetch-bingie-addons.py', fluxo)
         self.assertIn('--extra-addons "$RUNNER_TEMP/extra"', fluxo)
         self.assertIn('--default-skin "$RUNNER_TEMP/extra/skin.titan.bingie.mod"', fluxo)
-        self.assertIn('--to-version 1.0.48', fluxo)
-        self.assertIn('--to-code 2103034', fluxo)
-        self.assertIn('v1.0.48-smarted-arm64', fluxo)
+        self.assertIn('--to-version 1.0.49', fluxo)
+        self.assertIn('--to-code 2103035', fluxo)
+        self.assertIn('v1.0.49-smarted-arm64', fluxo)
 
 
 if __name__ == '__main__':

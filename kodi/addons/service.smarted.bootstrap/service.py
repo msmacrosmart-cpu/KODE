@@ -17,6 +17,7 @@ import xbmcvfs
 import repair
 from favourites import ensure_favourites
 from performance import ensure_performance
+from menu_smarted import garantir_menu
 from skin_setup import ensure_home_nodes, ensure_skin, home_xml_candidates
 
 ADDON = xbmcaddon.Addon()
@@ -267,6 +268,7 @@ def main():
     apply_silencio()
     write_favourites()
     apply_navigation()
+    garantir_menu(xbmc, log=log)
     performance = apply_performance()
 
     # 1º arranque: skin SMARTEDTV ativa + nós da Home ligados às rotas do addon

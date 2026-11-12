@@ -105,6 +105,7 @@ def main():
     from_version = to_version = to_code = None
     extra_addons = []
     default_skin = None
+    skin_overlay = None
     while len(argv) >= 2 and argv[0].startswith("--"):
         opt = argv.pop(0)
         if opt == "--from-version":
@@ -117,6 +118,10 @@ def main():
             # pasta com addons extras (ex.: skin Bingie baixada no CI) - nao
             # versionada no repositorio, injetada so no APK desta build
             extra_addons.append(Path(argv.pop(0)))
+        elif opt == "--skin-overlay":
+            # pasta com arquivos que substituem parte da skin padrao (ex.: menu
+            # superior do Bingie apontando para as rotas do Brazuca Play)
+            skin_overlay = Path(argv.pop(0))
         elif opt == "--default-skin":
             # skin de terceiro (ex.: Bingie) que passa a ser a skin padrao do APK,
             # renomeada para SMARTEDTV
@@ -124,7 +129,7 @@ def main():
         else:
             raise SystemExit(f"Unknown option: {opt}")
     if len(argv) != 2:
-        raise SystemExit("Usage: build-release-apk.py [--from-version V] [--to-version V] [--to-code N] [--extra-addons DIR] [--default-skin DIR] BASE.apk OUTPUT.apk")
+        raise SystemExit("Usage: build-release-apk.py [--from-version V] [--to-version V] [--to-code N] [--extra-addons DIR] [--default-skin DIR] [--skin-overlay DIR] BASE.apk OUTPUT.apk")
     base, out = Path(argv[0]), Path(argv[1])
     if base.resolve() == out.resolve():
         raise SystemExit("Input and output must differ")
@@ -164,6 +169,20 @@ def main():
         print(f"Skin padrao: {default_skin.name} -> {SKIN_ADDON_ID} ({SKIN_NAME} {SKIN_VERSION})")
     else:
         skin_files = skin_payload()
+    if skin_overlay is not None:
+        if not skin_overlay.is_dir():
+            raise SystemExit(f"Overlay de skin inexistente: {skin_overlay}")
+        aplicados = []
+        for origem in sorted(p for p in skin_overlay.rglob("*") if p.is_file()):
+            rel = origem.relative_to(skin_overlay).as_posix()
+            if rel == "addon.xml":
+                raise SystemExit("O overlay nao pode sobrescrever o addon.xml da skin")
+            destino = SKIN_PREFIX + rel
+            if destino not in skin_files:
+                raise SystemExit(f"Overlay aponta para arquivo inexistente na skin: {rel}")
+            skin_files[destino] = origem.read_bytes()
+            aplicados.append(rel)
+        print("Overlay aplicado na skin padrao: " + ", ".join(aplicados))
     skin_files.update(skin_payload(SKIN, SKIN_CLASSIC_ID, SKIN_CLASSIC_NAME, SKIN_CLASSIC_VERSION))
     bridge_files = {}
     bridge_ids = []
