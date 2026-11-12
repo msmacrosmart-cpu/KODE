@@ -158,14 +158,18 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
             self.assertNotIn('mode=21', texto)
             self.assertNotIn('mode=27', texto)
 
-    def test_barra_tem_espacamento_maior(self):
+    def test_espacamento_das_opcoes_abaixo_do_hero(self):
+        """O pedido de espacamento e nas opcoes do meio da tela (abaixo do HERO)."""
+        opcoes = re.search(r'<control type="grouplist" id="9300">.*?(?=<control type="button")',
+                           self.home, re.S).group(0)
+        self.assertIn('<itemgap>38</itemgap>', opcoes)
+        self.assertIn('<top>504</top>', opcoes)
+        # mesmo visual: tipografia, cores e textura nao mudaram
+        self.assertIn('pb_rounded.png', self.home)
+        # a barra de pastas do topo continua com o espacamento original
         barra = re.search(r'<control type="grouplist" id="9000">.*?(?=<control type="group">)',
                           self.home, re.S).group(0)
-        self.assertIn('<itemgap>22</itemgap>', barra)
-        # mesmo visual: tipografia, cores e textura nao mudaram
-        self.assertIn('<font>font12</font>', barra)
-        self.assertIn('<textcolor>pb_muted</textcolor>', barra)
-        self.assertIn('pb_rounded.png', barra)
+        self.assertIn('<itemgap>6</itemgap>', barra)
 
     def test_barra_superior_nao_tem_mais_categorias_fixas(self):
         for antigo in ('9010', '9011', '9012', '9013', '9014', '9015', '9016'):
