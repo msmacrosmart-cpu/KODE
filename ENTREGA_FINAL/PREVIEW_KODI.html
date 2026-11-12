@@ -86,6 +86,7 @@ footer .idx button.on{background:var(--white);color:#0d0d0d}
   <span class="meta" id="meta">01 / 44 · Aurora</span>
   <span class="sp"></span>
   <span class="meta">Preview Kodi Omega 21 · monocromático · offline</span>
+  <button class="btn" id="r8">Rodada 8</button>
   <button class="btn" id="fs">Tela cheia</button>
 </header>
 <nav id="nav" aria-label="Telas"></nav>
@@ -93,6 +94,7 @@ footer .idx button.on{background:var(--white);color:#0d0d0d}
   <div class="stage-wrap">
     <div class="stage" id="stage"></div>
     <div class="note">Dados ilustrativos. Na skin real, TV ao vivo, Filmes e Séries vêm do Brazuca Play via ponte SMARTED-TV (rotas <b>tv</b>, <b>movies</b>, <b>series</b>). Séries reúne Séries, Novelas, Animes, Doramas e Desenhos. Use <b>← →</b> para trocar de tela, <b>↑ ↓</b> para mover o foco, <b>Enter</b> para ativar, <b>Esc</b> para fechar diálogo.</div>
+    <div class="note"><b>Rodada 8 (v1.0.33)</b> — a Home agora abre o addon real: linhas e botões usam <code>plugin://plugin.video.BrazucaPlay.Matrix/?mode=21&amp;url=%23menu_canais</code>, <code>mode=27&amp;url=%23filmes_menu</code> e <code>mode=27&amp;url=%23series_menu</code>; a barra superior tem <b>Ajustes</b> (10004) e <b>Energia</b> (ShutdownMenu). Botão <b>Rodada 8</b> no topo mostra as evidências da simulação.</div>
   </div>
 </main>
 <footer>
@@ -168,7 +170,7 @@ notif:`<h2>Nova notificação</h2><p class="sub">Mensagem informativa exibida pe
 audio:`<h2>Áudio</h2><div class="list">${L([['Português · AC3 5.1'],['Inglês · AAC 2.0']])}</div><div class="ctl"><button class="btn" data-x>Fechar</button></div>`,
 legenda:`<h2>Legendas</h2>${S([['Ativar legendas',1],['Idioma',undefined,'Português'],['Sincronizar',undefined,'0,0 s']])}<div class="ctl"><button class="btn" data-x>Fechar</button></div>`,
 info:`<h2>Informações do vídeo</h2><div class="list">${L([['Codec','H.264'],['Resolução','1920×1080'],['Áudio','AC3 5.1']])}</div><div class="ctl"><button class="btn" data-x>Fechar</button></div>`,
-marcadores:`<h2>Marcadores</h2><div class="list">${L([['00:12:30 · Cena'],['00:45:10 · Cena'],['Adicionar marcador','']])}</div><div class="ctl"><button class="btn" data-x>Fechar</button></div>`
+r8:`<h1>Rodada 8 — Home ligada ao Brazuca Play</h1><p class="sub">v1.0.33 · skin 1.0.4 · plugin 0.2.2 · bootstrap 1.0.4</p><h2>Rotas da Home (fonte única: o addon)</h2><div class="list">${L([['Linha TV ao vivo → mode=21 & url=#menu_canais','PLUTO TV'],['Linha Filmes → mode=27 & url=#filmes_menu','gêneros, lançamentos, A-Z, trilogia'],['Linha Séries → mode=27 & url=#series_menu','busca, todas as séries'],['Brazuca Play (9022) → mode=0','raiz real do addon'],['Barra: 9122 Ajustes','janela 10004'],['Barra: 9123 Energia','ShutdownMenu nativo']])}</div><h2>Simulação de primeiro boot (3 passagens, 0 falhas)</h2><div class="list">${L([['Passagem 1','26 checks · OK'],['Passagem 2','22 checks · OK'],['Passagem 3','22 checks · OK'],['TV ao vivo','1 item: PLUTO TV'],['Filmes','5 itens: pesquisa, gêneros, lançamentos…'],['Séries','2 itens: pesquisar séries, todas as séries'],['Raiz','10 itens: favoritos, TV ao vivo, filmes, séries…']])}</div><p class="note">Ambiente sem KVM/adb/SDK: a validação usa o perfil semeado real do APK, a skin do repositório instalada como add-on de sistema e a execução real do addon — não é um AVD.</p><div class="ctl"><button class="btn" data-x>Fechar</button></div>`, marcadores:`<h2>Marcadores</h2><div class="list">${L([['00:12:30 · Cena'],['00:45:10 · Cena'],['Adicionar marcador','']])}</div><div class="ctl"><button class="btn" data-x>Fechar</button></div>`
 };
 let cur=0;
 const nav=$('#nav'),stage=$('#stage'),idx=$('#idx');
@@ -213,6 +215,7 @@ document.addEventListener('keydown',e=>{
   let n=i<0?0:i+k;
   const t=els[Math.max(0,Math.min(els.length-1,n))];if(t){t.focus();t.scrollIntoView({block:'nearest',inline:'nearest'});}
 });
+$('#r8').onclick=()=>modal('r8');
 $('#fs').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
 const h=parseInt(location.hash.slice(1),10);
 show(Number.isFinite(h)&&h>=1&&h<=44?h-1:0);

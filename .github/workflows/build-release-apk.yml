@@ -1,8 +1,9 @@
+# v1.0.46: rodada 14 - cards em grade para as 6 categorias de VOD, filtros de ordenacao, icones das categorias e notificacoes SMARTEDTV.
 name: Build SMARTED-TV release APK
 on:
   workflow_dispatch:
   push:
-    branches: [arena/7024aff2-kode]
+    branches: [arena/1a97faf9-kode]
     paths: [.github/workflows/build-release-apk.yml]
 permissions:
   contents: write
@@ -35,18 +36,22 @@ jobs:
           print('APK base 1.0.22 reconstituído e conferido:', out.stat().st_size, 'bytes')
           PY
           ls -lh "$RUNNER_TEMP/base/"
-      - name: Obter chave de assinatura (Dropbox, link temporário)
+      - name: Chave de assinatura (repositório)
         run: |
-          curl --fail --location --retry 3 -o "$RUNNER_TEMP/smarted-tv-test.jks" 'https://www.dropbox.com/scl/fi/wn33tyj3s8g0setdreekw/smarted-tv-test.jks?rlkey=5lp11n83c8lzmny46hq96pi3n&dl=1'
+          cp dropbox/smarted-tv-test.jks "$RUNNER_TEMP/smarted-tv-test.jks"
           test "$(stat -c%s "$RUNNER_TEMP/smarted-tv-test.jks")" = "2730"
-          echo "Chave obtida (2730 bytes). Revogar o link do Dropbox após o build."
+          echo "Chave do repositório usada (2730 bytes)."
       - name: Preparar ferramentas de reempacotamento
         run: ./tools/kodi/setup.sh
-      - name: Montar candidato sem assinatura (versão + skin + ponte)
+      - name: Montar candidato sem assinatura (versão + skin.novatv + ponte)
         run: |
           export PYTHONPATH="$HOME/.cache/kode-build/python:$PYTHONPATH"
-          python3 tools/kodi/build-release-apk.py "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
+          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.46 --to-code 2103032 "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
           ls -lh "$RUNNER_TEMP/unsigned.apk"
+
+      - name: Verificar integridade de boot (simulação do launcher dex)
+        run: |
+          python3 tools/kodi/verify-boot-integrity.py "$RUNNER_TEMP/unsigned.apk" "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk"
       - name: Alinhar e assinar (mesma chave da linha 1.0.15+)
         run: |
           set -e
@@ -68,7 +73,8 @@ jobs:
           base = Path(os.environ["RUNNER_TEMP"]) / "base/SMARTED-TV-v1.0.22-arm64.apk"
           out = Path(os.environ["RUNNER_TEMP"]) / "signed.apk"
           a = APK(str(out))
-          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTED-TV', '1.0.23', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
+          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTED-TV', '1.0.46', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
+          assert int(a.version_code) == 2103032, f"versionCode inesperado: {a.version_code}"
           print(f"Identidade: {a.package} {a.get_app_name()} {a.version_name} ({a.version_code})")
           with zipfile.ZipFile(base) as before, zipfile.ZipFile(out) as after:
               assert after.testzip() is None
@@ -84,15 +90,63 @@ jobs:
               for n in sorted(oldlibs | {'classes.dex'}):
                   assert digest(before, n) == digest(after, n), f"Código alterado: {n}"
               print(f"Motor preservado: {len(oldlibs)} bibliotecas + classes.dex idênticos")
-              # Skin/ponte do APK devem ser idênticos ao repositório
+              # Skin.novatv no APK deve ser a skin do repositório (SMARTEDTV)
+              # com addon.xml reajustado para id=skin.novatv.
               import xml.etree.ElementTree as ET
-              for prefix, src in (('assets/addons/skin.novatv/', Path('kodi/skin.novatv')), ('assets/addons/plugin.video.smarted/', Path('kodi/addons/plugin.video.smarted'))):
-                  for p in sorted(src.rglob('*')):
-                      if p.is_file() and '__pycache__' not in p.parts and p.suffix != '.pyc':
-                          arc = prefix + p.relative_to(src).as_posix()
-                          assert after.read(arc) == p.read_bytes(), f"Divergência: {arc}"
-              print("Skin + ponte no APK idênticos ao repositório")
+              SKIN_ID = "skin.novatv"
+              SKIN_NAME = "SMARTEDTV"
+              import re as _re
+              SKIN_VERSION = _re.search(r'SKIN_VERSION\s*=\s*"([^"]+)"',
+                                       Path('tools/kodi/build-release-apk.py').read_text(encoding='utf-8')).group(1)
+              for p in sorted(Path('kodi/skin.estilo.personalizado').rglob('*')):
+                  if not p.is_file() or '__pycache__' in p.parts or p.suffix == '.pyc':
+                      continue
+                  rel = p.relative_to('kodi/skin.estilo.personalizado').as_posix()
+                  arc = f'assets/addons/{SKIN_ID}/{rel}'
+                  assert arc in after.namelist(), f"entry ausente: {arc}"
+                  data = p.read_bytes()
+                  if rel == 'addon.xml':
+                      root = ET.fromstring(after.read(arc))
+                      assert root.get('id') == SKIN_ID and root.get('name') == SKIN_NAME and root.get('version') == SKIN_VERSION, f"addon.xml skin inesperado: {root.get('id')} {root.get('name')} {root.get('version')}"
+                      root2 = ET.fromstring(data)
+                      assert root2.get('id') == 'skin.estilo.personalizado'
+                      continue
+                  assert after.read(arc) == data, f"Divergência: {arc}"
+              # Nenhum arquivo base de skin.novatv deve sobrar sem payload do repositório.
+              stale = [n for n in after.namelist()
+                       if n.startswith(f'assets/addons/{SKIN_ID}/') and n.endswith('addon.xml') is False
+                       and n not in {f'assets/addons/{SKIN_ID}/' + p.relative_to('kodi/skin.estilo.personalizado').as_posix()
+                                     for p in Path('kodi/skin.estilo.personalizado').rglob('*') if p.is_file()}]
+              assert not stale, f"Entradas velhas de skin.novatv sem payload: {stale[:5]}"
+              # Addons do repositório (ponte + bootstrap) devem ir byte a byte.
+              bridges = [d for d in sorted(Path('kodi/addons').iterdir()) if d.is_dir()]
+              assert {d.name for d in bridges} >= {'plugin.video.smarted', 'service.smarted.bootstrap'}, \
+                  f"addons do repositório ausentes: {[d.name for d in bridges]}"
+              for addon_dir in bridges:
+                  for p in sorted(addon_dir.rglob('*')):
+                      if not p.is_file() or '__pycache__' in p.parts or p.suffix == '.pyc':
+                          continue
+                      arc = f'assets/addons/{addon_dir.name}/' + p.relative_to(addon_dir).as_posix()
+                      assert arc in after.namelist(), f"entry ausente: {arc}"
+                      assert after.read(arc) == p.read_bytes(), f"Divergência addon: {arc}"
+              manifest = after.read('assets/system/addon-manifest.xml').decode()
+              for addon_id in [SKIN_ID] + [d.name for d in bridges]:
+                  assert f'>{addon_id}<' in manifest, f'addon ausente do manifesto: {addon_id}'
+              print("Skin.novatv (SMARTEDTV) + addons do repositório no APK idênticos à origem; skin.novatv base totalmente substituída.")
           print(f"Tamanho base: {base.stat().st_size} -> final: {out.stat().st_size}")
+          # CICLO DE VIDA: registra o que o manifest do player ja declara
+          try:
+              import zipfile, re as _re
+              with zipfile.ZipFile(out) as z:
+                  binm = z.read('AndroidManifest.xml')
+              achados = set(m.decode('utf-16-le', 'ignore') for m in _re.findall(
+                  rb'(?:[\x20-\x7e]\x00){4,}', binm))
+              chaves = sorted(t for t in achados if any(k in t for k in (
+                  'configChanges', 'launchMode', 'screenSize', 'orientation',
+                  'singleTask', 'resizeableActivity', 'hardwareAccelerated')))
+              print('CICLO DE VIDA - manifest:', chaves[:12])
+          except Exception as erro:
+              print('CICLO DE VIDA - diagnostico indisponivel:', erro)
           print(f"SHA-256 final: {hashlib.sha256(out.read_bytes()).hexdigest()}")
           PY
           ls -lh "$RUNNER_TEMP/signed.apk"
@@ -100,14 +154,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp "$RUNNER_TEMP/signed.apk" "SMARTED-TV-v1.0.23-arm64.apk"
-          sha256sum "SMARTED-TV-v1.0.23-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
-          TAG=v1.0.23-smarted-arm64
+          cp "$RUNNER_TEMP/signed.apk" "SMARTED-TV-v1.0.46-arm64.apk"
+          sha256sum "SMARTED-TV-v1.0.46-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
+          TAG=v1.0.46-smarted-arm64
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" "SMARTED-TV-v1.0.23-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
+            gh release upload "$TAG" "SMARTED-TV-v1.0.46-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
             gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false
             echo "Release $TAG atualizada com o APK assinado."
           else
-          gh release create v1.0.23-smarted-arm64 "SMARTED-TV-v1.0.23-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTED-TV 1.0.23 ARM64' --notes 'Release final ARM64 baseada no Kodi 21.3, com identidade SMARTED-TV, skin Nova TV e ponte SMARTED-TV atualizadas do repositório. Motor nativo e Dex preservados; assinatura com a mesma chave da linha 1.0.15+ (atualização direta). Tamanho mantido (~238 MB, com backup/perfil). Não foi testado em dispositivo nesta etapa; validação estática (assinatura, identidade, motor e conteúdo) executada no workflow. Apenas ARM64, pacote org.xbmc.kodi. Código do Kodi: https://github.com/xbmc/xbmc/tree/21.3-Omega .'
+          gh release create v1.0.46-smarted-arm64 "SMARTED-TV-v1.0.46-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTED-TV 1.0.46 ARM64' --notes 'SMARTED-TV 1.0.46 (ARM64, Kodi 21.3, org.xbmc.kodi) - atualiza por cima das anteriores (mesma assinatura e dados). VOD EM LISTA: Filmes, Series, Doramas, Novelas, Desenhos e Animes voltam ao modo de exibicao original em LISTA - poster 2:3 a esquerda (90x135), nome, nota, ano, genero e sinopse a direita, navegacao e conteudos iguais. A grade de cards foi removida dessas categorias. FILTROS: continuam existindo, agora na lista (Todos, A a Z, Z a A, Ultimos adicionados, Mais votados, Mais recentes), recarregando a mesma pasta com a ordem escolhida. TV AO VIVO: intocada - lista de sempre, sem filtros (a barra de filtros e escondida quando a pasta e de canais). Segue valendo: Home com apenas Filmes e Series, HERO reposicionado, identidade SMARTED sem Kodi/Brazuca nas telas e notificacoes (nome uma unica vez), player sem bolinha, navegacao silenciosa, menu lateral so texto, busca, ajustes e favoritos.'
           fi
-          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.23-smarted-arm64/SMARTED-TV-v1.0.23-arm64.apk"
+          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.46-smarted-arm64/SMARTED-TV-v1.0.46-arm64.apk"
+# Os blocos do APK base ficam em .github/private-apk-chunks.json; a assinatura usa dropbox/smarted-tv-test.jks.
