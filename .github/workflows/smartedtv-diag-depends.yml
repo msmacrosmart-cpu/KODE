@@ -55,8 +55,14 @@ jobs:
           echo "- quando: $(date -u +%FT%TZ)" >> /tmp/diag.md
           echo >> /tmp/diag.md
 
+          echo "### disco antes" >> /tmp/diag.md
+          echo '```' >> /tmp/diag.md
+          df -h / >> /tmp/diag.md
+          echo '```' >> /tmp/diag.md
+
           echo "### clone" >> /tmp/diag.md
-          git clone --depth 1 --branch 21.3-Omega https://github.com/xbmc/xbmc.git kodi \
+          rm -rf /tmp/kodi-src
+          git clone --depth 1 --branch 21.3-Omega https://github.com/xbmc/xbmc.git /tmp/kodi-src \
             > /tmp/clone.log 2>&1
           rc=$?
           echo "clone exit=$rc" >> /tmp/diag.md
@@ -66,9 +72,9 @@ jobs:
             cp /tmp/diag.md docs/smartedtv-diagnostico.md
             exit 1
           fi
-          echo "commit: $(git -C kodi rev-parse HEAD)" >> /tmp/diag.md
+          echo "commit: $(git -C /tmp/kodi-src rev-parse HEAD)" >> /tmp/diag.md
 
-          cd kodi/tools/depends || exit 1
+          cd /tmp/kodi-src/tools/depends || exit 1
           ./bootstrap > /tmp/boot.log 2>&1
           rc=$?
           echo "### bootstrap exit=$rc" >> /tmp/diag.md
@@ -82,9 +88,17 @@ jobs:
           echo "### configure exit=$rc" >> /tmp/diag.md
           [ $rc -ne 0 ] && { echo "::error::configure falhou"; tail -40 /tmp/conf.log >> /tmp/diag.md; }
 
+          echo "### disco antes do make" >> /tmp/diag.md
+          echo '```' >> /tmp/diag.md
+          df -h / >> /tmp/diag.md
+          echo '```' >> /tmp/diag.md
           make -j4 > /tmp/depends.log 2>&1
           rc=$?
           echo "### make exit=$rc" >> /tmp/diag.md
+          echo "### disco depois" >> /tmp/diag.md
+          echo '```' >> /tmp/diag.md
+          df -h / >> /tmp/diag.md
+          echo '```' >> /tmp/diag.md
           echo >> /tmp/diag.md
           echo '## Últimas 80 linhas do make' >> /tmp/diag.md
           echo '```' >> /tmp/diag.md
@@ -93,8 +107,13 @@ jobs:
           echo >> /tmp/diag.md
           echo '## Linhas de erro' >> /tmp/diag.md
           echo '```' >> /tmp/diag.md
-          grep -nE "Error [0-9]|error:|No such file|undefined reference|not found" /tmp/depends.log \
-            | tail -40 >> /tmp/diag.md
+          grep -nE "Error [0-9]|error:|No such file|undefined reference|not found|No space" \
+            /tmp/depends.log | tail -40 >> /tmp/diag.md
+          echo '```' >> /tmp/diag.md
+          echo >> /tmp/diag.md
+          echo '## Último alvo do make' >> /tmp/diag.md
+          echo '```' >> /tmp/diag.md
+          grep -nE "^(make|Entering|Leaving).*" /tmp/depends.log | tail -12 >> /tmp/diag.md
           echo '```' >> /tmp/diag.md
 
           if [ $rc -ne 0 ]; then
