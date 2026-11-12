@@ -84,6 +84,11 @@ class CatalogueTest(unittest.TestCase):
             def setTitle(self, value): self.title = value
             def setPlot(self, value): self.plot = value
             def setYear(self, value): self.year = value
+            def __getattr__(self, nome):
+                # genero/nota/data/duracao/mediatype: a skin usa o que existir
+                if nome.startswith('set'):
+                    return lambda *a, **k: None
+                raise AttributeError(nome)
         class Item:
             def __init__(self, label): self.label = label; self.info = Info()
             def setArt(self, value): self.art = value
@@ -97,7 +102,7 @@ class CatalogueTest(unittest.TestCase):
                                      log=lambda *a: events.append(('log', a)))
         sample = {'label':'Filme','url':url(16,'original'),'title':'Filme', 'folder':False,
                   'playable':True,'thumbnail':'poster','fanart':'wide','plot':'','year':2026}
-        source = types.SimpleNamespace(recent_movies=lambda rpc: [sample])
+        source = types.SimpleNamespace(recent_movies=lambda rpc, limit=10: [sample])
         with patch.dict(sys.modules, {'routes':routes,'xbmcgui':types.SimpleNamespace(ListItem=Item),
                 'xbmcplugin':plugin,'xbmc':xbmc,'catalogue':source}):
             main = load('catalogue_main','default.py')
