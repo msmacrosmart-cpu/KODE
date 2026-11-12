@@ -12,16 +12,15 @@ class AjustesFinaisTest(unittest.TestCase):
     def test_pastas_nao_usam_poster(self):
         # a tela final (com video) e a unica que entra na grade; a intermediaria
         # fica na lista vertical, e os filtros so existem na grade
-        plugin = (ROOT / 'kodi/addons/plugin.video.smarted/default.py').read_text(encoding='utf-8')
-        # rodada 18: VOD voltou para a lista original (sem grade) e os filtros
-        # aparecem na lista, nunca na TV ao vivo
-        self.assertIn("Container.SetViewMode(50)", plugin)
+        # rodada 19: navegacao nativa do addon de volta (o padrao que funcionava).
+        # A grade e uma vista OPCIONAL (52); o padrao e a lista 50.
         texto = (XML / 'MyVideoNav.xml').read_text(encoding='utf-8')
-        self.assertNotIn('id="52"', texto)
+        self.assertIn('<defaultcontrol always="true">50</defaultcontrol>', texto)
+        self.assertIn('<views>50,51,52</views>', texto)
         filtros = texto[texto.index('<control type="grouplist" id="9060">'):]
-        self.assertIn('<visible>Control.IsVisible(50) + !String.Contains(Container.FolderPath,tv=1)</visible>',
+        self.assertIn('<visible>Control.IsVisible(50) + !String.Contains(Container.FolderPath,mode=21)</visible>',
                       filtros)
-        self.assertEqual(filtros.count('route=pasta'), 6)
+        self.assertEqual(filtros.count('Container.SetSortMethod'), 6)
 
     def test_menu_lateral_sem_icones(self):
         texto = (XML / 'MyVideoNav.xml').read_text(encoding='utf-8')

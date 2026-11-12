@@ -251,7 +251,4 @@ def open_command(entry):
     url = buildin_url(entry['url'])
     if entry['playable']:
         return 'PlayMedia(%s)' % url
-    if not (entry['url'] or '').startswith('plugin://'):
-        return 'ActivateWindow(Videos,%s)' % url
-    # pasta do addon: abre pela ponte para a tela final poder virar grade
-    return 'ActivateWindow(Videos,%s)' % buildin_url(pasta_url(entry['url'], tv=is_channel(entry)))
+    return 'ActivateWindow(Videos,%s)' % url

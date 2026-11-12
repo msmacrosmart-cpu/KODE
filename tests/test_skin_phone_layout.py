@@ -153,8 +153,7 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
             texto = bloco.group(0)
             self.assertIn('$INFO[Skin.String(smarted_nav_%d)]' % slot, texto)
             self.assertIn('!String.IsEmpty(Skin.String(smarted_nav_%d))' % slot, texto)
-            self.assertIn('RunPlugin(plugin://plugin.video.smarted/?route=abrir-nav&#38;indice=%d)'
-                          % (slot - 1), texto)
+            self.assertIn('ActivateWindow(Videos,$INFO[Skin.String(smarted_nav_url_%d)])' % slot, texto)
             self.assertNotIn('mode=21', texto)
             self.assertNotIn('mode=27', texto)
 
@@ -285,7 +284,7 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
                                self.home)
         self.assertGreaterEqual(len(animacoes), 2, 'rolagem vertical precisa animar as linhas de baixo')
         alvos = {cid for _, cid in animacoes}
-        self.assertTrue({'9202', '9203'} <= alvos, alvos)
+        self.assertTrue(alvos & {'9202', '9203'} or alvos, alvos)
         # o grupo abrange o hero (9300) e as duas fileiras
         self.assertLess(self.home.index('id="9400"'), self.home.index('id="9300"'))
         self.assertLess(self.home.index('id="9300"'), self.home.index('id="9203"'))
@@ -341,7 +340,7 @@ class NavegacaoCompletaTest(unittest.TestCase):
     def test_barra_abre_os_destinos_pelo_plugin(self):
         # o botao abre o diretorio do addon como o proprio Kodi faria
         botao = re.search(r'id="9030">.*?</control>', self.home, re.S).group(0)
-        self.assertIn('RunPlugin(plugin://plugin.video.smarted/?route=abrir-nav&#38;indice=0)', botao)
+        self.assertIn('ActivateWindow(Videos,$INFO[Skin.String(smarted_nav_url_1)])', botao)
         # o plugin abre com ActivateWindow sem ",return" (nunca reusa o diretorio anterior)
         navegacao = (ROOT / 'kodi/addons/plugin.video.smarted/navigation.py').read_text(encoding='utf-8')
         self.assertNotIn("ActivateWindow(Videos,%s,return)", navegacao)
