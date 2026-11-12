@@ -1,8 +1,8 @@
 # Diagnostico do emulador
 
-- run: `43154506409`
-- commit: `bba4bd3604ac1053e6350bebd5a25562fb53bc2a`
-- quando: 2026-11-12T04:40:32Z
+- run: `43156856679`
+- commit: `9f7c8b50fb96d0872093c595d0b554253a2daf42`
+- quando: 2026-11-12T05:05:06Z
 
 ## Home.png (imagem, ver artefato)
 
@@ -21,7 +21,7 @@ true">false</setting>
     <setting id="pvrtimers.hidedisabledtimers" default="true">false</setting>
     <setting id="services.devicename" default="true">Kodi</setting>
     <setting id="services.zeroconf" default="true">true</setting>
-    <setting id="services.deviceuuid">cf10cf32-daa5-401a-aac3-c42acddc4b94</setting>
+    <setting id="services.deviceuuid">efc6c8d6-9d45-47c6-8c36-216d7c0edf73</setting>
     <setting id="services.webserver" default="true">false</setting>
     <setting id="services.webserverport" default="true">8080</setting>
     <setting id="services.webserverauthentication" default="true">true</setting>
@@ -324,197 +324,197 @@ true">false</setting>
 
 ## kodi-addons.txt (9291 bytes)
 ```
-2026-11-12 04:29:10.698 T:3810     info <general>: special://xbmcbinaddons/ is mapped to: /data/user/0/org.xbmc.kodi/cache/apk/assets/addons
-2026-11-12 04:29:11.578 T:3810     info <general>: create addons table
-2026-11-12 04:29:11.585 T:3810     info <general>: create addonlinkrepo table
-2026-11-12 04:29:12.666 T:3810     info <general>: CAddonMgr::FindAddons: audioencoder.kodi.builtin.aac v1.0.2 installed
-2026-11-12 04:29:12.668 T:3810     info <general>: CAddonMgr::FindAddons: audioencoder.kodi.builtin.wma v1.0.2 installed
-2026-11-12 04:29:12.669 T:3810     info <general>: CAddonMgr::FindAddons: game.controller.default v1.0.46 installed
-2026-11-12 04:29:12.671 T:3810     info <general>: CAddonMgr::FindAddons: game.controller.keyboard v1.1.47 installed
-2026-11-12 04:29:12.672 T:3810     info <general>: CAddonMgr::FindAddons: game.controller.mouse v1.0.30 installed
-2026-11-12 04:29:12.674 T:3810     info <general>: CAddonMgr::FindAddons: game.controller.snes v1.0.46 installed
-2026-11-12 04:29:12.675 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.global.audioengine v1.1.1 installed
-2026-11-12 04:29:12.677 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.global.filesystem v1.1.9 installed
-2026-11-12 04:29:12.678 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.global.general v1.0.5 installed
-2026-11-12 04:29:12.679 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.global.gui v5.15.0 installed
-2026-11-12 04:29:12.680 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.global.main v2.0.2 installed
-2026-11-12 04:29:12.682 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.global.network v1.0.4 installed
-2026-11-12 04:29:12.683 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.global.tools v1.0.4 installed
-2026-11-12 04:29:12.684 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.audiodecoder v4.0.0 installed
-2026-11-12 04:29:12.685 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.audioencoder v3.0.0 installed
-2026-11-12 04:29:12.686 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.game v3.0.2 installed
-2026-11-12 04:29:12.688 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.imagedecoder v3.0.1 installed
-2026-11-12 04:29:12.689 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.inputstream v3.3.0 installed
-2026-11-12 04:29:12.690 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.peripheral v3.0.2 installed
-2026-11-12 04:29:12.692 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.pvr v8.3.0 installed
-2026-11-12 04:29:12.693 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.screensaver v2.2.0 installed
-2026-11-12 04:29:12.694 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.vfs v3.0.1 installed
-2026-11-12 04:29:12.696 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.videocodec v2.1.0 installed
-2026-11-12 04:29:12.697 T:3810     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.visualization v4.0.0 installed
-2026-11-12 04:29:12.698 T:3810     info <general>: CAddonMgr::FindAddons: kodi.resource v1.0.0 installed
-2026-11-12 04:29:12.699 T:3810     info <general>: CAddonMgr::FindAddons: metadata.album.universal v3.1.4 installed
-2026-11-12 04:29:12.701 T:3810     info <general>: CAddonMgr::FindAddons: metadata.artists.universal v4.3.3 installed
-2026-11-12 04:29:12.703 T:3810     info <general>: CAddonMgr::FindAddons: metadata.common.allmusic.com v3.2.2 installed
-2026-11-12 04:29:12.704 T:3810     info <general>: CAddonMgr::FindAddons: metadata.common.fanart.tv v3.6.3 installed
-2026-11-12 04:29:12.705 T:3810     info <general>: CAddonMgr::FindAddons: metadata.common.musicbrainz.org v2.2.4 installed
-2026-11-12 04:29:12.706 T:3810     info <general>: CAddonMgr::FindAddons: metadata.common.theaudiodb.com v2.0.3 installed
-2026-11-12 04:29:12.707 T:3810     info <general>: CAddonMgr::FindAddons: metadata.generic.albums v1.0.14 installed
-2026-11-12 04:29:12.709 T:3810     info <general>: CAddonMgr::FindAddons: metadata.generic.artists v1.0.18 installed
-2026-11-12 04:29:12.710 T:3810     info <general>: CAddonMgr::FindAddons: metadata.local v1.0.1 installed
-2026-11-12 04:29:12.711 T:3810     info <general>: CAddonMgr::FindAddons: metadata.themoviedb.org.python v1.3.1+matrix.1 installed
-2026-11-12 04:29:12.713 T:3810     info <general>: CAddonMgr::FindAddons: metadata.tvshows.themoviedb.org.python v1.6.0 installed
-2026-11-12 04:29:12.714 T:3810     info <general>: CAddonMgr::FindAddons: peripheral.joystick v21.1.23 installed
-2026-11-12 04:29:12.716 T:3810     info <general>: CAddonMgr::FindAddons: plugin.video.BrazucaPlay.Matrix v2.1.4 installed
-2026-11-12 04:29:12.717 T:3810     info <general>: CAddonMgr::FindAddons: plugin.video.smarted v0.2.7 installed
-2026-11-12 04:29:12.718 T:3810     info <general>: CAddonMgr::FindAddons: repository.xbmc.org v3.4.0 installed
-2026-11-12 04:29:12.720 T:3810     info <general>: CAddonMgr::FindAddons: resource.images.weathericons.default v1.1.9 installed
-2026-11-12 04:29:12.721 T:3810     info <general>: CAddonMgr::FindAddons: resource.language.en_gb v2.0.2 installed
-2026-11-12 04:29:12.723 T:3810     info <general>: CAddonMgr::FindAddons: resource.uisounds.kodi v1.0.1 installed
-2026-11-12 04:29:12.724 T:3810     info <general>: CAddonMgr::FindAddons: screensaver.xbmc.builtin.black v1.0.34 installed
-2026-11-12 04:29:12.726 T:3810     info <general>: CAddonMgr::FindAddons: screensaver.xbmc.builtin.dim v1.0.66 installed
-2026-11-12 04:29:12.727 T:3810     info <general>: CAddonMgr::FindAddons: script.module.certifi v2023.5.7 installed
-2026-11-12 04:29:12.729 T:3810     info <general>: CAddonMgr::FindAddons: script.module.chardet v5.1.0 installed
-2026-11-12 04:29:12.730 T:3810     info <general>: CAddonMgr::FindAddons: script.module.idna v3.10.0 installed
-2026-11-12 04:29:12.732 T:3810     info <general>: CAddonMgr::FindAddons: script.module.kodi-six v0.1.3.1 installed
-2026-11-12 04:29:12.733 T:3810     info <general>: CAddonMgr::FindAddons: script.module.pil v5.1.0 installed
-2026-11-12 04:29:12.735 T:3810     info <general>: CAddonMgr::FindAddons: script.module.pycryptodome v3.4.3 installed
-2026-11-12 04:29:12.736 T:3810     info <general>: CAddonMgr::FindAddons: script.module.requests v2.31.0 installed
-2026-11-12 04:29:12.737 T:3810     info <general>: CAddonMgr::FindAddons: script.module.simplejson v3.19.1+matrix.1 installed
-2026-11-12 04:29:12.739 T:3810     info <general>: CAddonMgr::FindAddons: script.module.six v1.16.0+matrix.1 installed
-2026-11-12 04:29:12.740 T:3810     info <general>: CAddonMgr::FindAddons: script.module.urllib3 v2.2.3 installed
-2026-11-12 04:29:12.741 T:3810     info <general>: CAddonMgr::FindAddons: service.xbmc.versioncheck v0.5.27+matrix.1 installed
-2026-11-12 04:29:12.743 T:3810     info <general>: CAddonMgr::FindAddons: skin.estuary v4.0.0 installed
-2026-11-12 04:29:12.744 T:3810     info <general>: CAddonMgr::FindAddons: skin.novatv v1.0.8 installed
-2026-11-12 04:29:12.746 T:3810     info <general>: CAddonMgr::FindAddons: webinterface.default v21.x-1.0.1 installed
-2026-11-12 04:29:12.747 T:3810     info <general>: CAddonMgr::FindAddons: xbmc.addon v21.3.0 installed
-2026-11-12 04:29:12.748 T:3810     info <general>: CAddonMgr::FindAddons: xbmc.core v0.1.0 installed
-2026-11-12 04:29:12.750 T:3810     info <general>: CAddonMgr::FindAddons: xbmc.gui v5.17.0 installed
-2026-11-12 04:29:12.751 T:3810     info <general>: CAddonMgr::FindAddons: xbmc.json v13.5.0 installed
-2026-11-12 04:29:12.753 T:3810     info <general>: CAddonMgr::FindAddons: xbmc.metadata v2.1.0 installed
-2026-11-12 04:29:12.754 T:3810     info <general>: CAddonMgr::FindAddons: xbmc.python v3.0.1 installed
-2026-11-12 04:29:12.755 T:3810     info <general>: CAddonMgr::FindAddons: xbmc.webinterface v1.0.0 installed
-2026-11-12 04:29:22.039 T:4197     info <general>: Running database version Addons33
-2026-11-12 04:29:23.805 T:3810     info <general>: Unloaded skin
-2026-11-12 04:29:23.827 T:3810     info <general>:   load skin from: /data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/ (version: 1.0.8)
-2026-11-12 04:29:23.828 T:3810     info <general>:   load fonts for skin...
-2026-11-12 04:29:23.851 T:3810     info <general>: Loading skin includes from /data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/xml/Includes.xml
-2026-11-12 04:29:24.349 T:3810     info <general>: LoadFontsFromFile: Loading <fontset> with name 'Default' from '/data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/xml/Font.xml'
-2026-11-12 04:29:24.542 T:3810     info <general>: LoadTimers: Trying to load skin timers from /data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/xml/Timers.xml
-2026-11-12 04:29:24.642 T:3810     info <general>:   load new skin...
-2026-11-12 04:29:24.643 T:3810     info <general>: Loading custom window XMLs from skin path /data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/xml
-2026-11-12 04:29:24.760 T:3810     info <general>:   initialize new skin...
-2026-11-12 04:29:24.770 T:3810     info <general>: Loading skin file: DialogBusy.xml, load type: LOAD_ON_GUI_INIT
+2026-11-12 04:50:25.404 T:4122     info <general>: special://xbmcbinaddons/ is mapped to: /data/user/0/org.xbmc.kodi/cache/apk/assets/addons
+2026-11-12 04:50:26.621 T:4122     info <general>: create addons table
+2026-11-12 04:50:26.627 T:4122     info <general>: create addonlinkrepo table
+2026-11-12 04:50:28.139 T:4122     info <general>: CAddonMgr::FindAddons: audioencoder.kodi.builtin.aac v1.0.2 installed
+2026-11-12 04:50:28.143 T:4122     info <general>: CAddonMgr::FindAddons: audioencoder.kodi.builtin.wma v1.0.2 installed
+2026-11-12 04:50:28.147 T:4122     info <general>: CAddonMgr::FindAddons: game.controller.default v1.0.46 installed
+2026-11-12 04:50:28.149 T:4122     info <general>: CAddonMgr::FindAddons: game.controller.keyboard v1.1.47 installed
+2026-11-12 04:50:28.150 T:4122     info <general>: CAddonMgr::FindAddons: game.controller.mouse v1.0.30 installed
+2026-11-12 04:50:28.155 T:4122     info <general>: CAddonMgr::FindAddons: game.controller.snes v1.0.46 installed
+2026-11-12 04:50:28.160 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.global.audioengine v1.1.1 installed
+2026-11-12 04:50:28.164 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.global.filesystem v1.1.9 installed
+2026-11-12 04:50:28.174 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.global.general v1.0.5 installed
+2026-11-12 04:50:28.178 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.global.gui v5.15.0 installed
+2026-11-12 04:50:28.179 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.global.main v2.0.2 installed
+2026-11-12 04:50:28.183 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.global.network v1.0.4 installed
+2026-11-12 04:50:28.187 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.global.tools v1.0.4 installed
+2026-11-12 04:50:28.191 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.audiodecoder v4.0.0 installed
+2026-11-12 04:50:28.195 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.audioencoder v3.0.0 installed
+2026-11-12 04:50:28.199 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.game v3.0.2 installed
+2026-11-12 04:50:28.203 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.imagedecoder v3.0.1 installed
+2026-11-12 04:50:28.207 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.inputstream v3.3.0 installed
+2026-11-12 04:50:28.210 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.peripheral v3.0.2 installed
+2026-11-12 04:50:28.214 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.pvr v8.3.0 installed
+2026-11-12 04:50:28.218 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.screensaver v2.2.0 installed
+2026-11-12 04:50:28.221 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.vfs v3.0.1 installed
+2026-11-12 04:50:28.225 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.videocodec v2.1.0 installed
+2026-11-12 04:50:28.227 T:4122     info <general>: CAddonMgr::FindAddons: kodi.binary.instance.visualization v4.0.0 installed
+2026-11-12 04:50:28.231 T:4122     info <general>: CAddonMgr::FindAddons: kodi.resource v1.0.0 installed
+2026-11-12 04:50:28.234 T:4122     info <general>: CAddonMgr::FindAddons: metadata.album.universal v3.1.4 installed
+2026-11-12 04:50:28.235 T:4122     info <general>: CAddonMgr::FindAddons: metadata.artists.universal v4.3.3 installed
+2026-11-12 04:50:28.237 T:4122     info <general>: CAddonMgr::FindAddons: metadata.common.allmusic.com v3.2.2 installed
+2026-11-12 04:50:28.238 T:4122     info <general>: CAddonMgr::FindAddons: metadata.common.fanart.tv v3.6.3 installed
+2026-11-12 04:50:28.240 T:4122     info <general>: CAddonMgr::FindAddons: metadata.common.musicbrainz.org v2.2.4 installed
+2026-11-12 04:50:28.241 T:4122     info <general>: CAddonMgr::FindAddons: metadata.common.theaudiodb.com v2.0.3 installed
+2026-11-12 04:50:28.243 T:4122     info <general>: CAddonMgr::FindAddons: metadata.generic.albums v1.0.14 installed
+2026-11-12 04:50:28.244 T:4122     info <general>: CAddonMgr::FindAddons: metadata.generic.artists v1.0.18 installed
+2026-11-12 04:50:28.246 T:4122     info <general>: CAddonMgr::FindAddons: metadata.local v1.0.1 installed
+2026-11-12 04:50:28.250 T:4122     info <general>: CAddonMgr::FindAddons: metadata.themoviedb.org.python v1.3.1+matrix.1 installed
+2026-11-12 04:50:28.251 T:4122     info <general>: CAddonMgr::FindAddons: metadata.tvshows.themoviedb.org.python v1.6.0 installed
+2026-11-12 04:50:28.255 T:4122     info <general>: CAddonMgr::FindAddons: peripheral.joystick v21.1.23 installed
+2026-11-12 04:50:28.256 T:4122     info <general>: CAddonMgr::FindAddons: plugin.video.BrazucaPlay.Matrix v2.1.4 installed
+2026-11-12 04:50:28.258 T:4122     info <general>: CAddonMgr::FindAddons: plugin.video.smarted v0.2.7 installed
+2026-11-12 04:50:28.259 T:4122     info <general>: CAddonMgr::FindAddons: repository.xbmc.org v3.4.0 installed
+2026-11-12 04:50:28.260 T:4122     info <general>: CAddonMgr::FindAddons: resource.images.weathericons.default v1.1.9 installed
+2026-11-12 04:50:28.262 T:4122     info <general>: CAddonMgr::FindAddons: resource.language.en_gb v2.0.2 installed
+2026-11-12 04:50:28.263 T:4122     info <general>: CAddonMgr::FindAddons: resource.uisounds.kodi v1.0.1 installed
+2026-11-12 04:50:28.265 T:4122     info <general>: CAddonMgr::FindAddons: screensaver.xbmc.builtin.black v1.0.34 installed
+2026-11-12 04:50:28.266 T:4122     info <general>: CAddonMgr::FindAddons: screensaver.xbmc.builtin.dim v1.0.66 installed
+2026-11-12 04:50:28.267 T:4122     info <general>: CAddonMgr::FindAddons: script.module.certifi v2023.5.7 installed
+2026-11-12 04:50:28.268 T:4122     info <general>: CAddonMgr::FindAddons: script.module.chardet v5.1.0 installed
+2026-11-12 04:50:28.270 T:4122     info <general>: CAddonMgr::FindAddons: script.module.idna v3.10.0 installed
+2026-11-12 04:50:28.272 T:4122     info <general>: CAddonMgr::FindAddons: script.module.kodi-six v0.1.3.1 installed
+2026-11-12 04:50:28.273 T:4122     info <general>: CAddonMgr::FindAddons: script.module.pil v5.1.0 installed
+2026-11-12 04:50:28.274 T:4122     info <general>: CAddonMgr::FindAddons: script.module.pycryptodome v3.4.3 installed
+2026-11-12 04:50:28.276 T:4122     info <general>: CAddonMgr::FindAddons: script.module.requests v2.31.0 installed
+2026-11-12 04:50:28.277 T:4122     info <general>: CAddonMgr::FindAddons: script.module.simplejson v3.19.1+matrix.1 installed
+2026-11-12 04:50:28.279 T:4122     info <general>: CAddonMgr::FindAddons: script.module.six v1.16.0+matrix.1 installed
+2026-11-12 04:50:28.281 T:4122     info <general>: CAddonMgr::FindAddons: script.module.urllib3 v2.2.3 installed
+2026-11-12 04:50:28.282 T:4122     info <general>: CAddonMgr::FindAddons: service.xbmc.versioncheck v0.5.27+matrix.1 installed
+2026-11-12 04:50:28.283 T:4122     info <general>: CAddonMgr::FindAddons: skin.estuary v4.0.0 installed
+2026-11-12 04:50:28.285 T:4122     info <general>: CAddonMgr::FindAddons: skin.novatv v1.0.8 installed
+2026-11-12 04:50:28.289 T:4122     info <general>: CAddonMgr::FindAddons: webinterface.default v21.x-1.0.1 installed
+2026-11-12 04:50:28.290 T:4122     info <general>: CAddonMgr::FindAddons: xbmc.addon v21.3.0 installed
+2026-11-12 04:50:28.301 T:4122     info <general>: CAddonMgr::FindAddons: xbmc.core v0.1.0 installed
+2026-11-12 04:50:28.304 T:4122     info <general>: CAddonMgr::FindAddons: xbmc.gui v5.17.0 installed
+2026-11-12 04:50:28.305 T:4122     info <general>: CAddonMgr::FindAddons: xbmc.json v13.5.0 installed
+2026-11-12 04:50:28.310 T:4122     info <general>: CAddonMgr::FindAddons: xbmc.metadata v2.1.0 installed
+2026-11-12 04:50:28.314 T:4122     info <general>: CAddonMgr::FindAddons: xbmc.python v3.0.1 installed
+2026-11-12 04:50:28.318 T:4122     info <general>: CAddonMgr::FindAddons: xbmc.webinterface v1.0.0 installed
+2026-11-12 04:50:38.832 T:5091     info <general>: Running database version Addons33
+2026-11-12 04:50:40.887 T:4122     info <general>: Unloaded skin
+2026-11-12 04:50:40.909 T:4122     info <general>:   load skin from: /data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/ (version: 1.0.8)
+2026-11-12 04:50:40.910 T:4122     info <general>:   load fonts for skin...
+2026-11-12 04:50:40.947 T:4122     info <general>: Loading skin includes from /data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/xml/Includes.xml
+2026-11-12 04:50:41.832 T:4122     info <general>: LoadFontsFromFile: Loading <fontset> with name 'Default' from '/data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/xml/Font.xml'
+2026-11-12 04:50:42.013 T:4122     info <general>: LoadTimers: Trying to load skin timers from /data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/xml/Timers.xml
+2026-11-12 04:50:42.120 T:4122     info <general>:   load new skin...
+2026-11-12 04:50:42.178 T:4122     info <general>: Loading custom window XMLs from skin path /data/user/0/org.xbmc.kodi/cache/apk/assets/addons/skin.novatv/xml
+2026-11-12 04:50:42.401 T:4122     info <general>:   initialize new skin...
+2026-11-12 04:50:42.411 T:4122     info <general>: Loading skin file: DialogBusy.xml, load type: LOAD_ON_GUI_INIT
 ```
 
-## kodi-logcat.txt (24493 bytes)
+## kodi-logcat.txt (25611 bytes)
 ```
-le>
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                        DISTRIBUTION = distro.linux_distribution(full_distribution_name=False)[0].lower()
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 123, in linux_distribution
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                        return _distro.linux_distribution(full_distribution_name)
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 677, in linux_distribution
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                        self.name() if full_distribution_name else self.id(),
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                                                                   ^^^^^^^^^
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 703, in id
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                        distro_id = self.uname_attr('id')
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                                    ^^^^^^^^^^^^^^^^^^^^^
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 918, in uname_attr
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                        return self._uname_info.get(attribute, '')
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                               ^^^^^^^^^^^^^^^^
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 553, in __get__
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                        ret = obj.__dict__[self._fname] = self._f(obj)
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                                                          ^^^^^^^^^^^^
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 1048, in _uname_info
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                        stdout = subprocess.check_output(cmd, stderr=devnull)
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-11-12 04:34:53.855  2849  6389 E Kodi    :                                                    
-11-12 04:34:53.899  2849  4163 I Kodi    : 2026-11-12 04:34:53.899 T:4163     info <general>: CActiveAESink::OpenSink - initialize sink
-11-12 04:34:53.901  2849  4163 I Kodi    : 2026-11-12 04:34:53.901 T:4163     info <general>: Trying to open: samplerate: 44100, channelMask: 12, encoding: 4
-11-12 04:34:53.901  2849  4163 I Kodi    : 2026-11-12 04:34:53.901 T:4163     info <general>: Minimum size we need for stream: 15648 Bytes
-11-12 04:34:53.902  2849  4163 I Kodi    : 2026-11-12 04:34:53.902 T:4163     info <general>: Audiotrack buffer params are: period time = 44.354 ms, period size = 15648 bytes, num periods = 3
-11-12 04:34:53.902  2849  4163 I Kodi    : 2026-11-12 04:34:53.902 T:4163     info <general>: Created Audiotrackbuffer with playing time of 133.061224 ms min buffer size: 46944 bytes
-11-12 04:34:53.906  2849  4163 I Kodi    : 2026-11-12 04:34:53.906 T:4163     info <general>: CAESinkAUDIOTRACK::Initializing with: m_sampleRate: 44100 format: AE_FMT_FLOAT (AE) method: PCM stream-type: PCM-STREAM min_buffer_size: 46944 m_frames: 1956 m_frameSize: 8 channels: 2
-11-12 04:35:05.475  2849  6183 I Kodi    : 2026-11-12 04:35:05.474 T:6183     info <general>: CAddonMgr::FindAddon: metadata.album.universal v3.1.20 installed
-11-12 04:35:17.984  2849  6183 I Kodi    : 2026-11-12 04:35:17.984 T:6183     info <general>: CAddonMgr::FindAddon: metadata.artists.universal v4.3.24 installed
-11-12 04:38:31.817  2849  6368 I Kodi    : 2026-11-12 04:38:31.817 T:6368     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
-11-12 04:38:31.818  2849  4725 I Kodi    : 2026-11-12 04:38:31.818 T:4725     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
-11-12 04:38:32.644  2849  5845 I Kodi    : 2026-11-12 04:38:32.644 T:5845     info <general>: SMARTED_TEST_CARROSSEL SERIES total=20 midia=0 arte=20 menu=0
-11-12 04:38:32.644  2849  5845 I Kodi    : 2026-11-12 04:38:32.644 T:5845     info <general>: SMARTED_TEST_CARROSSEL   #BLACKAF | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:38:32.645  2849  5845 I Kodi    : 2026-11-12 04:38:32.645 T:5845     info <general>: SMARTED_TEST_CARROSSEL   #LUIMELIA | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:38:32.645  2849  5845 I Kodi    : 2026-11-12 04:38:32.645 T:5845     info <general>: SMARTED_TEST_CARROSSEL   007: ESTRADA PARA O MILHÃO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:38:32.646  2849  5845 I Kodi    : 2026-11-12 04:38:32.646 T:5845     info <general>: SMARTED_TEST_CARROSSEL   1 CONTRA TODOS | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:38:32.646  2849  5845 I Kodi    : 2026-11-12 04:38:32.646 T:5845     info <general>: SMARTED_TEST_CARROSSEL   100 ANOS DA WARNER BROS. | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:38:32.647  2849  5845 I Kodi    : 2026-11-12 04:38:32.647 T:5845     info <general>: SMARTED_TEST_CARROSSEL   100 CODE | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:38:32.647  2849  5845 I Kodi    : 2026-11-12 04:38:32.647 T:5845     info <general>: SMARTED_TEST_CARROSSEL   100 COISAS PARA FAZER ANTES DO HIGH SCHOOL | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:38:32.648  2849  5845 I Kodi    : 2026-11-12 04:38:32.648 T:5845     info <general>: SMARTED_TEST_CARROSSEL   100 DIAS PARA MORAR: COMEÇANDO DO ZERO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:38:42.772  2849  5845 I Kodi    : 2026-11-12 04:38:42.772 T:5845     info <general>: SMARTED_TEST_CARROSSEL MENU FILMES itens=5
-11-12 04:38:42.832  2849  3810 I Kodi    : 2026-11-12 04:38:42.832 T:3810     info <general>: Loading skin file: MyVideoNav.xml, load type: KEEP_IN_MEMORY
-11-12 04:38:48.174  2849  5845 I Kodi    : 2026-11-12 04:38:48.174 T:5845     info <general>: SMARTED_TEST_CARROSSEL NAVEGACAO janela=videos
-11-12 04:39:01.089  2849  5845 I Kodi    : 2026-11-12 04:39:01.088 T:5845     info <general>: SMARTED_TEST_CARROSSEL ABA ANIMES itens=2
-11-12 04:39:03.716  2849  5845 I Kodi    : 2026-11-12 04:39:03.716 T:5845     info <general>: SMARTED_TEST_CARROSSEL ABA DESENHOS itens=2
-11-12 04:39:06.280  2849  5845 I Kodi    : 2026-11-12 04:39:06.280 T:5845     info <general>: SMARTED_TEST_CARROSSEL ABA DORAMAS itens=2
-11-12 04:39:08.375  2849  5845 I Kodi    : 2026-11-12 04:39:08.375 T:5845     info <general>: SMARTED_TEST_CARROSSEL ABA NOVELAS itens=2
-11-12 04:39:10.106  2849  5845 I Kodi    : 2026-11-12 04:39:10.105 T:5845     info <general>: SMARTED_TEST_CARROSSEL RECENTES total=10
-11-12 04:39:11.202  2849  6860 I Kodi    : 2026-11-12 04:39:11.202 T:6860     info <general>: SMARTED-TV: hero com 10 filmes (ficha completa=0)
-11-12 04:39:11.749  2849  5845 I Kodi    : 2026-11-12 04:39:11.749 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO total=10 filmes=10 arte=10 sinopse=10 genero=0
-11-12 04:39:11.749  2849  5845 I Kodi    : 2026-11-12 04:39:11.749 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO OUTRA MAMÃE | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.750  2849  5845 I Kodi    : 2026-11-12 04:39:11.750 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO A ODISSEIA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.750  2849  5845 I Kodi    : 2026-11-12 04:39:11.750 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO GODZILLA MINUS ZERO | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.751  2849  5845 I Kodi    : 2026-11-12 04:39:11.751 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO NO LIMITE DA JUSTIÇA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.751  2849  5845 I Kodi    : 2026-11-12 04:39:11.751 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO CORAÇÃO SELVAGEM | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.752  2849  5845 I Kodi    : 2026-11-12 04:39:11.752 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO FUGA MORTAL | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.752  2849  5845 I Kodi    : 2026-11-12 04:39:11.752 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO RESIDENT EVIL | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.753  2849  5845 I Kodi    : 2026-11-12 04:39:11.753 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO MINHA MELHOR AMIGA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.753  2849  5845 I Kodi    : 2026-11-12 04:39:11.753 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO CARA-DE-BARRO | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.754  2849  5845 I Kodi    : 2026-11-12 04:39:11.754 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO APOCALIPSE Z: NOVO MUNDO | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:19.436  2849  6861 I Kodi    : 2026-11-12 04:39:19.436 T:6861     info <general>: SMARTED-TV: navegacao com 7 opcoes (menu)
-11-12 04:39:19.437  2849  6861 I Kodi    : 2026-11-12 04:39:19.437 T:6861     info <general>: SMARTED-TV: barra 1 = ● TV AO VIVO
-11-12 04:39:19.437  2849  6861 I Kodi    : 2026-11-12 04:39:19.437 T:6861     info <general>: SMARTED-TV: barra 2 = ● FILMES
-11-12 04:39:19.438  2849  6861 I Kodi    : 2026-11-12 04:39:19.438 T:6861     info <general>: SMARTED-TV: barra 3 = ● SÉRIES
-11-12 04:39:19.438  2849  6861 I Kodi    : 2026-11-12 04:39:19.438 T:6861     info <general>: SMARTED-TV: barra 4 = ● DESENHOS
-11-12 04:39:20.238  2849  5845 I Kodi    : 2026-11-12 04:39:20.238 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA opcoes=7 ['● TV AO VIVO', '● FILMES', '● SÉRIES', '● DESENHOS', '● DORAMAS', '● ANIMES', '● NOVELAS']
-11-12 04:39:23.341  2849  5845 I Kodi    : 2026-11-12 04:39:23.341 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● TV AO VIVO -> itens=10 primeiro=[B][COLOR white]CATEGORIA: [COLOR gold]T
-11-12 04:39:26.131  2849  5845 I Kodi    : 2026-11-12 04:39:26.131 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● FILMES -> itens=5 primeiro=[B][COLOR blue]●[/COLOR] [COLOR white]PE
-11-12 04:39:28.602  2849  5845 I Kodi    : 2026-11-12 04:39:28.602 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● SÉRIES -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-11-12 04:39:30.783  2849  5845 I Kodi    : 2026-11-12 04:39:30.783 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● DESENHOS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-11-12 04:39:33.226  2849  5845 I Kodi    : 2026-11-12 04:39:33.225 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● DORAMAS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-11-12 04:39:35.681  2849  5845 I Kodi    : 2026-11-12 04:39:35.681 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● ANIMES -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-11-12 04:39:38.146  2849  5845 I Kodi    : 2026-11-12 04:39:38.146 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● NOVELAS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-11-12 04:39:38.163  2849  5845 I Kodi    : 2026-11-12 04:39:38.163 T:5845     info <general>: SMARTED_TEST_CARROSSEL ADDONS video=2 ['None', 'None']
-11-12 04:39:38.171  2849  5845 I Kodi    : 2026-11-12 04:39:38.171 T:5845     info <general>: SMARTED_TEST_CARROSSEL ADDONS programas=0 []
-11-12 04:39:38.171  2849  5845 I Kodi    : 2026-11-12 04:39:38.171 T:5845     info <general>: SMARTED_TEST_CARROSSEL ADDONS youtube=ausente neste perfil
-11-12 04:39:40.613  2849  6898 I Kodi    : 2026-11-12 04:39:40.613 T:6898     info <general>: SMARTED-TV: navegacao com 7 opcoes (cache)
-11-12 04:39:40.613  2849  6898 I Kodi    : 2026-11-12 04:39:40.613 T:6898     info <general>: SMARTED-TV: barra 1 = ● TV AO VIVO
-11-12 04:39:40.614  2849  6898 I Kodi    : 2026-11-12 04:39:40.614 T:6898     info <general>: SMARTED-TV: barra 2 = ● FILMES
-11-12 04:39:40.614  2849  6898 I Kodi    : 2026-11-12 04:39:40.614 T:6898     info <general>: SMARTED-TV: barra 3 = ● SÉRIES
-11-12 04:39:40.614  2849  6898 I Kodi    : 2026-11-12 04:39:40.614 T:6898     info <general>: SMARTED-TV: barra 4 = ● DESENHOS
-11-12 04:39:42.197  2849  5845 I Kodi    : 2026-11-12 04:39:42.197 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO antes={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
-11-12 04:39:51.246  2849  5845 I Kodi    : 2026-11-12 04:39:51.246 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
-11-12 04:40:00.270  2849  5845 I Kodi    : 2026-11-12 04:40:00.270 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
-11-12 04:40:09.312  2849  5845 I Kodi    : 2026-11-12 04:40:09.312 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
-11-12 04:40:09.895  2849  6935 I Kodi    : 2026-11-12 04:40:09.895 T:6935     info <general>: SMARTED-TV: sem favoritos em filmes
-11-12 04:40:09.926  2849  5845 I Kodi    : 2026-11-12 04:40:09.926 T:5845     info <general>: SMARTED_TEST_CARROSSEL FAVORITOS itens=0
-11-12 04:40:09.926  2849  5845 E Kodi    : 2026-11-12 04:40:09.926 T:5845    error <general>: SMARTED_TEST_CARROSSEL_FAILED HERO: 10 filmes (o HERO usa no maximo 8); ADDONS: nenhum addon de programas; HERO: nao alternou sozinho em ~30 s
+93 E Kodi    :                                                        DISTRIBUTION = distro.linux_distribution(full_distribution_name=False)[0].lower()
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 123, in linux_distribution
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                        return _distro.linux_distribution(full_distribution_name)
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 677, in linux_distribution
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                        self.name() if full_distribution_name else self.id(),
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                                                                   ^^^^^^^^^
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 703, in id
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                        distro_id = self.uname_attr('id')
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                                    ^^^^^^^^^^^^^^^^^^^^^
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 918, in uname_attr
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                        return self._uname_info.get(attribute, '')
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                               ^^^^^^^^^^^^^^^^
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 553, in __get__
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                        ret = obj.__dict__[self._fname] = self._f(obj)
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                                                          ^^^^^^^^^^^^
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                      File "/storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi/addons/service.xbmc.versioncheck/resources/lib/version_check/distro/distro.py", line 1048, in _uname_info
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                        stdout = subprocess.check_output(cmd, stderr=devnull)
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11-12 04:57:58.132  3331  6693 E Kodi    :                                                    
+11-12 04:57:58.142  3331  4932 I Kodi    : 2026-11-12 04:57:58.142 T:4932     info <general>: CActiveAESink::OpenSink - initialize sink
+11-12 04:57:58.143  3331  4932 I Kodi    : 2026-11-12 04:57:58.143 T:4932     info <general>: Trying to open: samplerate: 44100, channelMask: 12, encoding: 4
+11-12 04:57:58.149  3331  4932 I Kodi    : 2026-11-12 04:57:58.149 T:4932     info <general>: Minimum size we need for stream: 15648 Bytes
+11-12 04:57:58.149  3331  4932 I Kodi    : 2026-11-12 04:57:58.149 T:4932     info <general>: Audiotrack buffer params are: period time = 44.354 ms, period size = 15648 bytes, num periods = 3
+11-12 04:57:58.150  3331  4932 I Kodi    : 2026-11-12 04:57:58.149 T:4932     info <general>: Created Audiotrackbuffer with playing time of 133.061224 ms min buffer size: 46944 bytes
+11-12 04:57:58.153  3331  4932 I Kodi    : 2026-11-12 04:57:58.153 T:4932     info <general>: CAESinkAUDIOTRACK::Initializing with: m_sampleRate: 44100 format: AE_FMT_FLOAT (AE) method: PCM stream-type: PCM-STREAM min_buffer_size: 46944 m_frames: 1956 m_frameSize: 8 channels: 2
+11-12 04:58:13.904  3331  5364 I Kodi    : 2026-11-12 04:58:13.904 T:5364     info <general>: CAddonMgr::FindAddon: metadata.album.universal v3.1.20 installed
+11-12 04:58:30.328  3331  5364 I Kodi    : 2026-11-12 04:58:30.327 T:5364     info <general>: CAddonMgr::FindAddon: metadata.artists.universal v4.3.24 installed
+11-12 05:02:36.847  3331  5373 I Kodi    : 2026-11-12 05:02:36.847 T:5373     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
+11-12 05:02:36.858  3331  6657 I Kodi    : 2026-11-12 05:02:36.858 T:6657     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
+11-12 05:02:37.718  3331  5942 I Kodi    : 2026-11-12 05:02:37.718 T:5942     info <general>: SMARTED_TEST_CARROSSEL SERIES total=20 midia=0 arte=20 menu=0
+11-12 05:02:37.719  3331  5942 I Kodi    : 2026-11-12 05:02:37.719 T:5942     info <general>: SMARTED_TEST_CARROSSEL   #BLACKAF | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 05:02:37.720  3331  5942 I Kodi    : 2026-11-12 05:02:37.720 T:5942     info <general>: SMARTED_TEST_CARROSSEL   #LUIMELIA | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 05:02:37.720  3331  5942 I Kodi    : 2026-11-12 05:02:37.720 T:5942     info <general>: SMARTED_TEST_CARROSSEL   007: ESTRADA PARA O MILHÃO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 05:02:37.721  3331  5942 I Kodi    : 2026-11-12 05:02:37.721 T:5942     info <general>: SMARTED_TEST_CARROSSEL   1 CONTRA TODOS | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 05:02:37.721  3331  5942 I Kodi    : 2026-11-12 05:02:37.721 T:5942     info <general>: SMARTED_TEST_CARROSSEL   100 ANOS DA WARNER BROS. | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 05:02:37.722  3331  5942 I Kodi    : 2026-11-12 05:02:37.722 T:5942     info <general>: SMARTED_TEST_CARROSSEL   100 CODE | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 05:02:37.722  3331  5942 I Kodi    : 2026-11-12 05:02:37.722 T:5942     info <general>: SMARTED_TEST_CARROSSEL   100 COISAS PARA FAZER ANTES DO HIGH SCHOOL | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 05:02:37.723  3331  5942 I Kodi    : 2026-11-12 05:02:37.723 T:5942     info <general>: SMARTED_TEST_CARROSSEL   100 DIAS PARA MORAR: COMEÇANDO DO ZERO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 05:02:51.264  3331  5942 I Kodi    : 2026-11-12 05:02:51.264 T:5942     info <general>: SMARTED_TEST_CARROSSEL MENU FILMES itens=5
+11-12 05:02:51.309  3331  4122 I Kodi    : 2026-11-12 05:02:51.308 T:4122     info <general>: Loading skin file: MyVideoNav.xml, load type: KEEP_IN_MEMORY
+11-12 05:02:58.829  3331  5942 I Kodi    : 2026-11-12 05:02:58.828 T:5942     info <general>: SMARTED_TEST_CARROSSEL NAVEGACAO janela=videos
+11-12 05:03:16.414  3331  5942 I Kodi    : 2026-11-12 05:03:16.413 T:5942     info <general>: SMARTED_TEST_CARROSSEL ABA ANIMES itens=2
+11-12 05:03:19.703  3331  5942 I Kodi    : 2026-11-12 05:03:19.703 T:5942     info <general>: SMARTED_TEST_CARROSSEL ABA DESENHOS itens=2
+11-12 05:03:22.960  3331  5942 I Kodi    : 2026-11-12 05:03:22.960 T:5942     info <general>: SMARTED_TEST_CARROSSEL ABA DORAMAS itens=2
+11-12 05:03:26.194  3331  5942 I Kodi    : 2026-11-12 05:03:26.194 T:5942     info <general>: SMARTED_TEST_CARROSSEL ABA NOVELAS itens=2
+11-12 05:03:28.481  3331  5942 I Kodi    : 2026-11-12 05:03:28.481 T:5942     info <general>: SMARTED_TEST_CARROSSEL RECENTES total=10
+11-12 05:03:30.166  3331  6982 I Kodi    : 2026-11-12 05:03:30.166 T:6982     info <general>: SMARTED-TV: hero com 8 filmes (ficha completa=0)
+11-12 05:03:30.641  3331  5942 I Kodi    : 2026-11-12 05:03:30.641 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO total=8 filmes=8 arte=8 sinopse=8 genero=0
+11-12 05:03:30.641  3331  5942 I Kodi    : 2026-11-12 05:03:30.641 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO OUTRA MAMÃE | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+11-12 05:03:30.642  3331  5942 I Kodi    : 2026-11-12 05:03:30.642 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO A ODISSEIA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+11-12 05:03:30.642  3331  5942 I Kodi    : 2026-11-12 05:03:30.642 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO GODZILLA MINUS ZERO | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+11-12 05:03:30.643  3331  5942 I Kodi    : 2026-11-12 05:03:30.643 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO NO LIMITE DA JUSTIÇA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+11-12 05:03:30.643  3331  5942 I Kodi    : 2026-11-12 05:03:30.643 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO CORAÇÃO SELVAGEM | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+11-12 05:03:30.644  3331  5942 I Kodi    : 2026-11-12 05:03:30.644 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO FUGA MORTAL | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+11-12 05:03:30.644  3331  5942 I Kodi    : 2026-11-12 05:03:30.644 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO RESIDENT EVIL | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+11-12 05:03:30.644  3331  5942 I Kodi    : 2026-11-12 05:03:30.644 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO MINHA MELHOR AMIGA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+11-12 05:03:40.861  3331  6983 I Kodi    : 2026-11-12 05:03:40.861 T:6983     info <general>: SMARTED-TV: navegacao com 7 opcoes (menu)
+11-12 05:03:40.862  3331  6983 I Kodi    : 2026-11-12 05:03:40.862 T:6983     info <general>: SMARTED-TV: barra 1 = ● TV AO VIVO
+11-12 05:03:40.862  3331  6983 I Kodi    : 2026-11-12 05:03:40.862 T:6983     info <general>: SMARTED-TV: barra 2 = ● FILMES
+11-12 05:03:40.863  3331  6983 I Kodi    : 2026-11-12 05:03:40.863 T:6983     info <general>: SMARTED-TV: barra 3 = ● SÉRIES
+11-12 05:03:40.863  3331  6983 I Kodi    : 2026-11-12 05:03:40.863 T:6983     info <general>: SMARTED-TV: barra 4 = ● DESENHOS
+11-12 05:03:42.121  3331  5942 I Kodi    : 2026-11-12 05:03:42.121 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA opcoes=7 ['● TV AO VIVO', '● FILMES', '● SÉRIES', '● DESENHOS', '● DORAMAS', '● ANIMES', '● NOVELAS']
+11-12 05:03:45.870  3331  5942 I Kodi    : 2026-11-12 05:03:45.870 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● TV AO VIVO -> itens=10 primeiro=[B][COLOR white]CATEGORIA: [COLOR gold]T
+11-12 05:03:49.295  3331  5942 I Kodi    : 2026-11-12 05:03:49.295 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● FILMES -> itens=5 primeiro=[B][COLOR blue]●[/COLOR] [COLOR white]PE
+11-12 05:03:52.493  3331  5942 I Kodi    : 2026-11-12 05:03:52.493 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● SÉRIES -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+11-12 05:03:55.749  3331  5942 I Kodi    : 2026-11-12 05:03:55.748 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● DESENHOS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+11-12 05:03:58.999  3331  5942 I Kodi    : 2026-11-12 05:03:58.999 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● DORAMAS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+11-12 05:04:02.239  3331  5942 I Kodi    : 2026-11-12 05:04:02.239 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● ANIMES -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+11-12 05:04:05.546  3331  5942 I Kodi    : 2026-11-12 05:04:05.546 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● NOVELAS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+11-12 05:04:05.627  3331  5942 I Kodi    : 2026-11-12 05:04:05.627 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA destinos_unicos=7 de 7
+11-12 05:04:09.417  3331  5942 I Kodi    : 2026-11-12 05:04:09.417 T:5942     info <general>: SMARTED_TEST_CARROSSEL TV AO VIVO abertura 1 itens=10 primeiro=[B][COLOR white]CATEGORIA: [COLOR gold]TODOS
+11-12 05:04:13.146  3331  5942 I Kodi    : 2026-11-12 05:04:13.146 T:5942     info <general>: SMARTED_TEST_CARROSSEL TV AO VIVO abertura 2 itens=10 primeiro=[B][COLOR white]CATEGORIA: [COLOR gold]TODOS
+11-12 05:04:13.169  3331  5942 I Kodi    : 2026-11-12 05:04:13.169 T:5942     info <general>: SMARTED_TEST_CARROSSEL ADDONS video=2 ['None', 'None']
+11-12 05:04:13.184  3331  5942 I Kodi    : 2026-11-12 05:04:13.184 T:5942     info <general>: SMARTED_TEST_CARROSSEL ADDONS programas=0 []
+11-12 05:04:13.185  3331  5942 I Kodi    : 2026-11-12 05:04:13.185 T:5942     info <general>: SMARTED_TEST_CARROSSEL ADDONS youtube=ausente neste perfil
+11-12 05:04:16.924  3331  7027 I Kodi    : 2026-11-12 05:04:16.924 T:7027     info <general>: SMARTED-TV: navegacao com 7 opcoes (cache)
+11-12 05:04:16.925  3331  7027 I Kodi    : 2026-11-12 05:04:16.925 T:7027     info <general>: SMARTED-TV: barra 1 = ● TV AO VIVO
+11-12 05:04:16.925  3331  7027 I Kodi    : 2026-11-12 05:04:16.925 T:7027     info <general>: SMARTED-TV: barra 2 = ● FILMES
+11-12 05:04:16.926  3331  7027 I Kodi    : 2026-11-12 05:04:16.926 T:7027     info <general>: SMARTED-TV: barra 3 = ● SÉRIES
+11-12 05:04:16.926  3331  7027 I Kodi    : 2026-11-12 05:04:16.926 T:7027     info <general>: SMARTED-TV: barra 4 = ● DESENHOS
+11-12 05:04:18.066  3331  5942 I Kodi    : 2026-11-12 05:04:18.065 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO antes={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
+11-12 05:04:27.109  3331  5942 I Kodi    : 2026-11-12 05:04:27.109 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
+11-12 05:04:36.139  3331  5942 I Kodi    : 2026-11-12 05:04:36.139 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
+11-12 05:04:45.158  3331  5942 I Kodi    : 2026-11-12 05:04:45.158 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
+11-12 05:04:45.939  3331  7066 I Kodi    : 2026-11-12 05:04:45.938 T:7066     info <general>: SMARTED-TV: sem favoritos em filmes
+11-12 05:04:45.982  3331  5942 I Kodi    : 2026-11-12 05:04:45.981 T:5942     info <general>: SMARTED_TEST_CARROSSEL FAVORITOS itens=0
+11-12 05:04:45.982  3331  5942 E Kodi    : 2026-11-12 05:04:45.982 T:5942    error <general>: SMARTED_TEST_CARROSSEL_FAILED ADDONS: nenhum addon de programas; HERO: nao alternou sozinho em ~30 s
 ```
 
-## kodi.log (68523 bytes)
+## kodi.log (69227 bytes)
 ```
-ossel filmes com 20 itens (#filmes_menu)
-2026-11-12 04:34:31.276 T:5845     info <general>: SMARTED_TEST_CARROSSEL FILMES total=20 midia=20 arte=20 menu=0
-2026-11-12 04:34:31.277 T:5845     info <general>: SMARTED_TEST_CARROSSEL   OUTRA MAMÃE | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-2026-11-12 04:34:31.277 T:5845     info <general>: SMARTED_TEST_CARROSSEL   A ODISSEIA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-2026-11-12 04:34:31.278 T:5845     info <general>: SMARTED_TEST_CARROSSEL   GODZILLA MINUS ZERO | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-2026-11-12 04:34:31.278 T:5845     info <general>: SMARTED_TEST_CARROSSEL   NO LIMITE DA JUSTIÇA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-2026-11-12 04:34:31.279 T:5845     info <general>: SMARTED_TEST_CARROSSEL   CORAÇÃO SELVAGEM | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-2026-11-12 04:34:31.279 T:5845     info <general>: SMARTED_TEST_CARROSSEL   FUGA MORTAL | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-2026-11-12 04:34:31.280 T:5845     info <general>: SMARTED_TEST_CARROSSEL   RESIDENT EVIL | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-2026-11-12 04:34:31.280 T:5845     info <general>: SMARTED_TEST_CARROSSEL   MINHA MELHOR AMIGA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-2026-11-12 04:34:40.805 T:6183     info <general>: CAddonMgr::FindAddon: metadata.tvshows.themoviedb.org.python v1.7.13 installed
-2026-11-12 04:34:43.541 T:6183     info <general>: CServiceAddonManager: failed to stop service.xbmc.versioncheck (may have ended)
-2026-11-12 04:34:52.164 T:6183     info <general>: CAddonMgr::FindAddon: service.xbmc.versioncheck v0.5.30+matrix.1 installed
-2026-11-12 04:34:53.854 T:6389    error <general>: EXCEPTION Thrown (PythonToCppException) : -->Python callback/script returned the following error<--
+SSEL FILMES total=20 midia=20 arte=20 menu=0
+2026-11-12 04:57:11.631 T:5942     info <general>: SMARTED_TEST_CARROSSEL   OUTRA MAMÃE | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 04:57:11.632 T:5942     info <general>: SMARTED_TEST_CARROSSEL   A ODISSEIA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 04:57:11.632 T:5942     info <general>: SMARTED_TEST_CARROSSEL   GODZILLA MINUS ZERO | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 04:57:11.633 T:5942     info <general>: SMARTED_TEST_CARROSSEL   NO LIMITE DA JUSTIÇA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 04:57:11.633 T:5942     info <general>: SMARTED_TEST_CARROSSEL   CORAÇÃO SELVAGEM | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 04:57:11.634 T:5942     info <general>: SMARTED_TEST_CARROSSEL   FUGA MORTAL | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 04:57:11.634 T:5942     info <general>: SMARTED_TEST_CARROSSEL   RESIDENT EVIL | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 04:57:11.635 T:5942     info <general>: SMARTED_TEST_CARROSSEL   MINHA MELHOR AMIGA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 04:57:21.764 T:5364     info <general>: CAddonMgr::FindAddon: metadata.themoviedb.org.python v3.2.2 installed
+2026-11-12 04:57:37.899 T:5364     info <general>: CAddonMgr::FindAddon: metadata.tvshows.themoviedb.org.python v1.7.13 installed
+2026-11-12 04:57:40.515 T:5364     info <general>: CServiceAddonManager: failed to stop service.xbmc.versioncheck (may have ended)
+2026-11-12 04:57:55.751 T:5364     info <general>: CAddonMgr::FindAddon: service.xbmc.versioncheck v0.5.30+matrix.1 installed
+2026-11-12 04:57:58.132 T:6693    error <general>: EXCEPTION Thrown (PythonToCppException) : -->Python callback/script returned the following error<--
                                                     - NOTE: IGNORING THIS CAN LEAD TO MEMORY LEAKS!
                                                    Error Type: <class 'subprocess.CalledProcessError'>
                                                    Error Contents: Command '('uname', '-rs')' died with <Signals.SIGSEGV: 11>.
@@ -551,269 +551,275 @@ ossel filmes com 20 itens (#filmes_menu)
                                                    subprocess.CalledProcessError: Command '('uname', '-rs')' died with <Signals.SIGSEGV: 11>.
                                                    -->End of Python script error report<--
                                                    
-2026-11-12 04:34:53.899 T:4163     info <general>: CActiveAESink::OpenSink - initialize sink
-2026-11-12 04:34:53.901 T:4163     info <general>: Trying to open: samplerate: 44100, channelMask: 12, encoding: 4
-2026-11-12 04:34:53.901 T:4163     info <general>: Minimum size we need for stream: 15648 Bytes
-2026-11-12 04:34:53.902 T:4163     info <general>: Audiotrack buffer params are: period time = 44.354 ms, period size = 15648 bytes, num periods = 3
-2026-11-12 04:34:53.902 T:4163     info <general>: Created Audiotrackbuffer with playing time of 133.061224 ms min buffer size: 46944 bytes
-2026-11-12 04:34:53.906 T:4163     info <general>: CAESinkAUDIOTRACK::Initializing with: m_sampleRate: 44100 format: AE_FMT_FLOAT (AE) method: PCM stream-type: PCM-STREAM min_buffer_size: 46944 m_frames: 1956 m_frameSize: 8 channels: 2
-2026-11-12 04:35:05.474 T:6183     info <general>: CAddonMgr::FindAddon: metadata.album.universal v3.1.20 installed
-2026-11-12 04:35:17.984 T:6183     info <general>: CAddonMgr::FindAddon: metadata.artists.universal v4.3.24 installed
-2026-11-12 04:38:31.817 T:6368     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
-2026-11-12 04:38:32.644 T:5845     info <general>: Skipped 1 duplicate messages..
-2026-11-12 04:38:32.644 T:5845     info <general>: SMARTED_TEST_CARROSSEL SERIES total=20 midia=0 arte=20 menu=0
-2026-11-12 04:38:32.644 T:5845     info <general>: SMARTED_TEST_CARROSSEL   #BLACKAF | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-2026-11-12 04:38:32.645 T:5845     info <general>: SMARTED_TEST_CARROSSEL   #LUIMELIA | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-2026-11-12 04:38:32.645 T:5845     info <general>: SMARTED_TEST_CARROSSEL   007: ESTRADA PARA O MILHÃO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-2026-11-12 04:38:32.646 T:5845     info <general>: SMARTED_TEST_CARROSSEL   1 CONTRA TODOS | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-2026-11-12 04:38:32.646 T:5845     info <general>: SMARTED_TEST_CARROSSEL   100 ANOS DA WARNER BROS. | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-2026-11-12 04:38:32.647 T:5845     info <general>: SMARTED_TEST_CARROSSEL   100 CODE | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-2026-11-12 04:38:32.647 T:5845     info <general>: SMARTED_TEST_CARROSSEL   100 COISAS PARA FAZER ANTES DO HIGH SCHOOL | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-2026-11-12 04:38:32.648 T:5845     info <general>: SMARTED_TEST_CARROSSEL   100 DIAS PARA MORAR: COMEÇANDO DO ZERO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-2026-11-12 04:38:42.772 T:5845     info <general>: SMARTED_TEST_CARROSSEL MENU FILMES itens=5
-2026-11-12 04:38:42.832 T:3810     info <general>: Loading skin file: MyVideoNav.xml, load type: KEEP_IN_MEMORY
-2026-11-12 04:38:48.174 T:5845     info <general>: SMARTED_TEST_CARROSSEL NAVEGACAO janela=videos
-2026-11-12 04:39:01.088 T:5845     info <general>: SMARTED_TEST_CARROSSEL ABA ANIMES itens=2
-2026-11-12 04:39:03.716 T:5845     info <general>: SMARTED_TEST_CARROSSEL ABA DESENHOS itens=2
-2026-11-12 04:39:06.280 T:5845     info <general>: SMARTED_TEST_CARROSSEL ABA DORAMAS itens=2
-2026-11-12 04:39:08.375 T:5845     info <general>: SMARTED_TEST_CARROSSEL ABA NOVELAS itens=2
-2026-11-12 04:39:10.105 T:5845     info <general>: SMARTED_TEST_CARROSSEL RECENTES total=10
-2026-11-12 04:39:11.202 T:6860     info <general>: SMARTED-TV: hero com 10 filmes (ficha completa=0)
-2026-11-12 04:39:11.749 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO total=10 filmes=10 arte=10 sinopse=10 genero=0
-2026-11-12 04:39:11.749 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO OUTRA MAMÃE | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-2026-11-12 04:39:11.750 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO A ODISSEIA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-2026-11-12 04:39:11.750 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO GODZILLA MINUS ZERO | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-2026-11-12 04:39:11.751 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO NO LIMITE DA JUSTIÇA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-2026-11-12 04:39:11.751 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO CORAÇÃO SELVAGEM | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-2026-11-12 04:39:11.752 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO FUGA MORTAL | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-2026-11-12 04:39:11.752 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO RESIDENT EVIL | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-2026-11-12 04:39:11.753 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO MINHA MELHOR AMIGA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-2026-11-12 04:39:11.753 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO CARA-DE-BARRO | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-2026-11-12 04:39:11.754 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO APOCALIPSE Z: NOVO MUNDO | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-2026-11-12 04:39:19.436 T:6861     info <general>: SMARTED-TV: navegacao com 7 opcoes (menu)
-2026-11-12 04:39:19.437 T:6861     info <general>: SMARTED-TV: barra 1 = ● TV AO VIVO
-2026-11-12 04:39:19.437 T:6861     info <general>: SMARTED-TV: barra 2 = ● FILMES
-2026-11-12 04:39:19.438 T:6861     info <general>: SMARTED-TV: barra 3 = ● SÉRIES
-2026-11-12 04:39:19.438 T:6861     info <general>: SMARTED-TV: barra 4 = ● DESENHOS
-2026-11-12 04:39:20.238 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA opcoes=7 ['● TV AO VIVO', '● FILMES', '● SÉRIES', '● DESENHOS', '● DORAMAS', '● ANIMES', '● NOVELAS']
-2026-11-12 04:39:23.341 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● TV AO VIVO -> itens=10 primeiro=[B][COLOR white]CATEGORIA: [COLOR gold]T
-2026-11-12 04:39:26.131 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● FILMES -> itens=5 primeiro=[B][COLOR blue]●[/COLOR] [COLOR white]PE
-2026-11-12 04:39:28.602 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● SÉRIES -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-2026-11-12 04:39:30.783 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● DESENHOS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-2026-11-12 04:39:33.225 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● DORAMAS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-2026-11-12 04:39:35.681 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● ANIMES -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-2026-11-12 04:39:38.146 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● NOVELAS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-2026-11-12 04:39:38.163 T:5845     info <general>: SMARTED_TEST_CARROSSEL ADDONS video=2 ['None', 'None']
-2026-11-12 04:39:38.171 T:5845     info <general>: SMARTED_TEST_CARROSSEL ADDONS programas=0 []
-2026-11-12 04:39:38.171 T:5845     info <general>: SMARTED_TEST_CARROSSEL ADDONS youtube=ausente neste perfil
-2026-11-12 04:39:40.613 T:6898     info <general>: SMARTED-TV: navegacao com 7 opcoes (cache)
-2026-11-12 04:39:40.613 T:6898     info <general>: SMARTED-TV: barra 1 = ● TV AO VIVO
-2026-11-12 04:39:40.614 T:6898     info <general>: SMARTED-TV: barra 2 = ● FILMES
-2026-11-12 04:39:40.614 T:6898     info <general>: SMARTED-TV: barra 3 = ● SÉRIES
-2026-11-12 04:39:40.614 T:6898     info <general>: SMARTED-TV: barra 4 = ● DESENHOS
-2026-11-12 04:39:42.197 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO antes={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
-2026-11-12 04:39:51.246 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
-2026-11-12 04:40:09.313 T:5845     info <general>: Skipped 1 duplicate messages..
-2026-11-12 04:40:09.312 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
-2026-11-12 04:40:09.895 T:6935     info <general>: SMARTED-TV: sem favoritos em filmes
-2026-11-12 04:40:09.926 T:5845     info <general>: SMARTED_TEST_CARROSSEL FAVORITOS itens=0
-2026-11-12 04:40:09.926 T:5845    error <general>: SMARTED_TEST_CARROSSEL_FAILED HERO: 10 filmes (o HERO usa no maximo 8); ADDONS: nenhum addon de programas; HERO: nao alternou sozinho em ~30 s
+2026-11-12 04:57:58.142 T:4932     info <general>: CActiveAESink::OpenSink - initialize sink
+2026-11-12 04:57:58.143 T:4932     info <general>: Trying to open: samplerate: 44100, channelMask: 12, encoding: 4
+2026-11-12 04:57:58.149 T:4932     info <general>: Minimum size we need for stream: 15648 Bytes
+2026-11-12 04:57:58.149 T:4932     info <general>: Audiotrack buffer params are: period time = 44.354 ms, period size = 15648 bytes, num periods = 3
+2026-11-12 04:57:58.149 T:4932     info <general>: Created Audiotrackbuffer with playing time of 133.061224 ms min buffer size: 46944 bytes
+2026-11-12 04:57:58.153 T:4932     info <general>: CAESinkAUDIOTRACK::Initializing with: m_sampleRate: 44100 format: AE_FMT_FLOAT (AE) method: PCM stream-type: PCM-STREAM min_buffer_size: 46944 m_frames: 1956 m_frameSize: 8 channels: 2
+2026-11-12 04:58:13.904 T:5364     info <general>: CAddonMgr::FindAddon: metadata.album.universal v3.1.20 installed
+2026-11-12 04:58:30.327 T:5364     info <general>: CAddonMgr::FindAddon: metadata.artists.universal v4.3.24 installed
+2026-11-12 05:02:36.847 T:5373     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
+2026-11-12 05:02:37.718 T:5942     info <general>: Skipped 1 duplicate messages..
+2026-11-12 05:02:37.718 T:5942     info <general>: SMARTED_TEST_CARROSSEL SERIES total=20 midia=0 arte=20 menu=0
+2026-11-12 05:02:37.719 T:5942     info <general>: SMARTED_TEST_CARROSSEL   #BLACKAF | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 05:02:37.720 T:5942     info <general>: SMARTED_TEST_CARROSSEL   #LUIMELIA | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 05:02:37.720 T:5942     info <general>: SMARTED_TEST_CARROSSEL   007: ESTRADA PARA O MILHÃO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 05:02:37.721 T:5942     info <general>: SMARTED_TEST_CARROSSEL   1 CONTRA TODOS | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 05:02:37.721 T:5942     info <general>: SMARTED_TEST_CARROSSEL   100 ANOS DA WARNER BROS. | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 05:02:37.722 T:5942     info <general>: SMARTED_TEST_CARROSSEL   100 CODE | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 05:02:37.722 T:5942     info <general>: SMARTED_TEST_CARROSSEL   100 COISAS PARA FAZER ANTES DO HIGH SCHOOL | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 05:02:37.723 T:5942     info <general>: SMARTED_TEST_CARROSSEL   100 DIAS PARA MORAR: COMEÇANDO DO ZERO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+2026-11-12 05:02:51.264 T:5942     info <general>: SMARTED_TEST_CARROSSEL MENU FILMES itens=5
+2026-11-12 05:02:51.308 T:4122     info <general>: Loading skin file: MyVideoNav.xml, load type: KEEP_IN_MEMORY
+2026-11-12 05:02:58.828 T:5942     info <general>: SMARTED_TEST_CARROSSEL NAVEGACAO janela=videos
+2026-11-12 05:03:16.413 T:5942     info <general>: SMARTED_TEST_CARROSSEL ABA ANIMES itens=2
+2026-11-12 05:03:19.703 T:5942     info <general>: SMARTED_TEST_CARROSSEL ABA DESENHOS itens=2
+2026-11-12 05:03:22.960 T:5942     info <general>: SMARTED_TEST_CARROSSEL ABA DORAMAS itens=2
+2026-11-12 05:03:26.194 T:5942     info <general>: SMARTED_TEST_CARROSSEL ABA NOVELAS itens=2
+2026-11-12 05:03:28.481 T:5942     info <general>: SMARTED_TEST_CARROSSEL RECENTES total=10
+2026-11-12 05:03:30.166 T:6982     info <general>: SMARTED-TV: hero com 8 filmes (ficha completa=0)
+2026-11-12 05:03:30.641 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO total=8 filmes=8 arte=8 sinopse=8 genero=0
+2026-11-12 05:03:30.641 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO OUTRA MAMÃE | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+2026-11-12 05:03:30.642 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO A ODISSEIA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+2026-11-12 05:03:30.642 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO GODZILLA MINUS ZERO | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+2026-11-12 05:03:30.643 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO NO LIMITE DA JUSTIÇA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+2026-11-12 05:03:30.643 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO CORAÇÃO SELVAGEM | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+2026-11-12 05:03:30.644 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO FUGA MORTAL | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+2026-11-12 05:03:30.644 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO RESIDENT EVIL | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+2026-11-12 05:03:30.644 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO MINHA MELHOR AMIGA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+2026-11-12 05:03:40.861 T:6983     info <general>: SMARTED-TV: navegacao com 7 opcoes (menu)
+2026-11-12 05:03:40.862 T:6983     info <general>: SMARTED-TV: barra 1 = ● TV AO VIVO
+2026-11-12 05:03:40.862 T:6983     info <general>: SMARTED-TV: barra 2 = ● FILMES
+2026-11-12 05:03:40.863 T:6983     info <general>: SMARTED-TV: barra 3 = ● SÉRIES
+2026-11-12 05:03:40.863 T:6983     info <general>: SMARTED-TV: barra 4 = ● DESENHOS
+2026-11-12 05:03:42.121 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA opcoes=7 ['● TV AO VIVO', '● FILMES', '● SÉRIES', '● DESENHOS', '● DORAMAS', '● ANIMES', '● NOVELAS']
+2026-11-12 05:03:45.870 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● TV AO VIVO -> itens=10 primeiro=[B][COLOR white]CATEGORIA: [COLOR gold]T
+2026-11-12 05:03:49.295 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● FILMES -> itens=5 primeiro=[B][COLOR blue]●[/COLOR] [COLOR white]PE
+2026-11-12 05:03:52.493 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● SÉRIES -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+2026-11-12 05:03:55.748 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● DESENHOS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+2026-11-12 05:03:58.999 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● DORAMAS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+2026-11-12 05:04:02.239 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● ANIMES -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+2026-11-12 05:04:05.546 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● NOVELAS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+2026-11-12 05:04:05.627 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA destinos_unicos=7 de 7
+2026-11-12 05:04:09.417 T:5942     info <general>: SMARTED_TEST_CARROSSEL TV AO VIVO abertura 1 itens=10 primeiro=[B][COLOR white]CATEGORIA: [COLOR gold]TODOS
+2026-11-12 05:04:13.146 T:5942     info <general>: SMARTED_TEST_CARROSSEL TV AO VIVO abertura 2 itens=10 primeiro=[B][COLOR white]CATEGORIA: [COLOR gold]TODOS
+2026-11-12 05:04:13.169 T:5942     info <general>: SMARTED_TEST_CARROSSEL ADDONS video=2 ['None', 'None']
+2026-11-12 05:04:13.184 T:5942     info <general>: SMARTED_TEST_CARROSSEL ADDONS programas=0 []
+2026-11-12 05:04:13.185 T:5942     info <general>: SMARTED_TEST_CARROSSEL ADDONS youtube=ausente neste perfil
+2026-11-12 05:04:16.924 T:7027     info <general>: SMARTED-TV: navegacao com 7 opcoes (cache)
+2026-11-12 05:04:16.925 T:7027     info <general>: SMARTED-TV: barra 1 = ● TV AO VIVO
+2026-11-12 05:04:16.925 T:7027     info <general>: SMARTED-TV: barra 2 = ● FILMES
+2026-11-12 05:04:16.926 T:7027     info <general>: SMARTED-TV: barra 3 = ● SÉRIES
+2026-11-12 05:04:16.926 T:7027     info <general>: SMARTED-TV: barra 4 = ● DESENHOS
+2026-11-12 05:04:18.065 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO antes={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
+2026-11-12 05:04:27.109 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
+2026-11-12 05:04:45.158 T:5942     info <general>: Skipped 1 duplicate messages..
+2026-11-12 05:04:45.158 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
+2026-11-12 05:04:45.938 T:7066     info <general>: SMARTED-TV: sem favoritos em filmes
+2026-11-12 05:04:45.981 T:5942     info <general>: SMARTED_TEST_CARROSSEL FAVORITOS itens=0
+2026-11-12 05:04:45.982 T:5942    error <general>: SMARTED_TEST_CARROSSEL_FAILED ADDONS: nenhum addon de programas; HERO: nao alternou sozinho em ~30 s
 ```
 
-## logcat.txt (485847 bytes)
+## logcat.txt (143943 bytes)
 ```
-
-I/Kodi    ( 2849): 2026-11-12 04:39:11.751 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO CORAÇÃO SELVAGEM | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-I/Kodi    ( 2849): 2026-11-12 04:39:11.752 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO FUGA MORTAL | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-I/Kodi    ( 2849): 2026-11-12 04:39:11.752 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO RESIDENT EVIL | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-I/Kodi    ( 2849): 2026-11-12 04:39:11.753 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO MINHA MELHOR AMIGA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-I/Kodi    ( 2849): 2026-11-12 04:39:11.753 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO CARA-DE-BARRO | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-I/Kodi    ( 2849): 2026-11-12 04:39:11.754 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO APOCALIPSE Z: NOVO MUNDO | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-D/logd    (    0): logdr: UID=0 GID=0 PID=6863 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
-D/logd    (    0): logdr: UID=0 GID=0 PID=6866 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
-I/Kodi    ( 2849): 2026-11-12 04:39:19.436 T:6861     info <general>: SMARTED-TV: navegacao com 7 opcoes (menu)
-I/Kodi    ( 2849): 2026-11-12 04:39:19.437 T:6861     info <general>: SMARTED-TV: barra 1 = ● TV AO VIVO
-I/Kodi    ( 2849): 2026-11-12 04:39:19.437 T:6861     info <general>: SMARTED-TV: barra 2 = ● FILMES
-I/Kodi    ( 2849): 2026-11-12 04:39:19.438 T:6861     info <general>: SMARTED-TV: barra 3 = ● SÉRIES
-I/Kodi    ( 2849): 2026-11-12 04:39:19.438 T:6861     info <general>: SMARTED-TV: barra 4 = ● DESENHOS
-I/Kodi    ( 2849): 2026-11-12 04:39:20.238 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA opcoes=7 ['● TV AO VIVO', '● FILMES', '● SÉRIES', '● DESENHOS', '● DORAMAS', '● ANIMES', '● NOVELAS']
+800-311416286):7)
+W/GLSUser ( 1169): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1167)
+W/GLSUser ( 1169): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:641)
+W/GLSUser ( 1169): 	at spj.run(:com.google.android.gms@201817023@20.18.17 (040800-311416286):0)
+W/GLSUser ( 1169): 	at java.lang.Thread.run(Thread.java:923)
+D/logd    (    0): logdr: UID=0 GID=0 PID=6849 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6852 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6855 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6858 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6861 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6864 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6867 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6870 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6873 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/KeyguardClockSwitch(  714): Updating clock: 502
+D/logd    (    0): logdr: UID=0 GID=0 PID=6876 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
 W/healthd (    0): battery l=100 v=5000 t=25.0 h=2 st=2 c=900000 fc=300000 cc=10 chg=a
-I/Kodi    ( 2849): 2026-11-12 04:39:23.341 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● TV AO VIVO -> itens=10 primeiro=[B][COLOR white]CATEGORIA: [COLOR gold]T
-D/logd    (    0): logdr: UID=0 GID=0 PID=6884 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
-I/Kodi    ( 2849): 2026-11-12 04:39:26.131 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● FILMES -> itens=5 primeiro=[B][COLOR blue]●[/COLOR] [COLOR white]PE
-I/Kodi    ( 2849): 2026-11-12 04:39:28.602 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● SÉRIES -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-D/logd    (    0): logdr: UID=0 GID=0 PID=6887 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
-D/WifiNl80211Manager(  493): Scan result ready event
-D/WifiNative(  493): Scan result ready event
-E/libc    ( 2977): Access denied finding property "persist.adb.tls_server.enable"
-E/libc    ( 2977): Access denied finding property "service.adb.tls.port"
-W/Binder:2977_6( 2977): type=1400 audit(0.0:58): avc: denied { read } for name="u:object_r:system_adbd_prop:s0" dev="tmpfs" ino=8681 scontext=u:r:gmscore_app:s0:c512,c768 tcontext=u:object_r:system_adbd_prop:s0 tclass=file permissive=0 app=com.google.android.gms
-W/Binder:2977_6( 2977): type=1400 audit(0.0:59): avc: denied { read } for name="u:object_r:adbd_prop:s0" dev="tmpfs" ino=8541 scontext=u:r:gmscore_app:s0:c512,c768 tcontext=u:object_r:adbd_prop:s0 tclass=file permissive=0 app=com.google.android.gms
-W/Conscrypt( 1172): Could not set socket write timeout: java.net.SocketException: Socket closed
-W/Conscrypt( 1172): 	at com.google.android.gms.org.conscrypt.Platform.setSocketWriteTimeout(:com.google.android.gms@201817023@20.18.17 (040800-311416286):2)
-W/Conscrypt( 1172): 	at com.google.android.gms.org.conscrypt.ConscryptFileDescriptorSocket.setSoWriteTimeout(:com.google.android.gms@201817023@20.18.17 (040800-311416286):0)
-I/Kodi    ( 2849): 2026-11-12 04:39:30.783 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● DESENHOS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-W/Conscrypt( 1172): Could not set socket write timeout: java.net.SocketException: Socket closed
-W/Conscrypt( 1172): 	at com.google.android.gms.org.conscrypt.Platform.setSocketWriteTimeout(:com.google.android.gms@201817023@20.18.17 (040800-311416286):2)
-W/Conscrypt( 1172): 	at com.google.android.gms.org.conscrypt.ConscryptFileDescriptorSocket.setSoWriteTimeout(:com.google.android.gms@201817023@20.18.17 (040800-311416286):0)
-W/GLSUser ( 1172): [AppCertManager] Failed to get security token.
-W/GLSUser ( 1172): java.io.IOException: Invalid scope
-W/GLSUser ( 1172): 	at adac.b(:com.google.android.gms@201817023@20.18.17 (040800-311416286):23)
-W/GLSUser ( 1172): 	at adac.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):18)
-W/GLSUser ( 1172): 	at adac.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):11)
-W/GLSUser ( 1172): 	at huk.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):16)
-W/GLSUser ( 1172): 	at hui.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):41)
-W/GLSUser ( 1172): 	at hud.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):0)
-W/GLSUser ( 1172): 	at hug.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):10)
-W/GLSUser ( 1172): 	at fzn.call(:com.google.android.gms@201817023@20.18.17 (040800-311416286):5)
-W/GLSUser ( 1172): 	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
-W/GLSUser ( 1172): 	at sji.b(:com.google.android.gms@201817023@20.18.17 (040800-311416286):12)
-W/GLSUser ( 1172): 	at sji.run(:com.google.android.gms@201817023@20.18.17 (040800-311416286):7)
-W/GLSUser ( 1172): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1167)
-W/GLSUser ( 1172): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:641)
-W/GLSUser ( 1172): 	at spj.run(:com.google.android.gms@201817023@20.18.17 (040800-311416286):0)
-W/GLSUser ( 1172): 	at java.lang.Thread.run(Thread.java:923)
-W/Conscrypt( 1172): Could not set socket write timeout: java.net.SocketException: Socket closed
-W/Conscrypt( 1172): 	at com.google.android.gms.org.conscrypt.Platform.setSocketWriteTimeout(:com.google.android.gms@201817023@20.18.17 (040800-311416286):2)
-W/Conscrypt( 1172): 	at com.google.android.gms.org.conscrypt.ConscryptFileDescriptorSocket.setSoWriteTimeout(:com.google.android.gms@201817023@20.18.17 (040800-311416286):0)
-W/Conscrypt( 1172): Could not set socket write timeout: java.net.SocketException: Socket closed
-W/Conscrypt( 1172): 	at com.google.android.gms.org.conscrypt.Platform.setSocketWriteTimeout(:com.google.android.gms@201817023@20.18.17 (040800-311416286):2)
-W/Conscrypt( 1172): 	at com.google.android.gms.org.conscrypt.ConscryptFileDescriptorSocket.setSoWriteTimeout(:com.google.android.gms@201817023@20.18.17 (040800-311416286):0)
-W/GLSUser ( 1172): [AppCertManager] IOException while requesting key: 
-W/GLSUser ( 1172): java.io.IOException: Invalid device key response.
-W/GLSUser ( 1172): 	at huk.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):46)
-W/GLSUser ( 1172): 	at hui.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):41)
-W/GLSUser ( 1172): 	at hud.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):0)
-W/GLSUser ( 1172): 	at hug.a(:com.google.android.gms@201817023@20.18.17 (040800-311416286):10)
-W/GLSUser ( 1172): 	at fzn.call(:com.google.android.gms@201817023@20.18.17 (040800-311416286):5)
-W/GLSUser ( 1172): 	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
-W/GLSUser ( 1172): 	at sji.b(:com.google.android.gms@201817023@20.18.17 (040800-311416286):12)
-W/GLSUser ( 1172): 	at sji.run(:com.google.android.gms@201817023@20.18.17 (040800-311416286):7)
-W/GLSUser ( 1172): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1167)
-W/GLSUser ( 1172): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:641)
-W/GLSUser ( 1172): 	at spj.run(:com.google.android.gms@201817023@20.18.17 (040800-311416286):0)
-W/GLSUser ( 1172): 	at java.lang.Thread.run(Thread.java:923)
-I/Kodi    ( 2849): 2026-11-12 04:39:33.225 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● DORAMAS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-D/logd    (    0): logdr: UID=0 GID=0 PID=6895 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
-I/Kodi    ( 2849): 2026-11-12 04:39:35.681 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● ANIMES -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-I/Kodi    ( 2849): 2026-11-12 04:39:38.146 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● NOVELAS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-I/Kodi    ( 2849): 2026-11-12 04:39:38.163 T:5845     info <general>: SMARTED_TEST_CARROSSEL ADDONS video=2 ['None', 'None']
-I/Kodi    ( 2849): 2026-11-12 04:39:38.171 T:5845     info <general>: SMARTED_TEST_CARROSSEL ADDONS programas=0 []
-I/Kodi    ( 2849): 2026-11-12 04:39:38.171 T:5845     info <general>: SMARTED_TEST_CARROSSEL ADDONS youtube=ausente neste perfil
-D/logd    (    0): logdr: UID=0 GID=0 PID=6900 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
-I/Kodi    ( 2849): 2026-11-12 04:39:40.613 T:6898     info <general>: SMARTED-TV: navegacao com 7 opcoes (cache)
-I/Kodi    ( 2849): 2026-11-12 04:39:40.613 T:6898     info <general>: SMARTED-TV: barra 1 = ● TV AO VIVO
-I/Kodi    ( 2849): 2026-11-12 04:39:40.614 T:6898     info <general>: SMARTED-TV: barra 2 = ● FILMES
-I/Kodi    ( 2849): 2026-11-12 04:39:40.614 T:6898     info <general>: SMARTED-TV: barra 3 = ● SÉRIES
-I/Kodi    ( 2849): 2026-11-12 04:39:40.614 T:6898     info <general>: SMARTED-TV: barra 4 = ● DESENHOS
-I/Kodi    ( 2849): 2026-11-12 04:39:42.197 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO antes={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
-D/logd    (    0): logdr: UID=0 GID=0 PID=6919 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
-W/ProcessReaper( 2025): Memory state is: 400
-W/ProcessReaper( 2025): Killing process to refresh experiment configuration
-I/Process ( 2025): Sending signal. PID: 2025 SIG: 9
-D/ConnectivityService(  493): ConnectivityService NetworkRequestInfo binderDied(NetworkRequest [ LISTEN id=25, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10123 AdministratorUids: [] RequestorUid: 10123 RequestorPackageName: com.google.android.googlequicksearchbox] ], android.os.BinderProxy@96c900c)
-D/ConnectivityService(  493): ConnectivityService NetworkRequestInfo binderDied(NetworkRequest [ TRACK_DEFAULT id=24, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10123 AdministratorUids: [] RequestorUid: 10123 RequestorPackageName: com.google.android.googlequicksearchbox] ], android.os.BinderProxy@c652d55)
-D/ConnectivityService(  493): releasing NetworkRequest [ TRACK_DEFAULT id=24, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Uid: 10123 AdministratorUids: [] RequestorUid: 10123 RequestorPackageName: com.google.android.googlequicksearchbox] ] (release request)
-I/ActivityManager(  493): Process com.google.android.googlequicksearchbox:search (pid 2025) has died: cch CACC
-W/ActivityManager(  493): Scheduling restart of crashed service com.google.android.googlequicksearchbox/com.google.android.apps.gsa.nowoverlayservice.DrawerOverlayService in 1000ms for connection
-I/Zygote  (  286): Process 2025 exited due to signal 9 (Killed)
-V/KeyguardUpdateMonitor(  712): onSubscriptionInfoChanged()
-V/KeyguardUpdateMonitor(  712): SubInfo:{id=1 iccId=89014103211118510720 simSlotIndex=0 carrierId=1 displayName=T-Mobile carrierName=T-Mobile nameSource=3 iconTint=-16746133 number=+15555215554 dataRoaming=0 iconBitmap=android.graphics.Bitmap@fc66708 mcc=310 mnc=260 countryIso=us isEmbedded=false nativeAccessRules=null cardString=89014103211118510720 cardId=-1 isOpportunistic=false groupUUID=null isGroupDisabled=false profileClass=-1 ehplmns=null hplmns=null subscriptionType=0 groupOwner=null carrierConfigAccessRules=null areUiccApplicationsEnabled=true}
-D/Telephony( 1065): isEmergencyPreferredAccount: subId=1, activeData=1
-D/Telephony( 1065): isEmergencyPreferredAccount: Device does not require preference.
-I/WindowManager(  493): WIN DEATH: Window{3b9ba0d u0 com.google.android.apps.nexuslauncher/com.google.android.apps.nexuslauncher.NexusLauncherActivity}
-W/InputDispatcher(  493): Attempted to unregister already unregistered input channel '3b9ba0d com.google.android.apps.nexuslauncher/com.google.android.apps.nexuslauncher.NexusLauncherActivity (server)'
-I/libprocessgroup(  493): Successfully killed process cgroup uid 10123 pid 2025 in 39ms
-W/ActivityManager(  493): setHasOverlayUi called on unknown pid: 2025
-D/logd    (    0): logdr: UID=0 GID=0 PID=6923 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
-I/Kodi    ( 2849): 2026-11-12 04:39:51.246 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
-D/logd    (    0): logdr: UID=0 GID=0 PID=6926 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
-D/KeyguardClockSwitch(  712): Updating clock: 440
-D/logd    (    0): logdr: UID=0 GID=0 PID=6929 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
-I/Kodi    ( 2849): 2026-11-12 04:40:00.270 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
-D/logd    (    0): logdr: UID=0 GID=0 PID=6932 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
-I/Kodi    ( 2849): 2026-11-12 04:40:09.312 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
-I/Kodi    ( 2849): 2026-11-12 04:40:09.895 T:6935     info <general>: SMARTED-TV: sem favoritos em filmes
-I/Kodi    ( 2849): 2026-11-12 04:40:09.926 T:5845     info <general>: SMARTED_TEST_CARROSSEL FAVORITOS itens=0
-E/Kodi    ( 2849): 2026-11-12 04:40:09.926 T:5845    error <general>: SMARTED_TEST_CARROSSEL_FAILED HERO: 10 filmes (o HERO usa no maximo 8); ADDONS: nenhum addon de programas; HERO: nao alternou sozinho em ~30 s
-D/logd    (    0): logdr: UID=0 GID=0 PID=6936 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6879 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6882 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6885 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6888 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6891 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6894 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3331): 2026-11-12 05:02:36.847 T:5373     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
+I/Kodi    ( 3331): 2026-11-12 05:02:36.858 T:6657     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
+D/logd    (    0): logdr: UID=0 GID=0 PID=6897 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3331): 2026-11-12 05:02:37.718 T:5942     info <general>: SMARTED_TEST_CARROSSEL SERIES total=20 midia=0 arte=20 menu=0
+I/Kodi    ( 3331): 2026-11-12 05:02:37.719 T:5942     info <general>: SMARTED_TEST_CARROSSEL   #BLACKAF | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+I/Kodi    ( 3331): 2026-11-12 05:02:37.720 T:5942     info <general>: SMARTED_TEST_CARROSSEL   #LUIMELIA | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+I/Kodi    ( 3331): 2026-11-12 05:02:37.720 T:5942     info <general>: SMARTED_TEST_CARROSSEL   007: ESTRADA PARA O MILHÃO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+I/Kodi    ( 3331): 2026-11-12 05:02:37.721 T:5942     info <general>: SMARTED_TEST_CARROSSEL   1 CONTRA TODOS | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+I/Kodi    ( 3331): 2026-11-12 05:02:37.721 T:5942     info <general>: SMARTED_TEST_CARROSSEL   100 ANOS DA WARNER BROS. | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+I/Kodi    ( 3331): 2026-11-12 05:02:37.722 T:5942     info <general>: SMARTED_TEST_CARROSSEL   100 CODE | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+I/Kodi    ( 3331): 2026-11-12 05:02:37.722 T:5942     info <general>: SMARTED_TEST_CARROSSEL   100 COISAS PARA FAZER ANTES DO HIGH SCHOOL | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+I/Kodi    ( 3331): 2026-11-12 05:02:37.723 T:5942     info <general>: SMARTED_TEST_CARROSSEL   100 DIAS PARA MORAR: COMEÇANDO DO ZERO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+D/logd    (    0): logdr: UID=0 GID=0 PID=6925 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6934 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3331): 2026-11-12 05:02:51.264 T:5942     info <general>: SMARTED_TEST_CARROSSEL MENU FILMES itens=5
+I/Kodi    ( 3331): 2026-11-12 05:02:51.308 T:4122     info <general>: Loading skin file: MyVideoNav.xml, load type: KEEP_IN_MEMORY
+D/logd    (    0): logdr: UID=0 GID=0 PID=6939 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+W/livelock(  472): sample 1.888s
+I/Kodi    ( 3331): 2026-11-12 05:02:58.828 T:5942     info <general>: SMARTED_TEST_CARROSSEL NAVEGACAO janela=videos
+D/logd    (    0): logdr: UID=0 GID=0 PID=6943 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/KeyguardClockSwitch(  714): Updating clock: 503
+W/healthd (    0): battery l=100 v=5000 t=25.0 h=2 st=2 c=900000 fc=300000 cc=10 chg=a
+D/logd    (    0): logdr: UID=0 GID=0 PID=6946 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/org.xbmc.kodi( 3331): Background young concurrent copying GC freed 7925(383KB) AllocSpace objects, 93(1488KB) LOS objects, 49% free, 1990KB/3979KB, paused 14us total 104.504ms
+D/logd    (    0): logdr: UID=0 GID=0 PID=6969 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3331): 2026-11-12 05:03:16.413 T:5942     info <general>: SMARTED_TEST_CARROSSEL ABA ANIMES itens=2
+D/logd    (    0): logdr: UID=0 GID=0 PID=6972 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3331): 2026-11-12 05:03:19.703 T:5942     info <general>: SMARTED_TEST_CARROSSEL ABA DESENHOS itens=2
+I/Kodi    ( 3331): 2026-11-12 05:03:22.960 T:5942     info <general>: SMARTED_TEST_CARROSSEL ABA DORAMAS itens=2
+D/logd    (    0): logdr: UID=0 GID=0 PID=6975 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3331): 2026-11-12 05:03:26.194 T:5942     info <general>: SMARTED_TEST_CARROSSEL ABA NOVELAS itens=2
+D/logd    (    0): logdr: UID=0 GID=0 PID=6979 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3331): 2026-11-12 05:03:28.481 T:5942     info <general>: SMARTED_TEST_CARROSSEL RECENTES total=10
+I/Kodi    ( 3331): 2026-11-12 05:03:30.166 T:6982     info <general>: SMARTED-TV: hero com 8 filmes (ficha completa=0)
+I/Kodi    ( 3331): 2026-11-12 05:03:30.641 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO total=8 filmes=8 arte=8 sinopse=8 genero=0
+I/Kodi    ( 3331): 2026-11-12 05:03:30.641 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO OUTRA MAMÃE | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+I/Kodi    ( 3331): 2026-11-12 05:03:30.642 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO A ODISSEIA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+I/Kodi    ( 3331): 2026-11-12 05:03:30.642 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO GODZILLA MINUS ZERO | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+I/Kodi    ( 3331): 2026-11-12 05:03:30.643 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO NO LIMITE DA JUSTIÇA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+I/Kodi    ( 3331): 2026-11-12 05:03:30.643 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO CORAÇÃO SELVAGEM | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+I/Kodi    ( 3331): 2026-11-12 05:03:30.644 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO FUGA MORTAL | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+I/Kodi    ( 3331): 2026-11-12 05:03:30.644 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO RESIDENT EVIL | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+I/Kodi    ( 3331): 2026-11-12 05:03:30.644 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO MINHA MELHOR AMIGA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+D/logd    (    0): logdr: UID=0 GID=0 PID=6985 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=6988 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3331): 2026-11-12 05:03:40.861 T:6983     info <general>: SMARTED-TV: navegacao com 7 opcoes (menu)
+I/Kodi    ( 3331): 2026-11-12 05:03:40.862 T:6983     info <general>: SMARTED-TV: barra 1 = ● TV AO VIVO
+I/Kodi    ( 3331): 2026-11-12 05:03:40.862 T:6983     info <general>: SMARTED-TV: barra 2 = ● FILMES
+I/Kodi    ( 3331): 2026-11-12 05:03:40.863 T:6983     info <general>: SMARTED-TV: barra 3 = ● SÉRIES
+I/Kodi    ( 3331): 2026-11-12 05:03:40.863 T:6983     info <general>: SMARTED-TV: barra 4 = ● DESENHOS
+I/Kodi    ( 3331): 2026-11-12 05:03:42.121 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA opcoes=7 ['● TV AO VIVO', '● FILMES', '● SÉRIES', '● DESENHOS', '● DORAMAS', '● ANIMES', '● NOVELAS']
+D/logd    (    0): logdr: UID=0 GID=0 PID=7006 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3331): 2026-11-12 05:03:45.870 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● TV AO VIVO -> itens=10 primeiro=[B][COLOR white]CATEGORIA: [COLOR gold]T
+D/logd    (    0): logdr: UID=0 GID=0 PID=7009 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3331): 2026-11-12 05:03:49.295 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● FILMES -> itens=5 primeiro=[B][COLOR blue]●[/COLOR] [COLOR white]PE
+I/anjv    ( 1169): updateFromConfigurations using legacy put method [CONTEXT service_id=204 ]
+I/anjv    ( 1169): updateFromConfigurations using legacy put method [CONTEXT service_id=204 ]
+D/WifiNl80211Manager(  500): Scan result ready event
+D/WifiNative(  500): Scan result ready event
+I/Kodi    ( 3331): 2026-11-12 05:03:52.493 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● SÉRIES -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+D/logd    (    0): logdr: UID=0 GID=0 PID=7015 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3331): 2026-11-12 05:03:55.748 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● DESENHOS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+D/logd    (    0): logdr: UID=0 GID=0 PID=7018 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3331): 2026-11-12 05:03:58.999 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● DORAMAS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+D/KeyguardClockSwitch(  714): Updating clock: 504
+I/Kodi    ( 3331): 2026-11-12 05:04:02.239 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● ANIMES -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+D/logd    (    0): logdr: UID=0 GID=0 PID=7021 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+W/healthd (    0): battery l=100 v=5000 t=25.0 h=2 st=2 c=900000 fc=300000 cc=10 chg=a
+I/Kodi    ( 3331): 2026-11-12 05:04:05.546 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● NOVELAS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+I/Kodi    ( 3331): 2026-11-12 05:04:05.627 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA destinos_unicos=7 de 7
+D/logd    (    0): logdr: UID=0 GID=0 PID=7024 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3331): 2026-11-12 05:04:09.417 T:5942     info <general>: SMARTED_TEST_CARROSSEL TV AO VIVO abertura 1 itens=10 primeiro=[B][COLOR white]CATEGORIA: [COLOR gold]TODOS
+I/Kodi    ( 3331): 2026-11-12 05:04:13.146 T:5942     info <general>: SMARTED_TEST_CARROSSEL TV AO VIVO abertura 2 itens=10 primeiro=[B][COLOR white]CATEGORIA: [COLOR gold]TODOS
+I/Kodi    ( 3331): 2026-11-12 05:04:13.169 T:5942     info <general>: SMARTED_TEST_CARROSSEL ADDONS video=2 ['None', 'None']
+I/Kodi    ( 3331): 2026-11-12 05:04:13.184 T:5942     info <general>: SMARTED_TEST_CARROSSEL ADDONS programas=0 []
+I/Kodi    ( 3331): 2026-11-12 05:04:13.185 T:5942     info <general>: SMARTED_TEST_CARROSSEL ADDONS youtube=ausente neste perfil
+D/logd    (    0): logdr: UID=0 GID=0 PID=7029 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3331): 2026-11-12 05:04:16.924 T:7027     info <general>: SMARTED-TV: navegacao com 7 opcoes (cache)
+I/Kodi    ( 3331): 2026-11-12 05:04:16.925 T:7027     info <general>: SMARTED-TV: barra 1 = ● TV AO VIVO
+I/Kodi    ( 3331): 2026-11-12 05:04:16.925 T:7027     info <general>: SMARTED-TV: barra 2 = ● FILMES
+I/Kodi    ( 3331): 2026-11-12 05:04:16.926 T:7027     info <general>: SMARTED-TV: barra 3 = ● SÉRIES
+I/Kodi    ( 3331): 2026-11-12 05:04:16.926 T:7027     info <general>: SMARTED-TV: barra 4 = ● DESENHOS
+I/Kodi    ( 3331): 2026-11-12 05:04:18.065 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO antes={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
+D/logd    (    0): logdr: UID=0 GID=0 PID=7048 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=7051 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3331): 2026-11-12 05:04:27.109 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
+D/logd    (    0): logdr: UID=0 GID=0 PID=7054 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=7057 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3331): 2026-11-12 05:04:36.139 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
+D/logd    (    0): logdr: UID=0 GID=0 PID=7060 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+D/logd    (    0): logdr: UID=0 GID=0 PID=7063 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Kodi    ( 3331): 2026-11-12 05:04:45.158 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
+I/Kodi    ( 3331): 2026-11-12 05:04:45.938 T:7066     info <general>: SMARTED-TV: sem favoritos em filmes
+I/Kodi    ( 3331): 2026-11-12 05:04:45.981 T:5942     info <general>: SMARTED_TEST_CARROSSEL FAVORITOS itens=0
+E/Kodi    ( 3331): 2026-11-12 05:04:45.982 T:5942    error <general>: SMARTED_TEST_CARROSSEL_FAILED ADDONS: nenhum addon de programas; HERO: nao alternou sozinho em ~30 s
+D/logd    (    0): logdr: UID=0 GID=0 PID=7067 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
 I/hwservicemanager(  162): getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device manifest.
-I/Gralloc4( 6945): mapper 4.x is not supported
-D/HostConnection( 6945): createUnique: call
-D/HostConnection( 6945): HostConnection::get() New Host Connection established 0x726651915bd0, tid 6945
-D/HostConnection( 6945): HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
-D/logd    (    0): logdr: UID=0 GID=0 PID=6947 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
+I/Gralloc4( 7076): mapper 4.x is not supported
+D/HostConnection( 7076): createUnique: call
+D/HostConnection( 7076): HostConnection::get() New Host Connection established 0x7513c547b090, tid 7076
+D/HostConnection( 7076): HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0 
+D/logd    (    0): logdr: UID=0 GID=0 PID=7078 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns
 ```
 
-## marcadores.txt (13101 bytes)
+## marcadores.txt (13134 bytes)
 ```
-11-12 04:32:37.357  2849  5932 I Kodi    : 2026-11-12 04:32:37.357 T:5932     info <general>: SMARTED-TV: carrossel canais com 20 itens (#todoscanais)
-11-12 04:32:37.359  2849  4723 I Kodi    : 2026-11-12 04:32:37.359 T:4723     info <general>: SMARTED-TV: carrossel canais com 20 itens (#todoscanais)
-11-12 04:32:41.529  2849  5845 I Kodi    : 2026-11-12 04:32:41.529 T:5845     info <general>: SMARTED_TEST_CARROSSEL CANAIS total=20 midia=20 arte=20 menu=0
-11-12 04:32:41.530  2849  5845 I Kodi    : 2026-11-12 04:32:41.530 T:5845     info <general>: SMARTED_TEST_CARROSSEL   A&E (8 OPÇÕES ) | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
-11-12 04:32:41.531  2849  5845 I Kodi    : 2026-11-12 04:32:41.531 T:5845     info <general>: SMARTED_TEST_CARROSSEL   A&E FHD FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
-11-12 04:32:41.532  2849  5845 I Kodi    : 2026-11-12 04:32:41.532 T:5845     info <general>: SMARTED_TEST_CARROSSEL   A&E HD HD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
-11-12 04:32:41.532  2849  5845 I Kodi    : 2026-11-12 04:32:41.532 T:5845     info <general>: SMARTED_TEST_CARROSSEL   A&E SD SD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
-11-12 04:32:41.532  2849  5845 I Kodi    : 2026-11-12 04:32:41.532 T:5845     info <general>: SMARTED_TEST_CARROSSEL   AMC (8 OPÇÕES ) | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
-11-12 04:32:41.533  2849  5845 I Kodi    : 2026-11-12 04:32:41.533 T:5845     info <general>: SMARTED_TEST_CARROSSEL   AMC FHD FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
-11-12 04:32:41.533  2849  5845 I Kodi    : 2026-11-12 04:32:41.533 T:5845     info <general>: SMARTED_TEST_CARROSSEL   AMC HD HD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
-11-12 04:32:41.534  2849  5845 I Kodi    : 2026-11-12 04:32:41.533 T:5845     info <general>: SMARTED_TEST_CARROSSEL   AMC L FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
-11-12 04:34:29.541  2849  6231 I Kodi    : 2026-11-12 04:34:29.541 T:6231     info <general>: SMARTED-TV: carrossel filmes com 20 itens (#filmes_menu)
-11-12 04:34:31.276  2849  5845 I Kodi    : 2026-11-12 04:34:31.276 T:5845     info <general>: SMARTED_TEST_CARROSSEL FILMES total=20 midia=20 arte=20 menu=0
-11-12 04:34:31.277  2849  5845 I Kodi    : 2026-11-12 04:34:31.277 T:5845     info <general>: SMARTED_TEST_CARROSSEL   OUTRA MAMÃE | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:34:31.277  2849  5845 I Kodi    : 2026-11-12 04:34:31.277 T:5845     info <general>: SMARTED_TEST_CARROSSEL   A ODISSEIA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:34:31.278  2849  5845 I Kodi    : 2026-11-12 04:34:31.278 T:5845     info <general>: SMARTED_TEST_CARROSSEL   GODZILLA MINUS ZERO | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:34:31.278  2849  5845 I Kodi    : 2026-11-12 04:34:31.278 T:5845     info <general>: SMARTED_TEST_CARROSSEL   NO LIMITE DA JUSTIÇA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:34:31.279  2849  5845 I Kodi    : 2026-11-12 04:34:31.279 T:5845     info <general>: SMARTED_TEST_CARROSSEL   CORAÇÃO SELVAGEM | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:34:31.279  2849  5845 I Kodi    : 2026-11-12 04:34:31.279 T:5845     info <general>: SMARTED_TEST_CARROSSEL   FUGA MORTAL | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:34:31.280  2849  5845 I Kodi    : 2026-11-12 04:34:31.280 T:5845     info <general>: SMARTED_TEST_CARROSSEL   RESIDENT EVIL | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:34:31.280  2849  5845 I Kodi    : 2026-11-12 04:34:31.280 T:5845     info <general>: SMARTED_TEST_CARROSSEL   MINHA MELHOR AMIGA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:38:31.817  2849  6368 I Kodi    : 2026-11-12 04:38:31.817 T:6368     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
-11-12 04:38:31.818  2849  4725 I Kodi    : 2026-11-12 04:38:31.818 T:4725     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
-11-12 04:38:32.644  2849  5845 I Kodi    : 2026-11-12 04:38:32.644 T:5845     info <general>: SMARTED_TEST_CARROSSEL SERIES total=20 midia=0 arte=20 menu=0
-11-12 04:38:32.644  2849  5845 I Kodi    : 2026-11-12 04:38:32.644 T:5845     info <general>: SMARTED_TEST_CARROSSEL   #BLACKAF | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:38:32.645  2849  5845 I Kodi    : 2026-11-12 04:38:32.645 T:5845     info <general>: SMARTED_TEST_CARROSSEL   #LUIMELIA | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:38:32.645  2849  5845 I Kodi    : 2026-11-12 04:38:32.645 T:5845     info <general>: SMARTED_TEST_CARROSSEL   007: ESTRADA PARA O MILHÃO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:38:32.646  2849  5845 I Kodi    : 2026-11-12 04:38:32.646 T:5845     info <general>: SMARTED_TEST_CARROSSEL   1 CONTRA TODOS | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:38:32.646  2849  5845 I Kodi    : 2026-11-12 04:38:32.646 T:5845     info <general>: SMARTED_TEST_CARROSSEL   100 ANOS DA WARNER BROS. | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:38:32.647  2849  5845 I Kodi    : 2026-11-12 04:38:32.647 T:5845     info <general>: SMARTED_TEST_CARROSSEL   100 CODE | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:38:32.647  2849  5845 I Kodi    : 2026-11-12 04:38:32.647 T:5845     info <general>: SMARTED_TEST_CARROSSEL   100 COISAS PARA FAZER ANTES DO HIGH SCHOOL | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:38:32.648  2849  5845 I Kodi    : 2026-11-12 04:38:32.648 T:5845     info <general>: SMARTED_TEST_CARROSSEL   100 DIAS PARA MORAR: COMEÇANDO DO ZERO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
-11-12 04:38:42.772  2849  5845 I Kodi    : 2026-11-12 04:38:42.772 T:5845     info <general>: SMARTED_TEST_CARROSSEL MENU FILMES itens=5
-11-12 04:38:48.174  2849  5845 I Kodi    : 2026-11-12 04:38:48.174 T:5845     info <general>: SMARTED_TEST_CARROSSEL NAVEGACAO janela=videos
-11-12 04:39:01.089  2849  5845 I Kodi    : 2026-11-12 04:39:01.088 T:5845     info <general>: SMARTED_TEST_CARROSSEL ABA ANIMES itens=2
-11-12 04:39:03.716  2849  5845 I Kodi    : 2026-11-12 04:39:03.716 T:5845     info <general>: SMARTED_TEST_CARROSSEL ABA DESENHOS itens=2
-11-12 04:39:06.280  2849  5845 I Kodi    : 2026-11-12 04:39:06.280 T:5845     info <general>: SMARTED_TEST_CARROSSEL ABA DORAMAS itens=2
-11-12 04:39:08.375  2849  5845 I Kodi    : 2026-11-12 04:39:08.375 T:5845     info <general>: SMARTED_TEST_CARROSSEL ABA NOVELAS itens=2
-11-12 04:39:10.106  2849  5845 I Kodi    : 2026-11-12 04:39:10.105 T:5845     info <general>: SMARTED_TEST_CARROSSEL RECENTES total=10
-11-12 04:39:11.749  2849  5845 I Kodi    : 2026-11-12 04:39:11.749 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO total=10 filmes=10 arte=10 sinopse=10 genero=0
-11-12 04:39:11.749  2849  5845 I Kodi    : 2026-11-12 04:39:11.749 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO OUTRA MAMÃE | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.750  2849  5845 I Kodi    : 2026-11-12 04:39:11.750 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO A ODISSEIA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.750  2849  5845 I Kodi    : 2026-11-12 04:39:11.750 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO GODZILLA MINUS ZERO | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.751  2849  5845 I Kodi    : 2026-11-12 04:39:11.751 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO NO LIMITE DA JUSTIÇA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.751  2849  5845 I Kodi    : 2026-11-12 04:39:11.751 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO CORAÇÃO SELVAGEM | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.752  2849  5845 I Kodi    : 2026-11-12 04:39:11.752 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO FUGA MORTAL | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.752  2849  5845 I Kodi    : 2026-11-12 04:39:11.752 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO RESIDENT EVIL | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.753  2849  5845 I Kodi    : 2026-11-12 04:39:11.753 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO MINHA MELHOR AMIGA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.753  2849  5845 I Kodi    : 2026-11-12 04:39:11.753 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO CARA-DE-BARRO | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:11.754  2849  5845 I Kodi    : 2026-11-12 04:39:11.754 T:5845     info <general>: SMARTED_TEST_CARROSSEL   HERO APOCALIPSE Z: NOVO MUNDO | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
-11-12 04:39:20.238  2849  5845 I Kodi    : 2026-11-12 04:39:20.238 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA opcoes=7 ['● TV AO VIVO', '● FILMES', '● SÉRIES', '● DESENHOS', '● DORAMAS', '● ANIMES', '● NOVELAS']
-11-12 04:39:23.341  2849  5845 I Kodi    : 2026-11-12 04:39:23.341 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● TV AO VIVO -> itens=10 primeiro=[B][COLOR white]CATEGORIA: [COLOR gold]T
-11-12 04:39:26.131  2849  5845 I Kodi    : 2026-11-12 04:39:26.131 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● FILMES -> itens=5 primeiro=[B][COLOR blue]●[/COLOR] [COLOR white]PE
-11-12 04:39:28.602  2849  5845 I Kodi    : 2026-11-12 04:39:28.602 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● SÉRIES -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-11-12 04:39:30.783  2849  5845 I Kodi    : 2026-11-12 04:39:30.783 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● DESENHOS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-11-12 04:39:33.226  2849  5845 I Kodi    : 2026-11-12 04:39:33.225 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● DORAMAS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-11-12 04:39:35.681  2849  5845 I Kodi    : 2026-11-12 04:39:35.681 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● ANIMES -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-11-12 04:39:38.146  2849  5845 I Kodi    : 2026-11-12 04:39:38.146 T:5845     info <general>: SMARTED_TEST_CARROSSEL BARRA ● NOVELAS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
-11-12 04:39:38.163  2849  5845 I Kodi    : 2026-11-12 04:39:38.163 T:5845     info <general>: SMARTED_TEST_CARROSSEL ADDONS video=2 ['None', 'None']
-11-12 04:39:38.171  2849  5845 I Kodi    : 2026-11-12 04:39:38.171 T:5845     info <general>: SMARTED_TEST_CARROSSEL ADDONS programas=0 []
-11-12 04:39:38.171  2849  5845 I Kodi    : 2026-11-12 04:39:38.171 T:5845     info <general>: SMARTED_TEST_CARROSSEL ADDONS youtube=ausente neste perfil
-11-12 04:39:42.197  2849  5845 I Kodi    : 2026-11-12 04:39:42.197 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO antes={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
-11-12 04:39:51.246  2849  5845 I Kodi    : 2026-11-12 04:39:51.246 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
-11-12 04:40:00.270  2849  5845 I Kodi    : 2026-11-12 04:40:00.270 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
-11-12 04:40:09.312  2849  5845 I Kodi    : 2026-11-12 04:40:09.312 T:5845     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
-11-12 04:40:09.926  2849  5845 I Kodi    : 2026-11-12 04:40:09.926 T:5845     info <general>: SMARTED_TEST_CARROSSEL FAVORITOS itens=0
-11-12 04:40:09.926  2849  5845 E Kodi    : 2026-11-12 04:40:09.926 T:5845    error <general>: SMARTED_TEST_CARROSSEL_FAILED HERO: 10 filmes (o HERO usa no maximo 8); ADDONS: nenhum addon de programas; HERO: nao alternou sozinho em ~30 s
+11-12 04:54:06.021  3331  6155 I Kodi    : 2026-11-12 04:54:06.021 T:6155     info <general>: SMARTED-TV: carrossel canais com 20 itens (#todoscanais)
+11-12 04:54:06.028  3331  5367 I Kodi    : 2026-11-12 04:54:06.028 T:5367     info <general>: SMARTED-TV: carrossel canais com 20 itens (#todoscanais)
+11-12 04:54:07.413  3331  5942 I Kodi    : 2026-11-12 04:54:07.413 T:5942     info <general>: SMARTED_TEST_CARROSSEL CANAIS total=20 midia=20 arte=20 menu=0
+11-12 04:54:07.415  3331  5942 I Kodi    : 2026-11-12 04:54:07.415 T:5942     info <general>: SMARTED_TEST_CARROSSEL   A&E (8 OPÇÕES ) | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 04:54:07.415  3331  5942 I Kodi    : 2026-11-12 04:54:07.415 T:5942     info <general>: SMARTED_TEST_CARROSSEL   A&E FHD FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 04:54:07.416  3331  5942 I Kodi    : 2026-11-12 04:54:07.416 T:5942     info <general>: SMARTED_TEST_CARROSSEL   A&E HD HD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 04:54:07.416  3331  5942 I Kodi    : 2026-11-12 04:54:07.416 T:5942     info <general>: SMARTED_TEST_CARROSSEL   A&E SD SD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 04:54:07.417  3331  5942 I Kodi    : 2026-11-12 04:54:07.417 T:5942     info <general>: SMARTED_TEST_CARROSSEL   AMC (8 OPÇÕES ) | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 04:54:07.418  3331  5942 I Kodi    : 2026-11-12 04:54:07.418 T:5942     info <general>: SMARTED_TEST_CARROSSEL   AMC FHD FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 04:54:07.419  3331  5942 I Kodi    : 2026-11-12 04:54:07.418 T:5942     info <general>: SMARTED_TEST_CARROSSEL   AMC HD HD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 04:54:07.419  3331  5942 I Kodi    : 2026-11-12 04:54:07.419 T:5942     info <general>: SMARTED_TEST_CARROSSEL   AMC L FHD | file | image://https%3a%2f%2fskyrisk.github.io%2fbrazucaplay%2flogo
+11-12 04:57:10.478  3331  6316 I Kodi    : 2026-11-12 04:57:10.478 T:6316     info <general>: SMARTED-TV: carrossel filmes com 20 itens (#filmes_menu)
+11-12 04:57:11.631  3331  5942 I Kodi    : 2026-11-12 04:57:11.630 T:5942     info <general>: SMARTED_TEST_CARROSSEL FILMES total=20 midia=20 arte=20 menu=0
+11-12 04:57:11.632  3331  5942 I Kodi    : 2026-11-12 04:57:11.631 T:5942     info <general>: SMARTED_TEST_CARROSSEL   OUTRA MAMÃE | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 04:57:11.632  3331  5942 I Kodi    : 2026-11-12 04:57:11.632 T:5942     info <general>: SMARTED_TEST_CARROSSEL   A ODISSEIA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 04:57:11.632  3331  5942 I Kodi    : 2026-11-12 04:57:11.632 T:5942     info <general>: SMARTED_TEST_CARROSSEL   GODZILLA MINUS ZERO | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 04:57:11.633  3331  5942 I Kodi    : 2026-11-12 04:57:11.633 T:5942     info <general>: SMARTED_TEST_CARROSSEL   NO LIMITE DA JUSTIÇA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 04:57:11.633  3331  5942 I Kodi    : 2026-11-12 04:57:11.633 T:5942     info <general>: SMARTED_TEST_CARROSSEL   CORAÇÃO SELVAGEM | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 04:57:11.634  3331  5942 I Kodi    : 2026-11-12 04:57:11.634 T:5942     info <general>: SMARTED_TEST_CARROSSEL   FUGA MORTAL | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 04:57:11.634  3331  5942 I Kodi    : 2026-11-12 04:57:11.634 T:5942     info <general>: SMARTED_TEST_CARROSSEL   RESIDENT EVIL | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 04:57:11.635  3331  5942 I Kodi    : 2026-11-12 04:57:11.635 T:5942     info <general>: SMARTED_TEST_CARROSSEL   MINHA MELHOR AMIGA | file | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 05:02:36.847  3331  5373 I Kodi    : 2026-11-12 05:02:36.847 T:5373     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
+11-12 05:02:36.858  3331  6657 I Kodi    : 2026-11-12 05:02:36.858 T:6657     info <general>: SMARTED-TV: carrossel series com 20 itens (#series_menu)
+11-12 05:02:37.718  3331  5942 I Kodi    : 2026-11-12 05:02:37.718 T:5942     info <general>: SMARTED_TEST_CARROSSEL SERIES total=20 midia=0 arte=20 menu=0
+11-12 05:02:37.719  3331  5942 I Kodi    : 2026-11-12 05:02:37.719 T:5942     info <general>: SMARTED_TEST_CARROSSEL   #BLACKAF | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 05:02:37.720  3331  5942 I Kodi    : 2026-11-12 05:02:37.720 T:5942     info <general>: SMARTED_TEST_CARROSSEL   #LUIMELIA | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 05:02:37.720  3331  5942 I Kodi    : 2026-11-12 05:02:37.720 T:5942     info <general>: SMARTED_TEST_CARROSSEL   007: ESTRADA PARA O MILHÃO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 05:02:37.721  3331  5942 I Kodi    : 2026-11-12 05:02:37.721 T:5942     info <general>: SMARTED_TEST_CARROSSEL   1 CONTRA TODOS | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 05:02:37.721  3331  5942 I Kodi    : 2026-11-12 05:02:37.721 T:5942     info <general>: SMARTED_TEST_CARROSSEL   100 ANOS DA WARNER BROS. | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 05:02:37.722  3331  5942 I Kodi    : 2026-11-12 05:02:37.722 T:5942     info <general>: SMARTED_TEST_CARROSSEL   100 CODE | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 05:02:37.722  3331  5942 I Kodi    : 2026-11-12 05:02:37.722 T:5942     info <general>: SMARTED_TEST_CARROSSEL   100 COISAS PARA FAZER ANTES DO HIGH SCHOOL | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 05:02:37.723  3331  5942 I Kodi    : 2026-11-12 05:02:37.723 T:5942     info <general>: SMARTED_TEST_CARROSSEL   100 DIAS PARA MORAR: COMEÇANDO DO ZERO | directory | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_and_h450
+11-12 05:02:51.264  3331  5942 I Kodi    : 2026-11-12 05:02:51.264 T:5942     info <general>: SMARTED_TEST_CARROSSEL MENU FILMES itens=5
+11-12 05:02:58.829  3331  5942 I Kodi    : 2026-11-12 05:02:58.828 T:5942     info <general>: SMARTED_TEST_CARROSSEL NAVEGACAO janela=videos
+11-12 05:03:16.414  3331  5942 I Kodi    : 2026-11-12 05:03:16.413 T:5942     info <general>: SMARTED_TEST_CARROSSEL ABA ANIMES itens=2
+11-12 05:03:19.703  3331  5942 I Kodi    : 2026-11-12 05:03:19.703 T:5942     info <general>: SMARTED_TEST_CARROSSEL ABA DESENHOS itens=2
+11-12 05:03:22.960  3331  5942 I Kodi    : 2026-11-12 05:03:22.960 T:5942     info <general>: SMARTED_TEST_CARROSSEL ABA DORAMAS itens=2
+11-12 05:03:26.194  3331  5942 I Kodi    : 2026-11-12 05:03:26.194 T:5942     info <general>: SMARTED_TEST_CARROSSEL ABA NOVELAS itens=2
+11-12 05:03:28.481  3331  5942 I Kodi    : 2026-11-12 05:03:28.481 T:5942     info <general>: SMARTED_TEST_CARROSSEL RECENTES total=10
+11-12 05:03:30.641  3331  5942 I Kodi    : 2026-11-12 05:03:30.641 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO total=8 filmes=8 arte=8 sinopse=8 genero=0
+11-12 05:03:30.641  3331  5942 I Kodi    : 2026-11-12 05:03:30.641 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO OUTRA MAMÃE | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+11-12 05:03:30.642  3331  5942 I Kodi    : 2026-11-12 05:03:30.642 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO A ODISSEIA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+11-12 05:03:30.642  3331  5942 I Kodi    : 2026-11-12 05:03:30.642 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO GODZILLA MINUS ZERO | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+11-12 05:03:30.643  3331  5942 I Kodi    : 2026-11-12 05:03:30.643 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO NO LIMITE DA JUSTIÇA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+11-12 05:03:30.643  3331  5942 I Kodi    : 2026-11-12 05:03:30.643 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO CORAÇÃO SELVAGEM | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+11-12 05:03:30.644  3331  5942 I Kodi    : 2026-11-12 05:03:30.644 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO FUGA MORTAL | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+11-12 05:03:30.644  3331  5942 I Kodi    : 2026-11-12 05:03:30.644 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO RESIDENT EVIL | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+11-12 05:03:30.644  3331  5942 I Kodi    : 2026-11-12 05:03:30.644 T:5942     info <general>: SMARTED_TEST_CARROSSEL   HERO MINHA MELHOR AMIGA | ano=0 | nota=0.0 | data= | genero= | image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw300_
+11-12 05:03:42.121  3331  5942 I Kodi    : 2026-11-12 05:03:42.121 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA opcoes=7 ['● TV AO VIVO', '● FILMES', '● SÉRIES', '● DESENHOS', '● DORAMAS', '● ANIMES', '● NOVELAS']
+11-12 05:03:45.870  3331  5942 I Kodi    : 2026-11-12 05:03:45.870 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● TV AO VIVO -> itens=10 primeiro=[B][COLOR white]CATEGORIA: [COLOR gold]T
+11-12 05:03:49.295  3331  5942 I Kodi    : 2026-11-12 05:03:49.295 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● FILMES -> itens=5 primeiro=[B][COLOR blue]●[/COLOR] [COLOR white]PE
+11-12 05:03:52.493  3331  5942 I Kodi    : 2026-11-12 05:03:52.493 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● SÉRIES -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+11-12 05:03:55.749  3331  5942 I Kodi    : 2026-11-12 05:03:55.748 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● DESENHOS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+11-12 05:03:58.999  3331  5942 I Kodi    : 2026-11-12 05:03:58.999 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● DORAMAS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+11-12 05:04:02.239  3331  5942 I Kodi    : 2026-11-12 05:04:02.239 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● ANIMES -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+11-12 05:04:05.546  3331  5942 I Kodi    : 2026-11-12 05:04:05.546 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA ● NOVELAS -> itens=2 primeiro=[B][COLOR blue]●[/COLOR][COLOR firebrick
+11-12 05:04:05.627  3331  5942 I Kodi    : 2026-11-12 05:04:05.627 T:5942     info <general>: SMARTED_TEST_CARROSSEL BARRA destinos_unicos=7 de 7
+11-12 05:04:09.417  3331  5942 I Kodi    : 2026-11-12 05:04:09.417 T:5942     info <general>: SMARTED_TEST_CARROSSEL TV AO VIVO abertura 1 itens=10 primeiro=[B][COLOR white]CATEGORIA: [COLOR gold]TODOS
+11-12 05:04:13.146  3331  5942 I Kodi    : 2026-11-12 05:04:13.146 T:5942     info <general>: SMARTED_TEST_CARROSSEL TV AO VIVO abertura 2 itens=10 primeiro=[B][COLOR white]CATEGORIA: [COLOR gold]TODOS
+11-12 05:04:13.169  3331  5942 I Kodi    : 2026-11-12 05:04:13.169 T:5942     info <general>: SMARTED_TEST_CARROSSEL ADDONS video=2 ['None', 'None']
+11-12 05:04:13.184  3331  5942 I Kodi    : 2026-11-12 05:04:13.184 T:5942     info <general>: SMARTED_TEST_CARROSSEL ADDONS programas=0 []
+11-12 05:04:13.185  3331  5942 I Kodi    : 2026-11-12 05:04:13.185 T:5942     info <general>: SMARTED_TEST_CARROSSEL ADDONS youtube=ausente neste perfil
+11-12 05:04:18.066  3331  5942 I Kodi    : 2026-11-12 05:04:18.065 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO antes={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
+11-12 05:04:27.109  3331  5942 I Kodi    : 2026-11-12 05:04:27.109 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
+11-12 05:04:36.139  3331  5942 I Kodi    : 2026-11-12 05:04:36.139 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
+11-12 05:04:45.158  3331  5942 I Kodi    : 2026-11-12 05:04:45.158 T:5942     info <general>: SMARTED_TEST_CARROSSEL HERO ROTACAO agora={'Container(9201).ListItem.Label': '[B][COLOR white]OUTRA MAMÃE[/COLOR][/B]', 'Container(9201).Position': '0'}
+11-12 05:04:45.982  3331  5942 I Kodi    : 2026-11-12 05:04:45.981 T:5942     info <general>: SMARTED_TEST_CARROSSEL FAVORITOS itens=0
+11-12 05:04:45.982  3331  5942 E Kodi    : 2026-11-12 05:04:45.982 T:5942    error <general>: SMARTED_TEST_CARROSSEL_FAILED ADDONS: nenhum addon de programas; HERO: nao alternou sozinho em ~30 s
 ```
 
 ## perfil-addons.txt (443 bytes)
