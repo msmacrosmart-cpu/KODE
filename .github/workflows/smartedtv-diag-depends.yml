@@ -1,8 +1,9 @@
 name: SMARTEDTV - diagnóstico das dependências
 
-# Roda só o passo de dependências e publica as últimas linhas do log, para
-# identificar exatamente qual biblioteca falhou (o log da CI é grande demais
-# para ser lido inteiro pela API).
+# Roda só o passo de dependências e grava o resultado em
+# docs/smartedtv-diagnostico.md (mesmo padrão já usado pelo projeto em
+# docs/emulador-diagnostico.md), porque o log completo da CI é grande demais
+# para a API.
 
 on:
   workflow_dispatch:
@@ -12,7 +13,7 @@ on:
       - .github/workflows/smartedtv-diag-depends.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   diag:
@@ -38,44 +39,80 @@ jobs:
         run: |
           "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install \
             'platforms;android-34' 'build-tools;33.0.1' 'ndk;21.4.7075529' > /dev/null
+          ls "$ANDROID_SDK_ROOT/ndk"
 
-      - name: Kodi 21.3 limpo (sem patch, para isolar o problema no upstream)
-        run: |
-          git clone --depth 1 --branch 21.3-Omega https://github.com/xbmc/xbmc.git kodi
-          cd kodi && git rev-parse HEAD
-
-      - name: Dependências com log controlado
+      - name: Kodi 21.3 + dependências, com diagnóstico
         env:
           ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
           ANDROID_HOME: /usr/local/lib/android/sdk
         run: |
           set +e
-          cd kodi/tools/depends
-          ./bootstrap > /tmp/boot.log 2>&1 || { echo '::error::bootstrap falhou'; tail -40 /tmp/boot.log; exit 1; }
+          : > /tmp/diag.md
+          echo "# Diagnóstico das dependências" >> /tmp/diag.md
+          echo >> /tmp/diag.md
+          echo "- run: \`$GITHUB_RUN_ID\`" >> /tmp/diag.md
+          echo "- commit: \`$GITHUB_SHA\`" >> /tmp/diag.md
+          echo "- quando: $(date -u +%FT%TZ)" >> /tmp/diag.md
+          echo >> /tmp/diag.md
+
+          echo "### clone" >> /tmp/diag.md
+          git clone --depth 1 --branch 21.3-Omega https://github.com/xbmc/xbmc.git kodi \
+            > /tmp/clone.log 2>&1
+          rc=$?
+          echo "clone exit=$rc" >> /tmp/diag.md
+          tail -5 /tmp/clone.log >> /tmp/diag.md
+          if [ $rc -ne 0 ]; then
+            echo "::error::clone do Kodi falhou (exit $rc)"
+            cp /tmp/diag.md docs/smartedtv-diagnostico.md
+            exit 1
+          fi
+          echo "commit: $(git -C kodi rev-parse HEAD)" >> /tmp/diag.md
+
+          cd kodi/tools/depends || exit 1
+          ./bootstrap > /tmp/boot.log 2>&1
+          rc=$?
+          echo "### bootstrap exit=$rc" >> /tmp/diag.md
+          [ $rc -ne 0 ] && { echo "::error::bootstrap falhou"; tail -30 /tmp/boot.log >> /tmp/diag.md; }
+
           ./configure --with-tarballs=/tmp/tarballs --host=aarch64-linux-android \
             --with-sdk-path="$ANDROID_SDK_ROOT" \
             --with-ndk-path="$ANDROID_SDK_ROOT/ndk/21.4.7075529" \
-            --prefix=/tmp/xbmc-depends > /tmp/conf.log 2>&1 \
-            || { echo '::error::configure falhou'; tail -60 /tmp/conf.log; exit 1; }
+            --prefix=/tmp/xbmc-depends > /tmp/conf.log 2>&1
+          rc=$?
+          echo "### configure exit=$rc" >> /tmp/diag.md
+          [ $rc -ne 0 ] && { echo "::error::configure falhou"; tail -40 /tmp/conf.log >> /tmp/diag.md; }
+
           make -j4 > /tmp/depends.log 2>&1
           rc=$?
-          echo "make exit=$rc"
-          echo "=== últimas 120 linhas ==="
-          tail -120 /tmp/depends.log
+          echo "### make exit=$rc" >> /tmp/diag.md
+          echo >> /tmp/diag.md
+          echo '## Últimas 80 linhas do make' >> /tmp/diag.md
+          echo '```' >> /tmp/diag.md
+          tail -80 /tmp/depends.log >> /tmp/diag.md
+          echo '```' >> /tmp/diag.md
+          echo >> /tmp/diag.md
+          echo '## Linhas de erro' >> /tmp/diag.md
+          echo '```' >> /tmp/diag.md
+          grep -nE "Error [0-9]|error:|No such file|undefined reference|not found" /tmp/depends.log \
+            | tail -40 >> /tmp/diag.md
+          echo '```' >> /tmp/diag.md
+
           if [ $rc -ne 0 ]; then
-            echo "=== linhas de erro ==="
-            grep -nE "Error [0-9]|error:|No such file|undefined reference|failed" /tmp/depends.log | tail -40
+            echo "::error::make das dependências falhou (exit $rc) — ver docs/smartedtv-diagnostico.md"
           fi
+          cd "$GITHUB_WORKSPACE"
+          cp /tmp/diag.md docs/smartedtv-diagnostico.md
           exit $rc
 
-      - name: Guardar logs
+      - name: Publicar diagnóstico no repositório
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: depends-logs
-          path: |
-            /tmp/depends.log
-            /tmp/conf.log
-            /tmp/boot.log
-          retention-days: 7
-          if-no-files-found: warn
+        run: |
+          git config user.name 'SMARTEDTV CI'
+          git config user.email 'ci@smarted.local'
+          if [ ! -f docs/smartedtv-diagnostico.md ]; then
+            printf '# Diagnóstico\n\nnão foi gerado (falha anterior)\n' > docs/smartedtv-diagnostico.md
+          fi
+          head -c 200000 docs/smartedtv-diagnostico.md > /tmp/d.md && mv /tmp/d.md docs/smartedtv-diagnostico.md
+          git add docs/smartedtv-diagnostico.md
+          git commit -m "ci: diagnostico das dependencias (run $GITHUB_RUN_ID)" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" || true
