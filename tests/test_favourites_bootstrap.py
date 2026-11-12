@@ -132,11 +132,11 @@ class SkinShortcutsTest(unittest.TestCase):
         self.assertIn('id="9019"', self.home)
         self.assertIn('ActivateWindow(10060)', self.home)
 
-    def test_home_tem_addons(self):
-        # a barra superior agora e dos favoritos do Brazuca; o acesso a Add-ons
-        # continua pelo botao redondo da direita (9124).
-        self.assertIn('id="9124"', self.home)
-        self.assertIn('ActivateWindow(10040)', self.home)
+    def test_home_sem_botao_de_addons(self):
+        # pedido do usuario (rodada 15): a barra redonda tem so Busca, Ajustes
+        # e Sair - gerenciar addons sai da tela inicial.
+        self.assertNotIn('id="9124"', self.home)
+        self.assertNotIn('ActivateWindow(10040)', self.home)
 
     def test_ajustes_tem_favoritos_addons_e_restaurar(self):
         settings = (XML / 'Settings.xml').read_text(encoding='utf-8')

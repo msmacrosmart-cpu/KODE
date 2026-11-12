@@ -30,6 +30,7 @@ WAIT_SECONDS = 20
 POLL_SECONDS = 5
 REPAIR_ATTEMPTS = 6
 REPAIR_RETRY_SECONDS = 5
+UISOUNDS_SILENCIO = 'resource.uisounds.silencio'
 
 
 def log(message, level=xbmc.LOGINFO):
@@ -66,6 +67,23 @@ def enable_addons(addon_ids):
                 xbmc.LOGWARNING)
             failed.append(addon_id)
     return failed
+
+
+def apply_silencio():
+    """Navegacao 100% silenciosa: tema de sons vazio instalado no boot."""
+    enable_addons([UISOUNDS_SILENCIO])
+    resposta = jsonrpc('Settings.SetSettingValue',
+                       {'setting': 'lookandfeel.soundskin', 'value': UISOUNDS_SILENCIO})
+    if resposta.get('error'):
+        # plano B: tema de sons vazio (o Kodi nao carrega nenhum som)
+        resposta = jsonrpc('Settings.SetSettingValue',
+                           {'setting': 'lookandfeel.soundskin', 'value': ''})
+    if resposta.get('error'):
+        log('silencio: nao foi possivel trocar o tema de sons: %s' % resposta['error'],
+            xbmc.LOGWARNING)
+        return False
+    log('silencio: navegacao sem sons (%s)' % UISOUNDS_SILENCIO)
+    return True
 
 
 def write_report(home, report):
@@ -246,6 +264,7 @@ def main():
     # o addon precisa aparecer habilitado no Kodi antes da Home abrir
     xbmc.executebuiltin('UpdateLocalAddons()')
     failed = enable_addons(report['required'])
+    apply_silencio()
     write_favourites()
     apply_navigation()
     performance = apply_performance()

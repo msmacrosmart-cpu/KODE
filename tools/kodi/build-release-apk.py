@@ -36,14 +36,15 @@ SKIN = ROOT / "kodi" / "skin.estilo.personalizado"
 BRIDGE = ROOT / "kodi" / "addons" / "plugin.video.smarted"
 # Addons do repositório injetados como addons de sistema (assets/addons/).
 # service.smarted.bootstrap garante o Brazuca Play registrado no primeiro boot.
-BRIDGE_ADDONS = [BRIDGE, ROOT / "kodi" / "addons" / "service.smarted.bootstrap"]
+BRIDGE_ADDONS = [BRIDGE, ROOT / "kodi" / "addons" / "service.smarted.bootstrap",
+                 ROOT / "kodi" / "addons" / "resource.uisounds.silencio"]
 SIG = re.compile(r"^META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC))$", re.I)
 MANIFEST = "assets/system/addon-manifest.xml"
 
 # Id that the launcher dex applies as default skin at first boot.
 SKIN_ADDON_ID = "skin.novatv"
 SKIN_NAME = "SMARTEDTV"
-SKIN_VERSION = "1.0.12"
+SKIN_VERSION = "1.0.13"
 SKIN_PREFIX = "assets/addons/skin.novatv/"
 
 

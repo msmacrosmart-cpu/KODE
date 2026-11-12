@@ -354,9 +354,10 @@ class NavegacaoCompletaTest(unittest.TestCase):
                      "28, '#desenhos_menu')"):
             self.assertIn(rota, self.navegacao)
 
-    def test_addons_continuam_alcancaveis_pela_barra_superior(self):
-        bloco = re.search(r'id="9124">.*?</control>', self.home, re.S)
-        self.assertIn('ActivateWindow(10040)', bloco.group(0))
+    def test_barra_superior_tem_so_busca_ajustes_e_sair(self):
+        # botao de addons removido a pedido (rodada 15)
+        self.assertIsNone(re.search(r'id="9124">', self.home))
+        self.assertNotIn('ActivateWindow(10040)', self.home)
 
     def test_skin_nao_embute_catalogo(self):
         # nada de canais/filmes ficticios na skin: o conteudo vem do addon
@@ -438,10 +439,8 @@ class FullScreenTest(unittest.TestCase):
     def test_icones_da_barra_superior_centrados_no_botao(self):
         """Botão e ícone redondos precisam compartilhar o mesmo centro.
 
-        Regressão de 2026-11-11: o botão Add-ons (9124) ficou com o ícone
-        deslocado 16 px para a direita, aparecendo "de um lado e o ícone do
-        outro". Como tudo é ancorado em <right>, o centro é
-        right + width/2 — não depende da largura da tela.
+        Tudo é ancorado em <right>, então o centro é right + width/2 e não
+        depende da largura da tela.
         """
         root = ET.parse(XML / 'Home.xml').getroot()
         buttons = []
@@ -452,13 +451,13 @@ class FullScreenTest(unittest.TestCase):
             right = int(control.findtext('right'))
             width = int(control.findtext('width') or 0)
             if control.get('type') == 'button' and control.get('id') in (
-                    '9121', '9122', '9123', '9124'):
+                    '9121', '9122', '9123'):
                 buttons.append((control.get('id'), right + width / 2.0))
             if (control.get('type') == 'image'
                     and (control.findtext('texture') or '').startswith('icons/')
                     and width == 28):
                 icons.append(right + width / 2.0)
-        self.assertEqual(len(buttons), 4)
+        self.assertEqual(len(buttons), 3)
         for control_id, center in buttons:
             self.assertIn(center, icons, 'ícone não centrado no botão %s' % control_id)
 

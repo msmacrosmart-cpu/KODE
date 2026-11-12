@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="resource.uisounds.silencio" version="1.0.0" name="SMARTEDTV - Sem sons" provider-name="SMARTEDTV">
+  <requires>
+    <import addon="kodi.resource" version="1.0.0"/>
+  </requires>
+  <extension point="kodi.resource.uisounds"/>
+  <extension point="kodi.addon.metadata">
+    <summary lang="pt_BR">Navegacao silenciosa</summary>
+    <description lang="pt_BR">Tema de sons vazio: nenhum clique, bipe ou efeito de navegacao.</description>
+    <platform>all</platform>
+    <assets>
+      <icon>icon.png</icon>
+    </assets>
+  </extension>
+</addon>
