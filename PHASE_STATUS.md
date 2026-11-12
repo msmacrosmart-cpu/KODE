@@ -529,3 +529,16 @@ Ressalva registrada: o `Home.png` e o zip de diagnóstico do run não são
 baixáveis deste ambiente (o download dos artefatos cai no blob de resultados do
 Actions). A conferência visual aqui é a prévia de geometria gerada do XML
 (`docs/preview-home-1920.png` / `docs/preview-home-2400.png`).
+
+#### Release v1.0.36 (final da rodada 10)
+
+- tag: `v1.0.36-smarted-arm64`
+- arquivo: `SMARTED-TV-v1.0.36-arm64.apk` — 241 528 477 bytes
+- sha256: `6a74994a711413618d8ad06a192a8f5ea2ab803aa8547075db7f5083555bbd19`
+- link: https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.36-smarted-arm64/SMARTED-TV-v1.0.36-arm64.apk
+- conteúdo: skin 1.0.6, plugin.video.smarted 0.2.5, bootstrap 1.0.4, versionCode 2103022.
+- o APK saiu do commit `bda6a51`; entre ele e o commit validado no emulador
+  (`78efd87`) mudaram apenas este documento, o workflow de build e o
+  diagnóstico — skin e plugin são byte a byte os que passaram no run
+  `43131656658`.
+- v1.0.35 foi marcada como superseded na release.
