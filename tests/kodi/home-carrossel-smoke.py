@@ -224,6 +224,32 @@ def main():
         log('HERO falhou (%s)' % error)
         problemas.append('HERO: %s' % error)
 
+    # DIAG: o que a propria pasta Lancamentos do addon publica em cada item
+    # (mostra se sinopse/genero/nota/data existem na fonte, sem inventar nada)
+    try:
+        menu = directory(brazuca(27, '#filmes_menu'), tentativas=2, espera=2.0,
+                         propriedades=HERO_PROPS)
+        lanc = [item for item in menu
+                if 'LANCAMENTOS' in normalize(TAGS.sub('', item.get('label', '')))]
+        if lanc:
+            bruto = directory(lanc[0].get('file'), tentativas=2, espera=2.0,
+                              propriedades=HERO_PROPS)
+            log('DIAG LANCAMENTOS bruto=%d campos_do_item=%s'
+                % (len(bruto), sorted(bruto[0].keys()) if bruto else []))
+            log('DIAG LANCAMENTOS plot=%d genre=%d dateadded=%d premiered=%d rating=%d year=%d'
+                % tuple(len([i for i in bruto if i.get(chave)])
+                        for chave in ('plot', 'genre', 'dateadded', 'premiered',
+                                      'rating', 'year')))
+            if bruto:
+                amostra = bruto[0]
+                log('DIAG AMOSTRA %s | plot=%s | genre=%s | dateadded=%s | year=%s'
+                    % (str(amostra.get('label'))[:40], str(amostra.get('plot'))[:60],
+                       amostra.get('genre'), amostra.get('dateadded'), amostra.get('year')))
+        else:
+            log('DIAG LANCAMENTOS pasta nao encontrada no menu de filmes')
+    except Exception as error:  # noqa: BLE001
+        log('DIAG LANCAMENTOS falhou (%s)' % error)
+
     # BARRA superior: sync-nav publica os favoritos do Brazuca; navegacao lista
     # exatamente as opcoes usadas pela skin (destino real, nunca lista inventada)
     try:

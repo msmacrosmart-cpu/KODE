@@ -58,6 +58,31 @@ def _entry(item):
             'duration': item.get('duration') if isinstance(item.get('duration'), int) else 0}
 
 
+def _log_hero(result, bruto):
+    """Diagnostico curto: quantos itens de Lancamentos vem com ficha."""
+    try:
+        import xbmc
+
+        def tem(chave):
+            return sum(1 for item in bruto if isinstance(item, dict) and item.get(chave))
+
+        nivel = getattr(xbmc, 'LOGINFO', 20)
+        chaves = sorted(bruto[0].keys()) if bruto and isinstance(bruto[0], dict) else []
+        xbmc.log('SMARTED-TV: lancamentos bruto=%d plot=%d genre=%d dateadded=%d '
+                 'premiered=%d rating=%d year=%d chaves=%s'
+                 % (len(bruto), tem('plot'), tem('genre'), tem('dateadded'),
+                    tem('premiered'), tem('rating'), tem('year'), chaves), nivel)
+        if result:
+            primeiro = result[0]
+            xbmc.log('SMARTED-TV: lancamentos primeiro=%r ficha=(plot=%d genre=%d nota=%s '
+                     'data=%s ano=%s dur=%s)'
+                     % (primeiro['title'], len(primeiro['plot']), len(primeiro['genre']),
+                        primeiro['rating'], primeiro['premiered'], primeiro['year'],
+                        primeiro['duration']), nivel)
+    except Exception:
+        pass
+
+
 def _genre(value):
     """O Kodi devolve genero como lista; o addon manda um texto so."""
     if isinstance(value, (list, tuple)):
@@ -141,8 +166,9 @@ def recent_movies(rpc, limit=10):
                    and _brazuca_url(entry.get('file'))), None)
     if not folder:
         return []
+    bruto = directory(rpc, folder)
     result = []
-    for item in directory(rpc, folder):
+    for item in bruto:
         entry = _entry(item)
         # Skip non-playable command entries in the hero. They remain accessible
         # through the add-on's native menu, but cannot be played as movies.
@@ -150,6 +176,7 @@ def recent_movies(rpc, limit=10):
             result.append(entry)
         if len(result) >= limit:
             break
+    _log_hero(result, bruto)
     return result
 
 

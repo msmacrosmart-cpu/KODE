@@ -306,6 +306,10 @@ def recent_movies(handle):
         xbmc.log('SMARTED-TV: lançamentos do Brazuca indisponíveis', xbmc.LOGWARNING)
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
         return
+    xbmc.log('SMARTED-TV: hero com %d filmes (ficha completa=%d)'
+             % (len(results), sum(1 for item in results
+                                  if item.get('plot') and item.get('genre'))),
+             getattr(xbmc, 'LOGINFO', 20))
     _add_movies(handle, results)
 
 
