@@ -1,4 +1,5 @@
-# v1.1.0: rodada 14 - cards em grade para as 6 categorias de VOD, filtros de ordenacao, icones das categorias e notificacoes SMARTEDTV.
+# v1.1.0: rodada 20 - linha separada com a skin Bingie Mod 2.2.3 embutida (addons extras).
+# (historico) rodada 14 - cards em grade para as 6 categorias de VOD, filtros de ordenacao, icones das categorias e notificacoes SMARTEDTV.
 name: Build SMARTED-TV release APK
 on:
   workflow_dispatch:
