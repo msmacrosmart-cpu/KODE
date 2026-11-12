@@ -27,7 +27,12 @@ O script é determinístico: a mesma entrada gera os mesmos bytes.
 from pathlib import Path
 import sys
 
-from PIL import Image
+try:
+    from PIL import Image
+except ImportError:
+    print("Pillow não instalado. Rode: python3 -m pip install Pillow==11.3.0",
+          file=sys.stderr)
+    raise SystemExit(2)
 
 ROOT = Path(__file__).resolve().parents[1]
 BRAND = ROOT / "assets" / "brand"

@@ -57,8 +57,12 @@ jobs:
             'platforms;android-34' 'build-tools;33.0.1' 'ndk;21.4.7075529'
           echo "ndk: $(ls "$ANDROID_SDK_ROOT/ndk")"
 
-      - name: 4. Artes oficiais da marca (do repositório, sem inventar nada)
-        run: python3 smartedtv/tools/make-brand-assets.py
+      - name: 4. Artefatos de identidade a partir das artes oficiais
+        run: |
+          python3 -m pip install --quiet --disable-pip-version-check 'Pillow==11.3.0' \
+            'pyaxmlparser==0.3.31'
+          python3 smartedtv/tools/make-brand-assets.py
+          ls -l smartedtv/out/media | head
 
       - name: 5. Idioma pt-BR oficial (repo-resources) para embarcar
         run: |

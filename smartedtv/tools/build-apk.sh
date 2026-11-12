@@ -50,6 +50,8 @@ for require in java javac cmake make python3 git curl unzip; do
 done
 test -d "$ANDROID_SDK_ROOT/ndk/$NDK" || {
   echo "NDK $NDK ausente em $ANDROID_SDK_ROOT/ndk (rode setup-build-env.sh)" >&2; exit 1; }
+python3 -c 'import PIL' 2>/dev/null || {
+  echo "Pillow ausente. Instale: python3 -m pip install Pillow==11.3.0" >&2; exit 1; }
 echo "java:  $(java -version 2>&1 | head -1)"
 echo "cmake: $(cmake --version | head -1)"
 echo "sdk:   $ANDROID_SDK_ROOT  ndk: $NDK"
