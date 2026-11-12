@@ -1,4 +1,4 @@
-# v1.0.50: rodada 23 - modulos Python que faltavam (arrow/unidecode/simplejson/requests)
+# build 1.0.50 (rodada 23) - modulos Python que faltavam (arrow/unidecode/simplejson/requests)
 # empacotados no APK; sem eles os scripts da skin morriam no boot (logs do Kodi).
 # (historico) rodada 14 - cards em grade para as 6 categorias de VOD, filtros de ordenacao, icones das categorias e notificacoes SMARTEDTV.
 name: Build SMARTED-TV release APK
