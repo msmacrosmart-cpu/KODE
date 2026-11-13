@@ -36,6 +36,8 @@ on:
     paths:
       - .github/workflows/smartedtv-release-leve.yml
       - tools/kodi/recolor-skin.py
+      - tools/kodi/repack-skins.py
+      - tools/kodi/diag-base.py
 
 permissions:
   contents: write
