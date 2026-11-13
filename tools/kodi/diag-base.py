@@ -34,6 +34,23 @@ with zipfile.ZipFile(apk) as z:
         print(f"  versionCode 2104000: {man.count(c)} ocorrência(s)")
         # se a versão não estiver literalmente no manifesto, o build anterior
         # não gravou o versionName como string do pool
+        # Onde o versionName realmente mora? O Gradle referencia
+        # @string/xbmc_version; o texto pode estar em resources.arsc ou em
+        # res/values/strings.xml compilado.
+        achados_arsc = 0
+        if "resources.arsc" in nomes:
+            arsc = z.read("resources.arsc")
+            achados_arsc = arsc.count(v) + arsc.count(b"21.4.0")
+            print(f"  versionName no resources.arsc: {achados_arsc} ocorrência(s) "
+                  f"({len(arsc)} bytes)")
+        em_res = []
+        for nome in nomes:
+            if nome.startswith("res/") and nome.endswith(".xml"):
+                dados = z.read(nome)
+                if dados.count(v) or dados.count(b"21.4.0"):
+                    em_res.append(nome)
+        print(f"  versionName em res/*.xml: {em_res[:5] or 'nenhum'}")
+
         if man.count(v) != 1:
             achados = [t.decode("utf-16-le", "ignore") for t in
                        __import__("re").findall(rb"(?:[\x20-\x7e]\x00){4,}", man)]

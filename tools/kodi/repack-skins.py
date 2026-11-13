@@ -216,22 +216,43 @@ def main() -> int:
             raise SystemExit(f"versionCode {args.de_code} aparece {binm.count(ca)}x no manifesto")
         novos["AndroidManifest.xml"] = binm
 
-        if "resources.arsc" in nomes:
-            arsc = src.read("resources.arsc")
-            # strings UTF-16 contam o tamanho em unidades; trocar por string de
-            # mesmo comprimento mantém todos os offsets válidos.
-            if len(va) == len(vn):
-                if arsc.count(va) == 1:
-                    arsc = arsc.replace(va, vn)
-                    trocas_versao.append("versionName (resources.arsc)")
-                elif arsc.count(va) > 1:
-                    raise SystemExit(f"versionName {args.de_version} aparece {arsc.count(va)}x no arsc")
-                # versão pode aparecer em UTF-8 em alguns builds
-                u8a, u8n = args.de_version.encode(), args.para_version.encode()
-                if arsc.count(u8a) == 1 and len(u8a) == len(u8n):
-                    arsc = arsc.replace(u8a, u8n)
-                    trocas_versao.append("versionName utf-8 (resources.arsc)")
-                novos["resources.arsc"] = arsc
+        # versionName: procurar no resources.arsc e, se não estiver lá, nos
+        # arquivos de strings compilados de res/ (o AAPT2 pode manter o valor
+        # em res/values/strings.xml compilado em vez do pool global).
+        if not any("versionName" in t for t in trocas_versao):
+            alvos_arsc = [n for n in nomes if n == "resources.arsc"]
+            for nome in alvos_arsc:
+                bruto = src.read(nome)
+                for codificacao, rotulo in (("utf-16-le", "utf-16"),
+                                            ("utf-8", "utf-8")):
+                    try:
+                        alvo = args.de_version.encode(codificacao)
+                        novo_ = args.para_version.encode(codificacao)
+                    except UnicodeEncodeError:
+                        continue
+                    if len(alvo) != len(novo_):
+                        continue
+                    ocorrencias = bruto.count(alvo)
+                    if ocorrencias == 1:
+                        bruto = bruto.replace(alvo, novo_)
+                        trocas_versao.append(f"versionName {rotulo} ({nome})")
+                        break
+                    if ocorrencias > 1:
+                        raise SystemExit(
+                            f"versionName {args.de_version} aparece {ocorrencias}x em {nome}")
+                novos[nome] = bruto
+
+        if not any("versionName" in t for t in trocas_versao):
+            # último recurso: varrer todos os arquivos de recursos textuais
+            candidatos = [n for n in nomes
+                          if n.startswith("res/") and n.endswith(".xml")]
+            for nome in candidatos:
+                bruto = src.read(nome)
+                alvo = args.de_version.encode("utf-16-le")
+                if bruto.count(alvo) == 1:
+                    novos[nome] = bruto.replace(alvo, args.para_version.encode("utf-16-le"))
+                    trocas_versao.append(f"versionName utf-16 ({nome})")
+                    break
 
         if not trocas_versao:
             raise SystemExit(
