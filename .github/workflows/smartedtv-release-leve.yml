@@ -97,6 +97,9 @@ jobs:
       - name: 5. Montar o APK (Bingie + Estuary monocromaticos)
         run: |
           set -euo pipefail
+          echo "== diagnostico da base =="
+          python3 tools/kodi/diag-base.py "$RUNNER_TEMP/base/$BASE_APK"
+
           python3 tools/kodi/repack-skins.py \
             "$RUNNER_TEMP/base/$BASE_APK" "$RUNNER_TEMP/novo.apk" \
             --bingie "$RUNNER_TEMP/extra" \
