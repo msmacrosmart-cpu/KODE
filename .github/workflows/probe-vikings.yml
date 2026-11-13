@@ -4,6 +4,9 @@ name: Sonda Vikings Repo (diagnostico)
 # e o que existe dentro do zip do repositório. Não publica nada.
 on:
   workflow_dispatch:
+  push:
+    branches: [arena/7dedf371-kode]
+    paths: [.github/workflows/probe-vikings.yml]
 
 jobs:
   sonda:
