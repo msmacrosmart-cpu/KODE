@@ -256,12 +256,17 @@ def main() -> int:
 
         if not trocas_versao:
             raise SystemExit(
-                "versao nao encontrada: nem no manifesto nem no resources.arsc "
-                f"({args.de_version}/{args.de_code})")
+                "versionCode nao encontrado no AndroidManifest "
+                f"({args.de_code})")
         print("  versao trocada: " + ", ".join(trocas_versao))
         if not any("versionName" in t for t in trocas_versao):
-            print("  ATENCAO: versionName nao alterado (só o code subiu); "
-                  "o nome exibido continua " + args.de_version)
+            # Neste APK o Gradle nao materializa o versionName como string: o
+            # resources.arsc tem apenas 28 KB e nao contem o valor. Nao e falha:
+            # o que o Android usa para PERMITIR ATUALIZAR e o versionCode, e
+            # esse foi alterado. O nome exibido continua o da base.
+            print("  AVISO: versionName nao alterado (nao existe como string "
+                  "neste APK); versionCode subiu, que e o que governa a "
+                  "atualizacao. Nome exibido continua " + args.de_version)
 
         # ------------------------------------------------------- escrever
         args.saida.parent.mkdir(parents=True, exist_ok=True)

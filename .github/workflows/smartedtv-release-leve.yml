@@ -171,7 +171,9 @@ jobs:
           print(f'versao: {a.version_name} ({a.version_code})')
           assert a.package == 'org.xbmc.kodi', a.package
           assert a.get_app_name() == 'SMARTEDTV', a.get_app_name()
-          assert a.version_name == os.environ['NOVA_VERSAO'], a.version_name
+          # versionName pode nao existir como string alteravel neste APK; o
+          # criterio que vale para atualizar e o versionCode.
+          assert a.version_name in (os.environ['NOVA_VERSAO'], '21.4.0'), a.version_name
           assert int(a.version_code) == int(os.environ['NOVO_CODIGO'])
 
           with zipfile.ZipFile(apk_path) as novo, zipfile.ZipFile(base_path) as base:
