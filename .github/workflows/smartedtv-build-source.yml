@@ -115,13 +115,24 @@ jobs:
           mkdir -p "$RUNNER_TEMP/lang"
           cp -r "$RUNNER_TEMP/res/resource.language.pt_br" "$RUNNER_TEMP/lang/"
 
+          # Skin Bingie Mod + dependências (não versionadas: vêm do repo oficial)
+          python3 tools/kodi/fetch-bingie-addons.py "$RUNNER_TEMP/bingie"
+
           python3 smartedtv/tools/patch-source.py "$RUNNER_TEMP/kodi" \
             --brand-dir smartedtv/out \
-            --language-addon "$RUNNER_TEMP/lang/resource.language.pt_br"
+            --language-addon "$RUNNER_TEMP/lang/resource.language.pt_br" \
+            --bingie-dir "$RUNNER_TEMP/bingie"
           grep -q 'app_name">SMARTEDTV<' "$RUNNER_TEMP/kodi/tools/android/packaging/xbmc/strings.xml.in"
           grep -q '^APP_NAME Kodi' "$RUNNER_TEMP/kodi/version.txt"
           grep -q '^APP_PACKAGE org.xbmc.kodi' "$RUNNER_TEMP/kodi/version.txt"
-          echo "identidade aplicada; APP_NAME e APP_PACKAGE preservados"
+          # paleta preto/branco/cinza no Estuary
+          grep -q 'FFB3B3B3' "$RUNNER_TEMP/kodi/addons/skin.estuary/colors/defaults.xml"
+          ! grep -q 'FF12A0C7' "$RUNNER_TEMP/kodi/addons/skin.estuary/colors/defaults.xml"
+          # Bingie como skin padrão
+          grep -q '<default>skin.titan.bingie.mod</default>' "$RUNNER_TEMP/kodi/system/settings/settings.xml"
+          test -d "$RUNNER_TEMP/kodi/addons/skin.titan.bingie.mod"
+          test -d "$RUNNER_TEMP/kodi/addons/skin.estuary"
+          echo "identidade + paleta + Bingie padrão aplicados"
 
       - name: 7a. Cache das dependências
         # As dependências cruzadas (ffmpeg, python, openssl...) são a maior parte

@@ -35,7 +35,6 @@ FORBIDDEN_ADDONS = (
     "skin.novatv",
     "skin.estilo.personalizado",
     "skin.smartedtv",
-    "skin.titan",
     "service.smarted.bootstrap",
     "resource.uisounds.silencio",
 )
@@ -177,8 +176,14 @@ def main() -> int:
         report.check(not found, "nenhum add-on proibido embutido", ", ".join(found) or "limpo")
 
         skins = sorted(a for a in addon_dirs if a.startswith("skin."))
-        report.check(skins == ["skin.estuary"], "somente a skin Estuary original",
+        # A Bingie Mod é a skin padrão pedida; o Estuary fica no APK como
+        # fallback do Kodi (Application.cpp: se a skin padrão falhar, carrega o
+        # <default> do settings.xml). Nenhuma outra skin é permitida.
+        esperadas = ["skin.estuary", "skin.titan.bingie.mod"]
+        report.check(skins == esperadas,
+                     "skins: Bingie Mod (padrão) + Estuary (fallback), nada além",
                      ", ".join(skins))
+        report.check("skin.novatv" not in skins, "skin Nova TV ausente")
         report.check("assets/addons/repository.xbmc.org/addon.xml" in names,
                      "repositório nativo mantido (instalação de add-ons pelo usuário)")
         report.check(not any("brazuka" in n.lower() for n in names),

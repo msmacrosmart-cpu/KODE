@@ -388,6 +388,62 @@ def patch_skin_description(src: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# 7b. Paleta do Estuary: preto, branco e cinza
+# ---------------------------------------------------------------------------
+# O Estuary centraliza as cores em addons/skin.estuary/colors/defaults.xml, usado
+# via colordiffuse= em 350+ pontos dos layouts. Recolorir SÓ esse arquivo muda a
+# skin inteira sem tocar em layout, textura ou navegação.
+#
+# Nomes e valores de alfa são preservados; apenas os tons. O azul do Estuary
+# (FF0E597E) vira grafite, o verde-água (FF12A0C7) vira cinza claro de foco e o
+# âmbar de seleção (FFFFB70F) vira branco.
+ESTUARY_PALETTE = {
+    "primary_background":   "FF1A1A1A",  # fundo principal: grafite escuro
+    "secondary_background": "332A2A2A",  # sobreposição: cinza translúcido
+    "dialog_tint":          "FF1A2123",  # mantido (já é quase preto)
+    "background":           "FF000000",  # preto puro
+    "bg_image":             "FF8C8C8C",  # cinza neutro
+    "bg_overlay":           "30000000",  # véu preto sobre fanart
+    "black":                "FF000000",
+    "white":                "FFEDEDED",  # branco levemente suavizado
+    "grey":                 "FF9E9E9E",
+    "blue":                 "FFBFBFBF",  # não usado como azul: cinza claro
+    "red":                  "FF8A8A8A",  # sem vermelho: cinza
+    "button_focus":         "FFB3B3B3",  # foco: cinza claro (era verde-água)
+    "button_alt_focus":     "80B3B3B3",
+    "text_shadow":          "22000000",
+    "border_alpha":         "60FFFFFF",
+    "disabled":             "40FFFFFF",
+    "selected":             "FFFFFFFF",  # seleção: branco (era âmbar)
+    "invalid":              "FF6E6E6E",
+}
+
+
+def patch_estuary_palette(src: Path) -> None:
+    """Converte o Estuary para a paleta preto/branco/cinza."""
+    path = src / "addons/skin.estuary/colors/defaults.xml"
+    if not path.is_file():
+        raise PatchError(f"arquivo de cores do Estuary ausente: {path}")
+    text = read(path)
+    changed = 0
+    for name, value in ESTUARY_PALETTE.items():
+        pattern = re.compile(rf'(<color name="{re.escape(name)}">)([0-9A-Fa-f]{{8}})(</color>)')
+        new_text, count = pattern.subn(rf'\g<1>{value}\g<3>', text)
+        if count == 0:
+            raise PatchError(f"cor '{name}' não encontrada em {path.name}")
+        text = new_text
+        changed += count
+    # nenhuma cor fora da paleta pode sobrar com tom saturado
+    for leftover in re.findall(r'<color name="([^"]+)">([0-9A-Fa-f]{8})</color>', text):
+        nome, rgba = leftover
+        r, g, b = int(rgba[2:4], 16), int(rgba[4:6], 16), int(rgba[6:8], 16)
+        if max(r, g, b) - min(r, g, b) > 24:
+            raise PatchError(f"cor saturada remanescente: {nome}={rgba}")
+    write(path, text)
+    print(f"  ok  skin.estuary/colors/defaults.xml: {changed} cores para preto/branco/cinza")
+
+
+# ---------------------------------------------------------------------------
 # 8. Recursos visuais oficiais
 # ---------------------------------------------------------------------------
 MEDIA_FILES = (
@@ -447,6 +503,78 @@ def install_language(src: Path, addon_dir: Path) -> None:
         print("  ok  cmake/installdata/common/addons.txt: pt_BR entra no APK")
 
 
+def install_bingie(src: Path, addons_dir: Path) -> None:
+    """Embarca a skin Bingie Mod + dependências e a define como skin padrão.
+
+    O Kodi carrega ``lookandfeel.skin`` na inicialização; se a skin falhar, ele
+    cai no ``<default>`` do settings.xml (Application.cpp:756). Por isso:
+      * a Bingie vira o valor PADRÃO, para já abrir aplicada na primeira execução;
+      * o Estuary continua no APK, como rede de segurança se a Bingie quebrar.
+    """
+    target_skin = src / "addons/skin.titan.bingie.mod"
+    if not (addons_dir / "skin.titan.bingie.mod/addon.xml").is_file():
+        raise PatchError(f"skin Bingie ausente em {addons_dir}")
+
+    copiados = []
+    for origem in sorted(addons_dir.iterdir()):
+        if not origem.is_dir():
+            raise PatchError(f"entrada inesperada no diretório de addons: {origem}")
+        destino = src / "addons" / origem.name
+        if destino.exists():
+            raise PatchError(f"addon já presente no fonte: {origem.name}")
+        shutil.copytree(origem, destino)
+        copiados.append(origem.name)
+
+    # manifesto de instalação: cada add-on precisa entrar no APK
+    manifest = src / "cmake/installdata/common/addons.txt"
+    text = read(manifest)
+    entradas = [f"addons/{nome}/*" for nome in copiados]
+    linhas = text.splitlines()
+    for entrada in entradas:
+        if entrada in linhas:
+            continue
+        posicao = next(
+            (i for i, linha in enumerate(linhas)
+             if linha.startswith("addons/") and linha > entrada),
+            len(linhas),
+        )
+        linhas.insert(posicao, entrada)
+    write(manifest, "\n".join(linhas) + "\n")
+    print(f"  ok  {len(copiados)} add-ons da Bingie embarcados ({', '.join(copiados[:3])}...)")
+
+    # skin padrão
+    settings = src / "system/settings/settings.xml"
+    text = read(settings)
+    antigo = "<setting id=\"lookandfeel.skin\" type=\"addon\" label=\"166\" help=\"36103\">"
+    if antigo not in text:
+        raise PatchError("settings.xml: seção lookandfeel.skin não encontrada")
+    trecho_ini = text.index(antigo)
+    trecho_fim = text.index("</setting>", trecho_ini)
+    bloco = text[trecho_ini:trecho_fim]
+    if "<default>skin.estuary</default>" not in bloco:
+        raise PatchError("settings.xml: default da skin não é skin.estuary")
+    bloco_novo = bloco.replace("<default>skin.estuary</default>",
+                               "<default>skin.titan.bingie.mod</default>")
+    text = text[:trecho_ini] + bloco_novo + text[trecho_fim:]
+    write(settings, text)
+    print("  ok  settings.xml: skin padrão = skin.titan.bingie.mod (Estuary fica como fallback)")
+
+    # registro: a skin precisa constar no addon-manifest para ser ativável
+    addon_manifest = src / "system/addon-manifest.xml"
+    text = read(addon_manifest)
+    if "skin.titan.bingie.mod" not in text:
+        linha = "  <addon>skin.titan.bingie.mod</addon>"
+        marcador = "  <addon>skin.estuary</addon>"
+        if marcador in text:
+            text = text.replace(marcador, marcador + "\n" + linha, 1)
+        else:
+            text = text.replace("</addons>", linha + "\n</addons>", 1)
+        write(addon_manifest, text)
+        print("  ok  system/addon-manifest.xml: skin Bingie registrada")
+    else:
+        print("  --  system/addon-manifest.xml: skin Bingie já registrada")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -456,6 +584,8 @@ def main() -> int:
                         help="saída de make-brand-assets.py")
     parser.add_argument("--language-addon", type=Path, default=None,
                         help="pasta resource.language.pt_br do repo oficial (opcional)")
+    parser.add_argument("--bingie-dir", type=Path, default=None,
+                        help="addons da skin Bingie já extraídos (tools/kodi/fetch-bingie-addons.py)")
     args = parser.parse_args()
 
     src: Path = args.source.resolve()
@@ -472,9 +602,12 @@ def main() -> int:
         patch_device_name(src)
         patch_product_strings(src)
         patch_skin_description(src)
+        patch_estuary_palette(src)
         patch_media(src, args.brand_dir.resolve())
         if args.language_addon:
             install_language(src, args.language_addon.resolve())
+        if args.bingie_dir:
+            install_bingie(src, args.bingie_dir.resolve())
     except PatchError as error:
         print(f"\nERRO: {error}", file=sys.stderr)
         return 1
