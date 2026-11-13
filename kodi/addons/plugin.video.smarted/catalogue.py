@@ -91,13 +91,13 @@ def _log_hero(result, bruto):
 
         nivel = getattr(xbmc, 'LOGINFO', 20)
         chaves = sorted(bruto[0].keys()) if bruto and isinstance(bruto[0], dict) else []
-        xbmc.log('SMARTED-TV: lancamentos bruto=%d plot=%d genre=%d dateadded=%d '
+        xbmc.log('SMARTEDTV: lancamentos bruto=%d plot=%d genre=%d dateadded=%d '
                  'premiered=%d rating=%d year=%d chaves=%s'
                  % (len(bruto), tem('plot'), tem('genre'), tem('dateadded'),
                     tem('premiered'), tem('rating'), tem('year'), chaves), nivel)
         if result:
             primeiro = result[0]
-            xbmc.log('SMARTED-TV: lancamentos primeiro=%r ficha=(plot=%d genre=%d nota=%s '
+            xbmc.log('SMARTEDTV: lancamentos primeiro=%r ficha=(plot=%d genre=%d nota=%s '
                      'data=%s ano=%s dur=%s)'
                      % (primeiro['title'], len(primeiro['plot']), len(primeiro['genre']),
                         primeiro['rating'], primeiro['premiered'], primeiro['year'],

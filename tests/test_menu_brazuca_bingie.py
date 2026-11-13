@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Menu superior da skin SMARTEDTV (base Bingie) integrado ao Brazuca Play."""
 import importlib.util
+import re
 import os
 import pathlib
 import sys
@@ -109,8 +110,8 @@ class BuildOverlayTest(unittest.TestCase):
     def test_workflow_publica_versao_com_overlay(self):
         fluxo = FLUXO.read_text(encoding='utf-8')
         self.assertIn('--skin-overlay kodi/skin.smartedtv.bingie', fluxo)
-        self.assertIn('--to-version 1.0.55', fluxo)
-        self.assertIn('v1.0.55-smarted-arm64', fluxo)
+        versao = re.search(r'--to-version (\d+\.\d+\.\d+)', fluxo).group(1)
+        self.assertIn('v%s-smarted-arm64' % versao, fluxo)
 
 
 class BootstrapMenuTest(unittest.TestCase):

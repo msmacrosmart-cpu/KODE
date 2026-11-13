@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build an UNSIGNED release candidate from the published SMARTED-TV APK.
+"""Build an UNSIGNED release candidate from the published SMARTEDTV APK.
 
 ZIP-level update only (no apktool decode): bumps versionName/versionCode,
 replaces assets/addons/skin.novatv/ wholesale with the SMARTEDTV skin from
@@ -21,7 +21,13 @@ IMPORTANT (boot fix v1.0.25 -> v1.0.26):
   skin.novatv addon so the first boot activates it without profile failure.
 
 Usage:
-    python3 tools/kodi/build-release-apk.py [--from-version V] [--to-version V] [--to-code N] BASE.apk OUTPUT.apk
+    python3 tools/kodi/build-release-apk.py [--from-version V] [--to-version V] \
+        [--to-code N] [--app-label SMARTEDTV] BASE.apk OUTPUT.apk
+
+``--app-label`` troca o nome exibido do aplicativo no string pool do
+``resources.arsc`` (o Android le o rotulo dali, nao do manifesto). A troca e
+feita por ``patch-resources-label.py``, que remonta o pool inteiro e falha se o
+arquivo nao estiver no formato esperado.
 """
 import hashlib
 import re
@@ -39,6 +45,19 @@ BRIDGE = ROOT / "kodi" / "addons" / "plugin.video.smarted"
 BRIDGE_ADDONS = [BRIDGE, ROOT / "kodi" / "addons" / "service.smarted.bootstrap",
                  ROOT / "kodi" / "addons" / "resource.uisounds.silencio"]
 SIG = re.compile(r"^META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC))$", re.I)
+
+
+def carregar_patcher():
+    """Carrega o trocador de texto do resources.arsc (mesma pasta)."""
+    import importlib.util
+
+    caminho = Path(__file__).resolve().parent / "patch-resources-label.py"
+    if not caminho.is_file():
+        raise SystemExit(f"nao encontrei {caminho}")
+    spec = importlib.util.spec_from_file_location("patch_resources", caminho)
+    modulo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(modulo)
+    return modulo
 MANIFEST = "assets/system/addon-manifest.xml"
 
 # Id that the launcher dex applies as default skin at first boot.
@@ -106,6 +125,7 @@ def main():
     extra_addons = []
     default_skin = None
     skin_overlay = None
+    app_label = None
     while len(argv) >= 2 and argv[0].startswith("--"):
         opt = argv.pop(0)
         if opt == "--from-version":
@@ -122,6 +142,9 @@ def main():
             # pasta com arquivos que substituem parte da skin padrao (ex.: menu
             # superior do Bingie apontando para as rotas do Brazuca Play)
             skin_overlay = Path(argv.pop(0))
+        elif opt == "--app-label":
+            # nome exibido no Android (resources.arsc), ex.: SMARTEDTV
+            app_label = argv.pop(0)
         elif opt == "--default-skin":
             # skin de terceiro (ex.: Bingie) que passa a ser a skin padrao do APK,
             # renomeada para SMARTEDTV
@@ -129,7 +152,7 @@ def main():
         else:
             raise SystemExit(f"Unknown option: {opt}")
     if len(argv) != 2:
-        raise SystemExit("Usage: build-release-apk.py [--from-version V] [--to-version V] [--to-code N] [--extra-addons DIR] [--default-skin DIR] [--skin-overlay DIR] BASE.apk OUTPUT.apk")
+        raise SystemExit("Usage: build-release-apk.py [--from-version V] [--to-version V] [--to-code N] [--extra-addons DIR] [--default-skin DIR] [--skin-overlay DIR] [--app-label NOME] BASE.apk OUTPUT.apk")
     base, out = Path(argv[0]), Path(argv[1])
     if base.resolve() == out.resolve():
         raise SystemExit("Input and output must differ")
@@ -241,6 +264,14 @@ def main():
             "AndroidManifest.xml": manifest_bin,
             MANIFEST: addon_manifest,
         }
+        if app_label:
+            if "resources.arsc" not in names:
+                raise SystemExit("APK sem resources.arsc: nao da para trocar o nome exibido")
+            patcher = carregar_patcher()
+            arsc, trocas = patcher.principal(src.read("resources.arsc"), "SMARTED-TV", app_label)
+            replacements["resources.arsc"] = arsc
+            print(f"Nome exibido: SMARTED-TV -> {app_label} "
+                  f"({trocas} ocorrencia(s) no resources.arsc)")
         for arcname, data in {**skin_files, **bridge_files}.items():
             replacements[arcname] = data if isinstance(data, (bytes, bytearray)) else Path(data).read_bytes()
 

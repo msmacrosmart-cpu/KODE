@@ -5,9 +5,6 @@ name: Sonda Vikings Repo (diagnostico)
 # resultado em .github/vikings-probe.txt (commit nesta mesma branch).
 on:
   workflow_dispatch:
-  push:
-    branches: [arena/7dedf371-kode]
-    paths: [.github/workflows/probe-vikings.yml]
 
 permissions:
   contents: write

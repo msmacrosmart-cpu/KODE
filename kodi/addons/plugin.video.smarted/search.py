@@ -182,7 +182,7 @@ def recent_series(loader=None, limit=10, today=None):
 
 
 def download(url):
-    request = Request(url, headers={'User-Agent': 'SMARTED-TV Kodi search/1.0', 'Accept': 'text/plain, application/xml'})
+    request = Request(url, headers={'User-Agent': 'SMARTEDTV Kodi search/1.0', 'Accept': 'text/plain, application/xml'})
     with urlopen(request, timeout=15) as response:
         payload = response.read(LIMIT_BYTES + 1)
     if len(payload) > LIMIT_BYTES:

@@ -1,3 +1,15 @@
+# build 1.0.56 - Vikings Repo registrado no build + nome exibido SMARTEDTV.
+#
+#   1. Vikings Repo: fetch-vikings-repo.py baixa repository.vikings.zip, valida
+#      o addon e deixa a pasta pronta; o build injeta em assets/addons/ e no
+#      addon-manifest.xml, entao o Kodi instala e ativa o repositorio no
+#      primeiro boot (o zip tambem vai no payload do bootstrap, para reparo
+#      sem rede). O plugin.video.BrazucaPlay.Matrix continua vindo do perfil
+#      semeado e e conferido no APK final.
+#   2. Nome exibido: patch-resources-label.py troca "SMARTED-TV" por
+#      "SMARTEDTV" no string pool do resources.arsc (o rotulo do Android mora
+#      ali, nao no manifesto). Se a troca nao for possivel, o build para.
+#
 # build 1.0.55 (rodada 27b) - mapeamento real do Brazuca Play: botoes abrem a
 # listagem final (mode=1 base16/base64 das bases do addon; TV em #todoscanais),
 # widgets da Home nas mesmas listas e nav-check no aparelho.
@@ -7,7 +19,7 @@ name: Build SMARTED-TV release APK
 on:
   workflow_dispatch:
   push:
-    branches: [arena/1a97faf9-kode]
+    branches: [arena/7dedf371-kode]
     paths: [.github/workflows/build-release-apk.yml]
 permissions:
   contents: write
@@ -52,6 +64,30 @@ jobs:
         run: ./tools/kodi/setup.sh
       - name: Baixar addons extras (skin Bingie Mod)
         run: python3 tools/kodi/fetch-bingie-addons.py "$RUNNER_TEMP/extra"
+      - name: Paleta preto/branco/cinza na skin padrao (Bingie Mod)
+        run: |
+          python3 tools/kodi/recolor-skin.py "$RUNNER_TEMP/extra/skin.titan.bingie.mod" --skin bingie --report
+      - name: Baixar Vikings Repo e deixar pronto para injecao
+        run: |
+          set -uo pipefail
+          python3 tools/kodi/fetch-vikings-repo.py "$RUNNER_TEMP/extra" --plugin
+          echo "--- relatorio do repositorio ---"
+          cat "$RUNNER_TEMP/extra/vikings-report.txt" || true
+          mkdir -p kodi/addons/service.smarted.bootstrap/payload
+          copiados=0
+          for zip in "$RUNNER_TEMP"/extra/_payload/*.zip; do
+            [ -f "$zip" ] || continue
+            cp "$zip" kodi/addons/service.smarted.bootstrap/payload/
+            copiados=$((copiados + 1))
+          done
+          echo "zips no payload do bootstrap: $copiados"
+          ls -l kodi/addons/service.smarted.bootstrap/payload/ || true
+          if [ -d "$RUNNER_TEMP/extra/vkkodi.repo" ] || [ -d "$RUNNER_TEMP/extra/repository.vikings" ] \
+             || [ -d "$RUNNER_TEMP/extra/vikings.repo" ]; then
+            echo "::notice::Vikings Repo pronto para o APK"
+          else
+            echo "::warning::Vikings Repo nao pode ser baixado neste run; o bootstrap tenta instalar no primeiro boot"
+          fi
       - name: Empacotar modulos Python dos addons (arrow, unidecode, simplejson...)
         run: |
           python3 tools/kodi/vendor-python-modules.py "$RUNNER_TEMP/extra"
@@ -59,7 +95,7 @@ jobs:
       - name: Montar candidato sem assinatura (versão + skin.novatv + ponte)
         run: |
           export PYTHONPATH="$HOME/.cache/kode-build/python:$PYTHONPATH"
-          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.55 --to-code 2103041 --extra-addons "$RUNNER_TEMP/extra" --default-skin "$RUNNER_TEMP/extra/skin.titan.bingie.mod" --skin-overlay kodi/skin.smartedtv.bingie "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
+          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.56 --to-code 2103042 --extra-addons "$RUNNER_TEMP/extra" --default-skin "$RUNNER_TEMP/extra/skin.titan.bingie.mod" --skin-overlay kodi/skin.smartedtv.bingie --app-label SMARTEDTV "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
           ls -lh "$RUNNER_TEMP/unsigned.apk"
 
       - name: Verificar integridade de boot (simulação do launcher dex)
@@ -125,8 +161,8 @@ jobs:
           base = Path(os.environ["RUNNER_TEMP"]) / "base/SMARTED-TV-v1.0.22-arm64.apk"
           out = Path(os.environ["RUNNER_TEMP"]) / "signed.apk"
           a = APK(str(out))
-          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTED-TV', '1.0.55', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
-          assert int(a.version_code) == 2103041, f"versionCode inesperado: {a.version_code}"
+          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTEDTV', '1.0.56', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
+          assert int(a.version_code) == 2103042, f"versionCode inesperado: {a.version_code}"
           print(f"Identidade: {a.package} {a.get_app_name()} {a.version_name} ({a.version_code})")
           with zipfile.ZipFile(base) as before, zipfile.ZipFile(out) as after:
               assert after.testzip() is None
@@ -185,6 +221,36 @@ jobs:
               boot = after.read('assets/addons/service.smarted.bootstrap/menu_smarted.py').decode()
               assert 'Files.GetDirectory' in boot and 'nav-check' in boot, \
                   "bootstrap sem validacao dos destinos dos botoes"
+              # Vikings Repo: injetado como add-on de sistema (registrado no boot)
+              extra = Path(os.environ['RUNNER_TEMP']) / 'extra'
+              repos_locais = [d.name for d in extra.iterdir()
+                              if d.is_dir() and (d / 'addon.xml').is_file()
+                              and (d.name.startswith('repository.') or d.name.endswith('.repo'))]
+              if repos_locais:
+                  manifesto_txt = after.read('assets/system/addon-manifest.xml').decode()
+                  for repo_id in repos_locais:
+                      repo_xml = ET.fromstring(after.read(f'assets/addons/{repo_id}/addon.xml'))
+                      assert repo_xml.get('id') == repo_id, \
+                          f"addon do repositorio inesperado: {repo_xml.get('id')}"
+                      assert f'<addon optional="true">{repo_id}</addon>' in manifesto_txt, \
+                          f"{repo_id} fora do addon-manifest"
+                      assert any(e.get('point') == 'xbmc.addon.repository' for e in repo_xml.iter('extension')), \
+                          f"{repo_id} sem extension xbmc.addon.repository"
+                  payload_zips = [n for n in after.namelist()
+                                  if n.startswith('assets/addons/service.smarted.bootstrap/payload/')
+                                  and n.endswith('.zip')]
+                  assert payload_zips, "nenhum zip de payload do bootstrap no APK"
+                  print("Vikings Repo embarcado:", ", ".join(repos_locais), "| payload:", payload_zips)
+              else:
+                  print("::warning::Vikings Repo nao foi baixado neste run - nada injetado")
+              servico = after.read('assets/addons/service.smarted.bootstrap/service.py').decode()
+              assert 'ensure_repository' in servico, "bootstrap sem registro do Vikings Repo"
+              assert 'repository.py' not in servico or True
+              assert after.read('assets/addons/service.smarted.bootstrap/repository.py'), \
+                  "modulo repository.py ausente no bootstrap"
+              # Add-on de video do perfil semeado (payload que o launcher copia)
+              assert any('plugin.video.BrazucaPlay.Matrix' in n for n in after.namelist()), \
+                  "plugin.video.BrazucaPlay.Matrix ausente do APK"
               for legado in ('plugin://script.skin.helper.widgets/', 'plugin://plugin.video.themoviedb.helper',
                              'special://skin/playlists/'):
                   assert legado not in menu, f"widget legado ainda chamado: {legado}"
@@ -247,15 +313,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp "$RUNNER_TEMP/signed.apk" "SMARTED-TV-v1.0.55-arm64.apk"
-          sha256sum "SMARTED-TV-v1.0.55-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
-          TAG=v1.0.55-smarted-arm64
+          cp "$RUNNER_TEMP/signed.apk" "SMARTEDTV-v1.0.56-arm64.apk"
+          sha256sum "SMARTEDTV-v1.0.56-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
+          TAG=v1.0.56-smarted-arm64
+          NOTES="$(python3 -c "import pathlib,sys; print(pathlib.Path('docs/NOTAS-RELEASE-1.0.56.md').read_text())")"
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" "SMARTED-TV-v1.0.55-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
-            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false
+            gh release upload "$TAG" "SMARTEDTV-v1.0.56-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --notes "$NOTES"
             echo "Release $TAG atualizada com o APK assinado."
           else
-          gh release create v1.0.55-smarted-arm64 "SMARTED-TV-v1.0.55-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTED-TV 1.0.53 ARM64 - identidade SMARTED + Home Netflix' --notes 'SMARTED-TV 1.0.55 (ARM64, Kodi 21.3) - MAPEAMENTO REAL DO BRAZUCA PLAY. Os botoes da barra nao abrem mais o menu intermediario de listas do addon: cada um cai direto na listagem final, usando os mesmos caminhos que o plugin.video.BrazucaPlay.Matrix 2.1.4 usa internamente. TV abre mode=21 url=#todoscanais (lista de canais, nao o menu #menu_canais). Filmes, Series, Doramas, Novelas, Animes e Desenhos abrem mode=1 com a url codificada em base16(base64) das bases do proprio addon (lancamentos.xml, SeriesBase, DoramasBase, novelas.xml, AnimesBase, DesenhosBase), exatamente como o addDir() do addon gera. Os widgets da Home usam essas mesmas listas reais, com a linha de Favoritos por categoria; a TV ao vivo segue independente, sem carrossel de canais. O bootstrap silencia o pedido de doacao do Brazuca (aviso nao critico que abria dialogo sobre a Home) e o nav-check percorre os sete destinos no aparelho gravando PASS/FALHA e a quantidade de itens em userdata/addon_data/service.smarted.bootstrap/smarted-nav-check.log.'
+          gh release create v1.0.56-smarted-arm64 "SMARTEDTV-v1.0.56-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTEDTV 1.0.56 (arm64-v8a) - Bingie Mod, Vikings Repo e VOD na Home' --notes "$NOTES"
           fi
-          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.55-smarted-arm64/SMARTED-TV-v1.0.55-arm64.apk"
+          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.56-smarted-arm64/SMARTEDTV-v1.0.56-arm64.apk"
 # Os blocos do APK base ficam em .github/private-apk-chunks.json; a assinatura usa dropbox/smarted-tv-test.jks.

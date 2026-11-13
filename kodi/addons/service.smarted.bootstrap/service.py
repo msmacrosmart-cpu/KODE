@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Serviço de boot do SMARTED-TV.
+"""Serviço de boot do SMARTEDTV.
 
 Roda no início do Kodi e garante que o Brazuca Play esteja instalado,
 habilitado e com o bootstrap interno pronto antes de qualquer tela abrir.
@@ -18,6 +18,7 @@ import repair
 from favourites import ensure_favourites
 from performance import ensure_performance
 from menu_smarted import garantir_menu, rodar_validacao_navegacao, silenciar_avisos_brazuca
+from repository import ensure_repository
 from skin_setup import ensure_home_nodes, ensure_skin, home_xml_candidates
 
 ADDON = xbmcaddon.Addon()
@@ -213,7 +214,7 @@ def rotate_hero(monitor, intervalo=HERO_ROTATION):
         # pulso que reativa o fade da arte do HERO (transicao suave)
         xbmc.executebuiltin('Skin.SetString(smarted_hero_tick,%d)' % (passo % 2))
         if passo in (1, 5) or passo % 30 == 0:
-            xbmc.log('SMARTED-TV: hero rotacao %d (%s) posicao=%d'
+            xbmc.log('SMARTEDTV: hero rotacao %d (%s) posicao=%d'
                      % (passo, modo, _posicao_hero()), getattr(xbmc, 'LOGINFO', 20))
 
 
@@ -270,6 +271,16 @@ def main():
     apply_navigation()
     garantir_menu(xbmc, log=log)
     silenciar_avisos_brazuca(log=log)
+    # Vikings Repo: registrado no build (assets/addons) ou extraido do payload;
+    # o add-on de video e conferido e, se faltar, instalado pelo repositorio.
+    repo = ensure_repository(
+        xbmcvfs.translatePath('special://home'), PAYLOAD_DIR,
+        [xbmcvfs.translatePath('special://xbmc/addons')],
+        jsonrpc=jsonrpc, execute=xbmc.executebuiltin, log=log)
+    log('vikings: repos=%s plugin=%s falhas=%s'
+        % (', '.join(repo['repos']) or 'ausente',
+           'ok' if repo['plugin'] else 'pendente',
+           ', '.join(repo['falhas']) or 'nenhuma'))
     # teste real dos botoes da barra: passa por cada pasta e registra o resultado
     navegacao = rodar_validacao_navegacao(log)
     if navegacao is not None:

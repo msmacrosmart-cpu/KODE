@@ -2,7 +2,7 @@
 
 Source of truth: ``userdata/addon_data/plugin.video.BrazucaPlay.Matrix/favorites.dat``
 — the very same file the add-on writes when you press "Adicionar aos Favoritos".
-SMARTED-TV only *reads* it, so Home never keeps a second, independent list.
+SMARTEDTV only *reads* it, so Home never keeps a second, independent list.
 
 The add-on stores::
 

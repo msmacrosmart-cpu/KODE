@@ -63,14 +63,14 @@ OPCIONAIS = {
 EMPACOTADOS = {addon_id for addon_id, _ in MODULOS}
 
 ADDON_XML = '''<?xml version="1.0" encoding="UTF-8"?>
-<addon id="{addon_id}" name="{addon_id}" version="{versao}" provider-name="SMARTED-TV">
+<addon id="{addon_id}" name="{addon_id}" version="{versao}" provider-name="SMARTEDTV">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
   </requires>
   <extension point="xbmc.python.module" library="lib"/>
   <extension point="xbmc.addon.metadata">
-    <summary lang="pt_BR">{pacote} empacotado para o SMARTED-TV</summary>
-    <description lang="pt_BR">Modulo Python {pacote} ({versao}) empacotado como addon para que a skin e os scripts do SMARTED-TV funcionem sem depender de repositorio externo.</description>
+    <summary lang="pt_BR">{pacote} empacotado para o SMARTEDTV</summary>
+    <description lang="pt_BR">Modulo Python {pacote} ({versao}) empacotado como addon para que a skin e os scripts do SMARTEDTV funcionem sem depender de repositorio externo.</description>
     <platform>all</platform>
     <license>GPL-2.0-or-later</license>
   </extension>

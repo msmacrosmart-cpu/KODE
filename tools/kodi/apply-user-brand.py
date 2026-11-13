@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply supplied SMARTED-TV artwork to an apktool-decoded 1.0.16 tree.
+"""Apply supplied SMARTEDTV artwork to an apktool-decoded 1.0.16 tree.
 
 This only edits a decoded build tree; it neither signs nor publishes an APK.
 Requires Pillow. Keep the three original images under assets/brand/source.

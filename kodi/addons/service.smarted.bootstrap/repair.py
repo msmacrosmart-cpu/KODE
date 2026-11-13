@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Reparo do perfil Kodi usado pelo SMARTED-TV.
+"""Reparo do perfil Kodi usado pelo SMARTEDTV.
 
 Objetivo: garantir que, no primeiro boot, o plugin.video.BrazucaPlay.Matrix e
 todas as dependências obrigatórias estejam instalados (pasta addons do perfil),
@@ -48,6 +48,16 @@ CLOUDREQUEST_VERSION = '1.0.0'
 
 def _log(entries, message):
     entries.append(message)
+
+
+def _log_flex(log, message):
+    """Aceita tanto lista (uso interno) quanto funcao (service/repository)."""
+    if log is None:
+        return
+    if callable(log):
+        log(message)
+    else:
+        log.append(message)
 
 
 def parse_addon_xml(path):
@@ -269,6 +279,63 @@ def install_cloudrequest(addon_path, payload_zip, log):
         return False
 
 
+def importar_pacotes_do_payload(payload_dir, packages_dir, log):
+    """Copia para ``addons/packages`` os zips de add-on que vieram no payload.
+
+    O bootstrap embarca o zip do add-on de video publicado pelo repositorio
+    (``plugin.video.BrazucaPlay.Matrix-<versao>.zip``). Quando o perfil semeado
+    nao trouxe esse pacote, ele e a fonte do reparo — a mesma que o Kodi usa
+    quando instala algo pela interface. O zip so entra se o nome combinar com o
+    id declarado dentro dele; nada de arquivo solto na pasta de pacotes.
+    """
+    copiados = []
+    if not payload_dir or not os.path.isdir(payload_dir):
+        return copiados
+    try:
+        nomes = sorted(os.listdir(payload_dir))
+    except OSError as erro:
+        _log_flex(log, 'payload ilegivel (%s)' % erro)
+        return copiados
+    for nome in nomes:
+        if not nome.lower().endswith('.zip'):
+            continue
+        origem = os.path.join(payload_dir, nome)
+        try:
+            with zipfile.ZipFile(origem) as arquivo:
+                candidatos = [n for n in arquivo.namelist()
+                              if n.endswith('addon.xml') and n.count('/') == 1]
+                if len(candidatos) != 1:
+                    continue
+                raiz = candidatos[0].split('/', 1)[0]
+                info = parse_addon_xml_texto(arquivo.read(candidatos[0]))
+            if not info or not nome.startswith(info['id'] + '-'):
+                continue
+            if info['id'].startswith('repository.') or info['id'].endswith('.repo'):
+                continue  # repositorio tem fluxo proprio (repository.py)
+            destino = os.path.join(packages_dir, nome)
+            if os.path.isfile(destino):
+                continue
+            if not os.path.isdir(packages_dir):
+                os.makedirs(packages_dir)
+            shutil.copyfile(origem, destino)
+            copiados.append(info['id'])
+            _log_flex(log, 'PACOTE %s importado do payload (%s)' % (info['id'], nome))
+        except Exception as erro:  # zip ruim, permissao, disco...
+            _log_flex(log, 'ERRO ao importar %s do payload: %s' % (nome, erro))
+    return copiados
+
+
+def parse_addon_xml_texto(bruto):
+    """Interpreta o ``addon.xml`` de dentro de um zip (bytes) sem gravar arquivo."""
+    try:
+        raiz = ElementTree.fromstring(bruto)
+    except Exception:
+        return None
+    if raiz.tag != 'addon' or not raiz.get('id'):
+        return None
+    return {'id': raiz.get('id'), 'version': raiz.get('version') or ''}
+
+
 def repair_profile(home, payload_dir, log=None):
     """Executa o reparo completo. Devolve um relatório dict.
 
@@ -295,6 +362,9 @@ def repair_profile(home, payload_dir, log=None):
         except Exception as error:
             _log(log, 'ERRO ao criar %s: %s' % (addons_dir, error))
             return report
+
+    # zips de add-on embarcados no payload viram a fonte de reparo (packages)
+    importar_pacotes_do_payload(payload_dir, packages_dir, log)
 
     seen = set()
     repaired = []

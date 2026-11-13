@@ -11,7 +11,7 @@ def main():
     if title:
         xbmcgui.Dialog().textviewer(title, plot or 'Sinopse indisponível para este título.')
     else:
-        xbmcgui.Dialog().notification('SMARTED-TV', 'Nenhum título disponível no destaque.')
+        xbmcgui.Dialog().notification('SMARTEDTV', 'Nenhum título disponível no destaque.')
 
 
 if __name__ == '__main__':

@@ -163,11 +163,11 @@ def recent_series(handle):
     try:
         results, failed = _widget_cached('recent-series', fetch_recent_series, _series_cache_ok)
     except Exception:
-        xbmc.log('SMARTED-TV: lançamentos de séries indisponíveis', xbmc.LOGWARNING)
+        xbmc.log('SMARTEDTV: lançamentos de séries indisponíveis', xbmc.LOGWARNING)
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
         return
     if failed:
-        xbmc.log('SMARTED-TV: fontes de séries indisponíveis: ' + ', '.join(failed), xbmc.LOGWARNING)
+        xbmc.log('SMARTEDTV: fontes de séries indisponíveis: ' + ', '.join(failed), xbmc.LOGWARNING)
     xbmcplugin.setContent(handle, 'tvshows')
     xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
     for result in results:
@@ -198,11 +198,11 @@ def favorites_window(handle, category):
     try:
         results = favorite_items(path, category)
     except Exception:
-        xbmc.log('SMARTED-TV: favoritos indisponiveis (%s)' % category, xbmc.LOGWARNING)
+        xbmc.log('SMARTEDTV: favoritos indisponiveis (%s)' % category, xbmc.LOGWARNING)
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
         return
     if not results:
-        xbmc.log('SMARTED-TV: sem favoritos em %s' % category, xbmc.LOGINFO)
+        xbmc.log('SMARTEDTV: sem favoritos em %s' % category, xbmc.LOGINFO)
         xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
         return
     xbmcplugin.setContent(handle, 'movies')
@@ -235,7 +235,7 @@ def channel_favorites(handle):
     try:
         results = channel_items(directory(xbmc.executeJSONRPC, brazuca(15, 'canais')))
     except Exception:
-        xbmc.log('SMARTED-TV: favoritos de canais indisponíveis', xbmc.LOGWARNING)
+        xbmc.log('SMARTEDTV: favoritos de canais indisponíveis', xbmc.LOGWARNING)
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
         return
     xbmcplugin.setContent(handle, 'videos')
@@ -305,10 +305,10 @@ def recent_movies(handle):
                                  _movie_cache_ok)[:8]
     except Exception:
         # A widget must not interrupt the Home with a dialog or leak URLs.
-        xbmc.log('SMARTED-TV: lançamentos do Brazuca indisponíveis', xbmc.LOGWARNING)
+        xbmc.log('SMARTEDTV: lançamentos do Brazuca indisponíveis', xbmc.LOGWARNING)
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
         return
-    xbmc.log('SMARTED-TV: hero com %d filmes (ficha completa=%d)'
+    xbmc.log('SMARTEDTV: hero com %d filmes (ficha completa=%d)'
              % (len(results), sum(1 for item in results
                                   if item.get('plot') and item.get('genre'))),
              getattr(xbmc, 'LOGINFO', 20))
@@ -369,11 +369,11 @@ def carousel(handle, params):
     try:
         value = _widget_cached('carrossel-' + alvo, fetch, _carrossel_ok)
     except Exception:
-        xbmc.log('SMARTED-TV: carrossel %s indisponivel' % alvo, xbmc.LOGWARNING)
+        xbmc.log('SMARTEDTV: carrossel %s indisponivel' % alvo, xbmc.LOGWARNING)
         value = {'items': [], 'origem': '', 'found': False}
     items = value.get('items') or []
     if items:
-        xbmc.log('SMARTED-TV: carrossel %s com %d itens (%s)' % (alvo, len(items), value.get('origem')),
+        xbmc.log('SMARTEDTV: carrossel %s com %d itens (%s)' % (alvo, len(items), value.get('origem')),
                  xbmc.LOGINFO)
         _add_carrossel(handle, items, alvo)
         return
@@ -384,14 +384,14 @@ def carousel(handle, params):
     except Exception:
         favoritos = []
     if favoritos:
-        xbmc.log('SMARTED-TV: carrossel %s em modo favoritos' % alvo, xbmc.LOGINFO)
+        xbmc.log('SMARTEDTV: carrossel %s em modo favoritos' % alvo, xbmc.LOGINFO)
         _add_carrossel(handle, [{'url': item['url'], 'label': item['label'],
                                  'title': item['label'], 'folder': item['folder'],
                                  'playable': item['playable'], 'thumbnail': item['thumb'],
                                  'fanart': item['fanart'], 'plot': item['plot'], 'year': 0}
                                 for item in favoritos], alvo)
         return
-    xbmc.log('SMARTED-TV: carrossel %s sem dados' % alvo, xbmc.LOGWARNING)
+    xbmc.log('SMARTEDTV: carrossel %s sem dados' % alvo, xbmc.LOGWARNING)
     xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
 
 
@@ -434,10 +434,10 @@ def sync_navigation(handle, force=False):
             if antigas:
                 entradas, origem = antigas, 'cache'
     apply_skin_strings(entradas, xbmc.executebuiltin)
-    xbmc.log('SMARTED-TV: navegacao com %d opcoes (%s)' % (len(entradas), origem),
+    xbmc.log('SMARTEDTV: navegacao com %d opcoes (%s)' % (len(entradas), origem),
              getattr(xbmc, 'LOGINFO', 20))
     for indice, entrada in enumerate(entradas[:4]):
-        xbmc.log('SMARTED-TV: barra %d = %s' % (indice + 1, entrada['label']),
+        xbmc.log('SMARTEDTV: barra %d = %s' % (indice + 1, entrada['label']),
                  getattr(xbmc, 'LOGINFO', 20))
     xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
 
@@ -474,11 +474,11 @@ def open_navigation(handle, params):
         entradas, _ = build(favoritos, xbmc.executeJSONRPC, xbmc.log)
     entrada = resolve(entradas, indice)
     if not entrada:
-        xbmc.log('SMARTED-TV: navegacao sem opcao no slot %d' % indice, xbmc.LOGWARNING)
+        xbmc.log('SMARTEDTV: navegacao sem opcao no slot %d' % indice, xbmc.LOGWARNING)
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
         return
     comando = open_command(entrada)
-    xbmc.log('SMARTED-TV: navegacao abrindo %s' % entrada['label'],
+    xbmc.log('SMARTEDTV: navegacao abrindo %s' % entrada['label'],
              getattr(xbmc, 'LOGINFO', 20))
     xbmc.executebuiltin(comando)
     xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)

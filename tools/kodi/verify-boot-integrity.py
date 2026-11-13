@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simulate the SMARTED-TV launcher boot flow against a built APK.
+"""Simulate the SMARTEDTV launcher boot flow against a built APK.
 
 The launcher (org.smartedtv.bootstrap, classes3.dex) performs, at first boot:
 

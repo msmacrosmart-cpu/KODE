@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Aplica a identidade SMARTED-TV a uma árvore decodificada pelo Apktool."""
+"""Aplica a identidade SMARTEDTV a uma árvore decodificada pelo Apktool."""
 import argparse
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
@@ -25,7 +25,7 @@ def poster(size, transparent=False):
     mark_size=int(min(h*.50,w*.22))
     word_size=max(8,int(min(h*.20, w*.115)))
     font=ImageFont.truetype(FONT,word_size)
-    label='SMARTED-TV'
+    label='SMARTEDTV'
     box=d.textbbox((0,0),label,font=font)
     text_width=box[2]-box[0]
     # Arranjo horizontal para banner e vendor logo, vertical para splash.
@@ -55,7 +55,7 @@ def main():
     for name in ('app_name','search_hint'):
         old=f'<string name="{name}">Kodi</string>'
         if old not in text: raise ValueError(f'Valor esperado ausente: {name}')
-        text=text.replace(old,f'<string name="{name}">SMARTED-TV</string>')
+        text=text.replace(old,f'<string name="{name}">SMARTEDTV</string>')
     values.write_text(text,encoding='utf-8')
     for path in sorted((root/'res').glob('drawable-*/ic_launcher.png')):
         size=Image.open(path).size
@@ -79,5 +79,5 @@ def main():
     for path in (root/'assets/addons/skin.estuary/extras/home-images').glob('*.jpg'):
         with Image.open(path) as original: im=original.convert('L').convert('RGB')
         im.save(path,quality=95)
-    print('SMARTED-TV: identidade, paleta e versionCode aplicados')
+    print('SMARTEDTV: identidade, paleta e versionCode aplicados')
 if __name__=='__main__': main()

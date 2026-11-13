@@ -63,7 +63,7 @@ def main(argv):
 
         def getAddonInfo(self, key):
             return {
-                'path': bootstrap, 'id': self.id, 'name': 'SMARTED-TV Bootstrap',
+                'path': bootstrap, 'id': self.id, 'name': 'SMARTEDTV Bootstrap',
                 'version': '1.0.4',
                 'profile': os.path.join(profile, 'userdata', 'addon_data', self.id),
             }.get(key, '')

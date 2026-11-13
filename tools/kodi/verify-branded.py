@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verificações estáticas do APK SMARTED-TV contra o APK Kodi de entrada."""
+"""Verificações estáticas do APK SMARTEDTV contra o APK Kodi de entrada."""
 import hashlib
 import struct
 import sys
@@ -9,7 +9,7 @@ from pyaxmlparser import APK
 if len(sys.argv)!=3: raise SystemExit('Uso: verify-branded.py ORIGEM RESULTADO')
 source,output=sys.argv[1:]
 a=APK(output)
-if (a.package,a.get_app_name(),a.version_name,str(a.version_code)) != ('org.xbmc.kodi','SMARTED-TV','1.0.15','2103001'):
+if (a.package,a.get_app_name(),a.version_name,str(a.version_code)) != ('org.xbmc.kodi','SMARTEDTV','1.0.15','2103001'):
     raise SystemExit(f'Identidade inesperada: {a.package}, {a.get_app_name()}, {a.version_name}, {a.version_code}')
 def digest(z,n):
     h=hashlib.sha256()
@@ -36,4 +36,4 @@ with zipfile.ZipFile(source) as before,zipfile.ZipFile(output) as after:
         if i.compress_type==zipfile.ZIP_STORED:
             after.fp.seek(i.header_offset); h=struct.unpack('<IHHHHHIIIHH',after.fp.read(30))
             if (i.header_offset+30+h[-2]+h[-1])%4: raise SystemExit(f'Entrada desalinhada: {i.filename}')
-    print(f'Verificado: SMARTED-TV 1.0.15, ABI={sorted(abis)}, {len(oldlibs)} bibliotecas e classes.dex intactos, {len(changed)} assets de marca/tema alterados, ZIP íntegro e alinhado.')
+    print(f'Verificado: SMARTEDTV 1.0.15, ABI={sorted(abis)}, {len(oldlibs)} bibliotecas e classes.dex intactos, {len(changed)} assets de marca/tema alterados, ZIP íntegro e alinhado.')

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Skin Bingie embarcada como skin padrao SMARTEDTV: download, injecao e rename."""
 import importlib.util
+import re
 import pathlib
 import unittest
 
@@ -61,9 +62,11 @@ class SkinPadraoTest(unittest.TestCase):
         self.assertIn('fetch-bingie-addons.py', fluxo)
         self.assertIn('--extra-addons "$RUNNER_TEMP/extra"', fluxo)
         self.assertIn('--default-skin "$RUNNER_TEMP/extra/skin.titan.bingie.mod"', fluxo)
-        self.assertIn('--to-version 1.0.55', fluxo)
-        self.assertIn('--to-code 2103041', fluxo)
-        self.assertIn('v1.0.55-smarted-arm64', fluxo)
+        # a versao do build nao fica escrita no teste: ela e lida do workflow,
+        # e o mesmo numero precisa aparecer na tag da release
+        versao = re.search(r'--to-version (\d+\.\d+\.\d+)', fluxo).group(1)
+        self.assertIn('--to-code 2103', fluxo)
+        self.assertIn('v%s-smarted-arm64' % versao, fluxo)
 
 
 if __name__ == '__main__':

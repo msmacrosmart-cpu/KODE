@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stage the verified SMARTED-TV backup in a new private directory.
+"""Stage the verified SMARTEDTV backup in a new private directory.
 
 This is an offline preparation tool, NOT an in-app restore. Never run it against
 an active Kodi profile. No existing directory is merged or overwritten.

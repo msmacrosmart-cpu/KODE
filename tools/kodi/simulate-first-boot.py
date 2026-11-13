@@ -37,7 +37,7 @@ REPO_SKIN = ROOT / 'kodi' / 'skin.estilo.personalizado'
 BUILD_SCRIPT = TOOLS / 'build-release-apk.py'
 RUNNER = TOOLS / 'kodi_plugin_runner.py'
 BOOT_RUNNER = TOOLS / 'kodi_boot_runner.py'
-DEFAULT_BASE = Path('/tmp/base/SMARTED-TV-v1.0.22-arm64.apk')
+DEFAULT_BASE = Path('/tmp/base/SMARTEDTV-v1.0.22-arm64.apk')
 PLUGIN_ID = 'plugin.video.BrazucaPlay.Matrix'
 SKIN_ID = 'skin.novatv'
 

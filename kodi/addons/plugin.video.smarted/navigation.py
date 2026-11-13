@@ -3,7 +3,7 @@
 
 Fonte da verdade: o MESMO ``userdata/addon_data/plugin.video.BrazucaPlay.Matrix/
 favorites.dat`` que o addon grava quando a pessoa toca em "Adicionar aos
-Favoritos". O SMARTED-TV apenas le esse arquivo (nunca escreve).
+Favoritos". O SMARTEDTV apenas le esse arquivo (nunca escreve).
 
 Ordem: a do proprio addon (canais, filmes, series, novelas, animes, desenhos,
 doramas) e, dentro de cada categoria, a ordem em que os favoritos foram salvos.

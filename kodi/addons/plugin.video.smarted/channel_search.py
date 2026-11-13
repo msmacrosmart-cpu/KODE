@@ -2,7 +2,7 @@
 
 Brazuca's '#todoscanais' route merges its normal channel sources and, when
 configured, its pro source. Pluto has a separate directory, queried separately.
-No streams or channel names are shipped with SMARTED-TV.
+No streams or channel names are shipped with SMARTEDTV.
 """
 from urllib.parse import parse_qs, unquote_plus, urlsplit
 

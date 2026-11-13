@@ -19,7 +19,7 @@ import java.lang.reflect.Method;
 
 /** Asynchronous pre-Kodi bootstrap. Must be validated in an isolated emulator. */
 public final class ProfileDirectoryBootstrap {
-    private static final String TAG = "SMARTED-TV";
+    private static final String TAG = "SMARTEDTV";
     // State is read and modified exclusively on the Android main thread.
     private static WeakReference<Activity> current = new WeakReference<Activity>(null);
     private static boolean working;
@@ -123,12 +123,12 @@ public final class ProfileDirectoryBootstrap {
         }
         int textId = activity.getResources().getIdentifier("textView1", "id", activity.getPackageName());
         View text = activity.findViewById(textId);
-        if (text instanceof TextView) ((TextView) text).setText("Preparando o SMARTED-TV...");
+        if (text instanceof TextView) ((TextView) text).setText("Preparando o SMARTEDTV...");
     }
 
     private static void showFailure(final Activity activity) {
         new AlertDialog.Builder(activity)
-            .setTitle("SMARTED-TV")
+            .setTitle("SMARTEDTV")
             .setMessage("Não foi possível preparar o perfil inicial. Seus dados existentes não foram substituídos.")
             .setCancelable(false)
             .setPositiveButton("Tentar novamente", new DialogInterface.OnClickListener() {

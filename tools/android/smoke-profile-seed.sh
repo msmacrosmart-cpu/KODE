@@ -14,7 +14,7 @@ adb logcat -c
 adb shell am start -n "$app/.Splash"
 first=0
 for _ in $(seq 1 48); do
-  adb logcat -d -s SMARTED-TV:I '*:S' > "$out/seed-log.txt" || true
+  adb logcat -d -s SMARTEDTV:I '*:S' > "$out/seed-log.txt" || true
   if grep -q 'Perfil inicial preparado' "$out/seed-log.txt"; then first=1; break; fi
   if grep -q 'Falha ao preparar perfil inicial' "$out/seed-log.txt"; then break; fi
   sleep 5
@@ -110,7 +110,7 @@ adb logcat -c
 adb shell am start -n "$app/.Splash"
 preserved=0
 for _ in $(seq 1 36); do
-  adb logcat -d -s SMARTED-TV:I '*:S' > "$out/restart-log.txt" || true
+  adb logcat -d -s SMARTEDTV:I '*:S' > "$out/restart-log.txt" || true
   if grep -q 'Perfil existente preservado' "$out/restart-log.txt"; then preserved=1; break; fi
   sleep 5
 done
