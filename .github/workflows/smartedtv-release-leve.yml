@@ -1,0 +1,228 @@
+name: SMARTEDTV - APK leve (Bingie + Estuary monocromatico)
+
+# Reempacotamento RAPIDO, sem compilar o Kodi do codigo-fonte.
+#
+# Base: o APK 21.4.0 que ja foi compilado do codigo-fonte e publicado em
+#       releases/tag/smartedtv-v21.4.0-arm64 (Kodi 21.3-Omega, commit a3a448d2).
+#       Ele e baixado como insumo e NAO e alterado: libkodi.so, classes.dex,
+#       AndroidManifest e todo o resto continuam byte a byte.
+#
+# O que muda neste build:
+#   1. skin.titan.bingie.mod (Bingie Mod 2.2.3 + 15 dependencias) entra em
+#      assets/addons/ e vira a skin padrao em assets/system/addon-manifest.xml
+#      e no userdata inicial.
+#   2. Essa mesma skin recebe a paleta preto/branco/cinza (colors/defaults.xml).
+#   3. skin.estuary continua embarcada, tambem monocromatica: e a rede de
+#      seguranca do Kodi (Application.cpp carrega o <default> se a skin
+#      configurada falhar) e a alternativa em Ajustes > Aparencia > Skin.
+#   4. versionName/versionCode sobem para 21.4.1 / 2104001, permitindo atualizar
+#      por cima do 21.4.0 (mesma chave de assinatura).
+#
+# Tempo tipico: 4-8 min (o anterior deste tipo levava ~3 min).
+
+on:
+  workflow_dispatch:
+    inputs:
+      versao:
+        description: 'versionName novo (mesmo numero de caracteres do anterior)'
+        type: string
+        default: '21.4.1'
+      codigo:
+        description: 'versionCode novo'
+        type: number
+        default: 2104001
+  push:
+    branches: [arena/2e3d223d-kode]
+    paths:
+      - .github/workflows/smartedtv-release-leve.yml
+      - tools/kodi/recolor-skin.py
+
+permissions:
+  contents: write
+
+concurrency:
+  group: smartedtv-leve-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reempacotar:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      BASE_TAG: smartedtv-v21.4.0-arm64
+      BASE_APK: SMARTEDTV-21.4.0-arm64-v8a.apk
+      NOVA_VERSAO: ${{ inputs.versao || '21.4.1' }}
+      NOVO_CODIGO: ${{ inputs.codigo || 2104001 }}
+      TAG_SAIDA: smartedtv-v21.4.1-arm64-bingie
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Base compilada do codigo-fonte
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/base"
+          gh release download "$BASE_TAG" -R "$GITHUB_REPOSITORY" \
+            --pattern "$BASE_APK" --dir "$RUNNER_TEMP/base"
+          cd "$RUNNER_TEMP/base"
+          # integridade: o .sha256 publicado junto do APK
+          gh release download "$BASE_TAG" -R "$GITHUB_REPOSITORY" \
+            --pattern '*.sha256' --dir "$RUNNER_TEMP/base"
+          sha256sum -c ./*.sha256
+          ls -lh
+
+      - name: 2. Ferramentas de reempacotamento
+        run: ./tools/kodi/setup.sh
+
+      - name: "3. Skins: Bingie + suas dependencias"
+        run: |
+          set -euo pipefail
+          python3 tools/kodi/fetch-bingie-addons.py "$RUNNER_TEMP/extra"
+          echo "--- addons ---"
+          ls "$RUNNER_TEMP/extra"
+
+      - name: 4. Paleta preto/branco/cinza nas duas skins
+        run: |
+          set -euo pipefail
+          echo "=== Bingie (skin padrao) ==="
+          python3 tools/kodi/recolor-skin.py "$RUNNER_TEMP/extra/skin.titan.bingie.mod" \
+            --skin bingie --report
+          echo "=== Estuary (alternativa/fallback) ==="
+          # o Estuary nao vem no APK como pasta solta: ele esta dentro do
+          # assets/addons do proprio APK, entao e recolorido na etapa 6, sobre
+          # os bytes extraidos. Aqui so validamos o script.
+          python3 tools/kodi/recolor-skin.py --help > /dev/null
+
+      - name: 5. Montar o APK (Bingie + Estuary monocromaticos)
+        run: |
+          set -euo pipefail
+          python3 tools/kodi/repack-skins.py \
+            "$RUNNER_TEMP/base/$BASE_APK" "$RUNNER_TEMP/novo.apk" \
+            --bingie "$RUNNER_TEMP/extra" \
+            --de-version 21.4.0 --para-version "$NOVA_VERSAO" \
+            --de-code 2104000 --para-code "$NOVO_CODIGO"
+          ls -lh "$RUNNER_TEMP/novo.apk"
+
+      - name: 6. Alinhar e assinar com a chave do projeto
+        run: |
+          set -eo pipefail
+          CACHE="$HOME/.cache/kode-build"
+          JAVA="$CACHE/python/jdk4py/java-runtime/bin/java"
+          SIGNER="$CACHE/tools/apksigner.jar"
+          python3 tools/kodi/align-apk.py "$RUNNER_TEMP/novo.apk" "$RUNNER_TEMP/alinhado.apk"
+          "$JAVA" -jar "$SIGNER" sign \
+            --ks dropbox/smarted-tv-test.jks --ks-pass pass:android --key-pass pass:android \
+            --ks-key-alias smarted-tv-test \
+            --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
+            --v4-signing-enabled false \
+            --out "$RUNNER_TEMP/assinado.apk" "$RUNNER_TEMP/alinhado.apk"
+          "$JAVA" -jar "$SIGNER" verify --verbose --print-certs "$RUNNER_TEMP/assinado.apk" \
+            | tee "$RUNNER_TEMP/verify.txt"
+          grep -qi "certificate SHA-256 digest: 855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a" \
+            "$RUNNER_TEMP/verify.txt" || { echo "::error::certificado inesperado"; exit 1; }
+
+      - name: 7. Conferir o resultado
+        env:
+          PYTHONPATH: /home/runner/.cache/kode-build/python
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, zipfile
+          from pathlib import Path
+          from pyaxmlparser import APK
+
+          apk_path = Path(os.environ['RUNNER_TEMP']) / 'assinado.apk'
+          base_path = Path(os.environ['RUNNER_TEMP']) / 'base' / os.environ['BASE_APK']
+          a = APK(str(apk_path))
+          print(f'pacote: {a.package}')
+          print(f'nome:   {a.get_app_name()}')
+          print(f'versao: {a.version_name} ({a.version_code})')
+          assert a.package == 'org.xbmc.kodi', a.package
+          assert a.get_app_name() == 'SMARTEDTV', a.get_app_name()
+          assert a.version_name == os.environ['NOVA_VERSAO'], a.version_name
+          assert int(a.version_code) == int(os.environ['NOVO_CODIGO'])
+
+          with zipfile.ZipFile(apk_path) as novo, zipfile.ZipFile(base_path) as base:
+              assert novo.testzip() is None, 'ZIP corrompido'
+              nomes = set(novo.namelist())
+
+              # 1. motor intacto
+              libs_n = {n for n in nomes if n.startswith('lib/') and n.endswith('.so')}
+              libs_b = {n for n in base.namelist() if n.startswith('lib/') and n.endswith('.so')}
+              assert libs_n == libs_b == libs_n, 'bibliotecas nativas divergem'
+              print(f'libs nativas preservadas: {len(libs_n)}')
+
+              # 2. skins
+              assert 'assets/addons/skin.titan.bingie.mod/addon.xml' in nomes, 'Bingie ausente'
+              assert 'assets/addons/skin.estuary/addon.xml' in nomes, 'Estuary ausente'
+              skins = sorted({n.split('/')[2] for n in nomes
+                              if n.startswith('assets/addons/skin.') and n.count('/') > 2})
+              print(f'skins no APK: {skins}')
+              assert skins == ['skin.estuary', 'skin.titan.bingie.mod'], skins
+
+              # 3. manifesto
+              man = novo.read('assets/system/addon-manifest.xml').decode()
+              assert 'skin.titan.bingie.mod' in man, 'Bingie fora do manifesto'
+
+              # 4. paleta: nenhuma cor saturada nas duas skins
+              import re as _re
+              for skin in ('skin.estuary', 'skin.titan.bingie.mod'):
+                  cores = novo.read(f'assets/addons/{skin}/colors/defaults.xml').decode()
+                  saturadas = []
+                  for nome, v in _re.findall(r'name="([^"]+)"\s*>\s*([0-9A-Fa-f]{8})', cores):
+                      r, g, b = int(v[2:4], 16), int(v[4:6], 16), int(v[6:8], 16)
+                      if max(r, g, b) - min(r, g, b) > 24:
+                          saturadas.append((nome, v))
+                  assert not saturadas, f'{skin} com cor saturada: {saturadas}'
+                  print(f'{skin}: paleta monocromatica OK')
+
+              # 5. nada de Brazuka / Nova TV
+              proibidos = [n for n in nomes if 'brazuka' in n.lower() or 'novatv' in n.lower()]
+              assert not proibidos, f'conteudo proibido: {proibidos[:5]}'
+              print('sem Brazuka Play, sem skin Nova TV')
+          print('\nAPK aprovado.')
+          PY
+
+      - name: 8. Publicar release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cp "$RUNNER_TEMP/assinado.apk" "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk"
+          sha256sum "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk" > "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk.sha256"
+          cat "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk.sha256"
+          NOTES="SMARTEDTV ${NOVA_VERSAO} — Bingie Mod como skin padrao e Estuary monocromatico.
+
+          Base: Kodi 21.3-Omega compilado do codigo-fonte (release ${BASE_TAG}).
+          Esta versao apenas reempacota: libkodi.so e classes.dex nao mudam.
+
+          - Skin padrao: Bingie Mod 2.2.3 (+15 dependencias), em preto/branco/cinza
+          - Alternativa: Estuary original, tambem em preto/branco/cinza
+          - Application ID: org.xbmc.kodi (preservado)
+          - Assinatura: smarted-tv-test (atualiza o 21.4.0; nao atualiza Kodi oficial)
+          - Sem Brazuka Play, sem skin Nova TV, sem perfil pre-configurado
+          - SHA-256 no arquivo .sha256"
+          if gh release view "$TAG_SAIDA" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG_SAIDA" "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk" \
+              "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk.sha256" -R "$GITHUB_REPOSITORY" --clobber
+            gh release edit "$TAG_SAIDA" -R "$GITHUB_REPOSITORY" --notes "$NOTES"
+          else
+            gh release create "$TAG_SAIDA" \
+              "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk" \
+              "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk.sha256" \
+              -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "SMARTEDTV ${NOVA_VERSAO} (arm64-v8a) — Bingie padrao, preto/branco/cinza" \
+              --notes "$NOTES"
+          fi
+          echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG_SAIDA"
+
+      - name: 9. Guardar artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartedtv-apk-bingie
+          path: |
+            SMARTEDTV-*-arm64-v8a.apk
+            SMARTEDTV-*.sha256
+          retention-days: 30
+          if-no-files-found: error
