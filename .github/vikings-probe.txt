@@ -1,0 +1,12 @@
+SONDA VIKINGS REPO
+=== https://vkodi.net/repo/repository.vikings.zip -> http=0 bytes=25 final=https://vkodi.net/repo/repository.vikings.zip
+<urlopen error timed out>
+=== https://vkodi.net/repo/ -> http=0 bytes=25 final=https://vkodi.net/repo/
+<urlopen error timed out>
+=== https://vkodi.net/repo/addons.xml -> http=0 bytes=25 final=https://vkodi.net/repo/addons.xml
+<urlopen error timed out>
+=== https://vkodi.net/repo/zips/ -> http=0 bytes=25 final=https://vkodi.net/repo/zips/
+<urlopen error timed out>
+=== https://vkodi.net/repo/zips/plugin.video.BrazucaPlay.Matrix/plugin.video.BrazucaPlay.Matrix-2.1.4.zip -> http=0 bytes=25
+=== https://vkodi.net/repo/plugin.video.BrazucaPlay.Matrix/plugin.video.BrazucaPlay.Matrix-2.1.4.zip -> http=0 bytes=25
+=== https://vkodi.net/repo/zips/plugin.video.BrazucaPlay.Matrix/plugin.video.BrazucaPlay.Matrix-2.2.0.zip -> http=0 bytes=25
