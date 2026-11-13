@@ -160,9 +160,22 @@ jobs:
       - name: 7c. Conferir dependências
         run: |
           set -euo pipefail
-          test -d "$RUNNER_TEMP/xbmc-depends/share/kodi" || { echo "::error::dependências ausentes"; exit 1; }
+          # Critério real: o build precisa de $DEPENDS_PATH/lib com as libs e de
+          # $DEPENDS_PATH/share/kodi. Se o cache restaurou num prefixo diferente,
+          # falha aqui em 1 minuto em vez de só na hora de compilar.
+          test -d "$RUNNER_TEMP/xbmc-depends" || { echo "::error::prefixo de dependências ausente"; exit 1; }
           echo "cache hit: ${{ steps.cache-deps.outputs.cache-hit }}"
-          echo "libkodi: $(ls "$RUNNER_TEMP/xbmc-depends/lib" 2>/dev/null | head -5 | tr '\n' ' ')"
+          echo "--- conteúdo do prefixo ---"
+          ls "$RUNNER_TEMP/xbmc-depends" || true
+          # NÃO exigir share/kodi aqui: o prefixo de tools/depends entrega as
+          # bibliotecas em lib/ (e o share/kodi só aparece em instalações
+          # completas do Kodi). Foi exigir share/kodi que derrubou o run
+          # 43352462468 depois de o make -j2 ter dado certo.
+          test -d "$RUNNER_TEMP/xbmc-depends/lib" || { echo "::error::falta lib no prefixo"; exit 1; }
+          ls "$RUNNER_TEMP/xbmc-depends/lib" | grep -q '\.so\|\.a' || \
+            { echo "::error::prefixo sem bibliotecas compiladas"; exit 1; }
+          echo "libs: $(ls "$RUNNER_TEMP/xbmc-depends/lib" | wc -l) entradas"
+          echo "python: $(ls -d "$RUNNER_TEMP"/xbmc-depends/lib/python* 2>/dev/null | wc -l) dir(s)"
 
       - name: 8. Compilar o Kodi para Android
         run: |
