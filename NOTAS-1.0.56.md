@@ -92,7 +92,7 @@ do bootstrap · `plugin.video.BrazucaPlay.Matrix` presente · módulos Python
 (`arrow`, `unidecode`, `simplejson`, `requests`, `simpleeval`, `dateutil`) ·
 integridade do perfil semeado (`profile-manifest.txt` e linha da skin).
 
-Testes unitários: **238** (inclui os 14 novos do Vikings Repo e 7 do
+Testes unitários: **252** (inclui os 18 novos do Vikings Repo e 7 do
 `resources.arsc`); teste estático: 211 XML válidos, 55 scripts compilados.
 
 ## 5. O que só o aparelho pode confirmar
