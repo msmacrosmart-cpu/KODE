@@ -82,17 +82,14 @@ jobs:
           echo "--- addons ---"
           ls "$RUNNER_TEMP/extra"
 
-      - name: 4. Paleta preto/branco/cinza nas duas skins
+      - name: "4. Paleta preto/branco/cinza (validacao do script)"
         run: |
           set -euo pipefail
-          echo "=== Bingie (skin padrao) ==="
-          python3 tools/kodi/recolor-skin.py "$RUNNER_TEMP/extra/skin.titan.bingie.mod" \
-            --skin bingie --report
-          echo "=== Estuary (alternativa/fallback) ==="
-          # o Estuary nao vem no APK como pasta solta: ele esta dentro do
-          # assets/addons do proprio APK, entao e recolorido na etapa 6, sobre
-          # os bytes extraidos. Aqui so validamos o script.
-          python3 tools/kodi/recolor-skin.py --help > /dev/null
+          # A recoloracao efetiva acontece dentro do repack-skins.py, que trata
+          # a Bingie e o Estuary do APK de uma vez. Aqui so confirmamos que o
+          # script roda e que a paleta nao deixa cor saturada numa copia.
+          cp -r "$RUNNER_TEMP/extra/skin.titan.bingie.mod" "$RUNNER_TEMP/paleta-teste"
+          python3 tools/kodi/recolor-skin.py "$RUNNER_TEMP/paleta-teste" --skin bingie --report
 
       - name: 5. Montar o APK (Bingie + Estuary monocromaticos)
         run: |

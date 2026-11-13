@@ -196,15 +196,51 @@ def main() -> int:
                 novos[nome] = gs2.encode("utf-8")
                 print(f"  skin padrao em {nome}")
 
-        # versão no AndroidManifest binário
+        # ---------------------------------------------------- versão
+        # O versionName normalmente NÃO está no AndroidManifest.xml: o Gradle o
+        # referencia como @string/xbmc_version e o texto real vive no string
+        # pool de resources.arsc. Por isso o manifesto só é alterado se a
+        # string aparecer nele; senão a troca é feita no resources.arsc.
         binm = src.read("AndroidManifest.xml")
         va, vn = args.de_version.encode("utf-16le"), args.para_version.encode("utf-16le")
         ca, cn = struct.pack("<I", args.de_code), struct.pack("<I", args.para_code)
-        if binm.count(va) != 1:
-            raise SystemExit(f"versionName {args.de_version} nao aparece exatamente 1x")
-        if binm.count(ca) != 1:
-            raise SystemExit(f"versionCode {args.de_code} nao aparece exatamente 1x")
-        novos["AndroidManifest.xml"] = binm.replace(va, vn).replace(ca, cn)
+
+        trocas_versao: list[str] = []
+        if binm.count(va) == 1:
+            binm = binm.replace(va, vn)
+            trocas_versao.append("versionName (manifesto)")
+        if binm.count(ca) == 1:
+            binm = binm.replace(ca, cn)
+            trocas_versao.append("versionCode (manifesto)")
+        elif binm.count(ca) > 1:
+            raise SystemExit(f"versionCode {args.de_code} aparece {binm.count(ca)}x no manifesto")
+        novos["AndroidManifest.xml"] = binm
+
+        if "resources.arsc" in nomes:
+            arsc = src.read("resources.arsc")
+            # strings UTF-16 contam o tamanho em unidades; trocar por string de
+            # mesmo comprimento mantém todos os offsets válidos.
+            if len(va) == len(vn):
+                if arsc.count(va) == 1:
+                    arsc = arsc.replace(va, vn)
+                    trocas_versao.append("versionName (resources.arsc)")
+                elif arsc.count(va) > 1:
+                    raise SystemExit(f"versionName {args.de_version} aparece {arsc.count(va)}x no arsc")
+                # versão pode aparecer em UTF-8 em alguns builds
+                u8a, u8n = args.de_version.encode(), args.para_version.encode()
+                if arsc.count(u8a) == 1 and len(u8a) == len(u8n):
+                    arsc = arsc.replace(u8a, u8n)
+                    trocas_versao.append("versionName utf-8 (resources.arsc)")
+                novos["resources.arsc"] = arsc
+
+        if not trocas_versao:
+            raise SystemExit(
+                "versao nao encontrada: nem no manifesto nem no resources.arsc "
+                f"({args.de_version}/{args.de_code})")
+        print("  versao trocada: " + ", ".join(trocas_versao))
+        if not any("versionName" in t for t in trocas_versao):
+            print("  ATENCAO: versionName nao alterado (só o code subiu); "
+                  "o nome exibido continua " + args.de_version)
 
         # ------------------------------------------------------- escrever
         args.saida.parent.mkdir(parents=True, exist_ok=True)
