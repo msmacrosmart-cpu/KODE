@@ -122,6 +122,9 @@ def main() -> int:
         print(linha)
 
     if FALHAS:
+        # ::error:: vai para as annotations, que e o canal legivel na CI
+        for linha in FALHAS:
+            print(f"::error::{linha}")
         print(f"\n{len(FALHAS)} falha(s), {len(OK)} ok")
         return 1
     print(f"\nAPK aprovado ({len(OK)} verificações).")

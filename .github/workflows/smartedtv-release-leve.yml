@@ -158,21 +158,10 @@ jobs:
           PYTHONPATH: /home/runner/.cache/kode-build/python
         run: |
           set -uo pipefail
-          LOG="$RUNNER_TEMP/conferencia.log"
           python3 tools/kodi/conferir-apk.py \
             "$RUNNER_TEMP/assinado.apk" \
             "$RUNNER_TEMP/base/$BASE_APK" \
-            "$NOVA_VERSAO" "$NOVO_CODIGO" 2>&1 | tee "$LOG"
-          rc=${PIPESTATUS[0]}
-          if [ "$rc" -ne 0 ]; then
-            python3 - "$LOG" <<'PY'
-          import pathlib, sys
-          linhas = [l.rstrip() for l in pathlib.Path(sys.argv[1]).read_text(errors='replace').splitlines() if l.strip()]
-          for i in range(0, len(linhas), 3):
-              print('::error::' + ' | '.join(linhas[i:i+3])[:900])
-          PY
-          fi
-          exit "$rc"
+            "$NOVA_VERSAO" "$NOVO_CODIGO" 2>&1 | tee "$RUNNER_TEMP/conferencia.log"
 
       - name: 7b. Guardar log da conferencia
         if: always()
