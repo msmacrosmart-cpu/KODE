@@ -28,7 +28,7 @@ with zipfile.ZipFile(apk) as z:
 
     if "AndroidManifest.xml" in nomes:
         man = z.read("AndroidManifest.xml")
-        v = "21.4.0".encode("utf-16le")
+        v = "21.4-Omega".encode("utf-16le")
         c = struct.pack("<I", 2104000)
         print(f"  versionName 21.4.0: {man.count(v)} ocorrência(s)")
         print(f"  versionCode 2104000: {man.count(c)} ocorrência(s)")

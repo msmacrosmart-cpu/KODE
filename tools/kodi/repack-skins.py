@@ -100,7 +100,8 @@ def main() -> int:
     p.add_argument("saida", type=Path, help="APK gerado, sem assinatura")
     p.add_argument("--bingie", type=Path, required=True,
                    help="pasta com skin.titan.bingie.mod e suas dependências")
-    p.add_argument("--de-version", required=True)
+    p.add_argument("--de-version", required=True,
+                   help="versionName atual (o compilado usa o sufixo da tag, ex. 21.4-Omega)")
     p.add_argument("--para-version", required=True)
     p.add_argument("--de-code", type=int, required=True)
     p.add_argument("--para-code", type=int, required=True)
