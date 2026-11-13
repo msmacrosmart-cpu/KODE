@@ -1,0 +1,46 @@
+name: Sonda Vikings Repo (diagnostico)
+
+# Diagnóstico manual: confere se as URLs candidatas do Vikings Repo respondem
+# e o que existe dentro do zip do repositório. Não publica nada.
+on:
+  workflow_dispatch:
+
+jobs:
+  sonda:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Sondar URLs
+        run: |
+          for url in \
+            https://vkodi.net/repo/repository.vikings.zip \
+            https://vkodi.net/repo/ \
+            https://vkodi.net/repo/addons.xml \
+            https://vkodi.net/repo/zips/ ; do
+            echo "=== $url"
+            curl -sSL --max-time 25 -o /dev/null -w 'http=%{http_code} bytes=%{size_download} final=%{url_effective}\n' "$url" || echo "FALHOU"
+          done
+      - name: Baixar e inspecionar o zip do repositorio
+        run: |
+          set -uo pipefail
+          curl -sSL --max-time 60 -o /tmp/repo.zip https://vkodi.net/repo/repository.vikings.zip || true
+          ls -l /tmp/repo.zip || true
+          python3 - <<'PY'
+          import zipfile, pathlib, hashlib
+          p = pathlib.Path('/tmp/repo.zip')
+          if not p.exists() or p.stat().st_size == 0:
+              raise SystemExit('zip nao baixado')
+          print('sha256', hashlib.sha256(p.read_bytes()).hexdigest(), p.stat().st_size, 'bytes')
+          with zipfile.ZipFile(p) as z:
+              for n in z.namelist()[:40]:
+                  print('  ', n)
+              xml = [n for n in z.namelist() if n.endswith('addon.xml')]
+              for n in xml[:3]:
+                  print('----', n)
+                  print(z.read(n).decode('utf-8', 'replace')[:1500])
+          PY
+      - name: Listar addons.xml do repositorio
+        run: |
+          curl -sSL --max-time 30 https://vkodi.net/repo/addons.xml -o /tmp/addons.xml || true
+          ls -l /tmp/addons.xml || true
+          grep -o 'id="[^"]*"' /tmp/addons.xml 2>/dev/null | sort -u | head -60 || true
