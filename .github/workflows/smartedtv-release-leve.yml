@@ -97,15 +97,44 @@ jobs:
       - name: 5. Montar o APK (Bingie + Estuary monocromaticos)
         run: |
           set -euo pipefail
-          echo "== diagnostico da base =="
-          python3 tools/kodi/diag-base.py "$RUNNER_TEMP/base/$BASE_APK"
-
-          python3 tools/kodi/repack-skins.py \
-            "$RUNNER_TEMP/base/$BASE_APK" "$RUNNER_TEMP/novo.apk" \
-            --bingie "$RUNNER_TEMP/extra" \
-            --de-version 21.4.0 --para-version "$NOVA_VERSAO" \
-            --de-code 2104000 --para-code "$NOVO_CODIGO"
+          LOG="$RUNNER_TEMP/repack.log"
+          {
+            echo "== diagnostico da base =="
+            python3 tools/kodi/diag-base.py "$RUNNER_TEMP/base/$BASE_APK"
+          } 2>&1 | tee -a "$LOG"
+          {
+            python3 tools/kodi/repack-skins.py \
+              "$RUNNER_TEMP/base/$BASE_APK" "$RUNNER_TEMP/novo.apk" \
+              --bingie "$RUNNER_TEMP/extra" \
+              --de-version 21.4.0 --para-version "$NOVA_VERSAO" \
+              --de-code 2104000 --para-code "$NOVO_CODIGO"
+          } 2>&1 | tee -a "$LOG"
           ls -lh "$RUNNER_TEMP/novo.apk"
+
+      - name: 5b. Publicar log do repack (sempre)
+        if: always()
+        run: |
+          LOG="$RUNNER_TEMP/repack.log"
+          if [ -s "$LOG" ]; then
+            # as annotations sao o unico canal de texto que a API entrega
+            python3 - "$LOG" <<'PY'
+          import pathlib, sys
+          linhas = [l.rstrip() for l in pathlib.Path(sys.argv[1]).read_text(errors='replace').splitlines() if l.strip()]
+          for i in range(0, len(linhas), 4):
+              print('::error::' + ' | '.join(linhas[i:i+4])[:900])
+          PY
+          else
+            echo "::warning::log do repack vazio (o passo 5 nem iniciou)"
+          fi
+
+      - name: 5c. Guardar log do repack
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: repack-log
+          path: ${{ runner.temp }}/repack.log
+          retention-days: 7
+          if-no-files-found: warn
 
       - name: 6. Alinhar e assinar com a chave do projeto
         run: |
