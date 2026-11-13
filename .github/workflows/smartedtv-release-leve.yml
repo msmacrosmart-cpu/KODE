@@ -157,65 +157,31 @@ jobs:
         env:
           PYTHONPATH: /home/runner/.cache/kode-build/python
         run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import os, zipfile
-          from pathlib import Path
-          from pyaxmlparser import APK
-
-          apk_path = Path(os.environ['RUNNER_TEMP']) / 'assinado.apk'
-          base_path = Path(os.environ['RUNNER_TEMP']) / 'base' / os.environ['BASE_APK']
-          a = APK(str(apk_path))
-          print(f'pacote: {a.package}')
-          print(f'nome:   {a.get_app_name()}')
-          print(f'versao: {a.version_name} ({a.version_code})')
-          assert a.package == 'org.xbmc.kodi', a.package
-          assert a.get_app_name() == 'SMARTEDTV', a.get_app_name()
-          # versionName pode nao existir como string alteravel neste APK; o
-          # criterio que vale para atualizar e o versionCode.
-          assert a.version_name in (os.environ['NOVA_VERSAO'], '21.4.0'), a.version_name
-          assert int(a.version_code) == int(os.environ['NOVO_CODIGO'])
-
-          with zipfile.ZipFile(apk_path) as novo, zipfile.ZipFile(base_path) as base:
-              assert novo.testzip() is None, 'ZIP corrompido'
-              nomes = set(novo.namelist())
-
-              # 1. motor intacto
-              libs_n = {n for n in nomes if n.startswith('lib/') and n.endswith('.so')}
-              libs_b = {n for n in base.namelist() if n.startswith('lib/') and n.endswith('.so')}
-              assert libs_n == libs_b == libs_n, 'bibliotecas nativas divergem'
-              print(f'libs nativas preservadas: {len(libs_n)}')
-
-              # 2. skins
-              assert 'assets/addons/skin.titan.bingie.mod/addon.xml' in nomes, 'Bingie ausente'
-              assert 'assets/addons/skin.estuary/addon.xml' in nomes, 'Estuary ausente'
-              skins = sorted({n.split('/')[2] for n in nomes
-                              if n.startswith('assets/addons/skin.') and n.count('/') > 2})
-              print(f'skins no APK: {skins}')
-              assert skins == ['skin.estuary', 'skin.titan.bingie.mod'], skins
-
-              # 3. manifesto
-              man = novo.read('assets/system/addon-manifest.xml').decode()
-              assert 'skin.titan.bingie.mod' in man, 'Bingie fora do manifesto'
-
-              # 4. paleta: nenhuma cor saturada nas duas skins
-              import re as _re
-              for skin in ('skin.estuary', 'skin.titan.bingie.mod'):
-                  cores = novo.read(f'assets/addons/{skin}/colors/defaults.xml').decode()
-                  saturadas = []
-                  for nome, v in _re.findall(r'name="([^"]+)"\s*>\s*([0-9A-Fa-f]{8})', cores):
-                      r, g, b = int(v[2:4], 16), int(v[4:6], 16), int(v[6:8], 16)
-                      if max(r, g, b) - min(r, g, b) > 24:
-                          saturadas.append((nome, v))
-                  assert not saturadas, f'{skin} com cor saturada: {saturadas}'
-                  print(f'{skin}: paleta monocromatica OK')
-
-              # 5. nada de Brazuka / Nova TV
-              proibidos = [n for n in nomes if 'brazuka' in n.lower() or 'novatv' in n.lower()]
-              assert not proibidos, f'conteudo proibido: {proibidos[:5]}'
-              print('sem Brazuka Play, sem skin Nova TV')
-          print('\nAPK aprovado.')
+          set -uo pipefail
+          LOG="$RUNNER_TEMP/conferencia.log"
+          python3 tools/kodi/conferir-apk.py \
+            "$RUNNER_TEMP/assinado.apk" \
+            "$RUNNER_TEMP/base/$BASE_APK" \
+            "$NOVA_VERSAO" "$NOVO_CODIGO" 2>&1 | tee "$LOG"
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" -ne 0 ]; then
+            python3 - "$LOG" <<'PY'
+          import pathlib, sys
+          linhas = [l.rstrip() for l in pathlib.Path(sys.argv[1]).read_text(errors='replace').splitlines() if l.strip()]
+          for i in range(0, len(linhas), 3):
+              print('::error::' + ' | '.join(linhas[i:i+3])[:900])
           PY
+          fi
+          exit "$rc"
+
+      - name: 7b. Guardar log da conferencia
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: conferencia-log
+          path: ${{ runner.temp }}/conferencia.log
+          retention-days: 7
+          if-no-files-found: warn
 
       - name: 8. Publicar release
         env:
