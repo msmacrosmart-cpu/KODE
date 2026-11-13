@@ -123,7 +123,19 @@ jobs:
           grep -q '^APP_PACKAGE org.xbmc.kodi' "$RUNNER_TEMP/kodi/version.txt"
           echo "identidade aplicada; APP_NAME e APP_PACKAGE preservados"
 
-      - name: 7. Dependências Android (receita comprovada)
+      - name: 7a. Cache das dependências
+        # As dependências cruzadas (ffmpeg, python, openssl...) são a maior parte
+        # do tempo: ~40 min de 55. Elas dependem só da tag do Kodi e da versão do
+        # NDK, então cabem num cache e os builds seguintes caem para poucos
+        # minutos. cache-hit == 'false' significa que precisou compilar.
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/xbmc-depends
+          key: depends-${{ env.KODI_TAG }}-ndk${{ env.NDK_VERSION }}-${{ runner.os }}-v1
+
+      - name: 7b. Compilar dependências Android (só se não houver cache)
+        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP/kodi/tools/depends"
@@ -133,6 +145,13 @@ jobs:
             --prefix="$RUNNER_TEMP/xbmc-depends"
           make -j2
           echo "livre após dependências: $(df -h --output=avail / | tail -1)"
+
+      - name: 7c. Conferir dependências
+        run: |
+          set -euo pipefail
+          test -d "$RUNNER_TEMP/xbmc-depends/share/kodi" || { echo "::error::dependências ausentes"; exit 1; }
+          echo "cache hit: ${{ steps.cache-deps.outputs.cache-hit }}"
+          echo "libkodi: $(ls "$RUNNER_TEMP/xbmc-depends/lib" 2>/dev/null | head -5 | tr '\n' ' ')"
 
       - name: 8. Compilar o Kodi para Android
         run: |
