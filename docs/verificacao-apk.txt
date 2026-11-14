@@ -59,6 +59,7 @@ tamanho: 248023338 bytes
 == splash (barra branca, sem texto)
   OK    drawable branco                    progresswhite
   OK    layout da splash                   activity_splash.xml legível
+  dump do layout (linhas com visibility): A: http://schemas.android.com/apk/res/android:visibility(0x010100dc)=2
   FALHA texto de status                    escondido (gone)
 
 == resumo
