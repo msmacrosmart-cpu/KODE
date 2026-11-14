@@ -1,4 +1,16 @@
-# SMARTED-TV 1.0.63 (linha clássica) — a ponte dos anúncios, agora com a Intent certa
+# SMARTED-TV 1.0.63 (linha clássica) — ponte dos anúncios corrigida + instalador
+
+## Como instalar (só um arquivo para começar)
+
+1. Baixe **`SMARTEDTV-Anuncios-1.0.4.apk`** (leve, ~4,9 MB) e instale. Ele é o
+   **instalador**: ao abrir o ícone, se o SMARTEDTV ainda não estiver no
+   aparelho, baixa o APK principal sozinho e abre a tela de instalação do
+   Android (autorize “instalar apps desconhecidos” quando ele pedir).
+2. O próprio app instala o `SMARTED-TV-v1.0.63-arm64.apk` desta release.
+3. Depois disso, abrir o ícone do app de anúncios passa a **abrir o SMARTEDTV
+   direto**, e o Kodi volta a chamá-lo pelos gatilhos de anúncio.
+
+Se preferir instalar na mão: instale primeiro o APK de anúncios, depois o do Kodi.
 
 Base: **1.0.62 clássica**. Só o **service.smarted.bootstrap** muda (1.0.12 → 1.0.13).
 Vai junto o **APK de anúncios 1.0.3** (modo de teste + launcher + Toasts).
@@ -66,7 +78,7 @@ e o anúncio não, é o AdMob (aí o painel mostra o código 0/1/2/3/8).
 | Arquivo | Pacote | Versão / código | Tamanho | sha256 |
 | --- | --- | --- | --- | --- |
 | `SMARTED-TV-v1.0.63-arm64.apk` | `org.xbmc.kodi` | 1.0.63 / 2103049 | 242.222.254 B | `82c206e3eac9df9068414bc59908449008424927106e87a867e64f90b5bcee8d` |
-| `SMARTEDTV-Anuncios-1.0.3.apk` | `smartedtv.full` | 1.0.3 / 4 | 5.006.759 B | `b03f66ff4fb519fe688a2f8f1a4b53f9d04735e3fd46ffee31661b4e22dc6dc8` |
+| `SMARTEDTV-Anuncios-1.0.4.apk` | `smartedtv.full` | 1.0.4 / 5 | 5.119.928 B | ver `SMARTEDTV-Anuncios.sha256` |
 
 Conferência do APK **publicado** (workflow `verificar-classica.yml`, run verde —
 relatório em `docs/comparacao-1.0.63.txt`):
