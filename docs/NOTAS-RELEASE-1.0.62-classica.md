@@ -55,3 +55,21 @@ O guia completo está em `docs/DIAGNOSTICO-ANUNCIOS.md` (tabela de códigos 0/1/
   `android/smarted-ads/app-id.txt`, ou se player/skin/anúncios regredirem.
 - **Anúncios**: falha se faltar o bloco de teste correspondente no dex, a tag `SmartAds`,
   o `APPLICATION_ID`, as activities em `sensorLandscape`, ou a assinatura da linha.
+
+## CONFERÊNCIA DO ARQUIVO PUBLICADO
+
+Lido dos APKs **baixados da release** (`docs/comparacao-1.0.62.txt`):
+
+| Arquivo | Pacote / versão | Tamanho | sha256 |
+|---|---|---|---|
+| `SMARTED-TV-v1.0.62-arm64.apk` | `org.xbmc.kodi` · 1.0.62 / 2103048 | 242.222.254 B | `5fe9024e0a487c9f8f53b4b9e40469623753ec56308c27c0d7019276ef74964f` |
+| `SMARTEDTV-Anuncios-1.0.2.apk` | `smartedtv.full` · 1.0.2 / 3 | 5.006.759 B | `cb6405ceb54deeba0a2b7de96a7abb76d593868067b9bfd103c30bbdb7395886` |
+| base `v1.0.61` (conferida no download) | `org.xbmc.kodi` · 1.0.61 / 2103047 | 242.222.254 B | `f4d1a2038fd4ddac17564cb284aab108d7df3185e638bf118c96c1ef3ffb9629` |
+
+- Diff do ZIP contra a 1.0.61: **0 entradas novas, 0 removidas**; só
+  `service.smarted.bootstrap/smart_ads.py` mudou (6.925 → 7.951 B). Nada mais no APK do Kodi.
+- **11/11** checagens de anúncio OK no APK do Kodi, incluindo `builtin com 9 parametros`,
+  `className no ultimo parametro` e `logs com tag SmartAds`.
+- **9/9** de velocidade OK e skin sem regressão.
+- No APK de anúncios publicado: pacote **`smartedtv.full`**, versão 1.0.2/3, os **dois blocos
+  de teste do Google** no dex e a tag **`SmartAds`** presente.
