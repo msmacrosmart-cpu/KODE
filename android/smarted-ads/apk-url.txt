@@ -1,17 +1,19 @@
 # APK PRINCIPAL (SMARTED-TV / Kodi) que o app de anuncios instala.
 # Fonte unica: o Gradle gera BuildConfig.APK_URLS a partir daqui (o CI tambem
-# pode sobrescrever com -PapkUrls="url1|url2").
+# sobrescreve com -PapkUrls="url1|url2").
 #
-# IMPORTANTE: o link precisa funcionar SEM LOGIN. Uma release de repositorio
-# PRIVADO responde 404 para quem nao esta autenticado — e o app na TV nunca
-# esta. Use link publico (Dropbox com ?dl=1, seu servidor, release de repo
-# publico). Pode colocar varias linhas url=: o app tenta na ordem e, se todas
-# falharem, oferece abrir a `pagina=` no navegador.
-url=https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.63-classica/SMARTED-TV-v1.0.63-arm64.apk
+# REGRA DE OURO: o link tem que abrir SEM LOGIN. Anexo de release de repositorio
+# PRIVADO responde 404 para quem nao esta autenticado (e o app na TV nunca esta).
+# Aqui usamos o Dropbox com ?dl=1 (download direto). Teste sempre numa janela
+# anonima antes de publicar.
+#
+# Pode haver varias linhas url=: o app tenta na ordem e, se todas falharem,
+# oferece abrir a `pagina=` no navegador.
+url=https://www.dropbox.com/scl/fi/p5blo0t1rw86bwhcmkkns/SMARTEDTV.apk?rlkey=aapugrey7gcidvb40e8ajxykg&st=1luk07h0&dl=1
 
 # versionCode minimo aceito. Kodi instalado abaixo disso ganha a opcao ATUALIZAR.
 codigo=2103049
 
-# pagina humana (release), usada pelo botao "Abrir no navegador" quando o
-# download direto falha (404/403/login).
-pagina=https://github.com/msmacrosmart-cpu/KODE/releases/tag/v1.0.63-classica
+# pagina humana (abre sem login), usada pelo botao "Abrir no navegador" quando
+# o download direto falha. ?dl=0 = pagina do arquivo no Dropbox.
+pagina=https://www.dropbox.com/scl/fi/p5blo0t1rw86bwhcmkkns/SMARTEDTV.apk?rlkey=aapugrey7gcidvb40e8ajxykg&st=1luk07h0&dl=0

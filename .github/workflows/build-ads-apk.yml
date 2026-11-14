@@ -21,10 +21,10 @@ permissions:
   contents: write
 
 env:
-  VERSAO_ADS: "1.0.5"
-  CODIGO_ADS: "6"
-  ARQUIVO_ADS: SMARTEDTV-Anuncios-1.0.5.apk
-  TAG_ADS: v1.0.5-ads
+  VERSAO_ADS: "1.0.6"
+  CODIGO_ADS: "7"
+  ARQUIVO_ADS: SMARTEDTV-Anuncios-1.0.6.apk
+  TAG_ADS: v1.0.6-ads
   # MODO DE TESTE do AdMob (blocos de teste do Google = sempre preenchem).
   # Trocar para "false" quando a homologacao terminar.
   ADS_TESTE: "true"
@@ -70,10 +70,12 @@ jobs:
               else:
                   campos[chave] = valor
 
+          import re
           if not urls:
               sys.exit('::error::apk-url.txt sem nenhuma linha url=')
           for url in urls:
-              if not url.startswith('https://') or not url.endswith('.apk'):
+              # aceita query string (ex.: Dropbox "?rlkey=...&dl=1")
+              if not re.fullmatch(r'https://.+\.apk(\?.*)?', url):
                   sys.exit('::error::link invalido no apk-url.txt (precisa ser https://...apk): %s' % url)
 
           codigo = campos.get('codigo', '')
@@ -88,7 +90,17 @@ jobs:
           # na TV nunca esta). Por isso checamos tambem sem token.
           for url in urls:
               if '/releases/download/' not in url:
-                  print('::notice::link externo (nao e release do GitHub): %s' % url)
+                  # hospedagem externa (Dropbox, servidor proprio): o que importa
+                  # e responder SEM login e entregar o arquivo
+                  sonda = subprocess.run(
+                      ['curl', '-sSL', '-o', '/dev/null', '-I', '--max-time', '60',
+                       '-w', '%{http_code}', url], capture_output=True, text=True)
+                  print('::notice::link externo %s -> HTTP %s'
+                        % (url, sonda.stdout.strip() or '?'))
+                  if sonda.returncode != 0 or sonda.stdout.strip() not in ('200', '206'):
+                      print('::warning::o link externo nao respondeu 200 (veio %r); '
+                            'o app pode nao conseguir baixar'
+                            % (sonda.stdout.strip() or sonda.stderr.strip()[:120]))
                   continue
               resto = url.split('/releases/download/', 1)[1]
               tag, arquivo_apk = resto.split('/', 1)
@@ -116,6 +128,38 @@ jobs:
               env.write('APK_CODIGO=%s\n' % codigo)
               env.write('APK_PAGINA=%s\n' % pagina)
           print('::notice::APK principal: %s (versionCode minimo %s)' % (' -> '.join(urls), codigo))
+          PY
+
+      - name: 0c. Baixar o APK do link e conferir que e o SMARTEDTV certo
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          PRIMEIRO="${APK_URLS%%|*}"
+          echo "baixando para conferir: $PRIMEIRO"
+          mkdir -p "$RUNNER_TEMP/principal"
+          if ! curl -sSL --max-time 900 -o "$RUNNER_TEMP/principal/principal.apk" "$PRIMEIRO"; then
+            echo "::warning::nao consegui baixar o link principal agora (rede?); sigo sem conferir"
+            exit 0
+          fi
+          ls -l "$RUNNER_TEMP/principal/principal.apk"
+          python3 -m pip install --quiet 'pyaxmlparser==0.3.31'
+          python3 - "$RUNNER_TEMP/principal/principal.apk" "$APK_CODIGO" <<'PY'
+          import sys
+          from pyaxmlparser import APK
+          caminho, minimo = sys.argv[1], int(sys.argv[2])
+          try:
+              apk = APK(caminho)
+          except Exception as erro:
+              sys.exit('::error::o link nao devolveu um APK (%s)' % erro)
+          print('pacote:', apk.package)
+          print('versao:', apk.version_name, apk.version_code)
+          if apk.package != 'org.xbmc.kodi':
+              sys.exit('::error::o link entrega %r, nao o SMARTEDTV (org.xbmc.kodi)' % apk.package)
+          if int(apk.version_code or 0) < minimo:
+              sys.exit('::error::o APK do link tem versionCode %s, abaixo do codigo= %s '
+                       'do apk-url.txt' % (apk.version_code, minimo))
+          print('::notice::link confere: %s %s (%s)'
+                % (apk.package, apk.version_name, apk.version_code))
           PY
 
       - name: 1. Java 17 + Android SDK + Gradle

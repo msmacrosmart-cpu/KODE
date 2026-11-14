@@ -137,7 +137,8 @@ tasks.register('checkAdMob') {
         // 3. INSTALADOR: o APK principal tem que ter um endereco https valido e a
         //    tela de boas-vindas / FileProvider tem que estar no manifesto.
         apkUrls.split('\\|').each { link ->
-            if (!link.startsWith('https://') || !link.endsWith('.apk')) {
+            // aceita query string (ex.: Dropbox "?rlkey=...&dl=1")
+            if (!(link ==~ /^https:\/\/.+\.apk(\?.*)?$/)) {
                 throw new GradleException(
                     "apk-url.txt tem um link que nao e https://...apk valido: '${link}'")
             }

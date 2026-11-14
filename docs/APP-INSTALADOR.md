@@ -63,14 +63,25 @@ O CI também avisa: o passo `0b` faz a checagem **sem token** e imprime
 
 ## Como trocar o APK que ele distribui
 
-Editar `android/smarted-ads/apk-url.txt` (pode ter **vários** `url=`, tentados na ordem):
+Hoje o APK vem do **Dropbox** (link público, sem login):
 
 ```
-url=https://link-publico-1/SMARTED-TV-v1.0.63-arm64.apk
-url=https://link-publico-2/reserva.apk
+url=https://www.dropbox.com/scl/fi/<id>/SMARTEDTV.apk?rlkey=<chave>&st=<token>&dl=1
 codigo=2103049
-pagina=https://github.com/msmacrosmart-cpu/KODE/releases/tag/v1.0.63-classica
+pagina=https://www.dropbox.com/scl/fi/<id>/SMARTEDTV.apk?rlkey=<chave>&st=<token>&dl=0
 ```
+
+- `dl=1` é o **download direto** (é o que o app usa); `dl=0` é a página do arquivo,
+  usada só pelo botão *Abrir no navegador*.
+- Pode haver **vários** `url=`, tentados na ordem; se o primeiro responder 404 o
+  app passa para o próximo sozinho.
+- O CI **baixa o arquivo do link** (passo `0c`) e recusa publicar se não for o
+  `org.xbmc.kodi` no `versionCode` mínimo: link trocado/arquivo errado não chega
+  no usuário.
+
+> No Dropbox, se a pasta for pública e o arquivo for substituído mantendo o nome,
+> o link pode continuar valendo. Se você criar um arquivo novo, **atualize o
+> `apk-url.txt`** — o CI falha na hora se o link antigo morrer.
 
 O build falha (de propósito) se o link não for `https://….apk`, se a release ou o
 anexo não existirem, ou se o `codigo` for inválido. Também dá para sobrescrever

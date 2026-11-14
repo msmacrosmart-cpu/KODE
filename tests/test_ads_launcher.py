@@ -50,21 +50,35 @@ class LinkDoApkPrincipalTest(unittest.TestCase):
     def test_link_direto_https_do_apk(self):
         for url in self.urls:
             self.assertTrue(url.startswith('https://'), url)
-            self.assertTrue(url.endswith('.apk'), url)
-        # pelo menos um link direto de anexo de release (sem HTML no meio)
-        self.assertTrue(any('/releases/download/' in u for u in self.urls), self.urls)
+            self.assertIn('.apk', url)
+            # nunca a PAGINA do arquivo: tem que ser o download direto
+            self.assertNotIn('dl=0', url, url)
+
+    def test_nenhum_link_de_release_privada(self):
+        # anexo de repositorio privado responde 404 para quem nao esta logado
+        # (era exatamente o erro na TV). O link do GitHub so vale em repo publico.
+        for url in self.urls:
+            if '/releases/download/' in url:
+                self.fail('link de release do GitHub no apk-url.txt: se o repositorio '
+                          'for privado ele responde 404 na TV. Use hospedagem publica '
+                          '(Dropbox ?dl=1, servidor proprio). Link: %s' % url)
 
     def test_pagina_de_reserva_para_o_navegador(self):
         # se todos os links diretos falharem, o app abre esta pagina
         pagina = self.campos['pagina']
         self.assertTrue(pagina.startswith('https://'), pagina)
 
-    def test_link_aponta_para_release_real_da_linha_classica(self):
+    def test_link_entrega_o_arquivo_certo(self):
+        # o nome do arquivo tem que ser o do APK principal (nao o do app de anuncios)
+        for url in self.urls:
+            self.assertIn('SMARTED', url.upper())
+            self.assertNotIn('Anuncios', url)
+
+    def test_sem_login_para_baixar(self):
+        # Dropbox: ?dl=1 entrega os bytes; qualquer outro host: nada de login
         url = self.urls[0]
-        self.assertRegex(url, r'/releases/download/v1\.0\.\d+-classica/SMARTED-TV-v1\.0\.\d+-arm64\.apk')
-        tag = re.search(r'/releases/download/([^/]+)/', url).group(1)
-        arquivo = url.rsplit('/', 1)[-1]
-        self.assertTrue(arquivo.startswith('SMARTED-TV-' + tag.replace('-classica', '')), arquivo)
+        if 'dropbox.com' in url:
+            self.assertIn('dl=1', url)
 
     def test_codigo_minimo_do_kodi(self):
         codigo = int(self.campos['codigo'])
@@ -268,9 +282,14 @@ class WorkflowDoAppTest(unittest.TestCase):
         self.fluxo = WORKFLOW.read_text()
 
     def test_versao_nova(self):
-        self.assertIn('VERSAO_ADS: "1.0.5"', self.fluxo)
-        self.assertIn('CODIGO_ADS: "6"', self.fluxo)
-        self.assertIn('TAG_ADS: v1.0.5-ads', self.fluxo)
+        self.assertIn('VERSAO_ADS: "1.0.6"', self.fluxo)
+        self.assertIn('CODIGO_ADS: "7"', self.fluxo)
+        self.assertIn('TAG_ADS: v1.0.6-ads', self.fluxo)
+
+    def test_baixa_o_apk_do_link_antes_de_publicar(self):
+        # garante que o link entrega MESMO o org.xbmc.kodi na versao minima
+        self.assertIn('0c. Baixar o APK do link', self.fluxo)
+        self.assertIn("apk.package != 'org.xbmc.kodi'", self.fluxo)
 
     def test_le_o_apk_url_e_confere_a_release(self):
         self.assertIn('apk-url.txt', self.fluxo)
