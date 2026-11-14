@@ -1,9 +1,9 @@
-# Verificação do APK único — 1.0.65 (run 43643564098)
+# Verificação do APK único — 1.0.65
 
-APK: `SMARTEDTV-1.0.65-unificado-arm64-v8a.apk`
+artifact do run 43643564098 (conferência sem recompilar)
 
 ```
-== arquivo: smartedtv/out-apk/SMARTEDTV-1.0.65-unificado-arm64-v8a.apk  (85.2 MB)
+== arquivo: apk/SMARTEDTV-1.0.65-unificado-arm64-v8a.apk  (85.2 MB)
 
 == identidade do pacote (aapt2 badging)
   package: name='smartedtv.full' versionCode='2103051' versionName='1.0.65' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
@@ -16,11 +16,7 @@ APK: `SMARTEDTV-1.0.65-unificado-arm64-v8a.apk`
   OK    activity de pre-roll               .PreRollActivity
   OK    APPLICATION_ID do AdMob            ca-app-pub-2066014755407744~5076693043
   OK    permissão AD_ID                    com.google.android.gms.permission.AD_ID
-  aviso telas de anúncio em paisagem       sem sensorLandscape no manifesto
-  A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=6
-  A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=6
-  A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=6
-  A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=6
+  OK    telas de anúncio em paisagem       4 linha(s)
 
 == conteúdo do APK (ZIP)
   OK    addon skin.novatv                  assets/addons/skin.novatv/addon.xml
@@ -48,9 +44,9 @@ APK: `SMARTEDTV-1.0.65-unificado-arm64-v8a.apk`
   OK    ponte                              ATIVIDADE_PREROLL = 'smartedtv.full.PreRollActivity'
   OK    ponte                              ATIVIDADE_ABERTURA = 'smartedtv.full.AppOpenActivity'
   OK    ponte                              tentar_plano_b=False
-  aviso ponte                              ainda menciona o pacote do app auxiliar antigo
+  OK    ponte                              constantes em uso apontam para dentro do app
 
 == resumo
   obrigatórias com falha: 0
-  avisos: 2
+  avisos: 0
 ```
