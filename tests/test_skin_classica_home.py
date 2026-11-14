@@ -91,12 +91,14 @@ class VersaoEBuildTest(unittest.TestCase):
         for opcao in ('--skin-version', '--keep-bridge', '--no-classic-copy'):
             self.assertIn(opcao, script)
 
-    def test_fluxo_classico_parte_do_apk_1_0_47(self):
+    def test_fluxo_classico_encadeia_as_versoes(self):
+        # a linha classica anda sempre em cima da release anterior publicada
         fluxo = FLUXO.read_text(encoding='utf-8')
-        self.assertIn('--from-version 1.0.47', fluxo)
-        self.assertIn('70f5429f671a4c29ebb9476715bb8e79206638bba006ee963b02fd16ebe338a3', fluxo)
-        self.assertIn('--keep-bridge', fluxo)
-        self.assertIn('v1.0.58-classica', fluxo)
+        self.assertIn('--from-version 1.0.58', fluxo)
+        self.assertIn('ece4fb03cde87beb7fb351c3683c1cb5f834eb6270783daf97429eaca7cee6cf', fluxo)
+        self.assertIn('v1.0.59-classica', fluxo)
+        # 1.0.59 so reembarca o bootstrap: o resto do APK base fica intacto
+        self.assertIn('--bridge-addons service.smarted.bootstrap', fluxo)
 
 
 if __name__ == '__main__':

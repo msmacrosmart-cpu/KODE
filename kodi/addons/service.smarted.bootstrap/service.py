@@ -31,6 +31,9 @@ PAYLOAD_DIR = os.path.join(ADDON_PATH, 'payload')
 WAIT_SECONDS = 20
 POLL_SECONDS = 5
 REPAIR_ATTEMPTS = 6
+# o nav-check passou a rodar em segundo plano: espera a Home assentar antes de
+# percorrer as pastas (nada de I/O de rede competindo com a abertura do player)
+NAV_CHECK_DELAY = 20
 REPAIR_RETRY_SECONDS = 5
 UISOUNDS_SILENCIO = 'resource.uisounds.silencio'
 
@@ -246,6 +249,31 @@ def repair_until_ready(monitor):
     return report, REPAIR_ATTEMPTS
 
 
+def _tocando_video():
+    try:
+        return bool(xbmc.Player().isPlayingVideo())
+    except Exception:
+        return False
+
+
+def validar_navegacao_depois_do_boot(monitor):
+    """nav-check fora da linha do boot (nunca durante a reproducao)."""
+    if monitor.waitForAbort(NAV_CHECK_DELAY):
+        return None
+    if _tocando_video():
+        log('nav-check: adiado (video em reproducao)')
+        return None
+    try:
+        navegacao = rodar_validacao_navegacao(log)
+    except Exception as error:  # nunca derrubar o servico por causa do teste
+        log('nav-check: falhou (%s)' % error, xbmc.LOGWARNING)
+        return None
+    if navegacao is not None:
+        falhas = [linha for linha in navegacao if linha.startswith('FALHA')]
+        log('nav-check: %d destinos testados, %d falha(s)' % (len(navegacao), len(falhas)))
+    return navegacao
+
+
 def main():
     monitor = xbmc.Monitor()
     log('startup: preparando o Brazuca Play')
@@ -281,12 +309,17 @@ def main():
         % (', '.join(repo['repos']) or 'ausente',
            'ok' if repo['plugin'] else 'pendente',
            ', '.join(repo['falhas']) or 'nenhuma'))
-    # teste real dos botoes da barra: passa por cada pasta e registra o resultado
-    navegacao = rodar_validacao_navegacao(log)
-    if navegacao is not None:
-        falhas = [linha for linha in navegacao if linha.startswith('FALHA')]
-        log('nav-check: %d destinos testados, %d falha(s)' % (len(navegacao), len(falhas)))
+    # OTIMIZACAO DE PLAYBACK: cache + aceleracao por hardware ANTES de qualquer
+    # clique em "Assistir" (antes o apply_performance rodava depois do nav-check,
+    # que passa por todas as pastas da barra e competia com a Home).
     performance = apply_performance()
+
+    # o teste real dos botoes da barra continua, mas em segundo plano: some da
+    # frente da abertura do player e nunca roda durante a reproducao.
+    teste_nav = threading.Thread(target=validar_navegacao_depois_do_boot,
+                                 args=(monitor,), name='nav-check')
+    teste_nav.daemon = True
+    teste_nav.start()
 
     # 1º arranque: skin SMARTEDTV ativa + nós da Home ligados às rotas do addon
     home = xbmcvfs.translatePath('special://home')

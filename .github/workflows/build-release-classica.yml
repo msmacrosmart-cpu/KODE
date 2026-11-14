@@ -1,21 +1,23 @@
-name: Build SMARTED-TV 1.0.58 (linha classica, sem Bingie)
+name: "Build SMARTED-TV 1.0.59 (linha classica: partida rapida do player)"
 
 # Corrige a versao CLASSICA (a mesma familia da 1.0.47, ~240 MB) SEM recompilar o
-# Kodi: baixa o APK 1.0.47, troca apenas a skin (skin.novatv = skin classica do
-# repositorio, agora 1.0.18), sobe versionName/versionCode, reassina com a mesma
-# chave da linha e publica.
+# Kodi: baixa o APK da versao anterior, troca a skin e o bootstrap, sobe
+# versionName/versionCode, reassina com a mesma chave da linha e publica.
 #
-# Correcoes desta build:
-#   1. Lista de pastas (MyVideoNav, view 50): o fundo de cada linha era
-#      pb_rounded.png (textura cinza-clara) tingido de BRANCO (B3FFFFFF na linha
-#      normal e FFFFFFFF na focada). Agora: CC121212 (normal) e FF1E1E1E (focada).
-#   2. Home (layout aurora, o padrao): havia duas fileiras sobrepostas
-#      ("Lancamentos" em y=800 e "Filmes" em y=700) e "Series" fora da tela
-#      (y=1180). Agora sao exatamente duas: Lancamentos/Filmes em y=570 e Series
-#      em y=822, com 28 px de respiro entre elas.
+# 1.0.59 — PARTIDA RAPIDA DO PLAYER (10-20 s -> poucos segundos)
+#   * advancedsettings.xml: buffermode 1 (cache so de stream), memorysize 50 MB
+#     (buffer curto enche rapido) e readfactor 20.0 (le 20x o bitrate). Antes:
+#     buffermode 4 + 256 MB + 10x, que segurava o primeiro frame ate encher.
+#   * Settings via JSON-RPC no boot: filecache.buffermode 1, memorysize 50,
+#     readfactor 2000 (=20x), chunksize 512 KB, MediaCodec + Surface ligados e
+#     videoplayer.adjustrefreshrate 0 (sem 1-3 s de troca de modo de video).
+#   * apply_performance() passou a rodar ANTES do nav-check; o nav-check (que
+#     percorre todas as pastas da barra) agora roda 20 s depois do boot, em
+#     segundo plano, e nunca durante a reproducao.
+#   * timeouts de rede: curlclienttimeout 15 s e curllowspeedtime 20 s.
 #
-# Nada mais muda: motor (libkodi.so), dex, perfil semeado, plugin.video.smarted e
-# bootstrap seguem byte a byte como estavam na 1.0.47 (--keep-bridge).
+# 1.0.58 — painel escuro na listagem (MyVideoNav view 50) e Home com duas
+# fileiras (Lancamentos em y=570 e Series em y=822, 28 px de respiro).
 
 on:
   workflow_dispatch:
@@ -31,21 +33,21 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     env:
-      TAG_BASE: v1.0.47-classica
-      ARQUIVO_BASE: SMARTED-TV-v1.0.47-arm64.apk
-      SHA256_BASE: 70f5429f671a4c29ebb9476715bb8e79206638bba006ee963b02fd16ebe338a3
-      VERSAO_NOVA: "1.0.58"
-      CODIGO_NOVO: "2103044"
+      TAG_BASE: v1.0.58-classica
+      ARQUIVO_BASE: SMARTED-TV-v1.0.58-arm64.apk
+      SHA256_BASE: ece4fb03cde87beb7fb351c3683c1cb5f834eb6270783daf97429eaca7cee6cf
+      VERSAO_NOVA: "1.0.59"
+      CODIGO_NOVO: "2103045"
       SKIN_NOVA: "1.0.18"
-      TAG_DESTINO: v1.0.58-classica
-      ARQUIVO_DESTINO: SMARTED-TV-v1.0.58-arm64.apk
+      TAG_DESTINO: v1.0.59-classica
+      ARQUIVO_DESTINO: SMARTED-TV-v1.0.59-arm64.apk
     steps:
       - uses: actions/checkout@v4
 
       - name: 1. Teste estatico (XML + py_compile)
         run: python3 tools/kodi/static-check.py
 
-      - name: 2. Baixar o APK base 1.0.47 (hash conferido)
+      - name: 2. Baixar o APK base 1.0.58 (hash conferido)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -64,23 +66,23 @@ jobs:
       - name: 4. Ferramentas de reempacotamento
         run: ./tools/kodi/setup.sh
 
-      - name: "5. Reempacotar: skin nova + versao nova, resto intacto"
+      - name: "5. Reempacotar: skin + bootstrap novos e versao nova, resto intacto"
         env:
           PYTHONPATH: /home/runner/.cache/kode-build/python
         run: |
           set -euo pipefail
           python3 tools/kodi/build-release-apk.py \
-            --from-version 1.0.47 \
+            --from-version 1.0.58 \
             --to-version "$VERSAO_NOVA" \
             --to-code "$CODIGO_NOVO" \
             --skin-version "$SKIN_NOVA" \
-            --keep-bridge \
+            --bridge-addons service.smarted.bootstrap \
             --no-classic-copy \
             --app-label SMARTEDTV \
             "$RUNNER_TEMP/base/$ARQUIVO_BASE" "$RUNNER_TEMP/unsigned.apk"
           ls -lh "$RUNNER_TEMP/unsigned.apk"
 
-      - name: 6. Conferir a skin dentro do APK (fileiras e paineis)
+      - name: 6. Conferir skin e otimizacoes de playback dentro do APK
         env:
           PYTHONPATH: /home/runner/.cache/kode-build/python
         run: |
@@ -123,6 +125,22 @@ jobs:
           assert 'CC121212" border="16">pb_rounded.png' in nav, 'fundo escuro ausente'
           assert 'FF1E1E1E" border="16">pb_rounded.png' in nav, 'foco escuro ausente'
           print('Skin conferida: Home com 2 fileiras (%d px de respiro) e lista em cinza-escuro.' % respiro)
+
+          # OTIMIZACAO DE PLAYBACK: cache curto + leitura 20x + sem troca de modo
+          with zipfile.ZipFile(apk) as z:
+              perf = z.read('assets/addons/service.smarted.bootstrap/performance.py').decode()
+              serv = z.read('assets/addons/service.smarted.bootstrap/service.py').decode()
+          assert '<buffermode>1</buffermode>' in perf, 'buffermode nao esta em 1'
+          assert '<memorysize>52428800</memorysize>' in perf, 'memorysize diferente de 50 MB'
+          assert '<readfactor>20.0</readfactor>' in perf, 'readfactor diferente de 20x'
+          assert 'smartedtv-performance-v2' in perf, 'marker antigo do advancedsettings'
+          assert "'filecache.memorysize': 48" in perf, 'settings do cache nao sao os novos'
+          assert "'filecache.readfactor': 2000" in perf, 'readfactor dos settings nao e 20x'
+          assert "'videoplayer.adjustrefreshrate': 0" in perf, 'troca de modo de video ligada'
+          assert 'NAV_CHECK_DELAY' in serv, 'nav-check ainda sincrono no boot'
+          assert serv.index('apply_performance()') < serv.index('validar_navegacao_depois_do_boot('), \
+              'performance aplicada depois do nav-check'
+          print('Playback conferido: buffermode 1, 50 MB, readfactor 20x, sem troca de modo, nav-check em segundo plano.')
           print('Tamanho do APK sem assinatura: %.1f MB' % (apk.stat().st_size / 1048576))
           PY
 
@@ -160,8 +178,8 @@ jobs:
                                                            a.version_name, a.version_code))
           assert a.package == 'org.xbmc.kodi'
           assert a.get_app_name() == 'SMARTEDTV', a.get_app_name()
-          assert a.version_name == '1.0.58', a.version_name
-          assert int(a.version_code) == 2103044, a.version_code
+          assert a.version_name == '1.0.59', a.version_name
+          assert int(a.version_code) == 2103045, a.version_code
           with zipfile.ZipFile(apk) as z:
               nomes = z.namelist()
               skins = sorted({n.split('/')[2] for n in nomes
@@ -183,7 +201,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          NOTES="$(python3 -c "import pathlib; print(pathlib.Path('docs/NOTAS-RELEASE-1.0.58-classica.md').read_text())")"
+          NOTES="$(python3 -c "import pathlib; print(pathlib.Path('docs/NOTAS-RELEASE-1.0.59-classica.md').read_text())")"
           if gh release view "$TAG_DESTINO" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG_DESTINO" "$ARQUIVO_DESTINO" "$ARQUIVO_DESTINO.sha256" \
               -R "$GITHUB_REPOSITORY" --clobber
@@ -191,7 +209,7 @@ jobs:
           else
             gh release create "$TAG_DESTINO" "$ARQUIVO_DESTINO" "$ARQUIVO_DESTINO.sha256" \
               -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title 'SMARTED-TV 1.0.58 (arm64) - linha classica: painel escuro e Home com 2 fileiras' \
+              --title 'SMARTED-TV 1.0.59 (arm64) - linha classica: player abrindo na hora' \
               --notes "$NOTES"
           fi
           echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_DESTINO/$ARQUIVO_DESTINO"

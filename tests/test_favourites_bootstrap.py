@@ -198,8 +198,10 @@ class PerformanceTest(unittest.TestCase):
         wrote = self.performance.write_advancedsettings(str(self.home))
         self.assertTrue(wrote)
         body = (self.home / 'userdata' / 'advancedsettings.xml').read_text()
-        self.assertIn('<buffermode>4</buffermode>', body)
-        self.assertIn('<memorysize>268435456</memorysize>', body)
+        self.assertIn('<buffermode>1</buffermode>', body)          # so streams da internet
+        self.assertIn('<memorysize>52428800</memorysize>', body)   # 50 MB: buffer curto
+        self.assertIn('<readfactor>20.0</readfactor>', body)       # 20x o bitrate
+        self.assertIn('<curlclienttimeout>15</curlclienttimeout>', body)
         self.assertIn(self.performance.MARKER, body)
 
     def test_preserva_advancedsettings_do_usuario(self):
@@ -220,8 +222,10 @@ class PerformanceTest(unittest.TestCase):
         self.assertEqual(failed, [])
         self.assertIn('filecache.memorysize', applied)
         self.assertIn('videoplayer.usemediacodecsurface', applied)
-        self.assertEqual(store['filecache.buffermode'], 4)
+        self.assertEqual(store['filecache.buffermode'], 1)
         self.assertTrue(store['videoplayer.usemediacodec'])
+        # sem troca de modo de video ao abrir o player (1-3 s de tela preta)
+        self.assertEqual(store['videoplayer.adjustrefreshrate'], 0)
 
     def test_setting_recusado_nao_derruba_o_boot(self):
         store = {}
@@ -238,10 +242,16 @@ class PerformanceTest(unittest.TestCase):
         self.assertIn(self.performance.CACHE_SETTINGS['filecache.chunksize'],
                       (256, 512, 1024, 2 * 1024, 4 * 1024, 8 * 1024, 16 * 1024, 32 * 1024,
                        64 * 1024, 128 * 1024, 256 * 1024, 512 * 1024, 1024 * 1024))
-        self.assertEqual(self.performance.CACHE_SETTINGS['filecache.buffermode'], 4)
+        self.assertEqual(self.performance.CACHE_SETTINGS['filecache.buffermode'], 1)
+        self.assertIn('videoplayer.adjustrefreshrate', self.performance.VIDEO_SETTINGS)
 
     def test_servico_aplica_no_boot(self):
         source = (BOOTSTRAP / 'service.py').read_text()
         main = source[source.index('def main():'):]
         self.assertIn('apply_performance()', main)
         self.assertIn('ensure_performance', source)
+        # cache/hardware aplicados antes do nav-check, que agora roda em segundo plano
+        self.assertLess(main.index('performance = apply_performance()'),
+                        main.index('validar_navegacao_depois_do_boot'))
+        self.assertIn("name='nav-check'", source.replace('"', "'"))
+        self.assertNotIn('navegacao = rodar_validacao_navegacao(log)', main)

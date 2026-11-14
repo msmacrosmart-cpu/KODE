@@ -129,6 +129,7 @@ def main():
     skin_version = SKIN_VERSION
     keep_bridge = False
     copia_classica = True
+    bridge_escolhidos = None
     while len(argv) >= 2 and argv[0].startswith("--"):
         opt = argv.pop(0)
         if opt == "--from-version":
@@ -152,6 +153,10 @@ def main():
             # versao do addon da skin padrao (serve para o Kodi invalidar a skin
             # compilada em cache quando apenas os XMLs mudam)
             skin_version = argv.pop(0)
+        elif opt == "--bridge-addons":
+            # lista de addons do repositorio a REEMBARCAR (os demais ficam como
+            # estao no APK base). Ex.: --bridge-addedons service.smarted.bootstrap
+            bridge_escolhidos = [nome.strip() for nome in argv.pop(0).split(',') if nome.strip()]
         elif opt == "--no-classic-copy":
             # a skin classica ja e a skin padrao: nao embarcar uma segunda copia
             copia_classica = False
@@ -166,7 +171,7 @@ def main():
         else:
             raise SystemExit(f"Unknown option: {opt}")
     if len(argv) != 2:
-        raise SystemExit("Usage: build-release-apk.py [--from-version V] [--to-version V] [--to-code N] [--extra-addons DIR] [--default-skin DIR] [--skin-overlay DIR] [--app-label NOME] [--skin-version V] [--keep-bridge] [--no-classic-copy] BASE.apk OUTPUT.apk")
+        raise SystemExit("Usage: build-release-apk.py [--from-version V] [--to-version V] [--to-code N] [--extra-addons DIR] [--default-skin DIR] [--skin-overlay DIR] [--app-label NOME] [--skin-version V] [--keep-bridge] [--no-classic-copy] [--bridge-addons ID,ID] BASE.apk OUTPUT.apk")
     base, out = Path(argv[0]), Path(argv[1])
     if base.resolve() == out.resolve():
         raise SystemExit("Input and output must differ")
@@ -237,6 +242,13 @@ def main():
                     if (neto / "addon.xml").is_file():
                         extras.append(neto)
     base_addons = [] if keep_bridge else list(BRIDGE_ADDONS)
+    if bridge_escolhidos is not None:
+        por_id = {pasta.name: pasta for pasta in base_addons}
+        desconhecidos = [nome for nome in bridge_escolhidos if nome not in por_id]
+        if desconhecidos:
+            raise SystemExit("Addons desconhecidos em --bridge-addons: %s" % ", ".join(desconhecidos))
+        base_addons = [por_id[nome] for nome in bridge_escolhidos]
+        print("Addons do repositorio reembarcados: " + ", ".join(nome for nome in bridge_escolhidos))
     if keep_bridge:
         print("Ponte e bootstrap mantidos como estao no APK base (--keep-bridge)")
     for addon_dir in base_addons + extras:
