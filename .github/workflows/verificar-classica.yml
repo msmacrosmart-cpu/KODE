@@ -5,6 +5,9 @@ name: Conferir APK classico publicado (1.0.58 vs 1.0.47)
 
 on:
   workflow_dispatch:
+  push:
+    branches: [arena/7dedf371-kode]
+    paths: [.github/workflows/verificar-classica.yml]
 
 permissions:
   contents: read
