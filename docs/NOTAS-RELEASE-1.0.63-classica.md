@@ -60,3 +60,25 @@ StartAndroidActivity(smartedtv.full,smartedtv.ads.PREROLL,,,,,,,org.smartedtv.ad
 
 Se **nem o Toast** do app aparecer, o problema é o disparo (Kodi → app); se o Toast aparecer
 e o anúncio não, é o AdMob (aí o painel mostra o código 0/1/2/3/8).
+
+## Arquivos e conferência (11/2026)
+
+| Arquivo | Pacote | Versão / código | Tamanho | sha256 |
+| --- | --- | --- | --- | --- |
+| `SMARTED-TV-v1.0.63-arm64.apk` | `org.xbmc.kodi` | 1.0.63 / 2103049 | 242.222.254 B | `82c206e3eac9df9068414bc59908449008424927106e87a867e64f90b5bcee8d` |
+| `SMARTEDTV-Anuncios-1.0.3.apk` | `smartedtv.full` | 1.0.3 / 4 | 5.006.759 B | `b03f66ff4fb519fe688a2f8f1a4b53f9d04735e3fd46ffee31661b4e22dc6dc8` |
+
+Conferência do APK **publicado** (workflow `verificar-classica.yml`, run verde —
+relatório em `docs/comparacao-1.0.63.txt`):
+
+- diff do ZIP vs 1.0.62: **0 entradas novas, 0 removidas**, só
+  `service.smarted.bootstrap/smart_ads.py` mudou (7.951 → 11.496 B);
+- bootstrap embarcado: **1.0.13**;
+- anúncios: **13/13 checagens OK** (intent não vazio, plano B, marca `smartedtv-ads-v2`,
+  classes da abertura e do pre-roll, gancho `xbmc.Player`, pacote `smartedtv.full`);
+- playback: **9/9 OK** (buffermode 1, 50 MB, readfactor 20x, sem troca de modo de vídeo,
+  nav-check em segundo plano);
+- skin 1.0.18 sem regressão (9201 `570/194`, 9203 `822/194`, 9202 ausente, painéis escuros);
+- APK de anúncios da release: `smartedtv.full` 1.0.3/4, com os dois blocos de teste no dex
+  e a tag `SmartAds` (orientação `sensorLandscape` confirmada por `aapt2` nas 3 telas no
+  build do app).
