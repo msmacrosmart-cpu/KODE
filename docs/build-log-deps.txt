@@ -1,11 +1,11 @@
-# Dependências do monolito — run 43643564098
+# Dependências do monolito — run 43651800166
 
-## cache: 
+## cache: true
 
 ## disco
 ```
 Filesystem       Size  Used Avail Use% Mounted on
-/dev/root        146G   61G   85G  42% /
+/dev/root        146G   59G   87G  41% /
 tmpfs            7.9G  172K  7.9G   1% /dev/shm
 tmpfs            3.2G  1.0M  3.2G   1% /run
 tmpfs            5.0M     0  5.0M   0% /run/lock
@@ -15,29 +15,31 @@ tmpfs            1.6G   12K  1.6G   1% /run/user/1001
 ```
 ## RUNNER_TEMP
 ```
-total 12048
-drwxr-xr-x  9 runner runner     4096 Nov 14 22:06 .
-drwxr-xr-x  6 runner runner     4096 Nov 14 21:34 ..
--rw-r--r--  1 runner runner      814 Nov 14 21:35 19a4dda8-116b-405b-a23a-0a30197d4fbc.sh
--rw-r--r--  1 runner runner     1880 Nov 14 22:06 291cd95d-fa03-4173-a158-edd04a9641c3.sh
--rw-r--r--  1 runner runner      117 Nov 14 21:36 341867d2-9595-4099-bf1b-c6c07a8adc29.sh
--rw-r--r--  1 runner runner      180 Nov 14 21:36 54fdfd91-2dc8-47fc-b096-89b1ca5d9732.sh
--rw-r--r--  1 runner runner      426 Nov 14 21:36 774b959a-52bc-471c-b5a9-a621fad2f8b3.sh
--rw-r--r--  1 runner runner      226 Nov 14 21:35 92995a63-f0a7-495c-8975-eb0e8f4ab3fc.sh
-drwxr-xr-x  2 runner runner     4096 Nov 14 21:34 _github_workflow
-drwxr-xr-x  2 runner runner    12288 Nov 14 22:06 _runner_file_commands
--rw-r--r--  1 runner runner     1067 Nov 14 21:36 baee331a-8d1d-4f43-8f41-10e40b053c5c.sh
--rw-r--r--  1 runner runner      313 Nov 14 21:34 bd4c3c40-ff77-42b6-8edf-88e136f20d2b.sh
--rw-r--r--  1 runner runner 12246192 Nov 14 22:06 deps.log
-drwxr-xr-x 15 runner runner     4096 Nov 14 21:36 kodi
-drwxr-xr-x  3 runner runner     4096 Nov 14 21:36 lang
-drwxr-xr-x 83 runner runner     4096 Nov 14 21:36 res
-drwxr-xr-x  2 runner runner    12288 Nov 14 22:01 tarballs
-drwxr-xr-x  4 runner runner     4096 Nov 14 21:36 xbmc-depends
+total 92
+drwxr-xr-x 11 runner runner  4096 Nov 14 23:12 .
+drwxr-xr-x  6 runner runner  4096 Nov 14 23:09 ..
+-rw-r--r--  1 runner runner   226 Nov 14 23:10 1cfc4880-caa0-4b04-bca9-ff79acd5854d.sh
+-rw-r--r--  1 runner runner   313 Nov 14 23:09 20950038-ce47-4ca7-b60f-5c90deeb5c5e.sh
+-rw-r--r--  1 runner runner  1884 Nov 14 23:12 21264c51-9bce-4a22-a0a2-48301817bd23.sh
+-rw-r--r--  1 runner runner   426 Nov 14 23:12 4d21e427-61f0-4871-9fd9-e7ae1d01dd1f.sh
+drwxr-xr-x  2 runner runner  4096 Nov 14 23:12 725cbb61-c36f-4bdd-a289-e510f72f1e94
+drwxr-xr-x  2 runner runner  4096 Nov 14 23:09 _github_workflow
+drwxr-xr-x  2 runner runner 12288 Nov 14 23:12 _runner_file_commands
+-rw-r--r--  1 runner runner   814 Nov 14 23:10 acd60417-150e-4cbd-aed0-964bd8dd93c7.sh
+drwxr-xr-x  2 runner runner  4096 Nov 14 23:10 base
+-rw-r--r--  1 runner runner   117 Nov 14 23:11 cdcd27a5-19ed-4600-88f3-df408ab933b3.sh
+-rw-r--r--  1 runner runner  1067 Nov 14 23:11 dd26d19c-0545-4bbb-922a-c5fcaeb2bdba.sh
+-rw-r--r--  1 runner runner  6718 Nov 14 23:12 deps.log
+-rw-r--r--  1 runner runner   939 Nov 14 23:10 ee196f3f-d4dc-48ad-a9ee-155594c929a9.sh
+drwxr-xr-x 15 runner runner  4096 Nov 14 23:11 kodi
+drwxr-xr-x  3 runner runner  4096 Nov 14 23:11 lang
+drwxr-xr-x 83 runner runner  4096 Nov 14 23:11 res
+drwxr-xr-x  2 runner runner  4096 Nov 14 23:12 tarballs
+drwxr-xr-x  4 runner runner  4096 Nov 14 21:36 xbmc-depends
 ```
 ## onde estão as bibliotecas (.a) por diretório
 ```
-     60 /home/runner/work/_temp/xbmc-depends/aarch64-linux-android-21-debug/lib
+     74 /home/runner/work/_temp/xbmc-depends/aarch64-linux-android-21-debug/lib
      15 /home/runner/work/_temp/xbmc-depends/x86_64-linux-gnu-native/lib
       2 /home/runner/work/_temp/xbmc-depends/aarch64-linux-android-21-debug/lib/mariadb
       1 /home/runner/work/_temp/xbmc-depends/x86_64-linux-gnu-native/lib/python3.11/config-3.11-x86_64-linux-gnu
@@ -103,64 +105,64 @@ drwxr-xr-x  4 runner runner     4096 Nov 14 21:36 xbmc-depends
 ```
 ## fim do log das dependências
 ```
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/mastering_display_metadata.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/md5.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/mem.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/motion_vector.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/murmur3.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/opt.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/parseutils.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/pixdesc.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/pixelutils.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/pixfmt.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/random_seed.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/rc4.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/rational.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/replaygain.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/ripemd.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/samplefmt.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/sha.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/sha512.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/spherical.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/stereo3d.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/threadmessage.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/time.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/timecode.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/timestamp.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/tree.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/twofish.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/uuid.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/version.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/video_enc_params.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/xtea.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/tea.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/tx.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/film_grain_params.h
-INSTALL	libavutil/avconfig.h
-INSTALL	libavutil/ffversion.h
-INSTALL	libavutil/libavutil.pc
-make[6]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build/ffmpeg-prefix/src/ffmpeg-build'
-[100%] Completed 'ffmpeg'
-make[5]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-[100%] Built target ffmpeg
-make[4]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-make[3]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-touch .build-aarch64-linux-android-21-debug
-make -C aarch64-linux-android-21-debug/build install
-make[3]: Entering directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-make[4]: Entering directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-make[5]: Entering directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-make[5]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-[100%] Built target ffmpeg
-make[4]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-Install the project...
--- Install configuration: "Debug"
-Done
-make[3]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-touch .installed-aarch64-linux-android-21-debug
-make[2]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg'
-touch .installed-aarch64-linux-android-21-debug
-Dependencies built successfully.
-make[1]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target'
-livre após dependências:   85G
+checking for aarch64-linux-android-aarch64-linux-android21-clang... no
+checking for aarch64-linux-android21-clang... /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang
+checking for aarch64-linux-android-aarch64-linux-android21-clang++... no
+checking for aarch64-linux-android21-clang++... /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++
+checking for aarch64-linux-android-gcc... /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang
+checking whether the C compiler works... yes
+checking for C compiler default output file name... a.out
+checking for suffix of executables... 
+checking whether we are cross compiling... yes
+checking for suffix of object files... o
+checking whether the compiler supports GNU C... yes
+checking whether /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang accepts -g... yes
+checking for /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang option to enable C11 features... none needed
+checking how to run the C preprocessor... /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang -E
+checking for unzip... yes
+checking for zip... yes
+checking whether the compiler supports GNU C++... yes
+checking whether /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ accepts -g... yes
+checking for /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ option to enable C++11 features... none needed
+checking whether /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ supports C++17 features with -std=c++17... yes
+
+configure: creating ./config.status
+config.status: creating native/config.site.native
+config.status: creating Makefile.include
+config.status: creating target/config.site
+config.status: creating target/config-binaddons.site
+config.status: creating target/Toolchain.cmake
+config.status: creating target/Toolchain_binaddons.cmake
+config.status: creating native/Toolchain-Native.cmake
+'target/config.site' -> '/home/runner/work/_temp/xbmc-depends/aarch64-linux-android-21-debug/share/config.site'
+'target/config-binaddons.site' -> '/home/runner/work/_temp/xbmc-depends/x86_64-linux-gnu-native/share/config-binaddons.site'
+'target/Toolchain.cmake' -> '/home/runner/work/_temp/xbmc-depends/aarch64-linux-android-21-debug/share/Toolchain.cmake'
+'target/Toolchain_binaddons.cmake' -> '/home/runner/work/_temp/xbmc-depends/aarch64-linux-android-21-debug/share/Toolchain_binaddons.cmake'
+'native/config.site.native' -> '/home/runner/work/_temp/xbmc-depends/x86_64-linux-gnu-native/share/config.site'
+'native/Toolchain-Native.cmake' -> '/home/runner/work/_temp/xbmc-depends/x86_64-linux-gnu-native/share/Toolchain-Native.cmake'
+
+
+#------- configuration -------#
+ccache:		 no
+build type:		 debug
+build system:	 x86_64-pc-linux-gnu
+build cpu:		 x86_64
+build includes:	 
+toolchain:		 /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64
+cpu:			 arm64-v8a
+host:		 aarch64-linux-android
+CC:		 /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang
+CXX:		 /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++
+asflags:		 
+cflags:		 -DANDROID -fexceptions -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fPIC -DPIC -mtune=cortex-a53 -Og -g -D_DEBUG 
+cxxflags:		 -DANDROID -fexceptions -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fPIC -DPIC -mtune=cortex-a53 -frtti -Og -g -D_DEBUG  -std=c++17
+ldflags:		 -Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libatomic.a -L/home/runner/work/_temp/xbmc-depends/aarch64-linux-android-21-debug/lib/android-21  
+target_platform:	 
+platform_includes:	 -isystem /home/runner/work/_temp/xbmc-depends/aarch64-linux-android-21-debug/include/android-21
+ffmpeg options:	 
+prefix:		 /home/runner/work/_temp/xbmc-depends
+depends:		 /home/runner/work/_temp/xbmc-depends/aarch64-linux-android-21-debug
+ndk-api-level:	 21
+build-tools:	 /usr/local/lib/android/sdk/tools:/usr/local/lib/android/sdk/platform-tools:/usr/local/lib/android/sdk/build-tools/37.0.0
+tools/depends configurado (prefixtemp): 115 linhas
 ```
