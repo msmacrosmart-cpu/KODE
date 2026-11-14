@@ -171,12 +171,39 @@ class LigacaoNoBootTest(unittest.TestCase):
         self.assertIn("name='ads-abertura'", self.corpo.replace('"', "'"))
 
 
+class PacoteDoAppTest(unittest.TestCase):
+    def test_pacote_do_python_e_o_application_id_do_gradle(self):
+        gradle = APP_GRADLE.read_text()
+        fonte = PY_MODULE.read_text()
+        padrao = re.search(r"findProperty\('adsAppId'\) \?: '([^']+)'", gradle)
+        self.assertIsNotNone(padrao, 'applicationId padrao nao encontrado')
+        package_py = re.search(r"^PACKAGE = '([^']+)'", fonte, re.M)
+        self.assertIsNotNone(package_py)
+        self.assertEqual(package_py.group(1), padrao.group(1),
+                         'PACKAGE do Python difere do applicationId do app')
+
+    def test_nunca_usa_o_pacote_do_kodi(self):
+        gradle = APP_GRADLE.read_text()
+        self.assertIn("pacotesProibidos = ['org.xbmc.kodi']", gradle)
+        # e o pacote do Kodi nao pode aparecer como applicationId
+        self.assertNotIn("applicationId 'org.xbmc.kodi'", gradle)
+        fonte = PY_MODULE.read_text()
+        self.assertNotIn("PACKAGE = 'org.xbmc.kodi'", fonte)
+
+    def test_as_activities_ficam_no_namespace_do_app(self):
+        # mudar o applicationId nao muda o nome das classes: a ponte continua
+        # apontando para org.smartedtv.ads.AppOpenActivity / PreRollActivity
+        fonte = PY_MODULE.read_text()
+        self.assertIn("ATIVIDADE_ABERTURA = 'org.smartedtv.ads.AppOpenActivity'", fonte)
+        self.assertIn("ATIVIDADE_PREROLL = 'org.smartedtv.ads.PreRollActivity'", fonte)
+
+
 class NoBuildClassicoTest(unittest.TestCase):
     def test_fluxo_confere_os_anuncios_e_anexa_o_apk(self):
         fluxo = (ROOT / '.github/workflows/build-release-classica.yml').read_text()
         self.assertIn('smart_ads.iniciar_monitor', fluxo)     # confere o bootstrap embarcado
         self.assertIn('v1.0.0-ads', fluxo)                    # baixa o APK de anuncios
-        self.assertIn('SMARTEDTV-Anuncios-', fluxo)           # e anexa na mesma release
+        self.assertIn('*Anuncios*', fluxo)                    # e anexa na mesma release
 
     def test_fluxo_de_anuncios_compila_com_a_mesma_chave(self):
         fluxo = (ROOT / '.github/workflows/build-ads-apk.yml').read_text()

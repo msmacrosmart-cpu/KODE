@@ -8,6 +8,11 @@ def admobAppId = 'ca-app-pub-2066014755407744~5076693043'
 def adUnitAppOpen = 'ca-app-pub-2066014755407744/4214378379'
 def adUnitPreRoll = 'ca-app-pub-2066014755407744/3572039686'
 
+// PACKAGE do app de anuncios. Precisa ser UNICO no aparelho: o Kodi e
+// org.xbmc.kodi e o Android nao aceita dois pacotes com o mesmo nome (instalar
+// um sobrescreveria o outro). Por isso o padrao e org.smartedtv.ads.
+def adsAppId = (project.findProperty('adsAppId') ?: 'org.smartedtv.ads').toString()
+
 // versao vem do CI (-PadsVersionName / -PadsVersionCode) com padrao local
 def adsVersionName = (project.findProperty('adsVersionName') ?: '1.0.0').toString()
 def adsVersionCode = (project.findProperty('adsVersionCode') ?: '1').toString().toInteger()
@@ -17,7 +22,7 @@ android {
     compileSdk 34
 
     defaultConfig {
-        applicationId 'org.smartedtv.ads'
+        applicationId adsAppId
         minSdk 21
         targetSdk 34
         versionCode adsVersionCode
@@ -51,6 +56,25 @@ dependencies {
 
 // O workflow envia os IDs por -P para nao duplicar valores: se algum dia
 // mudarem, muda-se em um lugar e o build falha se o APK nao bater.
+// Trava de seguranca: o app de anuncios NUNCA pode usar o pacote do Kodi nem
+// um pacote que o Android ja veja como "mesmo app". Com a mesma assinatura da
+// linha, instalar um APK com applicationId org.xbmc.kodi tentaria SUBSTITUIR o
+// Kodi instalado (e falharia por versao, ou apagaria o Kodi do aparelho).
+def pacotesProibidos = ['org.xbmc.kodi']
+
+tasks.register('checkAdMob') {
+    doLast {
+        if (pacotesProibidos.contains(adsAppId)) {
+            throw new GradleException(
+                "applicationId '${adsAppId}' e o pacote do Kodi: o Android nao permite " +
+                "dois apps com o mesmo pacote. Instalar este APK tentaria substituir o " +
+                "Kodi (falha por versao) ou remover o Kodi do aparelho. Use um pacote " +
+                "proprio, ex.: org.smartedtv.ads")
+        }
+        println "Pacote do app de anuncios: ${adsAppId}"
+    }
+}
+
 if (project.hasProperty('admobCheck')) {
     tasks.register('checkAdMob') {
         doLast {

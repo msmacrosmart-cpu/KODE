@@ -28,6 +28,9 @@ import time
 import xbmc
 import xbmcvfs
 
+# PACKAGE = applicationId do app de anuncios (android/smarted-ads). Tem que ser
+# um pacote proprio: org.xbmc.kodi e o pacote do Kodi e o Android nao aceita
+# dois apps com o mesmo nome — um sobrescreveria o outro.
 PACKAGE = 'org.smartedtv.ads'
 ATIVIDADE_ABERTURA = 'org.smartedtv.ads.AppOpenActivity'
 ATIVIDADE_PREROLL = 'org.smartedtv.ads.PreRollActivity'
