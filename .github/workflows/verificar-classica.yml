@@ -1,4 +1,4 @@
-name: Conferir APK classico publicado (1.0.59 vs 1.0.58)
+name: Conferir APK classico publicado (1.0.60 vs 1.0.59)
 
 # Diagnostico sob demanda: baixa as duas releases e confere o APK publicado de
 # verdade (nao o que estava no diretorio de build). Mostra sha256, o que mudou
@@ -26,10 +26,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/apks"
+          gh release download v1.0.60-classica -R "$GITHUB_REPOSITORY" \
+            --pattern 'SMARTED-TV-v1.0.60-arm64.apk' --dir "$RUNNER_TEMP/apks"
           gh release download v1.0.59-classica -R "$GITHUB_REPOSITORY" \
             --pattern 'SMARTED-TV-v1.0.59-arm64.apk' --dir "$RUNNER_TEMP/apks"
-          gh release download v1.0.58-classica -R "$GITHUB_REPOSITORY" \
-            --pattern 'SMARTED-TV-v1.0.58-arm64.apk' --dir "$RUNNER_TEMP/apks"
+          gh release download v1.0.60-classica -R "$GITHUB_REPOSITORY" \
+            --pattern 'SMARTEDTV-Anuncios-*.apk' --dir "$RUNNER_TEMP/apks"
           ls -l "$RUNNER_TEMP/apks"
           sha256sum "$RUNNER_TEMP/apks/"*.apk | tee "$RUNNER_TEMP/sha.txt"
 
@@ -44,8 +46,8 @@ jobs:
 
           pasta = Path(sys.argv[1])
           sha_txt = Path(sys.argv[2]).read_text()
-          novo = pasta / 'SMARTED-TV-v1.0.59-arm64.apk'
-          velho = pasta / 'SMARTED-TV-v1.0.58-arm64.apk'
+          novo = pasta / 'SMARTED-TV-v1.0.60-arm64.apk'
+          velho = pasta / 'SMARTED-TV-v1.0.59-arm64.apk'
 
           def resumo(apk):
               a = APK(str(apk))
@@ -55,9 +57,9 @@ jobs:
 
           a_novo, i_novo = resumo(novo)
           a_velho, i_velho = resumo(velho)
-          print('1.0.59: %d bytes | %s %s | %s' % (novo.stat().st_size, a_novo.version_name,
+          print('1.0.60: %d bytes | %s %s | %s' % (novo.stat().st_size, a_novo.version_name,
                                                    a_novo.version_code, a_novo.get_app_name()))
-          print('1.0.58: %d bytes | %s %s | %s' % (velho.stat().st_size, a_velho.version_name,
+          print('1.0.59: %d bytes | %s %s | %s' % (velho.stat().st_size, a_velho.version_name,
                                                    a_velho.version_code, a_velho.get_app_name()))
           for linha in sha_txt.splitlines():
               if linha.endswith('.apk'):
@@ -105,6 +107,33 @@ jobs:
           if not all(ok for _, ok in checagens):
               raise SystemExit('APK publicado sem as otimizacoes de playback')
 
+          # --- ANUNCIOS: ponte no bootstrap embarcado -------------------------
+          with zipfile.ZipFile(novo) as z:
+              ads = z.read('assets/addons/service.smarted.bootstrap/smart_ads.py').decode()
+          checagens_ads = [
+              ('app de anuncios referenciado', 'org.smartedtv.ads' in ads),
+              ('tela de abertura', 'AppOpenActivity' in ads),
+              ('tela de video pre-roll', 'PreRollActivity' in ads),
+              ('ponte StartAndroidActivity', 'StartAndroidActivity(%s,%s)' in ads),
+              ('gancho xbmc.Player', 'MonitorPreRoll' in ads),
+              ('abertura uma vez por instalacao', 'abertura_ja_mostrada' in ads),
+              ('intervalo de pre-roll', 'PREROLL_INTERVALO' in ads),
+          ]
+          print('')
+          for nome, ok in checagens_ads:
+              print('%-36s %s' % (nome, 'OK' if ok else 'FALTANDO'))
+          if not all(ok for _, ok in checagens_ads):
+              raise SystemExit('APK publicado sem os anuncios')
+
+          anuncios_apk = sorted(pasta.glob('SMARTEDTV-Anuncios-*.apk'))
+          if anuncios_apk:
+              extra = APK(str(anuncios_apk[0]))
+              print('APK de anuncios na release: %s (%d bytes, %s %s)' % (
+                  anuncios_apk[0].name, anuncios_apk[0].stat().st_size,
+                  extra.version_name, extra.version_code))
+          else:
+              print('APK de anuncios na release: AUSENTE')
+
           # --- skin (nao pode ter regredido) ---------------------------------
           print('')
           print('skin.novatv versao:', versao_addon(addon))
@@ -122,9 +151,9 @@ jobs:
       - name: Guardar comparacao no repositorio
         run: |
           set -euo pipefail
-          cp "$RUNNER_TEMP/comparacao.txt" docs/comparacao-1.0.59.txt
+          cp "$RUNNER_TEMP/comparacao.txt" docs/comparacao-1.0.60.txt
           git config user.name "SMARTEDTV Build"
           git config user.email "ci@smarted.local"
-          git add docs/comparacao-1.0.59.txt
-          git commit -m "docs: conferencia do APK 1.0.59 publicado (playback)" || echo "sem mudancas"
+          git add docs/comparacao-1.0.60.txt
+          git commit -m "docs: conferencia do APK 1.0.60 publicado (anuncios)" || echo "sem mudancas"
           git push origin HEAD:${GITHUB_REF_NAME}
