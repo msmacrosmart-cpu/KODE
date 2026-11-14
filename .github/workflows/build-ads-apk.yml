@@ -17,9 +17,6 @@ permissions:
   contents: write
 
 env:
-  # pacote do app de anuncios (unico no aparelho). NAO pode ser org.xbmc.kodi:
-  # seria o mesmo pacote do Kodi e o Android nao aceita dois.
-  ADS_APP_ID: org.smartedtv.ads
   VERSAO_ADS: "1.0.0"
   CODIGO_ADS: "1"
   ARQUIVO_ADS: SMARTEDTV-Anuncios-1.0.0.apk
@@ -32,6 +29,17 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+
+      - name: 0. Pacote do app (android/smarted-ads/app-id.txt)
+        run: |
+          set -euo pipefail
+          PACOTE="$(cat android/smarted-ads/app-id.txt | tr -d '[:space:]')"
+          echo "ADS_APP_ID=$PACOTE" >> "$GITHUB_ENV"
+          echo::notice::applicationId do app de anuncios: $PACOTE
+          if [ "$PACOTE" = "org.xbmc.kodi" ]; then
+            echo "::error::org.xbmc.kodi e o pacote do Kodi: o Android nao aceita dois apps com o mesmo pacote"
+            exit 1
+          fi
 
       - name: 1. Java 17 + Android SDK + Gradle
         uses: actions/setup-java@v4

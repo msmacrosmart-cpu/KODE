@@ -11,7 +11,9 @@ def adUnitPreRoll = 'ca-app-pub-2066014755407744/3572039686'
 // PACKAGE do app de anuncios. Precisa ser UNICO no aparelho: o Kodi e
 // org.xbmc.kodi e o Android nao aceita dois pacotes com o mesmo nome (instalar
 // um sobrescreveria o outro). Por isso o padrao e org.smartedtv.ads.
-def adsAppId = (project.findProperty('adsAppId') ?: 'org.smartedtv.ads').toString()
+// Fonte unica do pacote: android/smarted-ads/app-id.txt (uma linha).
+def adsAppId = (project.findProperty('adsAppId')
+        ?: file('app-id.txt').text.trim()).toString()
 
 // versao vem do CI (-PadsVersionName / -PadsVersionCode) com padrao local
 def adsVersionName = (project.findProperty('adsVersionName') ?: '1.0.0').toString()

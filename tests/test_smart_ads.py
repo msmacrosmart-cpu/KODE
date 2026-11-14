@@ -172,15 +172,21 @@ class LigacaoNoBootTest(unittest.TestCase):
 
 
 class PacoteDoAppTest(unittest.TestCase):
-    def test_pacote_do_python_e_o_application_id_do_gradle(self):
+    def pacote_do_arquivo(self):
+        return (ADS_DIR / 'app-id.txt').read_text().strip()
+
+    def test_pacote_do_python_e_o_application_id_do_app(self):
+        arquivo = self.pacote_do_arquivo()
         gradle = APP_GRADLE.read_text()
-        fonte = PY_MODULE.read_text()
-        padrao = re.search(r"findProperty\('adsAppId'\) \?: '([^']+)'", gradle)
-        self.assertIsNotNone(padrao, 'applicationId padrao nao encontrado')
-        package_py = re.search(r"^PACKAGE = '([^']+)'", fonte, re.M)
+        self.assertIn('app-id.txt', gradle, 'o Gradle deve ler app-id.txt')
+        package_py = re.search(r"^PACKAGE = '([^']+)'", PY_MODULE.read_text(), re.M)
         self.assertIsNotNone(package_py)
-        self.assertEqual(package_py.group(1), padrao.group(1),
+        self.assertEqual(package_py.group(1), arquivo,
                          'PACKAGE do Python difere do applicationId do app')
+
+    def test_arquivo_tem_um_pacote_valido(self):
+        arquivo = self.pacote_do_arquivo()
+        self.assertRegex(arquivo, r'^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$')
 
     def test_nunca_usa_o_pacote_do_kodi(self):
         gradle = APP_GRADLE.read_text()
