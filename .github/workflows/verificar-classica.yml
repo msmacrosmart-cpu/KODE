@@ -1,7 +1,8 @@
-name: Conferir APK classico publicado (1.0.58 vs 1.0.47)
+name: Conferir APK classico publicado (1.0.59 vs 1.0.58)
 
-# Diagnostico sob demanda: baixa as duas releases e compara o conteudo do ZIP,
-# mostrando exatamente o que mudou (skin, versao, tamanho). Nao publica nada.
+# Diagnostico sob demanda: baixa as duas releases e confere o APK publicado de
+# verdade (nao o que estava no diretorio de build). Mostra sha256, o que mudou
+# no ZIP e se as otimizacoes de playback realmente entraram. Nao publica nada.
 
 on:
   workflow_dispatch:
@@ -25,25 +26,26 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/apks"
+          gh release download v1.0.59-classica -R "$GITHUB_REPOSITORY" \
+            --pattern 'SMARTED-TV-v1.0.59-arm64.apk' --dir "$RUNNER_TEMP/apks"
           gh release download v1.0.58-classica -R "$GITHUB_REPOSITORY" \
             --pattern 'SMARTED-TV-v1.0.58-arm64.apk' --dir "$RUNNER_TEMP/apks"
-          gh release download v1.0.47-classica -R "$GITHUB_REPOSITORY" \
-            --pattern 'SMARTED-TV-v1.0.47-arm64.apk' --dir "$RUNNER_TEMP/apks"
           ls -l "$RUNNER_TEMP/apks"
-          sha256sum "$RUNNER_TEMP/apks/"*.apk
+          sha256sum "$RUNNER_TEMP/apks/"*.apk | tee "$RUNNER_TEMP/sha.txt"
 
       - name: Comparar conteudo
         run: |
           set -euo pipefail
           python3 -m pip install --quiet 'pyaxmlparser==0.3.31'
-          python3 - "$RUNNER_TEMP/apks" <<'PY' | tee "$RUNNER_TEMP/comparacao.txt"
-          import sys, zipfile, re
+          python3 - "$RUNNER_TEMP/apks" "$RUNNER_TEMP/sha.txt" <<'PY' | tee "$RUNNER_TEMP/comparacao.txt"
+          import hashlib, re, sys, zipfile
           from pathlib import Path
           from pyaxmlparser import APK
 
           pasta = Path(sys.argv[1])
-          novo = pasta / 'SMARTED-TV-v1.0.58-arm64.apk'
-          velho = pasta / 'SMARTED-TV-v1.0.47-arm64.apk'
+          sha_txt = Path(sys.argv[2]).read_text()
+          novo = pasta / 'SMARTED-TV-v1.0.59-arm64.apk'
+          velho = pasta / 'SMARTED-TV-v1.0.58-arm64.apk'
 
           def resumo(apk):
               a = APK(str(apk))
@@ -53,10 +55,13 @@ jobs:
 
           a_novo, i_novo = resumo(novo)
           a_velho, i_velho = resumo(velho)
-          print('1.0.58: %d bytes | %s %s | %s' % (novo.stat().st_size, a_novo.version_name,
+          print('1.0.59: %d bytes | %s %s | %s' % (novo.stat().st_size, a_novo.version_name,
                                                    a_novo.version_code, a_novo.get_app_name()))
-          print('1.0.47: %d bytes | %s %s | %s' % (velho.stat().st_size, a_velho.version_name,
+          print('1.0.58: %d bytes | %s %s | %s' % (velho.stat().st_size, a_velho.version_name,
                                                    a_velho.version_code, a_velho.get_app_name()))
+          for linha in sha_txt.splitlines():
+              if linha.endswith('.apk'):
+                  print('sha256 publicado:', linha)
 
           so_novo = sorted(set(i_novo) - set(i_velho))
           so_velho = sorted(set(i_velho) - set(i_novo))
@@ -68,10 +73,35 @@ jobs:
           for n in mudados[:20]:
               print('   %-70s %d -> %d' % (n, i_velho[n], i_novo[n]))
 
+          # --- otimizacoes de playback dentro do APK publicado ---------------
           with zipfile.ZipFile(novo) as z:
+              perf = z.read('assets/addons/service.smarted.bootstrap/performance.py').decode()
+              serv = z.read('assets/addons/service.smarted.bootstrap/service.py').decode()
+              boot = z.read('assets/addons/service.smarted.bootstrap/addon.xml').decode()
               home = z.read('assets/addons/skin.novatv/xml/Home.xml').decode()
               nav = z.read('assets/addons/skin.novatv/xml/MyVideoNav.xml').decode()
               addon = z.read('assets/addons/skin.novatv/addon.xml').decode()
+
+          print('')
+          print('bootstrap versao:', re.search(r'version="([^"]+)"', boot).group(1))
+          checagens = [
+              ('advancedsettings buffermode 1', '<buffermode>1</buffermode>' in perf),
+              ('advancedsettings memorysize 50 MB', '<memorysize>52428800</memorysize>' in perf),
+              ('advancedsettings readfactor 20x', '<readfactor>20.0</readfactor>' in perf),
+              ('marker v2 do advancedsettings', 'smartedtv-performance-v2' in perf),
+              ('setting memorysize 48 MB', "'filecache.memorysize': 48" in perf),
+              ('setting readfactor 2000 (20x)', "'filecache.readfactor': 2000" in perf),
+              ('sem troca de modo de video', "'videoplayer.adjustrefreshrate': 0" in perf),
+              ('nav-check em segundo plano', 'NAV_CHECK_DELAY' in serv),
+              ('performance antes do nav-check',
+               serv.index('apply_performance()') < serv.index('validar_navegacao_depois_do_boot(')),
+          ]
+          for nome, ok in checagens:
+              print('%-36s %s' % (nome, 'OK' if ok else 'FALTANDO'))
+          if not all(ok for _, ok in checagens):
+              raise SystemExit('APK publicado sem as otimizacoes de playback')
+
+          # --- skin (nao pode ter regredido) ---------------------------------
           print('')
           print('skin.novatv versao:', re.search(r'version="([^"]+)"', addon).group(1))
           for cid, topo, alt in (('9201', '570', '194'), ('9203', '822', '194')):
@@ -81,26 +111,16 @@ jobs:
               print('%s: top=%s height=%s (esperado %s/%s)' % (cid, m.group(1) if m else '?',
                                                               m.group(2) if m else '?', topo, alt))
           print('9202 presente:', '<control type="list" id="9202">' in home)
-          print('painel claro B3FFFFFF na lista:', 'B3FFFFFF" border="16">pb_rounded.png' in nav)
           print('painel escuro CC121212 na lista:', 'CC121212" border="16">pb_rounded.png' in nav)
           print('foco escuro FF1E1E1E na lista:', 'FF1E1E1E" border="16">pb_rounded.png' in nav)
-
-          with zipfile.ZipFile(velho) as z:
-              home_v = z.read('assets/addons/skin.novatv/xml/Home.xml').decode()
-          antigos = []
-          for c in ('9201', '9202', '9203'):
-              m = re.search(r'id="%s"><left>60</left><top>(\d+)</top>' % c, home_v)
-              antigos.append('%s@%s' % (c, m.group(1) if m else '?'))
-          print('')
-          print('(1.0.47) fileiras antigas:', ', '.join(antigos))
           PY
 
       - name: Guardar comparacao no repositorio
         run: |
           set -euo pipefail
-          cp "$RUNNER_TEMP/comparacao.txt" docs/comparacao-1.0.58.txt
+          cp "$RUNNER_TEMP/comparacao.txt" docs/comparacao-1.0.59.txt
           git config user.name "SMARTEDTV Build"
           git config user.email "ci@smarted.local"
-          git add docs/comparacao-1.0.58.txt
-          git commit -m "docs: comparacao APK 1.0.58 (classica) x 1.0.47" || echo "sem mudancas"
+          git add docs/comparacao-1.0.59.txt
+          git commit -m "docs: conferencia do APK 1.0.59 publicado (playback)" || echo "sem mudancas"
           git push origin HEAD:${GITHUB_REF_NAME}
