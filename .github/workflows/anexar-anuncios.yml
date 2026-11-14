@@ -1,0 +1,36 @@
+name: "Anexar APK de anuncios numa release existente"
+
+# Utilitario: copia o APK de anuncios da release v1.0.2-ads para uma release do
+# Kodi que ja foi publicada (sem recompilar o APK do Kodi).
+
+on:
+  workflow_dispatch:
+    inputs:
+      destino:
+        description: 'Tag da release do Kodi (ex.: v1.0.62-classica)'
+        required: true
+        default: v1.0.62-classica
+  push:
+    branches: [arena/7dedf371-kode]
+    paths: [.github/workflows/anexar-anuncios.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  anexar:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - name: Baixar o APK de anuncios e anexar
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DESTINO: ${{ inputs.destino || 'v1.0.62-classica' }}
+        run: |
+          set -euo pipefail
+          mkdir -p ads
+          gh release download v1.0.2-ads -R "$GITHUB_REPOSITORY" \
+            --pattern '*Anuncios*' --dir ads
+          ls -l ads
+          gh release upload "$DESTINO" ads/* -R "$GITHUB_REPOSITORY" --clobber
+          gh release view "$DESTINO" --json assets -q '.assets[] | "\(.name) \(.size) bytes"'
