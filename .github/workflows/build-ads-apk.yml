@@ -118,8 +118,20 @@ jobs:
           for activity in ('AppOpenActivity', 'PreRollActivity'):
               assert contem(manifesto, activity), '%s fora do manifesto' % activity
               print('activity no manifesto:', activity, 'OK')
-          assert contem(manifesto, 'sensorLandscape'), 'landscape nao forcado'
-          print('sensorLandscape: OK')
+          # screenOrientation e atributo de ENUM no AXML: vale o inteiro 6
+          # (sensorLandscape), nao o texto. Le o manifesto compilado de verdade.
+          from pyaxmlparser.core import AXML
+          import re
+          xml_manifesto = AXML(manifesto).get_xml()
+          valores = re.findall(r'screenOrientation="([^"]*)"', xml_manifesto)
+          print('screenOrientation no APK:', valores)
+          if not valores:
+              raise SystemExit('nenhuma activity com screenOrientation no APK')
+          for valor in valores:
+              ok = valor in ('6', 'sensorLandscape', '0x00000006')
+              if not ok:
+                  raise SystemExit('orientacao diferente de sensorLandscape: %r' % valor)
+          print('sensorLandscape (enum 6) nas %d activities: OK' % len(valores))
 
           # o SDK do AdMob tem que ter entrado de verdade
           assert any(n.startswith('classes') for n in nomes), 'sem dex'
