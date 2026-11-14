@@ -20,12 +20,17 @@ import zipfile
 from pathlib import Path
 
 PACOTE = "smartedtv.full"
-VERSAO = "1.0.65"
-CODIGO = 2103051
+VERSAO = "1.0.66"
+CODIGO = 2103052
 
 BLOCO_ABERTURA = "ca-app-pub-2066014755407744/4214378379"
 BLOCO_PREROLL = "ca-app-pub-2066014755407744/3572039686"
 ADS_APP_ID = "ca-app-pub-2066014755407744~5076693043"
+
+# base estável (perfil semeado) dentro do APK
+MANIFESTO_BASE = "assets/smarted/profile-manifest.txt"
+MANIFESTO_BASE_SHA256 = "1447de816a44ecc11c42c2c315cf20e61c9baa037e914a13293711cf152d1ede"
+BRAZUCA = "assets/smarted/profile/addons/plugin.video.BrazucaPlay.Matrix/addon.xml"
 
 ADDONS = (
     "skin.novatv",
@@ -164,6 +169,22 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
         if alvo_ponte in presentes:
             ponte = z.read(alvo_ponte).decode("utf-8", "replace")
 
+        # ------------------------------------------------ base estável (perfil)
+        rel.titulo("base estável (perfil semeado da linha clássica)")
+        if MANIFESTO_BASE in presentes:
+            import hashlib
+            dados = z.read(MANIFESTO_BASE)
+            digest = hashlib.sha256(dados).hexdigest()
+            esperado = esperado["manifesto_base"]
+            rel.exige(digest == esperado, "manifesto do perfil",
+                      f"{digest[:16]}… (esperado {esperado[:16]}…)")
+            arquivos = [n for n in nomes if n.startswith("assets/smarted/profile/")
+                        and not n.endswith("/")]
+            rel.exige(len(arquivos) > 50, "arquivos do perfil", f"{len(arquivos)} entradas")
+            rel.exige(BRAZUCA in presentes, "Brazuca Play no perfil", BRAZUCA)
+        else:
+            rel.falha("base estável", f"{MANIFESTO_BASE} ausente no APK")
+
     # -------------------------------------------------------------------- dex
     rel.titulo("classes no dex (anúncios dentro do app)")
     for rotulo, agulha in (
@@ -196,6 +217,23 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
         else:
             rel.ok("ponte", "constantes em uso apontam para dentro do app")
 
+    # ------------------------------------------------------------------ splash
+    rel.titulo("splash (barra branca, sem texto)")
+    recursos = dump(aapt2, "dump", "resources", str(apk))
+    rel.exige("progresswhite" in recursos, "drawable branco", "progresswhite")
+    layout = dump(aapt2, "dump", "xmltree", "--file",
+                  "res/layout/activity_splash.xml", str(apk))
+    if layout.startswith("<<"):
+        # o aapt2 pode renomear o caminho do layout; procura pelo id
+        layout = ""
+    if layout:
+        rel.exige("progressBar1" in layout or "progressDrawable" in layout,
+                  "layout da splash", "activity_splash.xml legível")
+        rel.exige("0x8" in layout or "gone" in layout,
+                  "texto de status", "escondido (gone)")
+    else:
+        rel.aviso("layout da splash", "não consegui ler activity_splash.xml")
+
     # -------------------------------------------------------------- resumo
     rel.titulo("resumo")
     rel.texto(f"obrigatórias com falha: {len(rel.erros)}")
@@ -212,10 +250,12 @@ def main() -> int:
     ap.add_argument("--pacote", default=PACOTE)
     ap.add_argument("--versao", default=VERSAO)
     ap.add_argument("--codigo", type=int, default=CODIGO)
+    ap.add_argument("--manifesto-base-sha", default=MANIFESTO_BASE_SHA256)
     ap.add_argument("--relatorio", default="")
     args = ap.parse_args()
 
-    esperado = {"pacote": args.pacote, "versao": args.versao, "codigo": args.codigo}
+    esperado = {"pacote": args.pacote, "versao": args.versao, "codigo": args.codigo,
+                "manifesto_base": args.manifesto_base_sha}
 
     apk = Path(args.apk)
     rel = Relatorio()

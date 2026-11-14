@@ -38,10 +38,10 @@ class IntegracaoNoFonteTest(unittest.TestCase):
 
     def test_pacote_unico_e_versao(self):
         self.assertIn(f'APP_PACKAGE = "{PACOTE}"', self.script)
-        self.assertIn('VERSAO_NOME = "1.0.65"', self.script)
-        self.assertIn('VERSAO_CODIGO = 2103051', self.script)
+        self.assertIn('VERSAO_NOME = "1.0.66"', self.script)
+        self.assertIn('VERSAO_CODIGO = 2103052', self.script)
         # tem que ser maior que a 1.0.63 (2103049) para nao regredir instalacao
-        self.assertGreater(2103051, 2103050)
+        self.assertGreater(2103052, 2103051)
 
     def test_gradle_ganha_o_admob_e_a_versao(self):
         self.assertIn("com.google.android.gms:play-services-ads:23.2.0", self.script)
@@ -228,13 +228,25 @@ class VerificadorDoApkTest(unittest.TestCase):
                        "ATIVIDADE_PREROLL = 'smartedtv.full.PreRollActivity'\n"
                        "ATIVIDADE_ABERTURA = 'smartedtv.full.AppOpenActivity'\n"
                        "tentar_plano_b=False\n")
+            registro = b"a" * 64 + b"\t10\tuserdata/guisettings.xml\n"
+            z.writestr("assets/smarted/profile-manifest.txt", registro)
+            for i in range(60):
+                z.writestr("assets/smarted/profile/addons/x%d.xml" % i, b"y")
+            z.writestr("assets/smarted/profile/addons/plugin.video.BrazucaPlay.Matrix/addon.xml",
+                       b"<addon/>")
         return apk
 
     def _aapt2(self, tmp):
         caminho = Path(tmp) / "aapt2"
         caminho.write_text("""#!/bin/sh
 if [ "$2" = badging ]; then
-  echo "package: name='smartedtv.full' versionCode='2103051' versionName='1.0.65'"
+  echo "package: name='smartedtv.full' versionCode='2103052' versionName='1.0.66'"
+elif [ "$2" = resources ]; then
+  echo "drawable/progresswhite type=drawable"
+elif [ "$2" = xmltree ] && [ "$4" = "res/layout/activity_splash.xml" ]; then
+  echo '    A: android:id(0x010100d0)=@0x7f080054'
+  echo '    A: android:progressDrawable(0x0101012c)=@0x7f070001'
+  echo '    A: android:visibility(0x010100dc)=0x8'
 else
   echo '    A: android:name(0x01010003)=".AppOpenActivity"'
   echo '    A: android:name(0x01010003)=".PreRollActivity"'
@@ -251,8 +263,12 @@ fi
         with tempfile.TemporaryDirectory() as tmp:
             apk = self._apk(tmp)
             aapt2 = self._aapt2(tmp)
+            import hashlib, zipfile
+            with zipfile.ZipFile(apk) as z:
+                sha = hashlib.sha256(z.read("assets/smarted/profile-manifest.txt")).hexdigest()
             proc = subprocess.run(
-                [sys.executable, str(VERIFICADOR), str(apk), "--aapt2", str(aapt2)],
+                [sys.executable, str(VERIFICADOR), str(apk), "--aapt2", str(aapt2),
+                 "--manifesto-base-sha", sha],
                 capture_output=True, text=True)
             self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
             self.assertIn("obrigatórias com falha: 0", proc.stdout)
@@ -272,10 +288,72 @@ fi
                 for nome, dados in itens.items():
                     z.writestr(nome, dados)
             aapt2 = self._aapt2(tmp)
+            import hashlib, zipfile
+            with zipfile.ZipFile(apk) as z:
+                sha = hashlib.sha256(z.read("assets/smarted/profile-manifest.txt")).hexdigest()
             proc = subprocess.run(
-                [sys.executable, str(VERIFICADOR), str(apk), "--aapt2", str(aapt2)],
+                [sys.executable, str(VERIFICADOR), str(apk), "--aapt2", str(aapt2),
+                 "--manifesto-base-sha", sha],
                 capture_output=True, text=True)
             self.assertEqual(proc.returncode, 1)
             self.assertIn("FALHA addon skin.novatv", proc.stdout)
             # não parou no primeiro erro: avaliou o dex também
             self.assertIn("classe SmartAds", proc.stdout)
+
+
+class RestauracaoDaBaseEstavelTest(unittest.TestCase):
+    """A base da linha estavel (perfil semeado) volta para dentro do APK.
+
+    Regressão real da 1.0.65: o monólito abria com perfil limpo, então o
+    catálogo perdia as categorias (Doramas, Animes, Novelas, Desenhos) porque
+    `plugin.video.smarted` só delega para o `plugin.video.BrazucaPlay.Matrix`,
+    que vivia no perfil semeado.
+    """
+
+    def setUp(self):
+        self.script = Path('smartedtv/tools/integrate-monolith.py').read_text(encoding='utf-8')
+        self.fluxo = Path('.github/workflows/build-monolith.yml').read_text(encoding='utf-8')
+        self.injecao = Path('smartedtv/tools/inject-base-estavel.py').read_text(encoding='utf-8')
+        self.seeder = Path('smartedtv/tools/ads-java/SeedBase.java.in').read_text(encoding='utf-8')
+
+    def test_seeder_entra_no_apk_e_no_install_cmake(self):
+        self.assertIn('"SeedBase"', self.script)
+        self.assertIn('SeedBase.pronto(this)', Path(
+            'smartedtv/tools/integrate-monolith.py').read_text(encoding='utf-8'))
+
+    def test_seeder_so_age_sem_perfil_e_confere_hash(self):
+        # nunca mexer num perfil existente
+        self.assertIn('if (new File(home, ".kodi").isDirectory())', self.seeder)
+        # manifesto fixo da base estavel, igual ao launcher antigo
+        self.assertIn('1447de816a44ecc11c42c2c315cf20e61c9baa037e914a13293711cf152d1ede',
+                      self.seeder)
+        # staging + rename atomico (nunca escreve direto em .kodi)
+        self.assertIn('.smarted-seed-', self.seeder)
+        self.assertIn('renameTo(alvo)', self.seeder)
+        # a skin da base (Estuary) vira skin.novatv
+        self.assertIn('skin.novatv', self.seeder)
+        # nada de texto na tela (pedido do usuario)
+        self.assertNotIn('setText(', self.seeder)
+
+    def test_injecao_recusa_base_errada(self):
+        self.assertIn('assets/smarted/profile-manifest.txt', self.injecao)
+        self.assertIn('MANIFESTO', self.injecao)
+        self.assertIn('não vou duplicar', self.injecao)     # já existe = erro
+        self.assertIn('.SF', self.injecao)                  # assinatura antiga sai
+        self.assertIn('zipalign', self.fluxo)               # realinhar depois
+        self.assertIn('apksigner" sign', self.fluxo)        # reassinar depois
+
+    def test_fluxo_baixa_a_base_e_confere_o_manifesto(self):
+        self.assertIn('BASE_TAG: v1.0.63-classica', self.fluxo)
+        self.assertIn('BASE_ARQUIVO: SMARTED-TV-v1.0.63-arm64.apk', self.fluxo)
+        self.assertIn('assets/smarted/profile-manifest.txt', self.fluxo)
+        self.assertIn('--manifesto-base-sha', self.fluxo)
+        self.assertIn('inject-base-estavel.py', self.fluxo)
+
+    def test_splash_branco_sem_texto_e_sem_corte(self):
+        layout_ok = 'progresswhite' in self.script and 'centerInside' in self.script
+        self.assertTrue(layout_ok)
+        self.assertIn('android:visibility="gone"', self.script)
+        self.assertIn('mSplash.mProgress.setVisibility(View.INVISIBLE)', self.script)
+        # o patch remove as chamadas que escondem a barra
+        self.assertIn('chamadas que escondiam a barra', self.script)

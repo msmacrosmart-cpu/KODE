@@ -5,7 +5,7 @@ Roda no codigo-fonte do Kodi 21.3-Omega (clonado pelo workflow) e transforma o
 build em um monolito:
 
     applicationId  smartedtv.full      (era org.xbmc.kodi)
-    versao         1.0.65 / 2103051
+    versao         1.0.66 / 2103052
     anuncios       AppOpenActivity + PreRollActivity dentro do app (AdMob nativo)
     conteudo       skin.novatv + plugin.video.smarted + service.smarted.bootstrap
                    + resource.uisounds.silencio (o mesmo pacote da linha classica)
@@ -33,13 +33,13 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 
 APP_PACKAGE = "smartedtv.full"
-VERSAO_NOME = "1.0.65"
-VERSAO_CODIGO = 2103051
+VERSAO_NOME = "1.0.66"
+VERSAO_CODIGO = 2103052
 
 ADS_APP_ID = "ca-app-pub-2066014755407744~5076693043"
 PLAY_SERVICES_ADS = "com.google.android.gms:play-services-ads:23.2.0"
 
-JAVA_ADS = ["SmartAds", "AdTela", "AppOpenActivity", "PreRollActivity"]
+JAVA_ADS = ["SmartAds", "AdTela", "AppOpenActivity", "PreRollActivity", "SeedBase"]
 
 SKIN_ORIGEM = "kodi/skin.estilo.personalizado"
 SKIN_ID = "skin.novatv"
@@ -136,8 +136,16 @@ def patch_version_txt(src: Path) -> None:
 def patch_android_strings(src: Path) -> None:
     """Nome visivel SMARTEDTV + splash. Reaproveita o patch da linha fonte."""
     ps = patch_source()
-    ps.patch_android_app_name(src)
-    ps.patch_android_java(src)
+    strings = src / "tools/android/packaging/xbmc/strings.xml.in"
+    java = src / "tools/android/packaging/xbmc/src/Main.java.in"
+    if strings.is_file() and "@APP_NAME@" not in strings.read_text(encoding="utf-8"):
+        print("  --  strings.xml.in: nome ja aplicado")
+    else:
+        ps.patch_android_app_name(src)
+    if java.is_file() and "SMARTEDTV" in java.read_text(encoding="utf-8"):
+        print("  --  Java do Android: nome ja aplicado")
+    else:
+        ps.patch_android_java(src)
 
 
 # ---------------------------------------------------------------------------
@@ -248,6 +256,148 @@ def patch_install_cmake(src: Path) -> None:
     novos = "".join(f"                  src/{classe}.java\n" for classe in JAVA_ADS)
     escrever(caminho, texto.replace(marcador, marcador + novos, 1))
     print(f"  ok  Install.cmake: {len(JAVA_ADS)} arquivos Java na lista package_files")
+
+
+# ---------------------------------------------------------------------------
+# 4b. Splash: barra branca limpa, sem textos, logo widescreen centralizada
+# ---------------------------------------------------------------------------
+LAYOUT_SPLASH = """<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black" >
+
+    <!-- arte widescreen inteira, centralizada, sem corte -->
+    <ImageView
+        android:id="@+id/imageView1"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:adjustViewBounds="true"
+        android:scaleType="centerInside"
+        android:src="@drawable/applaunch_screen" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:paddingLeft="96dp"
+        android:paddingRight="96dp"
+        android:paddingBottom="44dp" >
+
+        <ProgressBar
+            android:id="@+id/progressBar1"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:indeterminate="true"
+            android:indeterminateDrawable="@drawable/progresswhite"
+            android:progressDrawable="@drawable/progresswhite" />
+
+        <!-- o Kodi escreve aqui; fica invisivel de proposito -->
+        <TextView
+            android:id="@+id/textView1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+    </LinearLayout>
+
+</FrameLayout>
+"""
+
+DRAWABLE_BARRA = """<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <!-- trilho discreto -->
+    <item android:id="@android:id/background">
+        <shape>
+            <corners android:radius="2dip" />
+            <solid android:color="#33FFFFFF" />
+        </shape>
+    </item>
+
+    <!-- progresso branco puro -->
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape>
+                <corners android:radius="2dip" />
+                <solid android:color="#FFFFFFFF" />
+            </shape>
+        </clip>
+    </item>
+
+</layer-list>
+"""
+
+
+def patch_splash(src: Path) -> None:
+    """Troca a barra azul padrao por uma branca e tira o texto de status."""
+    layout = src / "tools/android/packaging/xbmc/res/layout/activity_splash.xml"
+    original = ler(layout)
+    if "progresswhite" in original:
+        print("  --  splash: barra branca ja aplicada")
+    else:
+        if 'android:id="@+id/progressBar1"' not in original:
+            raise ErroDePatch("activity_splash.xml sem progressBar1 (upstream mudou)")
+        if "progresscolor" not in original:
+            raise ErroDePatch("activity_splash.xml nao usa progresscolor (upstream mudou)")
+        escrever(layout, LAYOUT_SPLASH)
+        print("  ok  splash: barra branca, sem texto, arte centralizada sem corte")
+
+    drawable = src / "tools/android/packaging/xbmc/res/drawable/progresswhite.xml"
+    drawable.parent.mkdir(parents=True, exist_ok=True)
+    escrever(drawable, DRAWABLE_BARRA)
+    print("  ok  res/drawable/progresswhite.xml (branco puro)")
+
+    # a barra nao pode mais ser escondida pelo codigo do Kodi
+    java = src / "tools/android/packaging/xbmc/src/Splash.java.in"
+    texto = ler(java)
+    esconder = [
+        "          mSplash.mProgress.setVisibility(View.INVISIBLE);\n",
+        "        mProgress.setVisibility(View.INVISIBLE);\n",
+    ]
+    removidos = 0
+    for linha in esconder:
+        while linha in texto:
+            texto = texto.replace(linha, "", 1)
+            removidos += 1
+    escrever(java, texto)
+    print(f"  ok  Splash.java: {removidos} chamadas que escondiam a barra removidas")
+
+    # texto de status nunca aparece (fica no layout como gone; nao religamos)
+    if "mTextView.setVisibility(View.VISIBLE)" in texto:
+        raise ErroDePatch("Splash.java passou a mostrar o texto de status")
+
+
+def patch_seed_no_splash(src: Path) -> None:
+    """A base estavel (perfil semeado) entra antes do Kodi abrir."""
+    java = src / "tools/android/packaging/xbmc/src/Splash.java.in"
+    texto = ler(java)
+    if "SeedBase.pronto" in texto:
+        print("  --  Splash.java: semente da base ja chamada")
+        return
+    antigo = """  protected void startXBMC()
+  {
+    // Run @APP_NAME@
+    Intent intent = getIntent();"""
+    novo = """  protected void startXBMC()
+  {
+    // Base da linha classica: instala o perfil semeado UMA vez, antes de abrir
+    // o Kodi. Enquanto copia, a splash fica na tela; no fim este metodo e
+    // chamado de novo e o app abre normalmente.
+    if (!@APP_PACKAGE@.SeedBase.pronto(this))
+      return;
+
+    startXBMCNow();
+  }
+
+  private void startXBMCNow()
+  {
+    // Run @APP_NAME@
+    Intent intent = getIntent();"""
+    if antigo not in texto:
+        raise ErroDePatch("Splash.java: startXBMC com formato inesperado")
+    escrever(java, texto.replace(antigo, novo, 1))
+    print("  ok  Splash.java: base estavel instalada antes de abrir o Kodi")
 
 
 # ---------------------------------------------------------------------------
@@ -379,6 +529,8 @@ def main() -> int:
     patch_manifest(src)
     copiar_java_ads(src)
     patch_install_cmake(src)
+    patch_splash(src)
+    patch_seed_no_splash(src)
 
     instalar_skin(repo, src)
     for addon in ADDONS:
@@ -409,6 +561,12 @@ def main() -> int:
         assert f"addons/{addon_id}/*" in ler(src / "cmake/installdata/common/addons.txt")
     ads = ler(src / "addons/service.smarted.bootstrap/smart_ads.py")
     assert f"ATIVIDADE_PREROLL = '{APP_PACKAGE}.PreRollActivity'" in ads
+    splash = ler(src / "tools/android/packaging/xbmc/res/layout/activity_splash.xml")
+    assert "progresswhite" in splash and "centerInside" in splash
+    assert 'android:visibility="gone"' in splash
+    splash_java = ler(src / "tools/android/packaging/xbmc/src/Splash.java.in")
+    assert "SeedBase.pronto(this)" in splash_java and "startXBMCNow" in splash_java
+    assert "mSplash.mProgress.setVisibility(View.INVISIBLE)" not in splash_java
 
     print("\nTudo aplicado. O build agora gera o APK unico:", APP_PACKAGE)
     return 0

@@ -200,3 +200,50 @@ Verificação automática (`docs/verificacao-apk.txt`): **0 falhas e 0 avisos**.
 
 O APK também fica guardado como artifact (`apk-unificado-1.0.65`), então
 `check-apk.yml` reconfere tudo em ~1 min sem recompilar.
+
+## 1.0.66 — base estável restaurada + splash branco
+
+### O que estava faltando (bug do catálogo)
+
+A 1.0.65 abria com **perfil limpo**. Na linha clássica o APK levava dentro de si
+um perfil já customizado — e é lá que morava o `plugin.video.BrazucaPlay.Matrix`,
+para onde `plugin.video.smarted` delega as categorias (Doramas, Animes,
+Novelas, Desenhos). Sem o Brazuca instalado, sobram só os atalhos que o próprio
+plugin monta: as categorias "somem".
+
+Agora o APK carrega `assets/smarted/profile/**` + `profile-manifest.txt` da
+**1.0.63 clássica** (release `v1.0.63-classica`), injetado no build.
+
+### Como a base entra e é aplicada
+
+```
+1b. baixa SMARTED-TV-v1.0.63-arm64.apk        (manifesto conferido: 1447de81…)
+9.  make apk -> inject-base-estavel.py        (assets/smarted/** entra; assinatura antiga sai)
+    zipalign -p 4 -> apksigner sign           (realinha e assina com o keystore do projeto)
+app: Splash.startXBMC() -> SeedBase.pronto()
+    copia assets/smarted/profile/** para <files>/.kodi com hash+tamanho conferidos,
+    ajusta lookandfeel.skin para skin.novatv e publica por rename atômico
+```
+
+`SeedBase` é o equivalente interno do launcher dex da linha clássica:
+**só age quando não existe `.kodi`** (perfil de quem já usa nunca é tocado),
+valida o SHA-256 fixo do manifesto antes de copiar, grava num diretório de
+preparo e só então faz o rename. Qualquer falha = perfil antigo preservado e o
+Kodi abre normal (o app nunca fica travado).
+
+### Splash (item 3 do pedido)
+
+`res/layout/activity_splash.xml` reescrito:
+
+| antes | agora |
+| --- | --- |
+| barra azul (`@drawable/progresscolor`, gradiente `#0E5A91`) | `@drawable/progresswhite` — branco puro sobre trilho `#33FFFFFF`, 3dp, cantos 2dp |
+| `TextView` branco com "Starting SMARTEDTV...", "Clearing cache..." | `visibility="gone"`, o Kodi continua escrevendo nele sem aparecer |
+| arte com `scaleType=centerCrop` (cortava as bordas) | `centerInside` + fundo preto: logo widescreen inteira e centralizada |
+
+As 5 chamadas `mProgress.setVisibility(View.INVISIBLE)` do `Splash.java` foram
+removidas: a barra não desaparece mais no meio do carregamento.
+
+A verificação bloqueante passou a exigir: manifesto do perfil com o hash
+esperado, presença do Brazuca no perfil, `drawable/progresswhite` nos recursos,
+`assents`/texto escondido no layout e a classe `SeedBase` no dex.

@@ -22,8 +22,9 @@ concurrency:
 
 env:
   PACOTE: smartedtv.full
-  VERSAO: "1.0.65"
-  CODIGO: "2103051"
+  BASE_MANIFESTO_SHA256: 1447de816a44ecc11c42c2c315cf20e61c9baa037e914a13293711cf152d1ede
+  VERSAO: "1.0.66"
+  CODIGO: "2103052"
 
 jobs:
   conferir:
@@ -72,6 +73,7 @@ jobs:
           python3 smartedtv/tools/verify-monolito-apk.py "$APK" \
             --aapt2 "$AAPT2" \
             --pacote "$PACOTE" --versao "$VERSAO" --codigo "$CODIGO" \
+            --manifesto-base-sha "$BASE_MANIFESTO_SHA256" \
             --relatorio "$RUNNER_TEMP/verificacao.txt"
           RC=$?
           SHA=$(sha256sum "$APK" | cut -d' ' -f1)

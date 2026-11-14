@@ -1,0 +1,347 @@
+package @APP_PACKAGE@;
+
+import android.app.Activity;
+import android.content.res.AssetManager;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+import android.view.View;
+import android.widget.ProgressBar;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * Instala a base da linha estável (perfil semeado com skin, menus, fontes do
+ * catálogo e o Brazuca Play já configurado) ANTES do Kodi abrir.
+ *
+ * Mesmo contrato do launcher que fazia isso na linha clássica:
+ *
+ *  * só age quando NÃO existe perfil — um .kodi existente nunca é tocado,
+ *    mesclado ou apagado;
+ *  * o manifesto embarcado (assets/smarted/profile-manifest.txt) é conferido
+ *    pelo SHA-256 fixo antes de qualquer cópia;
+ *  * cada arquivo é conferido (hash + tamanho) enquanto é gravado num diretório
+ *    de preparo; só no fim o diretório vira .kodi (rename atômico);
+ *  * falha em qualquer ponto = perfil antigo preservado e o Kodi abre normal.
+ *
+ * A cópia roda em segundo plano (a base tem milhares de arquivos): a splash do
+ * Splash.java fica na tela com a barra branca e a interface só é liberada no
+ * fim. Nada é escrito na tela além disso.
+ */
+public final class SeedBase {
+
+    private static final String TAG = "SmartAds";
+    private static final String MANIFESTO = "smarted/profile-manifest.txt";
+    private static final String RAIZ = "smarted/profile/";
+    /** SHA-256 do manifesto da base estável (1.0.63 clássica). */
+    private static final String MANIFESTO_SHA256 =
+            "1447de816a44ecc11c42c2c315cf20e61c9baa037e914a13293711cf152d1ede";
+
+    private static final String SKIN_ANTIGA =
+            "<setting id=\"lookandfeel.skin\" default=\"true\">skin.estuary</setting>";
+    private static final String SKIN_NOVA =
+            "<setting id=\"lookandfeel.skin\">skin.novatv</setting>";
+
+    private static final long LIMITE_BYTES = 256L * 1024L * 1024L;
+    private static final int LIMITE_ARQUIVOS = 12000;
+
+    /** null = ainda não decidido; TRUE = pode abrir; FALSE = instalando. */
+    private static volatile Boolean liberado;
+
+    private SeedBase() {
+    }
+
+    /**
+     * Porta de entrada chamada pelo Splash antes de abrir o Kodi.
+     *
+     * @return true quando o Kodi pode abrir agora; false quando a instalação
+     *         começou (quem chama deve sair e esperar a nova chamada).
+     */
+    public static boolean pronto(final Activity activity) {
+        if (Boolean.TRUE.equals(liberado)) {
+            return true;
+        }
+        File home = home(activity);
+        if (home == null) {
+            liberado = Boolean.TRUE;
+            return true;
+        }
+        if (new File(home, ".kodi").isDirectory()) {
+            // já existe perfil: nunca mexer
+            liberado = Boolean.TRUE;
+            return true;
+        }
+        if (Boolean.FALSE.equals(liberado)) {
+            return false;
+        }
+        liberado = Boolean.FALSE;
+        mostrarSplash(activity);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean ok;
+                try {
+                    ok = instalar(activity);
+                } catch (Exception e) {
+                    Log.e(TAG, "SeedBase: falhou (" + e.getClass().getSimpleName() + ")");
+                    ok = false;
+                }
+                if (!ok) {
+                    Log.w(TAG, "SeedBase: perfil NAO instalado; o Kodi abre do zero");
+                }
+                liberado = Boolean.TRUE;
+                final Activity alvo = activity;
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            java.lang.reflect.Method m =
+                                    alvo.getClass().getDeclaredMethod("startXBMC");
+                            m.setAccessible(true);
+                            m.invoke(alvo);
+                        } catch (Exception e) {
+                            Log.e(TAG, "SeedBase: nao consegui retomar o start");
+                        }
+                    }
+                });
+            }
+        }, "smarted-seed").start();
+        return false;
+    }
+
+    // ------------------------------------------------------------------ splash
+
+    private static void mostrarSplash(Activity activity) {
+        int id = activity.getResources()
+                .getIdentifier("progressBar1", "id", activity.getPackageName());
+        View barra = id == 0 ? null : activity.findViewById(id);
+        if (barra == null) {
+            // só infla se a splash ainda não estiver na tela (não desmonta a do Kodi)
+            int layout = activity.getResources()
+                    .getIdentifier("activity_splash", "layout", activity.getPackageName());
+            if (layout != 0) {
+                try {
+                    activity.setContentView(layout);
+                } catch (RuntimeException ignored) {
+                    // já existe uma splash montada
+                }
+                barra = activity.findViewById(id);
+            }
+        }
+        if (barra instanceof ProgressBar) {
+            ProgressBar p = (ProgressBar) barra;
+            p.setIndeterminate(true);
+            p.setVisibility(View.VISIBLE);
+        }
+    }
+
+    // ----------------------------------------------------------------- instalar
+
+    private static File home(Activity activity) {
+        File externo = activity.getExternalFilesDir("");
+        if (externo != null && externo.isDirectory()) {
+            return externo;
+        }
+        File interno = activity.getDir(activity.getPackageName(), Activity.MODE_PRIVATE);
+        return interno != null && interno.isDirectory() ? interno : null;
+    }
+
+    private static boolean instalar(Activity activity) throws IOException {
+        File home = home(activity);
+        if (home == null) {
+            return false;
+        }
+        AssetManager assets = activity.getAssets();
+
+        byte[] manifesto = lerAsset(assets, MANIFESTO);
+        if (!MANIFESTO_SHA256.equalsIgnoreCase(sha256(manifesto))) {
+            Log.e(TAG, "SeedBase: manifesto da base nao confere com o esperado");
+            return false;
+        }
+
+        List<String[]> linhas = lerManifesto(manifesto);
+        File preparo = new File(home, ".smarted-seed-" + UUID.randomUUID().toString());
+        if (!preparo.mkdir()) {
+            return false;
+        }
+        try {
+            long total = 0;
+            for (String[] linha : linhas) {
+                String esperadoHash = linha[0];
+                long tamanho = Long.parseLong(linha[1]);
+                String caminho = linha[2];
+                File destino = new File(preparo, caminho);
+                total += copiarConferindo(assets, RAIZ + caminho, destino, esperadoHash, tamanho);
+                if (total > LIMITE_BYTES) {
+                    throw new IOException("base maior que o limite");
+                }
+            }
+            ajustarSkin(new File(preparo, "userdata/guisettings.xml"));
+
+            File alvo = new File(home, ".kodi");
+            if (alvo.exists()) {
+                return false;              // alguém criou o perfil no meio do caminho
+            }
+            if (!alvo.mkdir()) {
+                return false;
+            }
+            if (!preparo.renameTo(alvo)) {
+                alvo.delete();             // só remove o diretório vazio que criamos
+                return false;
+            }
+            Log.i(TAG, "SeedBase: base estavel instalada (" + linhas.size() + " arquivos)");
+            return true;
+        } finally {
+            apagar(preparo);
+        }
+    }
+
+    private static List<String[]> lerManifesto(byte[] manifesto) throws IOException {
+        String texto = new String(manifesto, Charset.forName("UTF-8"));
+        List<String[]> linhas = new ArrayList<String[]>();
+        for (String linha : texto.split("\n")) {
+            if (linha.length() == 0 || linha.equals("\r")) {
+                continue;
+            }
+            String limpa = linha.endsWith("\r") ? linha.substring(0, linha.length() - 1) : linha;
+            String[] campos = limpa.split("\t", -1);
+            if (campos.length != 3 || campos[0].length() != 64) {
+                throw new IOException("linha invalida no manifesto");
+            }
+            String caminho = campos[2];
+            if (caminho.length() == 0 || caminho.startsWith("/") || caminho.indexOf('\\') >= 0) {
+                throw new IOException("caminho invalido no manifesto");
+            }
+            for (String parte : caminho.split("/", -1)) {
+                if (parte.length() == 0 || parte.equals(".") || parte.equals("..")) {
+                    throw new IOException("caminho invalido no manifesto");
+                }
+            }
+            linhas.add(campos);
+            if (linhas.size() > LIMITE_ARQUIVOS) {
+                throw new IOException("manifesto com arquivos demais");
+            }
+        }
+        return linhas;
+    }
+
+    private static long copiarConferindo(AssetManager assets, String origem, File destino,
+                                         String hashEsperado, long tamanhoEsperado)
+            throws IOException {
+        File pasta = destino.getParentFile();
+        if (pasta != null && !pasta.isDirectory() && !pasta.mkdirs()) {
+            throw new IOException("nao consegui criar pasta");
+        }
+        MessageDigest digest = novoDigest();
+        long total = 0;
+        InputStream entrada = assets.open(origem);
+        try {
+            OutputStream saida = new FileOutputStream(destino);
+            try {
+                byte[] buffer = new byte[64 * 1024];
+                int lidos;
+                while ((lidos = entrada.read(buffer)) > 0) {
+                    digest.update(buffer, 0, lidos);
+                    saida.write(buffer, 0, lidos);
+                    total += lidos;
+                }
+            } finally {
+                saida.close();
+            }
+        } finally {
+            entrada.close();
+        }
+        if (total != tamanhoEsperado || !hashEsperado.equalsIgnoreCase(hex(digest.digest()))) {
+            throw new IOException("arquivo da base nao confere: " + destino.getName());
+        }
+        return total;
+    }
+
+    /** O perfil semeado abre na Estuary; a skin da SMARTEDTV assume no lugar. */
+    private static void ajustarSkin(File guisettings) throws IOException {
+        if (!guisettings.isFile()) {
+            return;
+        }
+        String texto;
+        InputStream entrada = new java.io.FileInputStream(guisettings);
+        try {
+            ByteArrayOutputStream saida = new ByteArrayOutputStream();
+            byte[] buffer = new byte[8192];
+            int lidos;
+            while ((lidos = entrada.read(buffer)) > 0) {
+                saida.write(buffer, 0, lidos);
+            }
+            texto = new String(saida.toByteArray(), Charset.forName("UTF-8"));
+        } finally {
+            entrada.close();
+        }
+        if (texto.indexOf(SKIN_ANTIGA) < 0) {
+            return;
+        }
+        byte[] novo = texto.replace(SKIN_ANTIGA, SKIN_NOVA).getBytes(Charset.forName("UTF-8"));
+        OutputStream saida = new FileOutputStream(guisettings);
+        try {
+            saida.write(novo);
+        } finally {
+            saida.close();
+        }
+    }
+
+    // ------------------------------------------------------------------ util
+
+    private static byte[] lerAsset(AssetManager assets, String caminho) throws IOException {
+        InputStream entrada = assets.open(caminho);
+        try {
+            ByteArrayOutputStream saida = new ByteArrayOutputStream();
+            byte[] buffer = new byte[64 * 1024];
+            int lidos;
+            while ((lidos = entrada.read(buffer)) > 0) {
+                saida.write(buffer, 0, lidos);
+            }
+            return saida.toByteArray();
+        } finally {
+            entrada.close();
+        }
+    }
+
+    private static MessageDigest novoDigest() {
+        try {
+            return MessageDigest.getInstance("SHA-256");
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static String sha256(byte[] dados) {
+        return hex(novoDigest().digest(dados));
+    }
+
+    private static String hex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            sb.append(Character.forDigit((b >> 4) & 0xF, 16));
+            sb.append(Character.forDigit(b & 0xF, 16));
+        }
+        return sb.toString();
+    }
+
+    private static void apagar(File alvo) {
+        File[] filhos = alvo.listFiles();
+        if (filhos != null) {
+            for (File filho : filhos) {
+                apagar(filho);
+            }
+        }
+        alvo.delete();
+    }
+}

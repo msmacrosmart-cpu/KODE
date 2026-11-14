@@ -42,12 +42,17 @@ env:
   KODI_TAG: 21.3-Omega
   KODI_COMMIT: a3a448d26b8d560a65655dab2cd122994dc4e146
   NDK_VERSION: 21.4.7075529
-  VERSAO: "1.0.65"
-  CODIGO: "2103051"
+  VERSAO: "1.0.66"
+  CODIGO: "2103052"
   PACOTE: smartedtv.full
-  TAG_DESTINO: v1.0.65-unificado
-  ARQUIVO_DESTINO: SMARTEDTV-1.0.65-unificado-arm64-v8a.apk
+  TAG_DESTINO: v1.0.66-unificado
+  ARQUIVO_DESTINO: SMARTEDTV-1.0.66-unificado-arm64-v8a.apk
   CERT_SHA256: 855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a
+  # Base estavel da linha classica: de onde sai o perfil semeado (skin, menus,
+  # fontes do catalogo e o Brazuca Play ja configurado).
+  BASE_TAG: v1.0.63-classica
+  BASE_ARQUIVO: SMARTED-TV-v1.0.63-arm64.apk
+  BASE_MANIFESTO_SHA256: 1447de816a44ecc11c42c2c315cf20e61c9baa037e914a13293711cf152d1ede
 
 jobs:
   arm64:
@@ -67,6 +72,33 @@ jobs:
           sudo apt-get clean
           docker image prune -af 2>/dev/null || true
           echo "== depois =="; df -h /
+
+      - name: 1b. Base estável (perfil semeado da linha clássica)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/base"
+          gh release download "$BASE_TAG" -R "$GITHUB_REPOSITORY" \
+            --pattern "$BASE_ARQUIVO" --dir "$RUNNER_TEMP/base" --clobber
+          BASE="$RUNNER_TEMP/base/$BASE_ARQUIVO"
+          ls -l "$BASE"
+          python3 - "$BASE" <<'PY'
+          import hashlib, sys, zipfile
+          from pathlib import Path
+          apk = Path(sys.argv[1])
+          with zipfile.ZipFile(apk) as z:
+              if 'assets/smarted/profile-manifest.txt' not in z.namelist():
+                  sys.exit('::error::base sem assets/smarted/profile-manifest.txt')
+              digest = hashlib.sha256(z.read('assets/smarted/profile-manifest.txt')).hexdigest()
+              quantos = len([n for n in z.namelist() if n.startswith('assets/smarted/')])
+          print('manifesto', digest)
+          print('arquivos da base:', quantos)
+          esperado = __import__('os').environ.get('BASE_MANIFESTO_SHA256', '')
+          if esperado and digest != esperado:
+              sys.exit('::error::manifesto da base diferente do esperado')
+          PY
+          echo "BASE_APK=$BASE" >> "$GITHUB_ENV"
 
       - name: 2. JDK 17
         uses: actions/setup-java@v4
@@ -244,8 +276,26 @@ jobs:
           APK=$(find "$RUNNER_TEMP/kodi-build" "$RUNNER_TEMP/kodi" -type f -name '*.apk' \
                 | grep -v 'unaligned\|unsigned\|intermediate' | head -1)
           [ -n "$APK" ] || { echo "::error::nenhum APK gerado"; exit 1; }
-          echo "APK: $APK"
-          cp "$APK" "$OUT/$ARQUIVO_DESTINO"
+          echo "APK compilado: $APK"
+
+          # 1) a base estavel (perfil semeado) entra dentro do APK
+          python3 smartedtv/tools/inject-base-estavel.py \
+            --apk "$APK" --base "$BASE_APK" --saida "$OUT/bruto.apk" \
+            --manifesto-sha "$BASE_MANIFESTO_SHA256"
+
+          # 2) a injecao mexe no ZIP: realinhar e assinar de novo
+          TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)
+          "$TOOLS/zipalign" -f -p 4 "$OUT/bruto.apk" "$OUT/alinhado.apk"
+          rm -f "$OUT/bruto.apk"
+          "$TOOLS/apksigner" sign \
+            --ks "$KODI_ANDROID_STORE_FILE" \
+            --ks-pass "pass:$KODI_ANDROID_STORE_PASSWORD" \
+            --ks-key-alias "$KODI_ANDROID_KEY_ALIAS" \
+            --key-pass "pass:$KODI_ANDROID_KEY_PASSWORD" \
+            --out "$OUT/$ARQUIVO_DESTINO" "$OUT/alinhado.apk"
+          rm -f "$OUT/alinhado.apk"
+          "$TOOLS/apksigner" verify --print-certs "$OUT/$ARQUIVO_DESTINO" | head -6
+          "$TOOLS/zipalign" -c -p 4 "$OUT/$ARQUIVO_DESTINO"
           ( cd "$OUT" && sha256sum "$ARQUIVO_DESTINO" > "$ARQUIVO_DESTINO.sha256" )
           ls -la "$OUT"
           cat "$OUT"/*.sha256
@@ -273,6 +323,7 @@ jobs:
           python3 smartedtv/tools/verify-monolito-apk.py "$APK" \
             --aapt2 "$AAPT2" \
             --pacote "$PACOTE" --versao "$VERSAO" --codigo "$CODIGO" \
+            --manifesto-base-sha "$BASE_MANIFESTO_SHA256" \
             --relatorio "$RUNNER_TEMP/verificacao.txt"
           RC=$?
           {
