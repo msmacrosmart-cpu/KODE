@@ -71,6 +71,7 @@ jobs:
       - name: 5. Compilar o APK (release, sem assinatura)
         run: |
           set -euo pipefail
+          exec > >(tee "$RUNNER_TEMP/gradle.log") 2>&1
           gradle -p android/smarted-ads assembleRelease --no-daemon --console=plain \
             -PadsVersionName="$VERSAO_ADS" -PadsVersionCode="$CODIGO_ADS" \
             -PadsAppId="$ADS_APP_ID" -PadsTeste="$ADS_TESTE"
@@ -253,6 +254,11 @@ jobs:
             echo '```'
             ls -l "$RUNNER_TEMP/ads" 2>/dev/null || echo '(sem pasta)'
             echo '```'
+            echo '## compilacao (gradle)'
+            echo '```'
+            tail -n 150 "$RUNNER_TEMP/gradle.log" 2>/dev/null || echo '(sem log do gradle)'
+            echo '```'
+            echo
             echo '## conferencia'
             echo '```'
             tail -n 80 "$RUNNER_TEMP/ads/check.log" 2>/dev/null || echo '(sem log da conferencia)'

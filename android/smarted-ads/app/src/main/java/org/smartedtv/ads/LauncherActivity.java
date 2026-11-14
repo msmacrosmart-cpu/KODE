@@ -33,7 +33,10 @@ public class LauncherActivity extends Activity {
         Class<?> destino = preroll ? PreRollActivity.class : AppOpenActivity.class;
         try {
             Intent intent = new Intent(this, destino);
-            intent.putExtras(getIntent() == null ? new Bundle() : getIntent());
+            Intent recebida = getIntent();
+            if (recebida != null && recebida.getExtras() != null) {
+                intent.putExtras(recebida.getExtras());
+            }
             startActivity(intent);
             Log.i(Ads.TAG, "LauncherActivity: encaminhado para " + destino.getSimpleName());
         } catch (Throwable erro) {
