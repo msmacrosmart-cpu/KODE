@@ -67,3 +67,28 @@ E o workflow `build-ads-apk.yml` falha se o APK de anúncios não sair com o APP
 manifesto, os dois blocos no dex, as duas activities em `sensorLandscape`, sem
 `play-services-ads`, ou assinado com certificado diferente de
 `855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`.
+
+## CONFERÊNCIA DO ARQUIVO PUBLICADO
+
+Tudo abaixo foi lido dos APKs **baixados das releases** (`docs/comparacao-1.0.60.txt`):
+
+| Arquivo | Tamanho | sha256 |
+|---|---|---|
+| `SMARTED-TV-v1.0.60-arm64.apk` | 242.222.254 B | `79ff859b7a37eb634d5d864bfb36240029128b27cabfd5f6f44aa628df0d65dc` |
+| `SMARTEDTV-Anuncios-1.0.0.apk` | 5.002.663 B | `71b66db84073486c261786f9e2ed36182cc0d360991f37cf0711551a4dfeee2b` |
+| base `v1.0.59` (conferida de novo) | 242.218.060 B | `5e3dc5c36be6b630ced417f2feab85af6507c2d00b7c2e86256f6491d08cf51b` |
+
+- Versões: Kodi `1.0.60` / `2103046` / rótulo **SMARTEDTV**;
+  bootstrap `1.0.10`; skin `1.0.18` (inalterada).
+- Diff do ZIP contra a 1.0.59: **1 entrada nova** (`service.smarted.bootstrap/smart_ads.py`),
+  **0 removidas**, e só o bootstrap mudou (`service.py` 14.050 → 14.519 B, `addon.xml`).
+  `libkodi.so`, dex do Kodi, perfil semeado e skin continuam idênticos.
+- 7 de 7 checagens de anúncio **OK** dentro do APK do Kodi (app referenciado, as duas telas,
+  a ponte `StartAndroidActivity`, o gancho `xbmc.Player`, abertura única, intervalo do pre-roll).
+- 9 de 9 checagens de velocidade **OK** (buffermode 1, 50 MB, readfactor 20x, marker v2,
+  memorysize 48, readfactor 2000, sem troca de modo, nav-check em segundo plano, ordem no boot).
+- Skin sem regressão: `9201 top=570 h=194`, `9203 top=822 h=194`, `9202` ausente,
+  painel `CC121212`, foco `FF1E1E1E`.
+- APK de anúncios conferido no build: `APPLICATION_ID` no manifesto, os dois blocos no dex,
+  as duas activities com `screenOrientation=6` (`sensorLandscape`) lidas por `aapt2`, e
+  assinatura com o certificado `855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`.
