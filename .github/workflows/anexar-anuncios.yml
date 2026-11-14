@@ -32,5 +32,6 @@ jobs:
           gh release download v1.0.2-ads -R "$GITHUB_REPOSITORY" \
             --pattern '*Anuncios*' --dir ads
           ls -l ads
+          echo "anexando em $DESTINO"
           gh release upload "$DESTINO" ads/* -R "$GITHUB_REPOSITORY" --clobber
           gh release view "$DESTINO" --json assets -q '.assets[] | "\(.name) \(.size) bytes"'
