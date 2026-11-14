@@ -135,9 +135,12 @@ jobs:
               if 'sensorLandscape' in linha:      # aapt2 as vezes imprime o nome
                   valores.append(6)
                   continue
-              pedaco = linha.rsplit(')', 1)[-1].strip()
+              print('   orientation:', linha.strip()[:120])
+              pedaco = linha.rsplit('=', 1)[-1].strip()   # '=0x6', '=6' ou o nome
               if pedaco.lower().startswith('0x'):
                   valores.append(int(pedaco, 16))
+              elif pedaco.isdigit():
+                  valores.append(int(pedaco))
           print('screenOrientation no APK:', valores,
                 '(linhas: %d)' % linhas_orient)
           if len(valores) < 2:
