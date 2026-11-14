@@ -83,6 +83,7 @@ jobs:
             "$RUNNER_TEMP/ads/verify.txt" || (echo "certificado inesperado"; exit 1)
 
       - name: 7. Conferir o APK final (AdMob, landscape, SDK)
+        timeout-minutes: 5
         run: |
           set -euo pipefail
           exec > >(tee "$RUNNER_TEMP/ads/check.log") 2>&1
@@ -118,37 +119,27 @@ jobs:
           for activity in ('AppOpenActivity', 'PreRollActivity'):
               assert contem(manifesto, activity), '%s fora do manifesto' % activity
               print('activity no manifesto:', activity, 'OK')
-          # screenOrientation e atributo de ENUM no AXML: vale o inteiro 6
-          # (sensorLandscape), nao o texto. Le o manifesto compilado de verdade.
-          from pyaxmlparser.axmlparser import AXMLParser
-          from pyaxmlparser.axmlprinter import AXMLPrinter
+          # screenOrientation e atributo de ENUM do AXML (vale o inteiro 6 =
+          # sensorLandscape, nao o texto). Quem le o APK compilado e o aapt2.
+          import os, re, subprocess
+          aapt2 = os.path.join(os.environ['ANDROID_HOME'], 'build-tools', '34.0.0', 'aapt2')
+          arvore = subprocess.run(
+              [aapt2, 'dump', 'xmltree', '--file', 'AndroidManifest.xml', apk_path],
+              capture_output=True, text=True, check=True).stdout
+          valores = [int(v, 16) for v in
+                     re.findall(r'screenOrientation\(0x[0-9a-f]+\)=\(type 0x[0-9a-f]+\)(0x[0-9a-f]+)', arvore)]
+          print('screenOrientation no APK:', valores)
+          if len(valores) < 2:
+              raise SystemExit('esperava screenOrientation nas 2 activities; achei %r' % valores)
+          for valor in valores:
+              if valor != 6:   # ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                  raise SystemExit('orientacao diferente de sensorLandscape (6): %r' % valor)
+          print('sensorLandscape (enum 6) nas %d activities: OK' % len(valores))
 
-          parser = AXMLParser(manifesto)
-          encontrados = []
-          while parser.is_valid():
-              if parser.getAttributeCount() > 0 and parser.namespace == 'android':
-                  for i in range(parser.getAttributeCount()):
-                      if parser.getAttributeName(i) == 'screenOrientation':
-                          # getAttributeValueData devolve o inteiro do enum
-                          encontrados.append(int(parser.getAttributeValueData(i)))
-              parser.next()
-          print('screenOrientation (enum) no APK:', encontrados)
-
-          # fallback: o XML "impresso" mostra o nome do enum
-          if not encontrados:
-              xml_manifesto = AXMLPrinter(manifesto).get_xml()
-              if isinstance(xml_manifesto, bytes):
-                  xml_manifesto = xml_manifesto.decode('utf-8', 'replace')
-              print('manifesto em XML lido (%d caracteres)' % len(xml_manifesto))
-              if 'sensorLandscape' in xml_manifesto:
-                  encontrados = [6, 6]
-
-          if len(encontrados) < 2:
-              raise SystemExit('esperava screenOrientation nas 2 activities; achei %r' % encontrados)
-          for valor in encontrados:
-              if valor != 6:   # 6 = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-                  raise SystemExit('orientacao diferente de sensorLandscape (enum 6): %r' % valor)
-          print('sensorLandscape (enum 6) nas %d activities: OK' % len(encontrados))
+          # e o APPLICATION_ID tem que estar no <application> compilado
+          if app_id not in arvore:
+              raise SystemExit('APPLICATION_ID nao aparece no manifesto via aapt2')
+          print('APPLICATION_ID via aapt2: OK')
 
           # o SDK do AdMob tem que ter entrado de verdade
           assert any(n.startswith('classes') for n in nomes), 'sem dex'
