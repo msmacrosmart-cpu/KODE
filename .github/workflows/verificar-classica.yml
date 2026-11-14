@@ -1,8 +1,9 @@
-name: Conferir APK classico publicado (1.0.62 vs 1.0.61)
+name: Conferir APK classico publicado (1.0.63 vs 1.0.62)
 
 # Diagnostico sob demanda: baixa as duas releases e confere o APK publicado de
 # verdade (nao o que estava no diretorio de build). Mostra sha256, o que mudou
-# no ZIP e se as otimizacoes de playback realmente entraram. Nao publica nada.
+# no ZIP, se as otimizacoes de playback entraram e se a PONTE dos anuncios usa
+# o parametro intent (posicao 2) em vez de deixa-lo vazio. Nao publica nada.
 
 on:
   workflow_dispatch:
@@ -26,11 +27,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/apks"
+          gh release download v1.0.63-classica -R "$GITHUB_REPOSITORY" \
+            --pattern 'SMARTED-TV-v1.0.63-arm64.apk' --dir "$RUNNER_TEMP/apks"
           gh release download v1.0.62-classica -R "$GITHUB_REPOSITORY" \
             --pattern 'SMARTED-TV-v1.0.62-arm64.apk' --dir "$RUNNER_TEMP/apks"
-          gh release download v1.0.61-classica -R "$GITHUB_REPOSITORY" \
-            --pattern 'SMARTED-TV-v1.0.61-arm64.apk' --dir "$RUNNER_TEMP/apks"
-          gh release download v1.0.62-classica -R "$GITHUB_REPOSITORY" \
+          gh release download v1.0.63-classica -R "$GITHUB_REPOSITORY" \
             --pattern 'SMARTEDTV-Anuncios-*.apk' --dir "$RUNNER_TEMP/apks"
           ls -l "$RUNNER_TEMP/apks"
           sha256sum "$RUNNER_TEMP/apks/"*.apk | tee "$RUNNER_TEMP/sha.txt"
@@ -47,8 +48,8 @@ jobs:
 
           pasta = Path(sys.argv[1])
           sha_txt = Path(sys.argv[2]).read_text()
-          novo = pasta / 'SMARTED-TV-v1.0.62-arm64.apk'
-          velho = pasta / 'SMARTED-TV-v1.0.61-arm64.apk'
+          novo = pasta / 'SMARTED-TV-v1.0.63-arm64.apk'
+          velho = pasta / 'SMARTED-TV-v1.0.62-arm64.apk'
 
           def resumo(apk):
               a = APK(str(apk))
@@ -58,9 +59,9 @@ jobs:
 
           a_novo, i_novo = resumo(novo)
           a_velho, i_velho = resumo(velho)
-          print('1.0.62: %d bytes | %s %s | %s' % (novo.stat().st_size, a_novo.version_name,
+          print('1.0.63: %d bytes | %s %s | %s' % (novo.stat().st_size, a_novo.version_name,
                                                    a_novo.version_code, a_novo.get_app_name()))
-          print('1.0.61: %d bytes | %s %s | %s' % (velho.stat().st_size, a_velho.version_name,
+          print('1.0.62: %d bytes | %s %s | %s' % (velho.stat().st_size, a_velho.version_name,
                                                    a_velho.version_code, a_velho.get_app_name()))
           print('pacote do APK do Kodi:', a_novo.package)
           for linha in sha_txt.splitlines():
@@ -121,8 +122,12 @@ jobs:
               ('abertura uma vez por instalacao', 'abertura_ja_mostrada' in ads),
               ('intervalo de pre-roll', 'PREROLL_INTERVALO' in ads),
               ('pacote smartedtv.full na ponte', "PACKAGE = 'smartedtv.full'" in ads),
-              ('builtin com 9 parametros', "campos = [package or PACKAGE] + [''] * 7 + [atividade]" in ads),
+              ('builtin com 9 parametros',
+               "campos = [package or PACKAGE, acao, '', '', '', '', '', '', atividade]" in ads),
               ('className no ultimo parametro', "StartAndroidActivity(%s)' % ','.join(campos)" in ads),
+              ('intent (posicao 2) nunca vazio', 'ACAO_PREROLL' in ads and 'ACAO_ABERTURA' in ads),
+              ('plano B pelo launcher', 'builtin_launcher' in ads and 'URI_PREROLL' in ads),
+              ('marca da abertura versionada', 'smartedtv-ads-v2' in ads),
               ('logs com tag SmartAds', '[SmartAds]' in ads),
           ]
           print('')
@@ -189,9 +194,9 @@ jobs:
       - name: Guardar comparacao no repositorio
         run: |
           set -euo pipefail
-          cp "$RUNNER_TEMP/comparacao.txt" docs/comparacao-1.0.62.txt
+          cp "$RUNNER_TEMP/comparacao.txt" docs/comparacao-1.0.63.txt
           git config user.name "SMARTEDTV Build"
           git config user.email "ci@smarted.local"
-          git add docs/comparacao-1.0.62.txt
-          git commit -m "docs: conferencia do APK 1.0.62 publicado (ponte corrigida + modo de teste)" || echo "sem mudancas"
+          git add docs/comparacao-1.0.63.txt
+          git commit -m "docs: conferencia do APK 1.0.63 publicado (intent obrigatorio + plano B)" || echo "sem mudancas"
           git push origin HEAD:${GITHUB_REF_NAME}

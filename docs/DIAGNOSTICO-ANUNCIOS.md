@@ -117,3 +117,55 @@ e me mande — dá para diagnosticar sem computador.
 Quando a homologação terminar: build com `ADS_TESTE=false`
 (workflow `build-ads-apk.yml`, variável `ADS_TESTE`), nova versão do APK de anúncios e
 mesma ponte — nada mais muda.
+
+---
+
+## Bloqueio #2 — o parâmetro `intent` vazio (1.0.63)
+
+A 1.0.62 acertou o `className` (9º parâmetro), mas o disparo continuava morrendo
+**antes** de chegar nele. Trecho real do Kodi Omega, `CXBMCApp::StartActivity`:
+
+```cpp
+CJNIIntent newIntent = intent.empty() ?
+    GetPackageManager().getLaunchIntentForPackage(package) : CJNIIntent(intent);
+if (!newIntent) return false;          // sai aqui, sem olhar o className
+newIntent.setPackage(package);
+if (!className.empty()) newIntent.setClassName(package, className);
+startActivity(newIntent);
+```
+
+Com o parâmetro `intent` (posição 2) vazio, o Kodi procura a **activity de launcher**
+do pacote. O app de anúncios não tinha launcher → `null` → `return false`. Nenhuma
+tela abria e **nada aparecia no log**.
+
+### Formato novo (sempre com o slot 1 preenchido)
+
+```
+StartAndroidActivity(smartedtv.full,smartedtv.ads.PREROLL,,,,,,,org.smartedtv.ads.PreRollActivity)
+StartAndroidActivity(smartedtv.full,smartedtv.ads.APPOPEN,,,,,,,org.smartedtv.ads.AppOpenActivity)
+```
+
+Plano B disparado junto (data URI no launcher do app):
+
+```
+StartAndroidActivity(smartedtv.full,android.intent.action.MAIN,,smartedtv://ads/preroll,,,,,org.smartedtv.ads.LauncherActivity)
+```
+
+### Passo a passo da leitura dos Toasts (para saber onde parou)
+
+Instale **SMARTEDTV-Anuncios-1.0.3.apk** e depois **SMARTED-TV-v1.0.63-arm64.apk**.
+
+| O que aparece na TV | Onde parou | O que fazer |
+| --- | --- | --- |
+| Nada (nem no `kodi.log` há `[SmartAds]`) | o Python não rodou o hook | conferir se o addon `service.smarted.bootstrap` 1.0.13 está instalado |
+| `[SmartAds] disparando …` no log, nenhum Toast | a Intent não chegou ao app | `adb shell pm list packages \| grep smartedtv` e `adb shell cmd package resolve-activity smartedtv.full` |
+| Toast **"SMARTEDTV Ads: video/abertura"** e nada mais | o app abriu, o roteamento falhou | `adb logcat -s SmartAds` (a `LauncherActivity` registra o data URI) |
+| Toast + painel de diagnóstico com código | o app abriu, o **AdMob** recusou | o código diz o motivo (ver tabela abaixo) |
+| Anúncio de **teste** do Google aparece | tudo certo | é o modo de teste (`ADS_TESTE`); a produção entra com `-PadsTeste=false` |
+
+Códigos do painel (`Ads.ERROR_*`): `0` interno, `1` inventário vazio, `2` rede,
+`3` sem preenchimento por enquanto, `4` ID inválido, `8` app ID do AdMob errado.
+
+> Regra de ouro: **se não há Toast, o problema é o disparo (Kodi → app); se há Toast
+> e não há anúncio, o problema é o AdMob.** Os Toasts existem exatamente para
+> separar esses dois mundos.
