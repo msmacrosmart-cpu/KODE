@@ -1,0 +1,105 @@
+name: Inspecionar APK 1.0.47 (skins, paineis, fileiras)
+
+# Extrai do APK 1.0.47 os XMLs das skins e do perfil semeado e os versiona em
+# docs/inspecao-1.0.47/, para editar exatamente o que esta dentro do APK que o
+# usuario usa. Nao publica release nem altera nenhum APK.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/7dedf371-kode]
+    paths: [.github/workflows/inspecionar-classica.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  inspecionar:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      TAG_ORIGEM: v1.0.47-classica
+      ARQUIVO: SMARTED-TV-v1.0.47-arm64.apk
+      SHA256_ESPERADO: 70f5429f671a4c29ebb9476715bb8e79206638bba006ee963b02fd16ebe338a3
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Baixar o APK 1.0.47
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/base"
+          gh release download "$TAG_ORIGEM" -R "$GITHUB_REPOSITORY" \
+            --pattern "$ARQUIVO" --dir "$RUNNER_TEMP/base"
+          echo "$SHA256_ESPERADO  $RUNNER_TEMP/base/$ARQUIVO" | sha256sum -c -
+
+      - name: 2. Extrair skins/perfil e diagnosticar
+        run: |
+          set -euo pipefail
+          python3 - "$RUNNER_TEMP/base/$ARQUIVO" <<'PY'
+          import re, sys, zipfile
+          from pathlib import Path
+
+          apk = Path(sys.argv[1])
+          destino = Path('docs/inspecao-1.0.47')
+          destino.mkdir(parents=True, exist_ok=True)
+          topo = ('assets/addons/skin.estuary/', 'assets/addons/skin.novatv/',
+                  'assets/addons/plugin.video.smarted/')
+          alvos = []
+          with zipfile.ZipFile(apk) as z:
+              for nome in z.namelist():
+                  if nome.endswith('/'):
+                      continue
+                  guardar = any(nome.startswith(p) for p in topo) and nome.endswith(('.xml', 'addon.xml'))
+                  if nome.startswith('assets/smarted/profile/userdata/') and nome.endswith('.xml'):
+                      guardar = True
+                  if guardar:
+                      alvos.append(nome)
+              for nome in alvos:
+                  saida = destino / nome.replace('/', '__')
+                  saida.write_bytes(z.read(nome))
+              skins = sorted({n.split('/')[2] for n in z.namelist()
+                              if n.startswith('assets/addons/skin.') and n.count('/') > 2})
+              linhas = ['skins no APK: %s' % ', '.join(skins)]
+              for skin in skins:
+                  alvo = 'assets/addons/%s/addon.xml' % skin
+                  if alvo in z.namelist():
+                      texto = z.read(alvo).decode('utf-8', 'replace')
+                      m = re.search(r'<(?:addon)[^>]*id="([^"]+)"[^>]*version="([^"]+)"', texto)
+                      n = re.search(r'name="([^"]+)"', texto)
+                      linhas.append('  %s -> id=%s versao=%s nome=%s'
+                                    % (skin, m.group(1) if m else '?', m.group(2) if m else '?',
+                                       n.group(1) if n else '?'))
+              for g in [n for n in z.namelist() if n.endswith('guisettings.xml')]:
+                  texto = z.read(g).decode('utf-8', 'replace')
+                  m = re.search(r'lookandfeel\.skin[^>]*>([^<]*)<', texto)
+                  linhas.append('skin padrao em %s: %s' % (g, m.group(1) if m else '?'))
+              # pistas visuais: branco em colordiffuse de painel e rotulos de fileira
+              linhas.append('')
+              linhas.append('== pistas (colordiffuse branco / painel / fileiras) ==')
+              for nome in alvos:
+                  if not nome.endswith('.xml'):
+                      continue
+                  texto = z.read(nome).decode('utf-8', 'replace')
+                  achados = []
+                  for padrao in ('FFFFFFFF', 'ffffff', 'fw_white', 'pb_white.png'):
+                      if padrao in texto:
+                          achados.append(padrao)
+                  if re.search(r'>\s*Lan[çc]amentos', texto, re.I):
+                      achados.append('rotulo LANCAMENTOS')
+                  if achados:
+                      linhas.append('  %s: %s' % (nome, ', '.join(sorted(set(achados)))))
+          (destino / 'DIAGNOSTICO.txt').write_text('\n'.join(linhas) + '\n', encoding='utf-8')
+          print('\n'.join(linhas[:40]))
+          print('arquivos guardados: %d' % len(alvos))
+          PY
+
+      - name: 3. Commitar o material para analise
+        run: |
+          set -euo pipefail
+          git config user.name "SMARTEDTV Build"
+          git config user.email "ci@smarted.local"
+          git add docs/inspecao-1.0.47
+          git commit -m "docs: XMLs do APK 1.0.47 (skins e perfil) para analise das correcoes visuais" || echo "sem mudancas"
+          git push origin HEAD:${GITHUB_REF_NAME}
