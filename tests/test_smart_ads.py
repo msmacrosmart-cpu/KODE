@@ -69,7 +69,7 @@ class AdMobNoAppAndroidTest(unittest.TestCase):
         # nenhum dos dois pode prender a tela quando o anuncio falha
         for fonte in (abertura, preroll):
             self.assertIn('onAdFailedToLoad', fonte)
-            self.assertIn('fechar()', fonte)
+            self.assertIn('fechar("', fonte)
 
     def test_min_sdk_cobre_tv_box_antiga(self):
         self.assertIn('minSdk 21', self.gradle)
@@ -118,11 +118,25 @@ class PontePythonTest(unittest.TestCase):
         self.assertTrue(modulo.tocar_anuncio(modulo.ATIVIDADE_ABERTURA))
         # pacote (applicationId) e classe (namespace) sao coisas diferentes
         self.assertEqual(chamadas, [
-            'StartAndroidActivity(%s,%s)' % (modulo.PACKAGE, modulo.ATIVIDADE_PREROLL),
-            'StartAndroidActivity(%s,%s)' % (modulo.PACKAGE, modulo.ATIVIDADE_ABERTURA),
+            modulo.builtin_para(modulo.ATIVIDADE_PREROLL),
+            modulo.builtin_para(modulo.ATIVIDADE_ABERTURA),
         ])
         self.assertEqual(modulo.PACKAGE, 'smartedtv.full')
         self.assertTrue(modulo.ATIVIDADE_PREROLL.startswith('org.smartedtv.ads.'))
+
+    def test_builtin_tem_a_classe_no_ultimo_parametro(self):
+        # ORDEM DO KODI (v20+): package, intent, dataType, dataURI, flags,
+        # extras, action, category, className. Passar a classe em segundo lugar
+        # cria um intent sem componente e a tela NUNCA abre (bug do no-fill).
+        modulo, _ = carregar_smart_ads()
+        builtin = modulo.builtin_para(modulo.ATIVIDADE_PREROLL)
+        campos = builtin[builtin.index('(') + 1:-1].split(',')
+        self.assertEqual(len(campos), 9, builtin)
+        self.assertEqual(campos[0], modulo.PACKAGE)
+        self.assertEqual(campos[1:8], [''] * 7, 'campos do meio precisam ficar vazios')
+        self.assertEqual(campos[8], modulo.ATIVIDADE_PREROLL)
+        self.assertIn('PreRollActivity', campos[8])
+        self.assertNotIn(modulo.ATIVIDADE_PREROLL, campos[1], 'classe nao pode ir em 2o lugar')
 
     def test_pre_roll_respeita_intervalo(self):
         modulo, chamadas = carregar_smart_ads()
@@ -205,6 +219,57 @@ class PacoteDoAppTest(unittest.TestCase):
         fonte = PY_MODULE.read_text()
         self.assertIn("ATIVIDADE_ABERTURA = 'org.smartedtv.ads.AppOpenActivity'", fonte)
         self.assertIn("ATIVIDADE_PREROLL = 'org.smartedtv.ads.PreRollActivity'", fonte)
+
+
+class DiagnosticoTest(unittest.TestCase):
+    """Modo de teste do AdMob + logs da tag SmartAds (homologacao)."""
+
+    def setUp(self):
+        self.ads_java = ADS_JAVA.read_text()
+        self.base = (ADS_DIR / 'app/src/main/java/org/smartedtv/ads/AdActivity.java').read_text()
+        self.abertura = (ADS_DIR / 'app/src/main/java/org/smartedtv/ads/AppOpenActivity.java').read_text()
+        self.preroll = (ADS_DIR / 'app/src/main/java/org/smartedtv/ads/PreRollActivity.java').read_text()
+        self.gradle = APP_GRADLE.read_text()
+
+    def test_tag_de_log_unica(self):
+        # tudo sai pela mesma tag: adb logcat -s SmartAds
+        self.assertIn('public static final String TAG = "SmartAds"', self.ads_java)
+        self.assertIn('Log.i(Ads.TAG', self.base)
+        self.assertIn('Log.w(Ads.TAG', self.base)
+        for fonte in (self.abertura, self.preroll):
+            self.assertNotIn('Log.i("SmartAds"', fonte)   # usam o log() da base
+        self.assertIn('log("carregando ABERTURA', self.abertura)
+        self.assertIn('log("carregando VIDEO', self.preroll)
+
+    def test_blocos_de_teste_oficiais(self):
+        self.assertIn('ca-app-pub-3940256099942544/9257395921', self.ads_java)   # app open teste
+        self.assertIn('ca-app-pub-3940256099942544/1033173712', self.ads_java)   # interstitial teste
+
+    def test_modo_de_teste_controlado_pelo_build(self):
+        self.assertIn('buildConfigField "boolean", "ADS_TESTE"', self.gradle)
+        self.assertIn('funProperty'.replace('funProperty', 'findProperty'), self.gradle)
+        self.assertIn('private static boolean teste = BuildConfig.ADS_TESTE', self.ads_java)
+        self.assertIn('unidadeAppOpen()', self.ads_java)
+
+    def test_loga_codigo_numerico_do_erro(self):
+        self.assertIn('erro.getCode()', self.abertura)
+        self.assertIn('erro.getDomain()', self.abertura)
+        self.assertIn('onAdFailedToLoad', self.abertura)
+        self.assertIn('onAdFailedToLoad', self.preroll)
+        self.assertIn('onAdLoaded', self.abertura)
+        self.assertIn('onAdLoaded', self.preroll)
+
+    def test_erro_aparece_na_tela_em_modo_de_teste(self):
+        self.assertIn('mostrarDiagnostico', self.base)
+        self.assertIn('Ads.testeAtivo()', self.base)
+        self.assertIn('mostrarDiagnostico("Falha ao CARREGAR o video"', self.preroll)
+
+    def test_visibilidade_de_pacotes_android_11(self):
+        # componente explicito (className) nao depende de <queries>, mas a
+        # declaracao deixa o app capaz de consultar o Kodi
+        manifesto = MANIFEST.read_text()
+        self.assertIn('<queries>', manifesto)
+        self.assertIn('<package android:name="org.xbmc.kodi" />', manifesto)
 
 
 class NoBuildClassicoTest(unittest.TestCase):

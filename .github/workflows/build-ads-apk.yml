@@ -17,10 +17,13 @@ permissions:
   contents: write
 
 env:
-  VERSAO_ADS: "1.0.1"
-  CODIGO_ADS: "2"
-  ARQUIVO_ADS: SMARTEDTV-Anuncios-1.0.1.apk
-  TAG_ADS: v1.0.1-ads
+  VERSAO_ADS: "1.0.2"
+  CODIGO_ADS: "3"
+  ARQUIVO_ADS: SMARTEDTV-Anuncios-1.0.2.apk
+  TAG_ADS: v1.0.2-ads
+  # MODO DE TESTE do AdMob (blocos de teste do Google = sempre preenchem).
+  # Trocar para "false" quando a homologacao terminar.
+  ADS_TESTE: "true"
   CERT_SHA256: 855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a
 
 jobs:
@@ -70,7 +73,7 @@ jobs:
           set -euo pipefail
           gradle -p android/smarted-ads assembleRelease --no-daemon --console=plain \
             -PadsVersionName="$VERSAO_ADS" -PadsVersionCode="$CODIGO_ADS" \
-            -PadsAppId="$ADS_APP_ID"
+            -PadsAppId="$ADS_APP_ID" -PadsTeste="$ADS_TESTE"
           mkdir -p "$RUNNER_TEMP/ads"
           cp android/smarted-ads/app/build/outputs/apk/release/app-release-unsigned.apk \
              "$RUNNER_TEMP/ads/unsigned.apk"
@@ -170,6 +173,17 @@ jobs:
           if app_id not in arvore:
               raise SystemExit('APPLICATION_ID nao aparece no manifesto via aapt2')
           print('APPLICATION_ID via aapt2: OK')
+
+          # modo de teste + logs de diagnostico tem que estar no APK
+          teste = os.environ.get('ADS_TESTE', 'true') == 'true'
+          if teste:
+              for unidade_teste in ('ca-app-pub-3940256099942544/9257395921',
+                                    'ca-app-pub-3940256099942544/1033173712'):
+                  assert unidade_teste.encode() in dex, \
+                      'bloco de TESTE %s nao esta no dex' % unidade_teste
+              print('modo de TESTE ligado: blocos do Google no dex OK')
+          assert b'SmartAds' in dex, 'tag de log SmartAds ausente no dex'
+          print('tag de log SmartAds: OK')
 
           # o SDK do AdMob tem que ter entrado de verdade
           assert any(n.startswith('classes') for n in nomes), 'sem dex'

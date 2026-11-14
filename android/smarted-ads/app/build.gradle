@@ -16,6 +16,13 @@ def adUnitPreRoll = 'ca-app-pub-2066014755407744/3572039686'
 def adsAppId = (project.findProperty('adsAppId')
         ?: rootProject.file('app-id.txt').text.trim()).toString()
 
+// MODO DE TESTE do AdMob: com os blocos de teste oficiais do Google o anuncio
+// SEMPRE aparece, o que separa "a ponte funciona?" de "a conta tem inventario?".
+// Desligar: -PadsTeste=false
+def adsTeste = (project.findProperty('adsTeste') ?: 'true').toString()
+// hash do dispositivo de teste (opcional): -PadsTesteHash=ABCDEF123...
+def adsTesteHash = (project.findProperty('adsTesteHash') ?: '').toString()
+
 // versao vem do CI (-PadsVersionName / -PadsVersionCode) com padrao local
 def adsVersionName = (project.findProperty('adsVersionName') ?: '1.0.0').toString()
 def adsVersionCode = (project.findProperty('adsVersionCode') ?: '1').toString().toInteger()
@@ -30,6 +37,9 @@ android {
         targetSdk 34
         versionCode adsVersionCode
         versionName adsVersionName
+
+        buildConfigField "boolean", "ADS_TESTE", adsTeste
+        buildConfigField "String", "ADS_TESTE_HASH", '\"' + adsTesteHash + '\"'
     }
 
     buildTypes {
@@ -40,6 +50,10 @@ android {
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 
     compileOptions {

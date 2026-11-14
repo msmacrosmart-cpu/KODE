@@ -4,16 +4,15 @@ import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.ResponseInfo;
 import com.google.android.gms.ads.interstitial.InterstitialAd;
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
 
 /**
  * GATILHO 2 — video pre-roll antes de canal/filme/serie.
  *
- * O Python do Kodi (xbmc.Player.onPlay) abre esta tela assim que o stream
- * comeca a ser preparado: o anuncio cobre a tela em quanto o player faz o
- * buffer atras. Ao fechar, o Kodi volta em primeiro plano com o video ja
- * pronto. Bloco: ca-app-pub-2066014755407744/3572039686.
+ * Bloco real: ca-app-pub-2066014755407744/3572039686.
+ * Em modo de teste usa o bloco de teste do Google (sempre preenche).
  */
 public class PreRollActivity extends AdActivity {
 
@@ -21,38 +20,55 @@ public class PreRollActivity extends AdActivity {
 
     @Override
     protected void carregar() {
-        log("carregando video (" + Ads.UNIT_PREROLL + ")");
-        InterstitialAd.load(this, Ads.UNIT_PREROLL, new AdRequest.Builder().build(),
+        String unidade = Ads.unidadePreRoll();
+        log("carregando VIDEO unidade=" + unidade + " (teste=" + Ads.testeAtivo() + ")");
+        InterstitialAd.load(this, unidade, new AdRequest.Builder().build(),
                 new InterstitialAdLoadCallback() {
                     @Override
                     public void onAdLoaded(InterstitialAd carregado) {
                         anuncio = carregado;
+                        ResponseInfo info = carregado.getResponseInfo();
+                        log("onAdLoaded VIDEO | responseId=" + (info == null ? "?" : info.getResponseId())
+                                + " adapters=" + (info == null ? "?" : info.getAdapterResponses().size()));
                         anuncio.setFullScreenContentCallback(new FullScreenContentCallback() {
                             @Override
+                            public void onAdShowedFullScreenContent() {
+                                log("onAdShowedFullScreenContent VIDEO (anuncio na tela)");
+                            }
+
+                            @Override
+                            public void onAdImpression() {
+                                log("onAdImpression VIDEO (impressao contabilizada)");
+                            }
+
+                            @Override
+                            public void onAdClicked() {
+                                log("onAdClicked VIDEO");
+                            }
+
+                            @Override
                             public void onAdDismissedFullScreenContent() {
-                                log("video encerrado");
-                                fechar();
+                                log("onAdDismissedFullScreenContent VIDEO");
+                                fechar("video encerrado");
                             }
 
                             @Override
                             public void onAdFailedToShowFullScreenContent(AdError erro) {
-                                log("video nao pode ser exibido: " + erro);
-                                fechar();
+                                mostrarDiagnostico("Falha ao EXIBIR o video",
+                                        AppOpenActivity.descrever(erro));
                             }
                         });
                         try {
                             anuncio.show(PreRollActivity.this);
                         } catch (Throwable erro) {
-                            log("falha ao exibir video: " + erro);
-                            fechar();
+                            mostrarDiagnostico("Excecao ao exibir o video", erro.toString());
                         }
                     }
 
                     @Override
                     public void onAdFailedToLoad(LoadAdError erro) {
-                        // nunca segurar o usuario: sem anuncio, volta direto ao video
-                        log("video sem anuncio: " + erro);
-                        fechar();
+                        mostrarDiagnostico("Falha ao CARREGAR o video",
+                                AppOpenActivity.descrever(erro));
                     }
                 });
     }

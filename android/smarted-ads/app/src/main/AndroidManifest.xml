@@ -9,6 +9,14 @@
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <uses-feature android:name="android.hardware.leanback" android:required="false" />
 
+    <!-- Android 11+ (API 30) filtra a visibilidade entre apps. O Kodi abre estas
+         telas por componente explicito (className), que nao depende de <queries>;
+         a declaracao abaixo serve para este app conseguir consultar o Kodi
+         (ex.: checar versao/instalacao em diagnostico). -->
+    <queries>
+        <package android:name="org.xbmc.kodi" />
+    </queries>
+
     <application
         android:allowBackup="false"
         android:hardwareAccelerated="true"

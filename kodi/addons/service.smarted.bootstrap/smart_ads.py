@@ -6,7 +6,17 @@ recompilar o Kodi inteiro. Por isso o anuncio e exibido pelo app
 ``org.smartedtv.ads`` (pasta ``android/smarted-ads``), assinado com a mesma
 chave da linha, e o Kodi o abre por um builtin nativo:
 
-    StartAndroidActivity(org.smartedtv.ads,org.smartedtv.ads.PreRollActivity)
+    StartAndroidActivity(smartedtv.full,,,,,,,,org.smartedtv.ads.PreRollActivity)
+
+ATENCAO a ordem dos parametros do builtin (Kodi v20+):
+
+    StartAndroidActivity(package, intent, dataType, dataURI, flags, extras,
+                         action, category, className)
+
+O className e o NONO parametro, nao o segundo. Passar a classe em segundo lugar
+faz o Kodi montar um intent com action = nome da classe e sem componente — o
+Android nao acha ninguem e a tela de anuncio nunca abre (foi exatamente o bug
+que deixou os anuncios "sem preencher": na verdade nem eram pedidos).
 
 Dois gatilhos:
 
@@ -91,21 +101,33 @@ def android():
         return False
 
 
+def builtin_para(atividade, package=None):
+    """Builtin com os 9 parametros na ordem do Kodi (className e o ultimo).
+
+    Campos vazios no meio sao obrigatorios: o parser do builtin separa por
+    virgula e as posicoes precisam ser respeitadas.
+    """
+    campos = [package or PACKAGE] + [''] * 7 + [atividade]
+    return 'StartAndroidActivity(%s)' % ','.join(campos)
+
+
 def tocar_anuncio(atividade, log=None):
     """Abre a tela de anuncio do app SMARTEDTV Ads. Devolve True se disparou."""
     if not android():
         if log:
-            log('ads: ignorado (nao e Android)')
+            log('[SmartAds] ignorado (nao e Android)')
         return False
-    builtin = 'StartAndroidActivity(%s,%s)' % (PACKAGE, atividade)
+    builtin = builtin_para(atividade)
     try:
         xbmc.executebuiltin(builtin)
     except Exception as erro:
         if log:
-            log('ads: %s falhou (%s)' % (builtin, erro), xbmc.LOGWARNING)
+            log('[SmartAds] %s falhou (%s)' % (builtin, erro), xbmc.LOGWARNING)
         return False
     if log:
-        log('ads: %s' % builtin)
+        # este e o log que aparece no kodi.log quando o disparo acontece
+        log('[SmartAds] disparando %s -> %s/%s'
+            % (builtin, PACKAGE, atividade))
     return True
 
 
@@ -124,13 +146,13 @@ def mostrar_abertura(log=None):
     """Pop-up de abertura: exatamente uma vez por instalacao."""
     if abertura_ja_mostrada():
         if log:
-            log('ads: abertura ja exibida nesta instalacao')
+            log('[SmartAds] abertura ja exibida nesta instalacao')
         return False
     if not tocar_anuncio(ATIVIDADE_ABERTURA, log):
         return False
     marcar_abertura()
     if log:
-        log('ads: pop-up de abertura exibido (uma vez por instalacao)')
+        log('[SmartAds] pop-up de abertura disparado (uma vez por instalacao)')
     return True
 
 
@@ -144,7 +166,7 @@ def abertura_depois_do_boot(monitor, log=None):
     try:
         if xbmc.Player().isPlayingVideo():
             if log:
-                log('ads: abertura adiada (video ja em reproducao)')
+                log('[SmartAds] abertura adiada (video ja em reproducao)')
             return False
     except Exception:
         pass
@@ -190,7 +212,7 @@ class MonitorPreRoll(_BasePlayer):
             mostrar_preroll(self.log, self.intervalo)
         except Exception as erro:  # nunca derrubar o servico por causa do anuncio
             if self.log:
-                self.log('ads: pre-roll falhou (%s)' % erro, xbmc.LOGWARNING)
+                self.log('[SmartAds] pre-roll falhou (%s)' % erro, xbmc.LOGWARNING)
 
 
 _monitor = None
@@ -204,11 +226,11 @@ def iniciar_monitor(log=None, intervalo=PREROLL_INTERVALO):
     try:
         _monitor = MonitorPreRoll(log, intervalo)
         if log:
-            log('ads: gancho de pre-roll ligado (%s, minimo %d s entre anuncios)'
+            log('[SmartAds] gancho de pre-roll ligado (%s, minimo %d s entre anuncios)'
                 % (MARKER, intervalo))
     except Exception as erro:
         if log:
-            log('ads: nao foi possivel ligar o pre-roll (%s)' % erro, xbmc.LOGWARNING)
+            log('[SmartAds] nao foi possivel ligar o pre-roll (%s)' % erro, xbmc.LOGWARNING)
         _monitor = None
     return _monitor
 
