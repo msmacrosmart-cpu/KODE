@@ -103,7 +103,9 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
               "permissão AD_ID", "com.google.android.gms.permission.AD_ID")
 
     orientacoes = [l.strip() for l in arvore.splitlines() if "screenOrientation" in l]
-    if any("sensorLandscape" in l or "0x6" in l for l in orientacoes):
+    # aapt2 imprime o enum: "=6" (sensorLandscape) em algumas versoes, "0x6" em outras
+    if any("sensorLandscape" in l or "0x6" in l or l.rstrip().endswith("=6")
+           for l in orientacoes):
         rel.ok("telas de anúncio em paisagem", f"{len(orientacoes)} linha(s)")
     else:
         rel.aviso("telas de anúncio em paisagem", "sem sensorLandscape no manifesto")
@@ -186,8 +188,13 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
     else:
         for agulha in PONTE:
             rel.exige(agulha in ponte, "ponte", agulha)
-        if "org.smartedtv.ads" in ponte:
-            rel.aviso("ponte", "ainda menciona o pacote do app auxiliar antigo")
+        # comentários e o antigo ATIVIDADE_LAUNCHER podem citar o pacote antigo
+        # (o plano B está desligado); o que importa são as constantes em uso.
+        if ("ATIVIDADE_ABERTURA = 'org.smartedtv" in ponte
+                or "ATIVIDADE_PREROLL = 'org.smartedtv" in ponte):
+            rel.falha("ponte", "aponta para o app auxiliar antigo (org.smartedtv.ads)")
+        else:
+            rel.ok("ponte", "constantes em uso apontam para dentro do app")
 
     # -------------------------------------------------------------- resumo
     rel.titulo("resumo")
