@@ -320,12 +320,20 @@ jobs:
             echo "::error::APK nao existe: $APK (o passo 9 falhou)"
             exit 1
           fi
+          # o Actions roda com bash -e: sem o set +e o passo morre no primeiro
+          # código != 0 e o relatório nunca é gravado (foi o que aconteceu)
+          set +e
           python3 smartedtv/tools/verify-monolito-apk.py "$APK" \
             --aapt2 "$AAPT2" \
             --pacote "$PACOTE" --versao "$VERSAO" --codigo "$CODIGO" \
             --manifesto-base-sha "$BASE_MANIFESTO_SHA256" \
-            --relatorio "$RUNNER_TEMP/verificacao.txt"
+            --relatorio "$RUNNER_TEMP/verificacao.txt" > "$RUNNER_TEMP/saida.txt" 2>&1
           RC=$?
+          set -e
+          cat "$RUNNER_TEMP/saida.txt"
+          if [ ! -s "$RUNNER_TEMP/verificacao.txt" ]; then
+            cp "$RUNNER_TEMP/saida.txt" "$RUNNER_TEMP/verificacao.txt"
+          fi
           {
             echo "# Verificação do APK único — $VERSAO (run $GITHUB_RUN_ID)"
             echo
