@@ -3,6 +3,11 @@
 artifact do run 43643564098 (conferência sem recompilar)
 
 ```
+sha256: 719659e885503af2f3cff123bd40aefe930ac228d0fbc19ec93d70ff2c6ff383
+tamanho: 89380197 bytes
+```
+
+```
 == arquivo: apk/SMARTEDTV-1.0.65-unificado-arm64-v8a.apk  (85.2 MB)
 
 == identidade do pacote (aapt2 badging)
