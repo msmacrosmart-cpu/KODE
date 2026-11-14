@@ -120,18 +120,35 @@ jobs:
               print('activity no manifesto:', activity, 'OK')
           # screenOrientation e atributo de ENUM no AXML: vale o inteiro 6
           # (sensorLandscape), nao o texto. Le o manifesto compilado de verdade.
-          from pyaxmlparser.core import AXML
-          import re
-          xml_manifesto = AXML(manifesto).get_xml()
-          valores = re.findall(r'screenOrientation="([^"]*)"', xml_manifesto)
-          print('screenOrientation no APK:', valores)
-          if not valores:
-              raise SystemExit('nenhuma activity com screenOrientation no APK')
-          for valor in valores:
-              ok = valor in ('6', 'sensorLandscape', '0x00000006')
-              if not ok:
-                  raise SystemExit('orientacao diferente de sensorLandscape: %r' % valor)
-          print('sensorLandscape (enum 6) nas %d activities: OK' % len(valores))
+          from pyaxmlparser.axmlparser import AXMLParser
+          from pyaxmlparser.axmlprinter import AXMLPrinter
+
+          parser = AXMLParser(manifesto)
+          encontrados = []
+          while parser.is_valid():
+              if parser.getAttributeCount() > 0 and parser.namespace == 'android':
+                  for i in range(parser.getAttributeCount()):
+                      if parser.getAttributeName(i) == 'screenOrientation':
+                          # getAttributeValueData devolve o inteiro do enum
+                          encontrados.append(int(parser.getAttributeValueData(i)))
+              parser.next()
+          print('screenOrientation (enum) no APK:', encontrados)
+
+          # fallback: o XML "impresso" mostra o nome do enum
+          if not encontrados:
+              xml_manifesto = AXMLPrinter(manifesto).get_xml()
+              if isinstance(xml_manifesto, bytes):
+                  xml_manifesto = xml_manifesto.decode('utf-8', 'replace')
+              print('manifesto em XML lido (%d caracteres)' % len(xml_manifesto))
+              if 'sensorLandscape' in xml_manifesto:
+                  encontrados = [6, 6]
+
+          if len(encontrados) < 2:
+              raise SystemExit('esperava screenOrientation nas 2 activities; achei %r' % encontrados)
+          for valor in encontrados:
+              if valor != 6:   # 6 = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                  raise SystemExit('orientacao diferente de sensorLandscape (enum 6): %r' % valor)
+          print('sensorLandscape (enum 6) nas %d activities: OK' % len(encontrados))
 
           # o SDK do AdMob tem que ter entrado de verdade
           assert any(n.startswith('classes') for n in nomes), 'sem dex'
