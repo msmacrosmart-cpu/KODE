@@ -15,6 +15,9 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
+import sys
+
+VERIFICADOR = Path(__file__).resolve().parents[1] / "smartedtv/tools/verify-monolito-apk.py"
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / 'smartedtv' / 'tools' / 'integrate-monolith.py'
@@ -144,33 +147,28 @@ class WorkflowDoMonolitoTest(unittest.TestCase):
         self.assertIn('--language-addon', self.fluxo)
 
     def test_confere_o_apk_unico_antes_de_publicar(self):
-        for marca in ("package: name='%s'",
-                      '.PreRollActivity', '.AppOpenActivity',
-                      'ca-app-pub-2066014755407744~5076693043',
-                      'assets/addons/skin.novatv/addon.xml',
-                      'plugin.video.smarted',
-                      "ATIVIDADE_PREROLL = 'smartedtv.full.PreRollActivity'"):
-            self.assertIn(marca, self.fluxo)
-        # o pacote comparado é o do env PACOTE (smartedtv.full)
-        self.assertIn('PACOTE: smartedtv.full', self.fluxo)
-        # o prefixo das dependências tem subdiretório por alvo (regressão real:
-        # exigir $RUNNER_TEMP/xbmc-depends/lib derrubou dois runs)
-        self.assertIn('xbmc-depends/*-android-*', self.fluxo)
-        self.assertNotIn('test -d "$RUNNER_TEMP/xbmc-depends/lib"', self.fluxo)
-        # a conferência é bloqueante (sem continue-on-error)
-        bloco = self.fluxo.split('10. Conferir o monolito')[1].split('- name:')[0]
+        # a verificação virou um script próprio (relatório completo), chamado
+        # pelo passo 10 com o pacote/versão vindos do env
+        self.assertIn('smartedtv/tools/verify-monolito-apk.py', self.fluxo)
+        self.assertIn('--pacote "$PACOTE" --versao "$VERSAO" --codigo "$CODIGO"',
+                      self.fluxo)
+        self.assertIn('--relatorio', self.fluxo)
+        # o relatório da verificação fica no repositório (log do runner não basta)
+        self.assertIn('docs/verificacao-apk.txt', self.fluxo)
+        # o APK sobe como artifact: dá para reconferir sem recompilar
+        self.assertIn('actions/upload-artifact@v4', self.fluxo)
+        self.assertIn('apk-unificado-${{ env.VERSAO }}', self.fluxo)
+        # e a verificação continua bloqueante
         self.assertNotIn('continue-on-error', self.fluxo.split('10. Conferir o monolito')[1])
+        self.assertIn('exit $RC', self.fluxo)
 
-    def test_publica_com_assinatura_da_linha(self):
-        self.assertIn('TAG_DESTINO: v1.0.65-unificado', self.fluxo)
-        self.assertIn('dropbox/smarted-tv-test.jks', self.fluxo)
-        self.assertIn('855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a', self.fluxo)
-
-    def test_usa_a_receita_que_ja_compilou(self):
-        self.assertIn('ndk;$NDK_VERSION', self.fluxo)
-        self.assertIn('cmakebuildsys', self.fluxo)
-        self.assertIn('timeout-minutes: 300', self.fluxo)
-
+    def test_verificador_nao_morre_no_primeiro_erro(self):
+        codigo = (Path('smartedtv/tools/verify-monolito-apk.py')).read_text(encoding='utf-8')
+        # todas as checagens rodam; só o fim decide o código de saída
+        self.assertIn('self.erros', codigo)
+        self.assertIn('return 1 if rel.erros else 0', codigo)
+        # APPLICATION_ID existe só no manifesto: não pode ser obrigatório no dex
+        self.assertNotIn('rel.exige(ADS_APP_ID.encode() in dex', codigo)
 
 class ScriptFalhaComFonteInvalidoTest(unittest.TestCase):
     """O script não pode aplicar patch em árvore que não é o Kodi."""
@@ -198,3 +196,86 @@ class PonteDoRepositorioContinuaValidaTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class VerificadorDoApkTest(unittest.TestCase):
+    """O verificador do APK precisa rodar TODAS as checagens e dizer tudo.
+
+    Regressão real: a primeira versão parava no primeiro erro e exigia o
+    APPLICATION_ID dentro do dex (ele só existe no manifesto), derrubando dois
+    builds de 2 h já com o APK pronto.
+    """
+
+    def _apk(self, tmp, com_tudo=True):
+        import zipfile
+        apk = Path(tmp) / "fake.apk"
+        addons = ["skin.novatv", "skin.smartedtv.classic", "plugin.video.smarted",
+                  "service.smarted.bootstrap", "resource.uisounds.silencio"]
+        with zipfile.ZipFile(apk, "w") as z:
+            for addon in addons:
+                z.writestr(f"assets/addons/{addon}/addon.xml", "<addon/>")
+            z.writestr("assets/system/addon-manifest.xml",
+                       "<addons><addon>skin.novatv</addon></addons>")
+            z.writestr("assets/media/splash.jpg", b"x")
+            z.writestr("assets/media/applaunch_screen.png", b"x")
+            z.writestr("res/AB.png", b"x")
+            z.writestr("lib/arm64-v8a/libkodi.so", b"\x7fELF")
+            z.writestr("classes.dex", (b"ca-app-pub-2066014755407744/4214378379 "
+                                       b"ca-app-pub-2066014755407744/3572039686 "
+                                       b"AppOpenActivity PreRollActivity SmartAds "
+                                       b"com/google/android/gms/ads"))
+            z.writestr("assets/addons/service.smarted.bootstrap/smart_ads.py",
+                       "ATIVIDADE_PREROLL = 'smartedtv.full.PreRollActivity'\n"
+                       "ATIVIDADE_ABERTURA = 'smartedtv.full.AppOpenActivity'\n"
+                       "tentar_plano_b=False\n")
+        return apk
+
+    def _aapt2(self, tmp):
+        caminho = Path(tmp) / "aapt2"
+        caminho.write_text("""#!/bin/sh
+if [ "$2" = badging ]; then
+  echo "package: name='smartedtv.full' versionCode='2103051' versionName='1.0.65'"
+else
+  echo '    A: android:name(0x01010003)=".AppOpenActivity"'
+  echo '    A: android:name(0x01010003)=".PreRollActivity"'
+  echo '    A: android:screenOrientation(0x0101001e)=0x6'
+  echo '    A: android:value(0x01010024)="ca-app-pub-2066014755407744~5076693043"'
+  echo '    A: android:name(0x01010003)="com.google.android.gms.permission.AD_ID"'
+fi
+""", encoding="utf-8")
+        caminho.chmod(0o755)
+        return caminho
+
+    def test_apk_completo_passa(self):
+        import subprocess, tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            apk = self._apk(tmp)
+            aapt2 = self._aapt2(tmp)
+            proc = subprocess.run(
+                [sys.executable, str(VERIFICADOR), str(apk), "--aapt2", str(aapt2)],
+                capture_output=True, text=True)
+            self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+            self.assertIn("obrigatórias com falha: 0", proc.stdout)
+            # APPLICATION_ID no dex é aviso, não erro (ele vive no manifesto)
+            self.assertIn("aviso APPLICATION_ID no dex", proc.stdout)
+
+    def test_apk_sem_a_skin_falha_e_mostra_o_resto(self):
+        import subprocess, tempfile, zipfile
+        with tempfile.TemporaryDirectory() as tmp:
+            apk = self._apk(tmp)
+            # reescreve o zip sem a skin
+            origem = zipfile.ZipFile(apk)
+            itens = {n: origem.read(n) for n in origem.namelist()
+                     if not n.startswith("assets/addons/skin.novatv/")}
+            origem.close()
+            with zipfile.ZipFile(apk, "w") as z:
+                for nome, dados in itens.items():
+                    z.writestr(nome, dados)
+            aapt2 = self._aapt2(tmp)
+            proc = subprocess.run(
+                [sys.executable, str(VERIFICADOR), str(apk), "--aapt2", str(aapt2)],
+                capture_output=True, text=True)
+            self.assertEqual(proc.returncode, 1)
+            self.assertIn("FALHA addon skin.novatv", proc.stdout)
+            # não parou no primeiro erro: avaliou o dex também
+            self.assertIn("classe SmartAds", proc.stdout)

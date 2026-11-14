@@ -141,3 +141,35 @@ Kodi/Gradle). Com o cache funcionando, as próximas caem para ~40 min.
    `docs/build-log-falha.txt` (fim dos logs de dependências/Kodi).
 4. Sucesso = release `v1.0.64-unificado` com
    `SMARTEDTV-1.0.64-unificado-arm64-v8a.apk` + `.sha256`.
+
+## Identidade visual (1.0.65)
+
+Artes do usuário aplicadas em 13/11, via `smartedtv/assets/brand/`:
+
+| Arquivo | Origem | Uso |
+| --- | --- | --- |
+| `splash.png` (1280x720) | arte widescreen enviada | splash do Android e da GUI, preenchendo 1920x1080 sem barras |
+| `logo-oficial.jpg` (2000x2000) | arte quadrada enviada | banner Android TV 320x180 e ícones internos do Kodi |
+| `mark.png` (1720x1720) | recorte central da arte quadrada | launcher (36…192 px), `vendor_icon`, `vendor_logo` |
+
+`make-brand-assets.py` passou a aceitar a arte widescreen: `cover()` preenche o
+quadro 16:9 (corta as sobras) em vez de emoldurar a arte quadrada. Sem
+`splash.png`, ele volta ao comportamento antigo — nada quebra.
+
+## Verificação do APK (depois de dois runs perdidos)
+
+A conferência agora é um script: `smartedtv/tools/verify-monolito-apk.py`.
+
+* roda **todas** as checagens e imprime um relatório (OK / FALHA / aviso);
+* só o fim decide o código de saída — um erro não esconde os outros;
+* julga o que é obrigatório (pacote, versão, activities, APPLICATION_ID, AD_ID,
+  addons, splash, libkodi.so, classes do AdMob no dex) e o que é aviso;
+* grava `docs/verificacao-apk.txt` no próprio repositório.
+
+O `APPLICATION_ID` do AdMob **não** existe no dex: ele é uma meta-data do
+manifesto. Exigi-lo no dex derrubou os runs 43637389678 e 43638117645 com o APK
+já pronto — o tipo de erro que o relatório completo teria mostrado na hora.
+
+O APK de cada build sobe como artifact (`apk-unificado-<versão>`), e o workflow
+`check-apk.yml` roda a mesma verificação contra esse artifact em ~1 min, sem
+recompilar: dá para ajustar a checagem sem esperar 2 h.

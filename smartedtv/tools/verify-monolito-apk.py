@@ -1,0 +1,228 @@
+#!/usr/bin/env python3
+"""Confere o APK único (smartedtv.full) e imprime um relatório completo.
+
+Diferente de um verificador que morre no primeiro erro: aqui TODAS as checagens
+rodam e o relatório mostra o que passou e o que falhou. Assim uma rodada de 2h
+de build nunca é desperdiçada por causa de uma asserção mal escrita.
+
+Uso:
+    python3 verify-monolito-apk.py APK [--aapt2 CAMINHO] [--pacote ...]
+                                   [--versao ...] [--codigo ...] [--relatorio ARQ]
+
+Saída: relatório legível; código 1 se alguma checagem obrigatória falhar.
+"""
+from __future__ import annotations
+
+import argparse
+import subprocess
+import sys
+import zipfile
+from pathlib import Path
+
+PACOTE = "smartedtv.full"
+VERSAO = "1.0.65"
+CODIGO = 2103051
+
+BLOCO_ABERTURA = "ca-app-pub-2066014755407744/4214378379"
+BLOCO_PREROLL = "ca-app-pub-2066014755407744/3572039686"
+ADS_APP_ID = "ca-app-pub-2066014755407744~5076693043"
+
+ADDONS = (
+    "skin.novatv",
+    "skin.smartedtv.classic",
+    "plugin.video.smarted",
+    "service.smarted.bootstrap",
+    "resource.uisounds.silencio",
+)
+
+PONTE = (
+    "ATIVIDADE_PREROLL = 'smartedtv.full.PreRollActivity'",
+    "ATIVIDADE_ABERTURA = 'smartedtv.full.AppOpenActivity'",
+    "tentar_plano_b=False",
+)
+
+
+class Relatorio:
+    def __init__(self) -> None:
+        self.linhas: list[str] = []
+        self.erros: list[str] = []
+        self.avisos: list[str] = []
+
+    def titulo(self, texto: str) -> None:
+        self.linhas.append("")
+        self.linhas.append(f"== {texto}")
+
+    def ok(self, rotulo: str, detalhe: str = "") -> None:
+        self.linhas.append(f"  OK    {rotulo:<34} {detalhe}")
+
+    def falha(self, rotulo: str, detalhe: str = "") -> None:
+        self.erros.append(f"{rotulo}: {detalhe}")
+        self.linhas.append(f"  FALHA {rotulo:<34} {detalhe}")
+
+    def aviso(self, rotulo: str, detalhe: str = "") -> None:
+        self.avisos.append(f"{rotulo}: {detalhe}")
+        self.linhas.append(f"  aviso {rotulo:<34} {detalhe}")
+
+    def texto(self, conteudo: str) -> None:
+        self.linhas.append("  " + conteudo.replace("\n", "\n  "))
+
+    def exige(self, condicao: bool, rotulo: str, detalhe: str = "") -> bool:
+        (self.ok if condicao else self.falha)(rotulo, detalhe)
+        return condicao
+
+
+def dump(aapt2: str, *args: str) -> str:
+    proc = subprocess.run([aapt2, *args], capture_output=True, text=True)
+    if proc.returncode != 0:
+        return f"<<aapt2 falhou: {proc.stderr.strip()[:200]}>>"
+    return proc.stdout
+
+
+def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
+    rel.titulo(f"arquivo: {apk}  ({apk.stat().st_size / 1048576.0:.1f} MB)")
+
+    # ---------------------------------------------------------------- badging
+    rel.titulo("identidade do pacote (aapt2 badging)")
+    badging = dump(aapt2, "dump", "badging", str(apk))
+    primeira = badging.splitlines()[0] if badging else "(sem saída)"
+    rel.texto(primeira)
+    rel.exige(f"package: name='{esperado['pacote']}'" in badging,
+              "pacote", esperado["pacote"])
+    rel.exige(f"versionName='{esperado['versao']}'" in badging,
+              "versionName", esperado["versao"])
+    rel.exige(f"versionCode='{esperado['codigo']}'" in badging,
+              "versionCode", str(esperado["codigo"]))
+
+    # --------------------------------------------------------------- manifesto
+    rel.titulo("manifesto (aapt2 xmltree)")
+    arvore = dump(aapt2, "dump", "xmltree", "--file", "AndroidManifest.xml", str(apk))
+    rel.exige("AppOpenActivity" in arvore, "activity de abertura", ".AppOpenActivity")
+    rel.exige("PreRollActivity" in arvore, "activity de pre-roll", ".PreRollActivity")
+    rel.exige(ADS_APP_ID in arvore, "APPLICATION_ID do AdMob", ADS_APP_ID)
+    rel.exige("com.google.android.gms.permission.AD_ID" in arvore,
+              "permissão AD_ID", "com.google.android.gms.permission.AD_ID")
+
+    orientacoes = [l.strip() for l in arvore.splitlines() if "screenOrientation" in l]
+    if any("sensorLandscape" in l or "0x6" in l for l in orientacoes):
+        rel.ok("telas de anúncio em paisagem", f"{len(orientacoes)} linha(s)")
+    else:
+        rel.aviso("telas de anúncio em paisagem", "sem sensorLandscape no manifesto")
+        for linha in orientacoes[:4]:
+            rel.texto(linha)
+
+    # -------------------------------------------------------------------- ZIP
+    rel.titulo("conteúdo do APK (ZIP)")
+    with zipfile.ZipFile(apk) as z:
+        nomes = z.namelist()
+        presentes = set(nomes)
+
+        for addon in ADDONS:
+            alvo = f"assets/addons/{addon}/addon.xml"
+            rel.exige(alvo in presentes, f"addon {addon}", alvo)
+
+        if "assets/system/addon-manifest.xml" in presentes:
+            manifesto = z.read("assets/system/addon-manifest.xml").decode("utf-8", "replace")
+            rel.exige("<addon>skin.novatv</addon>" in manifesto,
+                      "skin.novatv no addon-manifest", "padrão na primeira execução")
+        else:
+            rel.falha("addon-manifest.xml", "assets/system/addon-manifest.xml ausente")
+
+        for sonda, rotulo in (
+            ("assets/media/splash.jpg", "splash da GUI"),
+            ("assets/media/applaunch_screen.png", "splash do Android"),
+        ):
+            if sonda in presentes:
+                rel.ok(rotulo, sonda)
+            else:
+                rel.falha(rotulo, f"{sonda} ausente")
+
+        # o aapt compila os drawables: o caminho original não aparece no ZIP,
+        # só entradas res/**.png
+        icones = [n for n in nomes if n.startswith("res/") and n.endswith(".png")]
+        if icones:
+            rel.ok("ícones do launcher no APK", f"{len(icones)} PNG em res/")
+        else:
+            rel.aviso("ícones do launcher", "nenhum PNG em res/")
+
+        # biblioteca nativa e motor
+        if "lib/arm64-v8a/libkodi.so" in presentes:
+            rel.ok("motor nativo", "lib/arm64-v8a/libkodi.so")
+        else:
+            libs = [n for n in nomes if n.startswith("lib/arm64-v8a/") and n.endswith(".so")]
+            rel.falha("motor nativo", f"libkodi.so ausente (libs: {len(libs)})")
+
+        dex = b"".join(z.read(n) for n in nomes
+                       if n.startswith("classes") and n.endswith(".dex"))
+        pacotes = sorted({n.split("/")[2] for n in nomes
+                          if n.startswith("assets/addons/") and n.count("/") > 2})
+        rel.texto(f"addons no APK ({len(pacotes)}): " + ", ".join(pacotes[:14]))
+
+        ponte = None
+        alvo_ponte = "assets/addons/service.smarted.bootstrap/smart_ads.py"
+        if alvo_ponte in presentes:
+            ponte = z.read(alvo_ponte).decode("utf-8", "replace")
+
+    # -------------------------------------------------------------------- dex
+    rel.titulo("classes no dex (anúncios dentro do app)")
+    for rotulo, agulha in (
+        ("bloco de abertura", BLOCO_ABERTURA.encode()),
+        ("bloco de pre-roll", BLOCO_PREROLL.encode()),
+        ("activity AppOpenActivity", b"AppOpenActivity"),
+        ("activity PreRollActivity", b"PreRollActivity"),
+        ("SDK do AdMob", b"com/google/android/gms/ads"),
+        ("classe SmartAds", b"SmartAds"),
+    ):
+        rel.exige(agulha in dex, rotulo, agulha.decode()[:44])
+
+    if ADS_APP_ID.encode() in dex:
+        rel.ok("APPLICATION_ID no dex", "presente (redundante com o manifesto)")
+    else:
+        rel.aviso("APPLICATION_ID no dex", "não está no dex (esperado: só no manifesto)")
+
+    # ---------------------------------------------------------------- ponte
+    rel.titulo("ponte do serviço de bootstrap")
+    if ponte is None:
+        rel.falha("smart_ads.py embarcado", "ausente no APK")
+    else:
+        for agulha in PONTE:
+            rel.exige(agulha in ponte, "ponte", agulha)
+        if "org.smartedtv.ads" in ponte:
+            rel.aviso("ponte", "ainda menciona o pacote do app auxiliar antigo")
+
+    # -------------------------------------------------------------- resumo
+    rel.titulo("resumo")
+    rel.texto(f"obrigatórias com falha: {len(rel.erros)}")
+    rel.texto(f"avisos: {len(rel.avisos)}")
+    if rel.erros:
+        for erro in rel.erros:
+            rel.texto(f"- {erro}")
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("apk")
+    ap.add_argument("--aapt2", default="aapt2")
+    ap.add_argument("--pacote", default=PACOTE)
+    ap.add_argument("--versao", default=VERSAO)
+    ap.add_argument("--codigo", type=int, default=CODIGO)
+    ap.add_argument("--relatorio", default="")
+    args = ap.parse_args()
+
+    esperado = {"pacote": args.pacote, "versao": args.versao, "codigo": args.codigo}
+
+    apk = Path(args.apk)
+    rel = Relatorio()
+    if not apk.is_file():
+        rel.falha("APK", f"não existe: {apk}")
+    else:
+        conferir(apk, args.aapt2, rel, esperado)
+
+    texto = "\n".join(rel.linhas).lstrip("\n")
+    print(texto)
+    if args.relatorio:
+        Path(args.relatorio).write_text(texto + "\n", encoding="utf-8")
+    return 1 if rel.erros else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

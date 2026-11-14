@@ -250,85 +250,46 @@ jobs:
           ls -la "$OUT"
           cat "$OUT"/*.sha256
 
-      - name: 10. Conferir o monolito (bloqueante)
+      - name: 9b. Guardar o APK do build (artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-unificado-${{ env.VERSAO }}
+          path: |
+            smartedtv/out-apk/*.apk
+            smartedtv/out-apk/*.sha256
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: 10. Conferir o monolito (relatório completo, bloqueante)
         run: |
-          set -euo pipefail
+          set -o pipefail
           APK="smartedtv/out-apk/$ARQUIVO_DESTINO"
           AAPT2="$ANDROID_HOME/build-tools/33.0.1/aapt2"
-          python3 - "$APK" "$AAPT2" <<'PY'
-          import os, subprocess, sys, zipfile
-
-          apk, aapt2 = sys.argv[1], sys.argv[2]
-          pacote = os.environ['PACOTE']
-          versao = os.environ['VERSAO']
-          codigo = int(os.environ['CODIGO'])
-
-          def saida(*args):
-              return subprocess.run([aapt2, *args], capture_output=True, text=True, check=True).stdout
-
-          badging = saida('dump', 'badging', apk)
-          print(badging.splitlines()[0])
-          if "package: name='%s'" % pacote not in badging:
-              sys.exit('::error::pacote do APK nao e %s' % pacote)
-          if "versionName='%s'" % versao not in badging:
-              sys.exit('::error::versionName diferente de %s' % versao)
-          if "versionCode='%d'" % codigo not in badging:
-              sys.exit('::error::versionCode diferente de %d' % codigo)
-
-          arvore = saida('dump', 'xmltree', '--file', 'AndroidManifest.xml', apk)
-          obrigatorios = {
-              'ACTIVITY_APPOPEN': '.AppOpenActivity',
-              'ACTIVITY_PREROLL': '.PreRollActivity',
-              'ADMob APPLICATION_ID': 'ca-app-pub-2066014755407744~5076693043',
-              'permissao AD_ID': 'com.google.android.gms.permission.AD_ID',
-          }
-          for rotulo, agulha in obrigatorios.items():
-              if agulha not in arvore:
-                  sys.exit('::error::falta no manifesto: %s (%s)' % (rotulo, agulha))
-              print('%-24s OK' % rotulo)
-
-          orientacoes = [linha for linha in arvore.splitlines() if 'screenOrientation' in linha]
-          print('screenOrientation no manifesto:', len(orientacoes), 'linhas')
-          if not any('sensorLandscape' in linha or '0x6' in linha for linha in orientacoes):
-              sys.exit('::error::nenhuma tela de anuncio em sensorLandscape')
-
-          with zipfile.ZipFile(apk) as z:
-              nomes = z.namelist()
-              dex = b''.join(z.read(n) for n in nomes
-                             if n.startswith('classes') and n.endswith('.dex'))
-              if 'assets/addons/skin.novatv/addon.xml' not in nomes:
-                  sys.exit('::error::skin.novatv ausente no APK')
-              for addon in ('plugin.video.smarted', 'service.smarted.bootstrap',
-                            'resource.uisounds.silencio'):
-                  if 'assets/addons/%s/addon.xml' % addon not in nomes:
-                      sys.exit('::error::addon ausente no APK: %s' % addon)
-              manifesto_addons = z.read('assets/system/addon-manifest.xml').decode()
-              if '<addon>skin.novatv</addon>' not in manifesto_addons:
-                  sys.exit('::error::skin.novatv fora do addon-manifest.xml')
-              bridge = z.read('assets/addons/service.smarted.bootstrap/smart_ads.py').decode()
-
-          for rotulo, agulha in {
-              'bloco abertura': b'ca-app-pub-2066014755407744/4214378379',
-              'bloco pre-roll': b'ca-app-pub-2066014755407744/3572039686',
-              'APPLICATION_ID': b'ca-app-pub-2066014755407744~5076693043',
-              'classes de anuncio': b'AppOpenActivity',
-              'SDK do AdMob': b'com/google/android/gms/ads',
-              'tag SmartAds': b'SmartAds',
-          }.items():
-              if agulha not in dex:
-                  sys.exit('::error::%s ausente no dex' % rotulo)
-              print('%-24s OK' % rotulo)
-
-          for agulha in ("ATIVIDADE_PREROLL = 'smartedtv.full.PreRollActivity'",
-                         "ATIVIDADE_ABERTURA = 'smartedtv.full.AppOpenActivity'",
-                         'tentar_plano_b=False'):
-              if agulha not in bridge:
-                  sys.exit('::error::ponte do bootstrap nao aponta para dentro: %s' % agulha)
-          print('ponte interna           OK')
-
-          print('tamanho: %.1f MB' % (os.path.getsize(apk) / 1048576.0))
-          print('APK UNICO conferido: um arquivo, com player + anuncios + conteudo.')
-          PY
+          if [ ! -f "$APK" ]; then
+            echo "::error::APK nao existe: $APK (o passo 9 falhou)"
+            exit 1
+          fi
+          python3 smartedtv/tools/verify-monolito-apk.py "$APK" \
+            --aapt2 "$AAPT2" \
+            --pacote "$PACOTE" --versao "$VERSAO" --codigo "$CODIGO" \
+            --relatorio "$RUNNER_TEMP/verificacao.txt"
+          RC=$?
+          {
+            echo "# Verificação do APK único — $VERSAO (run $GITHUB_RUN_ID)"
+            echo
+            echo "APK: \`$ARQUIVO_DESTINO\`"
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/verificacao.txt" 2>/dev/null || echo '(relatorio vazio)'
+            echo '```'
+          } > docs/verificacao-apk.txt
+          git config user.name "smarted-bot"
+          git config user.email "smarted-bot@users.noreply.github.com"
+          git add -f docs/verificacao-apk.txt
+          git commit -m "ci: verificacao do APK unico $VERSAO (run $GITHUB_RUN_ID)" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" || true
+          exit $RC
 
       - name: 11. Guardar o log quando falhar
         if: failure()

@@ -1,0 +1,91 @@
+name: "Conferir o APK unificado (artifact, sem recompilar)"
+
+# Este workflow NÃO compila nada: ele pega o APK já gerado (artifact do build do
+# monólito) e roda a verificação completa. Serve para iterar a verificação em
+# ~1 minuto em vez de esperar 2 h de build a cada ajuste de checagem.
+
+on:
+  push:
+    branches: [arena/7dedf371-kode]
+    paths:
+      - .github/workflows/check-apk.yml
+      - smartedtv/tools/verify-monolito-apk.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: check-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PACOTE: smartedtv.full
+  VERSAO: "1.0.65"
+  CODIGO: "2103051"
+
+jobs:
+  conferir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Achar o artifact mais recente do build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          mkdir -p apk
+          ACHOU=""
+          # varre os últimos runs do workflow do monólito atrás de um artifact
+          for RUN in $(gh api "/repos/${{ github.repository }}/actions/workflows/build-monolith.yml/runs?per_page=10" \
+                       --jq '.workflow_runs[] | "\(.id)"' 2>/dev/null); do
+            echo "-- run $RUN"
+            NOME=$(gh api "/repos/${{ github.repository }}/actions/runs/$RUN/artifacts" \
+                    --jq '.artifacts[] | select(.name|startswith("apk-unificado")) | .name' 2>/dev/null | head -1)
+            [ -n "$NOME" ] || { echo "   sem artifact"; continue; }
+            echo "   artifact: $NOME"
+            if gh run download "$RUN" -n "$NOME" -D apk 2>/dev/null; then
+              ACHOU="$RUN"; echo "RUN_ID=$RUN" >> "$GITHUB_ENV"
+              break
+            fi
+            echo "   download falhou"
+          done
+          if [ -z "$ACHOU" ]; then
+            echo "::error::nenhum artifact de APK encontrado nos ultimos runs"
+            ls -R apk || true
+            exit 1
+          fi
+          find apk -type f | head -20
+          APK=$(find apk -name '*.apk' | head -1)
+          [ -n "$APK" ] || { echo "::error::artifact sem APK"; exit 1; }
+          echo "APK=$APK" >> "$GITHUB_ENV"
+
+      - name: 2. Verificar o APK (relatório completo)
+        run: |
+          set -o pipefail
+          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          AAPT2=$(ls -d "$SDK"/build-tools/*/ 2>/dev/null | sort -V | tail -1)aapt2
+          echo "aapt2: $AAPT2"
+          python3 smartedtv/tools/verify-monolito-apk.py "$APK" \
+            --aapt2 "$AAPT2" \
+            --pacote "$PACOTE" --versao "$VERSAO" --codigo "$CODIGO" \
+            --relatorio "$RUNNER_TEMP/verificacao.txt"
+          RC=$?
+          {
+            echo "# Verificação do APK único — $VERSAO"
+            echo
+            echo "artifact do run $RUN_ID (conferência sem recompilar)"
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/verificacao.txt" 2>/dev/null || echo '(relatorio vazio)'
+            echo '```'
+          } > docs/verificacao-apk.txt
+          git config user.name "smarted-bot"
+          git config user.email "smarted-bot@users.noreply.github.com"
+          git add -f docs/verificacao-apk.txt
+          git commit -m "ci: conferencia do APK $VERSAO pelo artifact (run $RUN_ID)" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" || true
+          exit $RC
