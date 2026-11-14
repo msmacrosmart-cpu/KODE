@@ -178,7 +178,7 @@ jobs:
         run: |
           set -euo pipefail
           sha256sum "$RUNNER_TEMP/ads/$ARQUIVO_ADS" \
-            | sed "s#$RUNNER_TEMP/ads/##" > "$RUNNER_TEMP/ads/sha256.txt"
+            | sed "s#$RUNNER_TEMP/ads/##" > "$RUNNER_TEMP/ads/SMARTEDTV-Anuncios.sha256"
           NOTAS="$RUNNER_TEMP/ads/notas.md"
           {
             echo "# SMARTEDTV Anuncios $VERSAO_ADS (AdMob nativo)"
@@ -207,9 +207,10 @@ jobs:
           fi
           # limpa um anexo com nome errado de tentativa anterior
           gh release delete-asset "$TAG_ADS" entrega.apk --yes >/dev/null 2>&1 || true
+          gh release delete-asset "$TAG_ADS" sha256.txt --yes >/dev/null 2>&1 || true
           gh release upload "$TAG_ADS" \
             "$RUNNER_TEMP/ads/$ARQUIVO_ADS" \
-            "$RUNNER_TEMP/ads/sha256.txt" --clobber
+            "$RUNNER_TEMP/ads/SMARTEDTV-Anuncios.sha256" --clobber
           gh release view "$TAG_ADS" --json assets -q '.assets[] | "\(.name) \(.size) bytes"'
 
       - name: 10. Diagnostico quando qualquer passo falhar
