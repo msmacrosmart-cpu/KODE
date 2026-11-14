@@ -83,7 +83,11 @@ jobs:
               addon = z.read('assets/addons/skin.novatv/addon.xml').decode()
 
           print('')
-          print('bootstrap versao:', re.search(r'version="([^"]+)"', boot).group(1))
+          # o addon.xml comeca com <?xml version="1.1"?>: ancora no <addon>
+          # o addon.xml comeca com <?xml version="1.1"?>: ancora no elemento <addon>
+          def versao_addon(xml):
+              return re.search(r'<addon [^>]*version="([^"]+)"', xml).group(1)
+          print('bootstrap versao:', versao_addon(boot))
           checagens = [
               ('advancedsettings buffermode 1', '<buffermode>1</buffermode>' in perf),
               ('advancedsettings memorysize 50 MB', '<memorysize>52428800</memorysize>' in perf),
@@ -103,7 +107,7 @@ jobs:
 
           # --- skin (nao pode ter regredido) ---------------------------------
           print('')
-          print('skin.novatv versao:', re.search(r'version="([^"]+)"', addon).group(1))
+          print('skin.novatv versao:', versao_addon(addon))
           for cid, topo, alt in (('9201', '570', '194'), ('9203', '822', '194')):
               padrao = (r'<control type="list" id="%s"><left>60</left><top>(\d+)</top>'
                         r'<right>60</right><height>(\d+)</height>' % cid)

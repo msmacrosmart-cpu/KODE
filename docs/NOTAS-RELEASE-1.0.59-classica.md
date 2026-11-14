@@ -71,3 +71,22 @@ O workflow `build-release-classica.yml` falha o build se, dentro do APK publicad
   (`memorysize 48`, `readfactor 2000`, `adjustrefreshrate 0`);
 - o `service.py` embarcado voltar a chamar `apply_performance()` depois do nav-check;
 - `versionName`/`versionCode` não forem `1.0.59` / `2103045`.
+
+## CONFERENCIA DO ARQUIVO PUBLICADO
+
+APK baixado da release e conferido arquivo por arquivo (`docs/comparacao-1.0.59.txt`,
+gerado pelo workflow `verificar-classica.yml`):
+
+- **242.218.060 bytes** | versionName `1.0.59` | versionCode `2103045` | rótulo **SMARTEDTV**
+- sha256: `5e3dc5c36be6b630ced417f2feab85af6507c2d00b7c2e86256f6491d08cf51b`
+- base 1.0.58 conferida de novo no download: sha256
+  `ece4fb03cde87beb7fb351c3683c1cb5f834eb6270783daf97429eaca7cee6cf` (o mesmo que foi publicado)
+- o que saiu/entrou no ZIP: 0 entradas removidas; `libkodi.so`, dex, perfil e skin intactos.
+  Só o bootstrap mudou (`performance.py` 4.858 → 5.871 B, `service.py` 11.667 → 14.050 B,
+  `repair.py`, `addon.xml`) e entraram `menu_smarted.py` e `repository.py`, que faltavam no
+  bootstrap que vinha do APK 1.0.47.
+- 9 de 9 checagens de playback **OK** dentro do APK publicado (buffermode 1, 50 MB, readfactor
+  20x, marker v2, memorysize 48, readfactor 2000, `adjustrefreshrate 0`, `NAV_CHECK_DELAY`,
+  performance antes do nav-check).
+- skin sem regressão: `skin.novatv` 1.0.18, `9201 top=570 h=194`, `9203 top=822 h=194`,
+  `9202` ausente, painel `CC121212` e foco `FF1E1E1E` na listagem.
