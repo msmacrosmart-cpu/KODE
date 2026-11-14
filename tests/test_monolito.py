@@ -246,7 +246,7 @@ elif [ "$2" = resources ]; then
 elif [ "$2" = xmltree ] && [ "$4" = "res/layout/activity_splash.xml" ]; then
   echo '    A: android:id(0x010100d0)=@0x7f080054'
   echo '    A: android:progressDrawable(0x0101012c)=@0x7f070001'
-  echo '    A: android:visibility(0x010100dc)=0x8'
+  echo '    A: android:visibility(0x010100dc)=2'
 else
   echo '    A: android:name(0x01010003)=".AppOpenActivity"'
   echo '    A: android:name(0x01010003)=".PreRollActivity"'
