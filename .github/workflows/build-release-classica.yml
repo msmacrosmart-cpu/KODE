@@ -1,8 +1,16 @@
-name: "Build SMARTED-TV 1.0.59 (linha classica: partida rapida do player)"
+name: "Build SMARTED-TV 1.0.60 (linha classica: anuncios AdMob)"
 
 # Corrige a versao CLASSICA (a mesma familia da 1.0.47, ~240 MB) SEM recompilar o
 # Kodi: baixa o APK da versao anterior, troca a skin e o bootstrap, sobe
 # versionName/versionCode, reassina com a mesma chave da linha e publica.
+#
+# 1.0.60 — ANUNCIOS ADMOB
+#   * bootstrap 1.0.10 liga o app org.smartedtv.ads pela ponte nativa
+#     StartAndroidActivity(): pop-up de abertura uma vez (bloco .../4214378379)
+#     e video pre-roll no inicio de canal/filme/serie (bloco .../3572039686).
+#   * o APK de anuncios e um app separado (android/smarted-ads, workflow
+#     build-ads-apk.yml) e vai anexado NA MESMA release: o Kodi do APK e binario
+#     pronto e nao aceita receber play-services-ads sem recompilar o Kodi.
 #
 # 1.0.59 — PARTIDA RAPIDA DO PLAYER (10-20 s -> poucos segundos)
 #   * advancedsettings.xml: buffermode 1 (cache so de stream), memorysize 50 MB
@@ -33,14 +41,14 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     env:
-      TAG_BASE: v1.0.58-classica
-      ARQUIVO_BASE: SMARTED-TV-v1.0.58-arm64.apk
-      SHA256_BASE: ece4fb03cde87beb7fb351c3683c1cb5f834eb6270783daf97429eaca7cee6cf
-      VERSAO_NOVA: "1.0.59"
-      CODIGO_NOVO: "2103045"
+      TAG_BASE: v1.0.59-classica
+      ARQUIVO_BASE: SMARTED-TV-v1.0.59-arm64.apk
+      SHA256_BASE: 5e3dc5c36be6b630ced417f2feab85af6507c2d00b7c2e86256f6491d08cf51b
+      VERSAO_NOVA: "1.0.60"
+      CODIGO_NOVO: "2103046"
       SKIN_NOVA: "1.0.18"
-      TAG_DESTINO: v1.0.59-classica
-      ARQUIVO_DESTINO: SMARTED-TV-v1.0.59-arm64.apk
+      TAG_DESTINO: v1.0.60-classica
+      ARQUIVO_DESTINO: SMARTED-TV-v1.0.60-arm64.apk
     steps:
       - uses: actions/checkout@v4
 
@@ -75,7 +83,7 @@ jobs:
           # erro fica legivel no proprio repositorio (o log do runner nao baixa)
           exec > >(tee "$RUNNER_TEMP/repack.log") 2>&1
           python3 tools/kodi/build-release-apk.py \
-            --from-version 1.0.58 \
+            --from-version 1.0.59 \
             --to-version "$VERSAO_NOVA" \
             --to-code "$CODIGO_NOVO" \
             --skin-version "$SKIN_NOVA" \
@@ -144,6 +152,18 @@ jobs:
           assert serv.index('apply_performance()') < serv.index('validar_navegacao_depois_do_boot('), \
               'performance aplicada depois do nav-check'
           print('Playback conferido: buffermode 1, 50 MB, readfactor 20x, sem troca de modo, nav-check em segundo plano.')
+
+          # ANUNCIOS: o bootstrap embarcado tem que saber abrir as duas telas
+          with zipfile.ZipFile(apk) as z:
+              ads = z.read('assets/addons/service.smarted.bootstrap/smart_ads.py').decode()
+              serv_ads = z.read('assets/addons/service.smarted.bootstrap/service.py').decode()
+          assert 'org.smartedtv.ads' in ads, 'ponte com o app de anuncios ausente'
+          assert 'AppOpenActivity' in ads and 'PreRollActivity' in ads, 'telas de anuncio ausentes'
+          assert 'StartAndroidActivity(%s,%s)' in ads, 'builtin da ponte nativa ausente'
+          assert 'MonitorPreRoll' in ads, 'gancho de reproducao ausente'
+          assert 'smart_ads.iniciar_monitor' in serv_ads, 'servico nao liga o pre-roll'
+          assert 'smartedtv-ads-v1' in ads, 'marker dos anuncios ausente'
+          print('Anuncios conferidos: abertura + pre-roll ligados no bootstrap embarcado.')
           print('Tamanho do APK sem assinatura: %.1f MB' % (apk.stat().st_size / 1048576))
           PY
 
@@ -181,8 +201,8 @@ jobs:
                                                            a.version_name, a.version_code))
           assert a.package == 'org.xbmc.kodi'
           assert a.get_app_name() == 'SMARTEDTV', a.get_app_name()
-          assert a.version_name == '1.0.59', a.version_name
-          assert int(a.version_code) == 2103045, a.version_code
+          assert a.version_name == '1.0.60', a.version_name
+          assert int(a.version_code) == 2103046, a.version_code
           with zipfile.ZipFile(apk) as z:
               nomes = z.namelist()
               skins = sorted({n.split('/')[2] for n in nomes
@@ -205,32 +225,49 @@ jobs:
           set -uo pipefail
           mkdir -p docs
           {
-            echo "# Log do reempacote (build 1.0.59)"
+            echo "# Log do reempacote (build 1.0.60)"
             echo
             echo '```'
             tail -n 200 "$RUNNER_TEMP/repack.log" 2>/dev/null || echo '(sem log)'
             echo '```'
-          } > docs/build-log-1.0.59.txt
+          } > docs/build-log-1.0.60.txt
           git config user.name "smarted-bot"
           git config user.email "smarted-bot@users.noreply.github.com"
           git add docs/build-log-1.0.59.txt
-          git commit -m "ci: log do reempacote que falhou (1.0.59)" || true
+          git commit -m "ci: log do reempacote que falhou (1.0.60)" || true
           git push origin HEAD:arena/7dedf371-kode || true
+
+      - name: 8c. Baixar o APK de anuncios para ir junto na release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ads"
+          gh release download v1.0.0-ads -R "$GITHUB_REPOSITORY" \
+            --pattern 'SMARTEDTV-Anuncios-*.apk' --dir "$RUNNER_TEMP/ads" || exit 0
+          ls -l "$RUNNER_TEMP/ads"
 
       - name: 9. Publicar a release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          NOTES="$(python3 -c "import pathlib; print(pathlib.Path('docs/NOTAS-RELEASE-1.0.59-classica.md').read_text())")"
+          NOTES="$(python3 -c "import pathlib; print(pathlib.Path('docs/NOTAS-RELEASE-1.0.60-classica.md').read_text())")"
+          # o APK de anuncios vai na MESMA release: um lugar so para instalar
+          EXTRA=()
+          for apk_ads in "$RUNNER_TEMP"/ads/SMARTEDTV-Anuncios-*.apk; do
+            [ -f "$apk_ads" ] && { cp "$apk_ads" .; EXTRA+=("$(basename "$apk_ads")"); }
+          done
+          if [ ${#EXTRA[@]} -gt 0 ]; then echo "anexando tambem: ${EXTRA[*]}"; fi
           if gh release view "$TAG_DESTINO" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG_DESTINO" "$ARQUIVO_DESTINO" "$ARQUIVO_DESTINO.sha256" \
-              -R "$GITHUB_REPOSITORY" --clobber
+              "${EXTRA[@]}" -R "$GITHUB_REPOSITORY" --clobber
             gh release edit "$TAG_DESTINO" -R "$GITHUB_REPOSITORY" --notes "$NOTES"
           else
             gh release create "$TAG_DESTINO" "$ARQUIVO_DESTINO" "$ARQUIVO_DESTINO.sha256" \
-              -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title 'SMARTED-TV 1.0.59 (arm64) - linha classica: player abrindo na hora' \
+              "${EXTRA[@]}" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title 'SMARTED-TV 1.0.60 (arm64) - linha classica: anuncios AdMob + player rapido' \
               --notes "$NOTES"
           fi
           echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_DESTINO/$ARQUIVO_DESTINO"

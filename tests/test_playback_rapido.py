@@ -98,13 +98,13 @@ class FluxoDeBuildTest(unittest.TestCase):
         fluxo = FLUXO.read_text(encoding='utf-8')
         self.assertIn('--bridge-addons service.smarted.bootstrap', fluxo)
 
-    def test_fluxo_parte_da_1_0_58_e_publica_1_0_59(self):
+    def test_fluxo_anda_em_cima_da_release_anterior(self):
         fluxo = FLUXO.read_text(encoding='utf-8')
-        self.assertIn('--from-version 1.0.58', fluxo)
-        self.assertIn('ece4fb03cde87beb7fb351c3683c1cb5f834eb6270783daf97429eaca7cee6cf', fluxo)
-        self.assertIn('VERSAO_NOVA: "1.0.59"', fluxo)
-        self.assertIn('CODIGO_NOVO: "2103045"', fluxo)
-        self.assertIn('v1.0.59-classica', fluxo)
+        self.assertIn('--from-version 1.0.59', fluxo)
+        self.assertIn('5e3dc5c36be6b630ced417f2feab85af6507c2d00b7c2e86256f6491d08cf51b', fluxo)
+        self.assertIn('VERSAO_NOVA: "1.0.60"', fluxo)
+        self.assertIn('CODIGO_NOVO: "2103046"', fluxo)
+        self.assertIn('v1.0.60-classica', fluxo)
 
 
 if __name__ == '__main__':

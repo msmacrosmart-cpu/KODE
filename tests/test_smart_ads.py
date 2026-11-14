@@ -171,5 +171,19 @@ class LigacaoNoBootTest(unittest.TestCase):
         self.assertIn("name='ads-abertura'", self.corpo.replace('"', "'"))
 
 
+class NoBuildClassicoTest(unittest.TestCase):
+    def test_fluxo_confere_os_anuncios_e_anexa_o_apk(self):
+        fluxo = (ROOT / '.github/workflows/build-release-classica.yml').read_text()
+        self.assertIn('smart_ads.iniciar_monitor', fluxo)     # confere o bootstrap embarcado
+        self.assertIn('v1.0.0-ads', fluxo)                    # baixa o APK de anuncios
+        self.assertIn('SMARTEDTV-Anuncios-', fluxo)           # e anexa na mesma release
+
+    def test_fluxo_de_anuncios_compila_com_a_mesma_chave(self):
+        fluxo = (ROOT / '.github/workflows/build-ads-apk.yml').read_text()
+        self.assertIn('play-services-ads', (ADS_DIR / 'app/build.gradle').read_text())
+        self.assertIn('855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a', fluxo)
+        self.assertIn('sensorLandscape', fluxo)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -177,9 +177,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          cp "$RUNNER_TEMP/ads/$ARQUIVO_ADS" "$RUNNER_TEMP/ads/entrega.apk"
-          sha256sum "$RUNNER_TEMP/ads/entrega.apk" | sed 's#entrega.apk#SMARTEDTV-Anuncios.apk#' \
-            > "$RUNNER_TEMP/ads/sha256.txt"
+          sha256sum "$RUNNER_TEMP/ads/$ARQUIVO_ADS" \
+            | sed "s#$RUNNER_TEMP/ads/##" > "$RUNNER_TEMP/ads/sha256.txt"
           NOTAS="$RUNNER_TEMP/ads/notas.md"
           {
             echo "# SMARTEDTV Anuncios $VERSAO_ADS (AdMob nativo)"
@@ -206,8 +205,10 @@ jobs:
             gh release create "$TAG_ADS" --title "SMARTEDTV Anuncios $VERSAO_ADS (AdMob)" \
               --notes-file "$NOTAS" --target "$GITHUB_SHA"
           fi
+          # limpa um anexo com nome errado de tentativa anterior
+          gh release delete-asset "$TAG_ADS" entrega.apk --yes >/dev/null 2>&1 || true
           gh release upload "$TAG_ADS" \
-            "$RUNNER_TEMP/ads/entrega.apk#$ARQUIVO_ADS" \
+            "$RUNNER_TEMP/ads/$ARQUIVO_ADS" \
             "$RUNNER_TEMP/ads/sha256.txt" --clobber
           gh release view "$TAG_ADS" --json assets -q '.assets[] | "\(.name) \(.size) bytes"'
 
