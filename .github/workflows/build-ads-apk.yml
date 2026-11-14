@@ -35,7 +35,7 @@ jobs:
           set -euo pipefail
           PACOTE="$(cat android/smarted-ads/app-id.txt | tr -d '[:space:]')"
           echo "ADS_APP_ID=$PACOTE" >> "$GITHUB_ENV"
-          echo::notice::applicationId do app de anuncios: $PACOTE
+          echo "::notice::applicationId do app de anuncios: $PACOTE"
           if [ "$PACOTE" = "org.xbmc.kodi" ]; then
             echo "::error::org.xbmc.kodi e o pacote do Kodi: o Android nao aceita dois apps com o mesmo pacote"
             exit 1
