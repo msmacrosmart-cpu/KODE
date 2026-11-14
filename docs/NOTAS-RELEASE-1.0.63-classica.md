@@ -2,7 +2,7 @@
 
 ## Como instalar (só um arquivo para começar)
 
-1. Baixe **`SMARTEDTV-Anuncios-1.0.4.apk`** (leve, ~4,9 MB) e instale. Ele é o
+1. Baixe **`SMARTEDTV-Anuncios-1.0.6.apk`** (leve, ~4,9 MB) e instale. Ele é o
    **instalador**: ao abrir o ícone, se o SMARTEDTV ainda não estiver no
    aparelho, baixa o APK principal sozinho e abre a tela de instalação do
    Android (autorize “instalar apps desconhecidos” quando ele pedir).
@@ -78,7 +78,7 @@ e o anúncio não, é o AdMob (aí o painel mostra o código 0/1/2/3/8).
 | Arquivo | Pacote | Versão / código | Tamanho | sha256 |
 | --- | --- | --- | --- | --- |
 | `SMARTED-TV-v1.0.63-arm64.apk` | `org.xbmc.kodi` | 1.0.63 / 2103049 | 242.222.254 B | `82c206e3eac9df9068414bc59908449008424927106e87a867e64f90b5bcee8d` |
-| `SMARTEDTV-Anuncios-1.0.4.apk` | `smartedtv.full` | 1.0.4 / 5 | 5.119.928 B | ver `SMARTEDTV-Anuncios.sha256` |
+| `SMARTEDTV-Anuncios-1.0.6.apk` | `smartedtv.full` | 1.0.6 / 7 | 5.124.024 B | ver `SMARTEDTV-Anuncios.sha256` |
 
 Conferência do APK **publicado** (workflow `verificar-classica.yml`, run verde —
 relatório em `docs/comparacao-1.0.63.txt`):
@@ -94,3 +94,24 @@ relatório em `docs/comparacao-1.0.63.txt`):
 - APK de anúncios da release: `smartedtv.full` 1.0.3/4, com os dois blocos de teste no dex
   e a tag `SmartAds` (orientação `sensorLandscape` confirmada por `aapt2` nas 3 telas no
   build do app).
+
+## Onde o instalador busca o APK principal (1.0.6)
+
+O repositório GitHub é **privado**, e o GitHub responde **404** (não 403) para
+anexo de release de repositório privado visto sem login — era esse o 404 na TV.
+O APK principal agora vem do **Dropbox**, com link público de download direto
+(`?dl=1`), configurado em `android/smarted-ads/apk-url.txt`.
+
+Conferência feita pelo CI **sem token/sem login** (`docs/verificacao-link-apk.txt`):
+
+| Item | Resultado |
+| --- | --- |
+| HTTP | `200` `application/binary` |
+| Tamanho | 242.222.254 B — igual ao APK desta release |
+| sha256 | `82c206e3eac9df9068414bc59908449008424927106e87a867e64f90b5bcee8d` |
+| Pacote | `org.xbmc.kodi` |
+| Versão | `1.0.63` (2103049) |
+
+Ou seja: o app baixa exatamente este APK. Se o link um dia cair, o app mostra o
+código HTTP e oferece **“Abrir no navegador”**; e o CI passa a avisar no passo
+`0b`/`0c` antes de qualquer publicação.
