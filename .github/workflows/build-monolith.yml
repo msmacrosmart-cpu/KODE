@@ -26,6 +26,8 @@ on:
       - smartedtv/tools/integrate-monolith.py
       - smartedtv/tools/patch-source.py
       - smartedtv/tools/ads-java/**
+      - smartedtv/assets/**
+      - smartedtv/tools/make-brand-assets.py
       - kodi/addons/**
       - 'kodi/skin.estilo.personalizado/**'
 
@@ -33,18 +35,18 @@ permissions:
   contents: write
 
 concurrency:
-  group: smartedtv-monolith-${{ github.ref }}
+  group: smartedtv-monolith-v2-${{ github.ref }}
   cancel-in-progress: false
 
 env:
   KODI_TAG: 21.3-Omega
   KODI_COMMIT: a3a448d26b8d560a65655dab2cd122994dc4e146
   NDK_VERSION: 21.4.7075529
-  VERSAO: "1.0.64"
-  CODIGO: "2103050"
+  VERSAO: "1.0.65"
+  CODIGO: "2103051"
   PACOTE: smartedtv.full
-  TAG_DESTINO: v1.0.64-unificado
-  ARQUIVO_DESTINO: SMARTEDTV-1.0.64-unificado-arm64-v8a.apk
+  TAG_DESTINO: v1.0.65-unificado
+  ARQUIVO_DESTINO: SMARTEDTV-1.0.65-unificado-arm64-v8a.apk
   CERT_SHA256: 855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a
 
 jobs:

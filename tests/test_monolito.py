@@ -35,10 +35,10 @@ class IntegracaoNoFonteTest(unittest.TestCase):
 
     def test_pacote_unico_e_versao(self):
         self.assertIn(f'APP_PACKAGE = "{PACOTE}"', self.script)
-        self.assertIn('VERSAO_NOME = "1.0.64"', self.script)
-        self.assertIn('VERSAO_CODIGO = 2103050', self.script)
+        self.assertIn('VERSAO_NOME = "1.0.65"', self.script)
+        self.assertIn('VERSAO_CODIGO = 2103051', self.script)
         # tem que ser maior que a 1.0.63 (2103049) para nao regredir instalacao
-        self.assertGreater(2103050, 2103049)
+        self.assertGreater(2103051, 2103050)
 
     def test_gradle_ganha_o_admob_e_a_versao(self):
         self.assertIn("com.google.android.gms:play-services-ads:23.2.0", self.script)
@@ -162,7 +162,7 @@ class WorkflowDoMonolitoTest(unittest.TestCase):
         self.assertNotIn('continue-on-error', self.fluxo.split('10. Conferir o monolito')[1])
 
     def test_publica_com_assinatura_da_linha(self):
-        self.assertIn('TAG_DESTINO: v1.0.64-unificado', self.fluxo)
+        self.assertIn('TAG_DESTINO: v1.0.65-unificado', self.fluxo)
         self.assertIn('dropbox/smarted-tv-test.jks', self.fluxo)
         self.assertIn('855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a', self.fluxo)
 
