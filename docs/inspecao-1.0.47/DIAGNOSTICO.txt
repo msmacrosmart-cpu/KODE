@@ -1,0 +1,26 @@
+skins no APK: skin.estuary, skin.novatv
+  skin.estuary -> id=skin.estuary versao=4.0.0 nome=Estuary
+  skin.novatv -> id=skin.novatv versao=1.0.17 nome=SMARTEDTV
+skin padrao em assets/smarted/profile/userdata/guisettings.xml: skin.estuary
+
+== pistas (colordiffuse branco / painel / fileiras) ==
+  assets/addons/skin.estuary/colors/defaults.xml: FFFFFFFF
+  assets/addons/skin.estuary/xml/DialogKeyboard.xml: FFFFFFFF
+  assets/addons/skin.estuary/xml/DialogNumeric.xml: FFFFFFFF
+  assets/addons/skin.estuary/xml/Variables.xml: FFFFFFFF
+  assets/smarted/profile/userdata/guisettings.xml: FFFFFFFF
+  assets/addons/skin.novatv/colors/defaults.xml: FFFFFFFF
+  assets/addons/skin.novatv/xml/DialogKeyboard.xml: FFFFFFFF
+  assets/addons/skin.novatv/xml/DialogNumeric.xml: FFFFFFFF
+  assets/addons/skin.novatv/xml/Home.xml: FFFFFFFF, pb_white.png, rotulo LANCAMENTOS
+  assets/addons/skin.novatv/xml/MusicOSD.xml: pb_white.png
+  assets/addons/skin.novatv/xml/MyFavourites.xml: FFFFFFFF, pb_white.png
+  assets/addons/skin.novatv/xml/MyGames.xml: pb_white.png
+  assets/addons/skin.novatv/xml/MyMusicNav.xml: pb_white.png
+  assets/addons/skin.novatv/xml/MyPics.xml: pb_white.png
+  assets/addons/skin.novatv/xml/MyPrograms.xml: pb_white.png
+  assets/addons/skin.novatv/xml/MyVideoNav.xml: FFFFFFFF, pb_white.png
+  assets/addons/skin.novatv/xml/MyWeather.xml: pb_white.png
+  assets/addons/skin.novatv/xml/Settings.xml: pb_white.png
+  assets/addons/skin.novatv/xml/SettingsCategory.xml: pb_white.png
+  assets/addons/skin.novatv/xml/Variables.xml: FFFFFFFF, rotulo LANCAMENTOS
