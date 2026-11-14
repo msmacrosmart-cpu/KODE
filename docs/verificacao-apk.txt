@@ -1,0 +1,56 @@
+# Verificação do APK único — 1.0.65 (run 43643564098)
+
+APK: `SMARTEDTV-1.0.65-unificado-arm64-v8a.apk`
+
+```
+== arquivo: smartedtv/out-apk/SMARTEDTV-1.0.65-unificado-arm64-v8a.apk  (85.2 MB)
+
+== identidade do pacote (aapt2 badging)
+  package: name='smartedtv.full' versionCode='2103051' versionName='1.0.65' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
+  OK    pacote                             smartedtv.full
+  OK    versionName                        1.0.65
+  OK    versionCode                        2103051
+
+== manifesto (aapt2 xmltree)
+  OK    activity de abertura               .AppOpenActivity
+  OK    activity de pre-roll               .PreRollActivity
+  OK    APPLICATION_ID do AdMob            ca-app-pub-2066014755407744~5076693043
+  OK    permissão AD_ID                    com.google.android.gms.permission.AD_ID
+  aviso telas de anúncio em paisagem       sem sensorLandscape no manifesto
+  A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=6
+  A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=6
+  A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=6
+  A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=6
+
+== conteúdo do APK (ZIP)
+  OK    addon skin.novatv                  assets/addons/skin.novatv/addon.xml
+  OK    addon skin.smartedtv.classic       assets/addons/skin.smartedtv.classic/addon.xml
+  OK    addon plugin.video.smarted         assets/addons/plugin.video.smarted/addon.xml
+  OK    addon service.smarted.bootstrap    assets/addons/service.smarted.bootstrap/addon.xml
+  OK    addon resource.uisounds.silencio   assets/addons/resource.uisounds.silencio/addon.xml
+  OK    skin.novatv no addon-manifest      padrão na primeira execução
+  OK    splash da GUI                      assets/media/splash.jpg
+  OK    splash do Android                  assets/media/applaunch_screen.png
+  OK    ícones do launcher no APK          52 PNG em res/
+  OK    motor nativo                       lib/arm64-v8a/libkodi.so
+  addons no APK (60): audioencoder.kodi.builtin.aac, audioencoder.kodi.builtin.wma, game.controller.default, game.controller.keyboard, game.controller.mouse, game.controller.snes, kodi.binary.global.audioengine, kodi.binary.global.filesystem, kodi.binary.global.general, kodi.binary.global.gui, kodi.binary.global.main, kodi.binary.global.network, kodi.binary.global.tools, kodi.binary.instance.audiodecoder
+
+== classes no dex (anúncios dentro do app)
+  OK    bloco de abertura                  ca-app-pub-2066014755407744/4214378379
+  OK    bloco de pre-roll                  ca-app-pub-2066014755407744/3572039686
+  OK    activity AppOpenActivity           AppOpenActivity
+  OK    activity PreRollActivity           PreRollActivity
+  OK    SDK do AdMob                       com/google/android/gms/ads
+  OK    classe SmartAds                    SmartAds
+  OK    APPLICATION_ID no dex              presente (redundante com o manifesto)
+
+== ponte do serviço de bootstrap
+  OK    ponte                              ATIVIDADE_PREROLL = 'smartedtv.full.PreRollActivity'
+  OK    ponte                              ATIVIDADE_ABERTURA = 'smartedtv.full.AppOpenActivity'
+  OK    ponte                              tentar_plano_b=False
+  aviso ponte                              ainda menciona o pacote do app auxiliar antigo
+
+== resumo
+  obrigatórias com falha: 0
+  avisos: 2
+```
