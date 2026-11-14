@@ -1,11 +1,17 @@
 name: "Anexar APK de anuncios numa release existente"
 
-# Utilitario: copia o APK de anuncios da release v1.0.3-ads para uma release do
-# Kodi que ja foi publicada (sem recompilar o APK do Kodi).
+# Utilitario: copia o APK de anuncios (instalador + AdMob) da release
+# v1.0.4-ads para uma release do Kodi que ja foi publicada (sem recompilar o
+# APK do Kodi). Remove versoes antigas do app de anuncios da release de destino
+# para nao deixar duas opcoes na mesma pagina.
 
 on:
   workflow_dispatch:
     inputs:
+      origem:
+        description: 'Tag da release do app de anuncios'
+        required: true
+        default: v1.0.4-ads
       destino:
         description: 'Tag da release do Kodi (ex.: v1.0.63-classica)'
         required: true
@@ -22,16 +28,33 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     steps:
-      - name: Baixar o APK de anuncios e anexar
+      - name: Baixar o APK de anuncios
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ORIGEM: ${{ inputs.origem || 'v1.0.4-ads' }}
+        run: |
+          set -euo pipefail
+          mkdir -p ads
+          gh release download "$ORIGEM" -R "$GITHUB_REPOSITORY" \
+            --pattern '*Anuncios*' --dir ads
+          ls -l ads
+
+      - name: Anexar na release do Kodi (e limpar versoes antigas)
         env:
           GH_TOKEN: ${{ github.token }}
           DESTINO: ${{ inputs.destino || 'v1.0.63-classica' }}
         run: |
           set -euo pipefail
-          mkdir -p ads
-          gh release download v1.0.3-ads -R "$GITHUB_REPOSITORY" \
-            --pattern '*Anuncios*' --dir ads
-          ls -l ads
           echo "anexando em $DESTINO"
           gh release upload "$DESTINO" ads/* -R "$GITHUB_REPOSITORY" --clobber
-          gh release view "$DESTINO" --json assets -q '.assets[] | "\(.name) \(.size) bytes"'
+          # tira da pagina as versoes antigas do app de anuncios
+          ATUAIS="$(cd ads && ls)"
+          gh release view "$DESTINO" -R "$GITHUB_REPOSITORY" --json assets \
+            -q '.assets[].name' | grep -i 'anuncios' | while read -r nome; do
+              if ! printf '%s\n' "$ATUAIS" | grep -qx "$nome"; then
+                echo "removendo anexo antigo: $nome"
+                gh release delete-asset "$DESTINO" "$nome" -R "$GITHUB_REPOSITORY" --yes
+              fi
+            done
+          gh release view "$DESTINO" -R "$GITHUB_REPOSITORY" --json assets \
+            -q '.assets[] | "\(.name) \(.size) bytes"' || true
