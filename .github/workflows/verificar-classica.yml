@@ -38,8 +38,9 @@ jobs:
       - name: Comparar conteudo
         run: |
           set -euo pipefail
+          exec > >(tee "$RUNNER_TEMP/comparacao.txt") 2>&1
           python3 -m pip install --quiet 'pyaxmlparser==0.3.31'
-          python3 - "$RUNNER_TEMP/apks" "$RUNNER_TEMP/sha.txt" <<'PY' | tee "$RUNNER_TEMP/comparacao.txt"
+          python3 - "$RUNNER_TEMP/apks" "$RUNNER_TEMP/sha.txt" <<'PY'
           import hashlib, re, sys, zipfile
           from pathlib import Path
           from pyaxmlparser import APK
@@ -166,6 +167,24 @@ jobs:
           print('painel escuro CC121212 na lista:', 'CC121212" border="16">pb_rounded.png' in nav)
           print('foco escuro FF1E1E1E na lista:', 'FF1E1E1E" border="16">pb_rounded.png' in nav)
           PY
+
+      - name: Diagnostico quando a conferencia falhar
+        if: failure()
+        run: |
+          set -uo pipefail
+          mkdir -p docs
+          {
+            echo "# Log da conferencia que falhou"
+            echo
+            echo '```'
+            tail -n 80 "$RUNNER_TEMP/comparacao.txt" 2>/dev/null || echo '(sem log)'
+            echo '```'
+          } > docs/build-log-conferencia.txt
+          git config user.name "smarted-bot"
+          git config user.email "smarted-bot@users.noreply.github.com"
+          git add docs/build-log-conferencia.txt
+          git commit -m "ci: log da conferencia que falhou" || true
+          git push origin HEAD:arena/7dedf371-kode || true
 
       - name: Guardar comparacao no repositorio
         run: |
