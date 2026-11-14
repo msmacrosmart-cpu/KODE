@@ -8,7 +8,6 @@ bloco no dex: ca-app-pub-2066014755407744/4214378379 OK
 bloco no dex: ca-app-pub-2066014755407744/3572039686 OK
 activity no manifesto: AppOpenActivity OK
 activity no manifesto: PreRollActivity OK
-Traceback (most recent call last):
-  File "<stdin>", line 33, in <module>
-ImportError: cannot import name 'AXML' from 'pyaxmlparser.core' (/home/runner/.local/lib/python3.10/site-packages/pyaxmlparser/core.py)
+screenOrientation no APK: []
+esperava screenOrientation nas 2 activities; achei []
 ```
