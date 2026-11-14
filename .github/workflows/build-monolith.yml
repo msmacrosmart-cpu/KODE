@@ -129,30 +129,89 @@ jobs:
         id: cache-deps
         uses: actions/cache@v4
         with:
-          path: ${{ runner.temp }}/xbmc-depends
-          key: depends-${{ env.KODI_TAG }}-ndk${{ env.NDK_VERSION }}-mono-${{ runner.os }}-v1
+          path: |
+            ${{ runner.temp }}/xbmc-depends
+            ${{ runner.temp }}/kodi/tools/depends/xbmc-depends
+            ${{ runner.temp }}/kodi/tools/depends/target
+          key: depends-${{ env.KODI_TAG }}-ndk${{ env.NDK_VERSION }}-mono-${{ runner.os }}-v2
 
-      - name: 7b. Compilar dependências Android (só se não houver cache)
-        if: steps.cache-deps.outputs.cache-hit != 'true'
+      - name: 7b0. Configurar tools/depends (sempre, é rápido)
+        # Precisa rodar também quando o cache acerta: sem ./configure não existe
+        # tools/depends/Makefile.include e o cmakebuildsys do passo 8 quebra.
         run: |
           set -euo pipefail
+          exec > >(tee "$RUNNER_TEMP/deps.log") 2>&1
           cd "$RUNNER_TEMP/kodi/tools/depends"
           ./bootstrap
           ./configure --with-tarballs="$RUNNER_TEMP/tarballs" --host=aarch64-linux-android \
             --with-sdk-path="$ANDROID_HOME" --with-ndk-path="$ANDROID_HOME/ndk/$NDK_VERSION" \
             --prefix="$RUNNER_TEMP/xbmc-depends"
+          test -f Makefile.include
+          echo "tools/depends configurado (prefixtemp): $(grep -c . Makefile.include) linhas"
+
+      - name: 7b. Compilar dependências Android (só se não houver cache)
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          exec > >(tee -a "$RUNNER_TEMP/deps.log") 2>&1
+          cd "$RUNNER_TEMP/kodi/tools/depends"
           make -j2
           echo "livre após dependências: $(df -h --output=avail / | tail -1)"
 
       - name: 7c. Conferir dependências
         run: |
-          set -euo pipefail
-          test -d "$RUNNER_TEMP/xbmc-depends" || { echo "::error::prefixo de dependências ausente"; exit 1; }
+          set -uo pipefail
           echo "cache hit: ${{ steps.cache-deps.outputs.cache-hit }}"
-          test -d "$RUNNER_TEMP/xbmc-depends/lib" || { echo "::error::falta lib no prefixo"; exit 1; }
-          ls "$RUNNER_TEMP/xbmc-depends/lib" | grep -q '\.so\|\.a' || \
-            { echo "::error::prefixo sem bibliotecas compiladas"; exit 1; }
-          echo "libs: $(ls "$RUNNER_TEMP/xbmc-depends/lib" | wc -l) entradas"
+          echo "== espaco em disco =="; df -h / | tail -2
+          echo "== RUNNER_TEMP =="; ls -la "$RUNNER_TEMP" | head -20
+
+          DEPENDS_PATH=""
+          for candidato in "$RUNNER_TEMP/xbmc-depends" \
+                           "$RUNNER_TEMP/kodi/tools/depends/xbmc-depends" \
+                           "$RUNNER_TEMP/kodi/tools/depends/target"; do
+            echo "-- $candidato"
+            ls -d "$candidato" 2>/dev/null || { echo "   (nao existe)"; continue; }
+            if ls "$candidato"/lib/*.a >/dev/null 2>&1; then
+              DEPENDS_PATH="$candidato"
+              echo "   ACHADO: $(ls "$candidato"/lib | wc -l) entradas, $(ls "$candidato"/lib/*.a | wc -l) bibliotecas .a"
+              break
+            fi
+            echo "   sem lib/*.a ($(ls "$candidato" 2>/dev/null | head -5 | tr '\n' ' '))"
+          done
+
+          if [ -z "$DEPENDS_PATH" ]; then
+            echo "::error::nao achei o prefixo das dependencias"
+            {
+              echo "# Dependencias: prefixo nao encontrado (build do monolito)"
+              echo
+              echo "Run: $GITHUB_RUN_ID"
+              echo
+              echo '## RUNNER_TEMP'
+              echo '```'
+              ls -la "$RUNNER_TEMP" 2>&1 | head -30
+              echo '```'
+              echo '## arvore de tools/depends (2 niveis)'
+              echo '```'
+              find "$RUNNER_TEMP/kodi/tools/depends" -maxdepth 2 -type d 2>/dev/null | head -40
+              echo '```'
+              echo '## fim do log das dependencias'
+              echo '```'
+              tail -n 120 "$RUNNER_TEMP/deps.log" 2>/dev/null || echo '(sem log)'
+              echo '```'
+              echo '## disco'
+              echo '```'
+              df -h 2>&1 | head -10
+              echo '```'
+            } > docs/build-log-monolito.txt
+            git config user.name "smarted-bot"
+            git config user.email "smarted-bot@users.noreply.github.com"
+            git add -f docs/build-log-monolito.txt
+            git commit -m "ci: diagnostico das dependencias (run $GITHUB_RUN_ID)" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" || true
+            exit 1
+          fi
+          echo "DEPENDS_PATH=$DEPENDS_PATH" >> "$GITHUB_ENV"
+          echo "ok: prefixo das dependencias em $DEPENDS_PATH"
 
       - name: 8. Compilar o Kodi para Android
         run: |
