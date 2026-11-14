@@ -1,20 +1,20 @@
-# Verificação do APK único — 1.0.65
+# Verificação do APK único — 1.0.66
 
-artifact do run 43643564098 (conferência sem recompilar)
-
-```
-sha256: 719659e885503af2f3cff123bd40aefe930ac228d0fbc19ec93d70ff2c6ff383
-tamanho: 89380197 bytes
-```
+artifact do run 43651800166 (conferência sem recompilar)
 
 ```
-== arquivo: apk/SMARTEDTV-1.0.65-unificado-arm64-v8a.apk  (85.2 MB)
+sha256: d97f97d2c978c2d11219c09f720b1956e7e23c2e901c803904c5f9b5ac413318
+tamanho: 248023338 bytes
+```
+
+```
+== arquivo: apk/SMARTEDTV-1.0.66-unificado-arm64-v8a.apk  (236.5 MB)
 
 == identidade do pacote (aapt2 badging)
-  package: name='smartedtv.full' versionCode='2103051' versionName='1.0.65' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
+  package: name='smartedtv.full' versionCode='2103052' versionName='1.0.66' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
   OK    pacote                             smartedtv.full
-  OK    versionName                        1.0.65
-  OK    versionCode                        2103051
+  OK    versionName                        1.0.66
+  OK    versionCode                        2103052
 
 == manifesto (aapt2 xmltree)
   OK    activity de abertura               .AppOpenActivity
@@ -36,6 +36,11 @@ tamanho: 89380197 bytes
   OK    motor nativo                       lib/arm64-v8a/libkodi.so
   addons no APK (60): audioencoder.kodi.builtin.aac, audioencoder.kodi.builtin.wma, game.controller.default, game.controller.keyboard, game.controller.mouse, game.controller.snes, kodi.binary.global.audioengine, kodi.binary.global.filesystem, kodi.binary.global.general, kodi.binary.global.gui, kodi.binary.global.main, kodi.binary.global.network, kodi.binary.global.tools, kodi.binary.instance.audiodecoder
 
+== base estável (perfil semeado da linha clássica)
+  OK    manifesto do perfil                1447de816a44ecc1… (esperado 1447de816a44ecc1…)
+  OK    arquivos do perfil                 2731 entradas
+  OK    Brazuca Play no perfil             assets/smarted/profile/addons/plugin.video.BrazucaPlay.Matrix/addon.xml
+
 == classes no dex (anúncios dentro do app)
   OK    bloco de abertura                  ca-app-pub-2066014755407744/4214378379
   OK    bloco de pre-roll                  ca-app-pub-2066014755407744/3572039686
@@ -51,7 +56,13 @@ tamanho: 89380197 bytes
   OK    ponte                              tentar_plano_b=False
   OK    ponte                              constantes em uso apontam para dentro do app
 
+== splash (barra branca, sem texto)
+  OK    drawable branco                    progresswhite
+  OK    layout da splash                   activity_splash.xml legível
+  FALHA texto de status                    escondido (gone)
+
 == resumo
-  obrigatórias com falha: 0
+  obrigatórias com falha: 1
   avisos: 0
+  - texto de status: escondido (gone)
 ```
