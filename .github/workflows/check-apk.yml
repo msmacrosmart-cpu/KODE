@@ -74,10 +74,17 @@ jobs:
             --pacote "$PACOTE" --versao "$VERSAO" --codigo "$CODIGO" \
             --relatorio "$RUNNER_TEMP/verificacao.txt"
           RC=$?
+          SHA=$(sha256sum "$APK" | cut -d' ' -f1)
+          echo "sha256: $SHA"
           {
             echo "# Verificação do APK único — $VERSAO"
             echo
             echo "artifact do run $RUN_ID (conferência sem recompilar)"
+            echo
+            echo '```'
+            echo "sha256: $SHA"
+            echo "tamanho: $(stat -c%s "$APK") bytes"
+            echo '```'
             echo
             echo '```'
             cat "$RUNNER_TEMP/verificacao.txt" 2>/dev/null || echo '(relatorio vazio)'

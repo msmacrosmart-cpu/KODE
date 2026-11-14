@@ -173,3 +173,30 @@ já pronto — o tipo de erro que o relatório completo teria mostrado na hora.
 O APK de cada build sobe como artifact (`apk-unificado-<versão>`), e o workflow
 `check-apk.yml` roda a mesma verificação contra esse artifact em ~1 min, sem
 recompilar: dá para ajustar a checagem sem esperar 2 h.
+
+## Resultado (13/11/2026)
+
+Build **verde**: run `43643564098` (Kodi 21.3-Omega compilado do fonte, ~1h45).
+
+Release: <https://github.com/msmacrosmart-cpu/KODE/releases/tag/v1.0.65-unificado>
+
+* `SMARTEDTV-1.0.65-unificado-arm64-v8a.apk` — 89.380.197 bytes
+* `SMARTEDTV-1.0.65-unificado-arm64-v8a.apk.sha256`
+
+Verificação automática (`docs/verificacao-apk.txt`): **0 falhas e 0 avisos**.
+
+| Item | Estado |
+| --- | --- |
+| `package: name='smartedtv.full'` | OK |
+| versionName 1.0.65 / versionCode 2103051 | OK |
+| `.AppOpenActivity` / `.PreRollActivity` no manifesto | OK |
+| `APPLICATION_ID` do AdMob + permissão `AD_ID` | OK |
+| telas de anúncio em `sensorLandscape` (=6) | OK |
+| skin.novatv + 60 addons embarcados | OK |
+| splash novo (GUI e Android) + 52 PNG em `res/` | OK |
+| `lib/arm64-v8a/libkodi.so` | OK |
+| blocos do AdMob, activities e SDK no dex | OK |
+| ponte apontando para dentro, sem plano B | OK |
+
+O APK também fica guardado como artifact (`apk-unificado-1.0.65`), então
+`check-apk.yml` reconfere tudo em ~1 min sem recompilar.
