@@ -1,0 +1,115 @@
+name: "Conferir o link do APK principal (download real)"
+
+# Baixa o arquivo do link configurado em android/smarted-ads/apk-url.txt, EXATAMENTE
+# como o app na TV faria (sem token, sem login), e grava o resultado em
+# docs/verificacao-link-apk.txt. Serve para provar que o instalador consegue baixar
+# o SMARTEDTV certo e para achar link morto antes do usuario.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/7dedf371-kode]
+    paths: [.github/workflows/verificar-link-apk.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  conferir:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Baixar e conferir
+        run: |
+          set -uo pipefail
+          mkdir -p docs
+          python3 -m pip install --quiet 'pyaxmlparser==0.3.31'
+          python3 - <<'PY' | tee docs/verificacao-link-apk.txt
+          import hashlib, subprocess, sys, tempfile
+          from pathlib import Path
+
+          campos, urls = {}, []
+          for linha in Path('android/smarted-ads/apk-url.txt').read_text().splitlines():
+              linha = linha.strip()
+              if not linha or linha.startswith('#') or '=' not in linha:
+                  continue
+              chave, valor = linha.split('=', 1)
+              if chave.strip() == 'url':
+                  urls.append(valor.strip())
+              else:
+                  campos[chave.strip()] = valor.strip()
+
+          print('# Conferencia do link do APK principal')
+          print()
+          print('Feita pelo CI do GitHub, **sem token e sem login** — do mesmo jeito')
+          print('que o app de anuncios faz na TV.')
+          print()
+          print('- versionCode minimo esperado: `%s`' % campos.get('codigo'))
+          print('- links configurados: %d' % len(urls))
+          print()
+
+          def conferir(url):
+              print('## %s' % url)
+              print()
+              destino = Path(tempfile.mkdtemp()) / 'principal.apk'
+              sonda = subprocess.run(
+                  ['curl', '-sSL', '--max-time', '1200', '-o', str(destino),
+                   '-w', '%{http_code} %{content_type} %{size_download}', url],
+                  capture_output=True, text=True)
+              partes = (sonda.stdout or '').split()
+              print('- HTTP/resultado: `%s`' % (sonda.stdout or sonda.stderr[:200]))
+              if sonda.returncode != 0 or not destino.is_file():
+                  print('- **FALHOU**: nao consegui baixar')
+                  print()
+                  return False
+              tamanho = destino.stat().st_size
+              digest = hashlib.sha256(destino.read_bytes()).hexdigest()
+              print('- tamanho: %d bytes (%.1f MB)' % (tamanho, tamanho / 1048576.0))
+              print('- sha256: `%s`' % digest)
+              try:
+                  from pyaxmlparser import APK
+                  apk = APK(str(destino))
+                  print('- pacote: `%s`' % apk.package)
+                  print('- versao: `%s` (%s)' % (apk.version_name, apk.version_code))
+                  print('- app: %s' % apk.get_app_name())
+                  ok = apk.package == 'org.xbmc.kodi'
+                  if not ok:
+                      print('- **FALHOU**: o link entrega `%s`, nao o SMARTEDTV' % apk.package)
+                  minimo = int(campos.get('codigo') or 0)
+                  if int(apk.version_code or 0) < minimo:
+                      print('- **FALHOU**: versionCode %s abaixo do minimo %s'
+                            % (apk.version_code, minimo))
+                      ok = False
+                  if ok:
+                      print('- **OK**: o app consegue baixar e instalar este arquivo')
+              except Exception as erro:
+                  ok = False
+                  print('- **FALHOU**: nao e um APK valido (%s)' % erro)
+              print()
+              return ok
+
+          resultados = [conferir(url) for url in urls]
+          print('---')
+          print()
+          if any(resultados):
+              print('Veredito: **link funcionando** (pelo menos um entrega o SMARTEDTV).')
+          else:
+              print('Veredito: **nenhum link funcionou** — o app na TV vai mostrar o erro '
+                    'e oferecer "Abrir no navegador".')
+              sys.exit(1)
+          PY
+
+      - name: Guardar o resultado no repositorio
+        if: always()
+        run: |
+          set -uo pipefail
+          test -s docs/verificacao-link-apk.txt || echo "(sem resultado)" > docs/verificacao-link-apk.txt
+          git config user.name "smarted-bot"
+          git config user.email "smarted-bot@users.noreply.github.com"
+          git add -f docs/verificacao-link-apk.txt
+          git commit -m "ci: conferencia do link do APK principal" || true
+          git fetch origin "${GITHUB_REF_NAME}" || true
+          git rebase "origin/${GITHUB_REF_NAME}" 2>/dev/null || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" || echo "push falhou (segue)"

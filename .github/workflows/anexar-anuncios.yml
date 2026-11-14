@@ -1,7 +1,7 @@
 name: "Anexar APK de anuncios numa release existente"
 
 # Utilitario: copia o APK de anuncios (instalador + AdMob) da release
-# v1.0.4-ads para uma release do Kodi que ja foi publicada (sem recompilar o
+# v1.0.6-ads para uma release do Kodi que ja foi publicada (sem recompilar o
 # APK do Kodi). Remove versoes antigas do app de anuncios da release de destino
 # para nao deixar duas opcoes na mesma pagina.
 
@@ -11,7 +11,7 @@ on:
       origem:
         description: 'Tag da release do app de anuncios'
         required: true
-        default: v1.0.4-ads
+        default: v1.0.6-ads
       destino:
         description: 'Tag da release do Kodi (ex.: v1.0.63-classica)'
         required: true
@@ -31,7 +31,7 @@ jobs:
       - name: Baixar o APK de anuncios
         env:
           GH_TOKEN: ${{ github.token }}
-          ORIGEM: ${{ inputs.origem || 'v1.0.4-ads' }}
+          ORIGEM: ${{ inputs.origem || 'v1.0.6-ads' }}
         run: |
           set -euo pipefail
           mkdir -p ads
