@@ -101,3 +101,43 @@ $RUNNER_TEMP/xbmc-depends/aarch64-linux-android-21-release/{lib,include,share}
 Checar `$RUNNER_TEMP/xbmc-depends/lib` faz o build morrer depois de ~75 min de
 dependências já compiladas. A conferência atual procura `xbmc-depends/*-android-*`
 e não bloqueia (quem decide é a compilação do Kodi).
+
+## Estado do build (13/11/2026)
+
+O que já está provado, com os runs reais:
+
+| Run | Até onde chegou |
+| --- | --- |
+| 43619130136 | integração do monólito **OK**, dependências compiladas, morreu na conferência do prefixo |
+| 43627396317 | idem (prefixo ainda errado) |
+| 43635491717 | **nem começou**: bloqueio de faturamento do GitHub Actions |
+
+Duas vezes a etapa `6. Código-fonte + INTEGRAÇÃO DO MONÓLITO` passou no fonte
+real do Kodi 21.3-Omega — ou seja, o patch (`applicationId`, versão, gradle,
+manifesto, Java, Install.cmake, addons, skin padrão, ponte) está correto.
+
+### O bloqueio atual não é código
+
+```
+The job was not started because recent account payments have failed
+or your spending limit needs to be increased.
+Please check the 'Billing & plans' section in your settings
+```
+
+Relatório da conta: <https://github.com/settings/billing> → *Spending limits* e
+forma de pagamento. Enquanto isso não for resolvido, **nenhum** workflow roda
+nesse repositório privado (nem os pequenos).
+
+Custo por tentativa: ~110 min de runner (≈75 min de dependências + ≈35 min de
+Kodi/Gradle). Com o cache funcionando, as próximas caem para ~40 min.
+
+### Checklist para quando o billing voltar
+
+1. `git push` em `arena/7dedf371-kode` (mexer em `.github/workflows/build-monolith.yml`
+   ou em `smartedtv/`) — o build dispara sozinho.
+2. Acompanhar até o passo `10. Conferir o monolito`; ele é bloqueante.
+3. Se falhar, os logs úteis caem no próprio repositório:
+   `docs/build-log-deps.txt` (fotografia das dependências) e
+   `docs/build-log-falha.txt` (fim dos logs de dependências/Kodi).
+4. Sucesso = release `v1.0.64-unificado` com
+   `SMARTEDTV-1.0.64-unificado-arm64-v8a.apk` + `.sha256`.
