@@ -163,7 +163,9 @@ jobs:
           print('entradas no APK:', len(nomes))
           PY
 
-      - name: 8. Guardar o APK como artefato
+      - name: 8. Guardar o APK como artefato (opcional)
+        # o que importa e a release (passo 9); o artefato e so conveniencia
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: smartedtv-anuncios
