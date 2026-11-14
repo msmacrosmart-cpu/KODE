@@ -126,10 +126,23 @@ jobs:
           arvore = subprocess.run(
               [aapt2, 'dump', 'xmltree', '--file', 'AndroidManifest.xml', apk_path],
               capture_output=True, text=True, check=True).stdout
-          valores = [int(v, 16) for v in
-                     re.findall(r'screenOrientation\(0x[0-9a-f]+\)=\(type 0x[0-9a-f]+\)(0x[0-9a-f]+)', arvore)]
-          print('screenOrientation no APK:', valores)
+          valores = []
+          linhas_orient = 0
+          for linha in arvore.splitlines():
+              if 'screenOrientation' not in linha:
+                  continue
+              linhas_orient += 1
+              if 'sensorLandscape' in linha:      # aapt2 as vezes imprime o nome
+                  valores.append(6)
+                  continue
+              pedaco = linha.rsplit(')', 1)[-1].strip()
+              if pedaco.lower().startswith('0x'):
+                  valores.append(int(pedaco, 16))
+          print('screenOrientation no APK:', valores,
+                '(linhas: %d)' % linhas_orient)
           if len(valores) < 2:
+              print('--- trecho do manifesto compilado ---')
+              print(arvore[:4000])
               raise SystemExit('esperava screenOrientation nas 2 activities; achei %r' % valores)
           for valor in valores:
               if valor != 6:   # ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
