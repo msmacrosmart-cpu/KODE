@@ -1,0 +1,169 @@
+name: "Build SMARTEDTV Ads (AdMob nativo)"
+
+# Compila o app de anuncios (org.smartedtv.ads) que o Kodi abre por
+# StartAndroidActivity(): App Open + video pre-roll, sempre em landscape.
+# O APK sai assinado com a MESMA chave da linha SMARTED-TV (sem isso o Android
+# nao aceitaria atualizar o app de anuncios depois).
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/7dedf371-kode]
+    paths:
+      - '.github/workflows/build-ads-apk.yml'
+      - 'android/smarted-ads/**'
+
+permissions:
+  contents: write
+
+env:
+  VERSAO_ADS: "1.0.0"
+  CODIGO_ADS: "1"
+  ARQUIVO_ADS: SMARTEDTV-Anuncios-1.0.0.apk
+  TAG_ADS: v1.0.0-ads
+  CERT_SHA256: 855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Java 17 + Android SDK + Gradle
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: 2. Android SDK (platform 34 + build-tools)
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
+          "$SDK/cmdline-tools/latest/bin/sdkmanager" \
+            "platforms;android-34" "build-tools;34.0.0" "platform-tools" | tail -3
+
+      - name: 3. Gradle 8.7
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+
+      - name: 4. Conferir os IDs do AdMob no codigo
+        run: gradle -p android/smarted-ads :app:checkAdMob -PadmobCheck --no-daemon --console=plain
+
+      - name: 5. Compilar o APK (release, sem assinatura)
+        run: |
+          set -euo pipefail
+          gradle -p android/smarted-ads assembleRelease --no-daemon --console=plain \
+            -PadsVersionName="$VERSAO_ADS" -PadsVersionCode="$CODIGO_ADS"
+          mkdir -p "$RUNNER_TEMP/ads"
+          cp android/smarted-ads/app/build/outputs/apk/release/app-release-unsigned.apk \
+             "$RUNNER_TEMP/ads/unsigned.apk"
+          ls -l "$RUNNER_TEMP/ads"
+
+      - name: 6. Alinhar e assinar com a chave da linha
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_HOME}"
+          BT="$SDK/build-tools/34.0.0"
+          cp dropbox/smarted-tv-test.jks "$RUNNER_TEMP/ads/smarted-tv-test.jks"
+          test "$(stat -c%s "$RUNNER_TEMP/ads/smarted-tv-test.jks")" = "2730"
+          "$BT/zipalign" -p -f 4 "$RUNNER_TEMP/ads/unsigned.apk" "$RUNNER_TEMP/ads/aligned.apk"
+          "$BT/apksigner" sign \
+            --ks "$RUNNER_TEMP/ads/smarted-tv-test.jks" --ks-pass pass:android \
+            --key-pass pass:android --ks-key-alias smarted-tv-test \
+            --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
+            --out "$RUNNER_TEMP/ads/$ARQUIVO_ADS" "$RUNNER_TEMP/ads/aligned.apk"
+          "$BT/apksigner" verify --verbose --print-certs "$RUNNER_TEMP/ads/$ARQUIVO_ADS" \
+            | tee "$RUNNER_TEMP/ads/verify.txt"
+          grep -qi "^Signer #1 certificate SHA-256 digest: $CERT_SHA256$" \
+            "$RUNNER_TEMP/ads/verify.txt" || (echo "certificado inesperado"; exit 1)
+
+      - name: 7. Conferir o APK final (AdMob, landscape, SDK)
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet 'pyaxmlparser==0.3.31'
+          python3 - "$RUNNER_TEMP/ads/$ARQUIVO_ADS" <<'PY'
+          import sys, zipfile
+          from pyaxmlparser import APK
+
+          apk_path = sys.argv[1]
+          apk = APK(apk_path)
+          print('pacote:', apk.package)
+          print('versao:', apk.version_name, apk.version_code)
+          assert apk.package == 'org.smartedtv.ads', apk.package
+
+          with zipfile.ZipFile(apk_path) as z:
+              nomes = z.namelist()
+              manifesto = z.read('AndroidManifest.xml')
+              dex = b''.join(z.read(n) for n in nomes if n.startswith('classes') and n.endswith('.dex'))
+
+          # o manifesto e binario: os textos do AdMob aparecem em UTF-16 no pool
+          app_id = 'ca-app-pub-2066014755407744~5076693043'
+          assert app_id.encode('utf-16-le') in manifesto, 'APPLICATION_ID do AdMob fora do manifesto'
+          print('APPLICATION_ID no manifesto: OK')
+
+          for unidade in ('ca-app-pub-2066014755407744/4214378379',
+                          'ca-app-pub-2066014755407744/3572039686'):
+              assert unidade.encode() in dex, 'bloco %s nao esta no dex' % unidade
+              print('bloco no dex:', unidade, 'OK')
+
+          for activity in ('AppOpenActivity', 'PreRollActivity'):
+              assert activity.encode('utf-16-le') in manifesto, '%s fora do manifesto' % activity
+          assert 'sensorLandscape'.encode('utf-16-le') in manifesto, 'landscape nao forcado'
+          print('activities e sensorLandscape: OK')
+
+          # o SDK do AdMob tem que ter entrado de verdade
+          assert any(n.startswith('classes') for n in nomes), 'sem dex'
+          print('classes.dex: %d bytes' % len(dex))
+          print('entradas no APK:', len(nomes))
+          PY
+
+      - name: 8. Guardar o APK como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartedtv-anuncios
+          path: ${{ runner.temp }}/ads/${{ env.ARQUIVO_ADS }}
+          if-no-files-found: error
+
+      - name: 9. Publicar/atualizar a release dos anuncios
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cp "$RUNNER_TEMP/ads/$ARQUIVO_ADS" "$RUNNER_TEMP/ads/entrega.apk"
+          sha256sum "$RUNNER_TEMP/ads/entrega.apk" | sed 's#entrega.apk#SMARTEDTV-Anuncios.apk#' \
+            > "$RUNNER_TEMP/ads/sha256.txt"
+          NOTAS="$RUNNER_TEMP/ads/notas.md"
+          {
+            echo "# SMARTEDTV Anuncios $VERSAO_ADS (AdMob nativo)"
+            echo
+            echo "App Android que exibe os anuncios do AdMob em cima do Kodi SMARTEDTV."
+            echo "Instale junto com o APK do Kodi: **SMARTEDTV-Anuncios.apk**."
+            echo
+            echo "| Tela | Bloco AdMob | Quando aparece |"
+            echo "|---|---|---|"
+            echo "| Abertura | \`ca-app-pub-2066014755407744/4214378379\` | uma vez, logo depois da Home carregar |"
+            echo "| Video pre-roll | \`ca-app-pub-2066014755407744/3572039686\` | ao dar play em canal, filme ou serie |"
+            echo
+            echo "APPLICATION_ID: \`ca-app-pub-2066014755407744~5076693043\`"
+            echo
+            echo "Ambas as telas forcam \`sensorLandscape\` (horizontal) e se fecham sozinhas"
+            echo "em 20 s se o anuncio nao carregar: nunca travam a TV."
+            echo
+            echo "Assinado com a mesma chave da linha SMARTED-TV (certificado"
+            echo "\`$CERT_SHA256\`)."
+          } > "$NOTAS"
+          if gh release view "$TAG_ADS" >/dev/null 2>&1; then
+            gh release edit "$TAG_ADS" --title "SMARTEDTV Anuncios $VERSAO_ADS (AdMob)" --notes-file "$NOTAS"
+          else
+            gh release create "$TAG_ADS" --title "SMARTEDTV Anuncios $VERSAO_ADS (AdMob)" \
+              --notes-file "$NOTAS" --target "$GITHUB_SHA"
+          fi
+          gh release upload "$TAG_ADS" \
+            "$RUNNER_TEMP/ads/entrega.apk#$ARQUIVO_ADS" \
+            "$RUNNER_TEMP/ads/sha256.txt" --clobber
+          gh release view "$TAG_ADS" --json assets -q '.assets[] | "\(.name) \(.size) bytes"'

@@ -1,0 +1,68 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Valores reais do AdMob. Ficam aqui (e nao espalhados no codigo) para o build
+// conferir que o APK saiu com os IDs certos.
+def admobAppId = 'ca-app-pub-2066014755407744~5076693043'
+def adUnitAppOpen = 'ca-app-pub-2066014755407744/4214378379'
+def adUnitPreRoll = 'ca-app-pub-2066014755407744/3572039686'
+
+// versao vem do CI (-PadsVersionName / -PadsVersionCode) com padrao local
+def adsVersionName = (project.findProperty('adsVersionName') ?: '1.0.0').toString()
+def adsVersionCode = (project.findProperty('adsVersionCode') ?: '1').toString().toInteger()
+
+android {
+    namespace 'org.smartedtv.ads'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'org.smartedtv.ads'
+        minSdk 21
+        targetSdk 34
+        versionCode adsVersionCode
+        versionName adsVersionName
+    }
+
+    buildTypes {
+        release {
+            // assinado no CI com a mesma chave da linha SMARTED-TV
+            // (apksigner + dropbox/smarted-tv-test.jks)
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+dependencies {
+    // Google Play Services Ads (AdMob): App Open + interstitial com criativo de video
+    implementation 'com.google.android.gms:play-services-ads:23.2.0'
+}
+
+// O workflow envia os IDs por -P para nao duplicar valores: se algum dia
+// mudarem, muda-se em um lugar e o build falha se o APK nao bater.
+if (project.hasProperty('admobCheck')) {
+    tasks.register('checkAdMob') {
+        doLast {
+            def manifest = file('src/main/AndroidManifest.xml').text
+            if (!manifest.contains(admobAppId)) {
+                throw new GradleException("APPLICATION_ID do AdMob ausente no manifesto: ${admobAppId}")
+            }
+            def ads = file('src/main/java/org/smartedtv/ads/Ads.java').text
+            if (!ads.contains(adUnitAppOpen) || !ads.contains(adUnitPreRoll)) {
+                throw new GradleException('IDs de bloco de anuncio ausentes em Ads.java')
+            }
+            println "AdMob conferido: app ${admobAppId}, abertura ${adUnitAppOpen}, video ${adUnitPreRoll}"
+        }
+    }
+}

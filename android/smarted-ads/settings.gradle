@@ -1,0 +1,23 @@
+// SMARTEDTV Ads — app Android nativo que mostra os anuncios do AdMob em cima do
+// Kodi. O Kodi do APK e um binario pronto (NativeActivity): nao da para injetar
+// play-services-ads dentro dele sem recompilar o Kodi inteiro. Por isso o
+// anuncio vive em um app minusculo assinado com a mesma chave, e o Kodi o abre
+// pela ponte nativa StartAndroidActivity() disparada pelo Python.
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'smarted-ads'
+include ':app'

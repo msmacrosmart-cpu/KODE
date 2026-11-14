@@ -15,6 +15,7 @@ import xbmcaddon
 import xbmcvfs
 
 import repair
+import smart_ads
 from favourites import ensure_favourites
 from performance import ensure_performance
 from menu_smarted import garantir_menu, rodar_validacao_navegacao, silenciar_avisos_brazuca
@@ -342,6 +343,15 @@ def main():
         log('perfil incompleto: %s' % ', '.join(problems), xbmc.LOGWARNING)
         xbmc.executebuiltin(
             'Notification(SMARTED, Conteudo incompleto: veja userdata/smarted-bootstrap.log, 8000)')
+
+    # ANUNCIOS (AdMob, app org.smartedtv.ads): o pop-up de abertura aparece uma
+    # unica vez, logo depois de a Home carregar; o pre-roll entra no inicio de
+    # qualquer canal/filme/serie pelo gancho do xbmc.Player.
+    smart_ads.iniciar_monitor(log)
+    abertura = threading.Thread(target=smart_ads.abertura_depois_do_boot,
+                                args=(monitor, log), name='ads-abertura')
+    abertura.daemon = True
+    abertura.start()
 
     # o HERO alterna sozinho entre os lancamentos enquanto a Home esta aberta
     rotacao = threading.Thread(target=rotate_hero, args=(monitor,), name='hero-rotate')
