@@ -42,3 +42,9 @@
 
 ﻿[B]0.0.1[/B]
 • Initial commit
+1.0.18 (2026-11-14)
+- Lista de pastas/conteudos: fundo das linhas em cinza-escuro (#CC121212 normal,
+  #FF1E1E1E focada). Antes pb_rounded.png era tingido de branco (painel claro).
+- Home (layout aurora): duas fileiras sem sobreposicao — Lancamentos/Filmes em
+  y=570 e Series em y=822, com 28 px de respiro. A fileira "Filmes" duplicada
+  (lista 9202) foi removida e a de Series saiu de y=1180 (fora da tela).

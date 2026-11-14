@@ -71,7 +71,7 @@ SKIN_PREFIX = "assets/addons/skin.novatv/"
 # usuario sem alternativa se a skin nova nao agradar (Ajustes > Aparencia > Skin).
 SKIN_CLASSIC_ID = "skin.smartedtv.classic"
 SKIN_CLASSIC_NAME = "SMARTED Classica"
-SKIN_CLASSIC_VERSION = "1.0.17"
+SKIN_CLASSIC_VERSION = "1.0.18"
 SKIN_CLASSIC_PREFIX = "assets/addons/skin.smartedtv.classic/"
 
 
@@ -126,6 +126,9 @@ def main():
     default_skin = None
     skin_overlay = None
     app_label = None
+    skin_version = SKIN_VERSION
+    keep_bridge = False
+    copia_classica = True
     while len(argv) >= 2 and argv[0].startswith("--"):
         opt = argv.pop(0)
         if opt == "--from-version":
@@ -145,6 +148,17 @@ def main():
         elif opt == "--app-label":
             # nome exibido no Android (resources.arsc), ex.: SMARTEDTV
             app_label = argv.pop(0)
+        elif opt == "--skin-version":
+            # versao do addon da skin padrao (serve para o Kodi invalidar a skin
+            # compilada em cache quando apenas os XMLs mudam)
+            skin_version = argv.pop(0)
+        elif opt == "--no-classic-copy":
+            # a skin classica ja e a skin padrao: nao embarcar uma segunda copia
+            copia_classica = False
+        elif opt == "--keep-bridge":
+            # mantem os addons do repositorio (ponte + bootstrap) que ja estao no
+            # APK base: build que muda so a skin, sem trocar o motor do perfil
+            keep_bridge = True
         elif opt == "--default-skin":
             # skin de terceiro (ex.: Bingie) que passa a ser a skin padrao do APK,
             # renomeada para SMARTEDTV
@@ -152,7 +166,7 @@ def main():
         else:
             raise SystemExit(f"Unknown option: {opt}")
     if len(argv) != 2:
-        raise SystemExit("Usage: build-release-apk.py [--from-version V] [--to-version V] [--to-code N] [--extra-addons DIR] [--default-skin DIR] [--skin-overlay DIR] [--app-label NOME] BASE.apk OUTPUT.apk")
+        raise SystemExit("Usage: build-release-apk.py [--from-version V] [--to-version V] [--to-code N] [--extra-addons DIR] [--default-skin DIR] [--skin-overlay DIR] [--app-label NOME] [--skin-version V] [--keep-bridge] [--no-classic-copy] BASE.apk OUTPUT.apk")
     base, out = Path(argv[0]), Path(argv[1])
     if base.resolve() == out.resolve():
         raise SystemExit("Input and output must differ")
@@ -188,10 +202,11 @@ def main():
     if default_skin is not None:
         if not default_skin.is_dir() or not (default_skin / "addon.xml").is_file():
             raise SystemExit(f"Skin padrao inexistente: {default_skin}")
-        skin_files = skin_payload(default_skin, expected_id="skin.titan.bingie.mod", strict=False)
-        print(f"Skin padrao: {default_skin.name} -> {SKIN_ADDON_ID} ({SKIN_NAME} {SKIN_VERSION})")
+        skin_files = skin_payload(default_skin, version=skin_version,
+                                  expected_id="skin.titan.bingie.mod", strict=False)
+        print(f"Skin padrao: {default_skin.name} -> {SKIN_ADDON_ID} ({SKIN_NAME} {skin_version})")
     else:
-        skin_files = skin_payload()
+        skin_files = skin_payload(version=skin_version)
     if skin_overlay is not None:
         if not skin_overlay.is_dir():
             raise SystemExit(f"Overlay de skin inexistente: {skin_overlay}")
@@ -206,7 +221,8 @@ def main():
             skin_files[destino] = origem.read_bytes()
             aplicados.append(rel)
         print("Overlay aplicado na skin padrao: " + ", ".join(aplicados))
-    skin_files.update(skin_payload(SKIN, SKIN_CLASSIC_ID, SKIN_CLASSIC_NAME, SKIN_CLASSIC_VERSION))
+    if copia_classica:
+        skin_files.update(skin_payload(SKIN, SKIN_CLASSIC_ID, SKIN_CLASSIC_NAME, SKIN_CLASSIC_VERSION))
     bridge_files = {}
     bridge_ids = []
     extras = []
@@ -220,7 +236,10 @@ def main():
                 for neto in sorted(filho.iterdir()):
                     if (neto / "addon.xml").is_file():
                         extras.append(neto)
-    for addon_dir in list(BRIDGE_ADDONS) + extras:
+    base_addons = [] if keep_bridge else list(BRIDGE_ADDONS)
+    if keep_bridge:
+        print("Ponte e bootstrap mantidos como estao no APK base (--keep-bridge)")
+    for addon_dir in base_addons + extras:
         addon_id = ET.parse(addon_dir / "addon.xml").getroot().get("id")
         # a skin que virou skin padrao nao entra duas vezes (ja esta em skin.novatv)
         if default_skin is not None and addon_id == "skin.titan.bingie.mod":
@@ -252,7 +271,8 @@ def main():
         addon_manifest = src.read(MANIFEST)
         if addon_manifest.count(b"</addons>") != 1:
             raise SystemExit("Unexpected addon manifest")
-        for addon_id in [SKIN_ADDON_ID, SKIN_CLASSIC_ID] + bridge_ids:
+        skins_manifesto = [SKIN_ADDON_ID] + ([SKIN_CLASSIC_ID] if copia_classica else [])
+        for addon_id in skins_manifesto + bridge_ids:
             if f">{addon_id}<".encode() not in addon_manifest:
                 addon_manifest = addon_manifest.replace(
                     b"</addons>",

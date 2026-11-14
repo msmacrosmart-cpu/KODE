@@ -286,7 +286,7 @@ jobs:
                   assert f'>script.module.{modulo}<' in after.read('assets/system/addon-manifest.xml').decode(), \
                       f"modulo fora do manifesto: {modulo}"
               classic_xml = ET.fromstring(after.read('assets/addons/skin.smartedtv.classic/addon.xml'))
-              assert (classic_xml.get('id'), classic_xml.get('version')) == ('skin.smartedtv.classic', '1.0.17'), \
+              assert (classic_xml.get('id'), classic_xml.get('version')) == ('skin.smartedtv.classic', '1.0.18'), \
                   f"skin classica inesperada: {classic_xml.get('id')} {classic_xml.get('version')}"
               for p in sorted(Path('kodi/skin.estilo.personalizado').rglob('*')):
                   if not p.is_file() or '__pycache__' in p.parts or p.suffix in ('.pyc',):

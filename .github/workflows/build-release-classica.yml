@@ -1,0 +1,197 @@
+name: Build SMARTED-TV 1.0.58 (linha classica, sem Bingie)
+
+# Corrige a versao CLASSICA (a mesma familia da 1.0.47, ~240 MB) SEM recompilar o
+# Kodi: baixa o APK 1.0.47, troca apenas a skin (skin.novatv = skin classica do
+# repositorio, agora 1.0.18), sobe versionName/versionCode, reassina com a mesma
+# chave da linha e publica.
+#
+# Correcoes desta build:
+#   1. Lista de pastas (MyVideoNav, view 50): o fundo de cada linha era
+#      pb_rounded.png (textura cinza-clara) tingido de BRANCO (B3FFFFFF na linha
+#      normal e FFFFFFFF na focada). Agora: CC121212 (normal) e FF1E1E1E (focada).
+#   2. Home (layout aurora, o padrao): havia duas fileiras sobrepostas
+#      ("Lancamentos" em y=800 e "Filmes" em y=700) e "Series" fora da tela
+#      (y=1180). Agora sao exatamente duas: Lancamentos/Filmes em y=570 e Series
+#      em y=822, com 28 px de respiro entre elas.
+#
+# Nada mais muda: motor (libkodi.so), dex, perfil semeado, plugin.video.smarted e
+# bootstrap seguem byte a byte como estavam na 1.0.47 (--keep-bridge).
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/7dedf371-kode]
+    paths: [.github/workflows/build-release-classica.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    env:
+      TAG_BASE: v1.0.47-classica
+      ARQUIVO_BASE: SMARTED-TV-v1.0.47-arm64.apk
+      SHA256_BASE: 70f5429f671a4c29ebb9476715bb8e79206638bba006ee963b02fd16ebe338a3
+      VERSAO_NOVA: "1.0.58"
+      CODIGO_NOVO: "2103044"
+      SKIN_NOVA: "1.0.18"
+      TAG_DESTINO: v1.0.58-classica
+      ARQUIVO_DESTINO: SMARTED-TV-v1.0.58-arm64.apk
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Teste estatico (XML + py_compile)
+        run: python3 tools/kodi/static-check.py
+
+      - name: 2. Baixar o APK base 1.0.47 (hash conferido)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/base"
+          gh release download "$TAG_BASE" -R "$GITHUB_REPOSITORY" \
+            --pattern "$ARQUIVO_BASE" --dir "$RUNNER_TEMP/base"
+          echo "$SHA256_BASE  $RUNNER_TEMP/base/$ARQUIVO_BASE" | sha256sum -c -
+          ls -l "$RUNNER_TEMP/base"
+
+      - name: 3. Chave de assinatura (mesma da linha 1.0.15+)
+        run: |
+          cp dropbox/smarted-tv-test.jks "$RUNNER_TEMP/smarted-tv-test.jks"
+          test "$(stat -c%s "$RUNNER_TEMP/smarted-tv-test.jks")" = "2730"
+
+      - name: 4. Ferramentas de reempacotamento
+        run: ./tools/kodi/setup.sh
+
+      - name: "5. Reempacotar: skin nova + versao nova, resto intacto"
+        env:
+          PYTHONPATH: /home/runner/.cache/kode-build/python
+        run: |
+          set -euo pipefail
+          python3 tools/kodi/build-release-apk.py \
+            --from-version 1.0.47 \
+            --to-version "$VERSAO_NOVA" \
+            --to-code "$CODIGO_NOVO" \
+            --skin-version "$SKIN_NOVA" \
+            --keep-bridge \
+            --no-classic-copy \
+            --app-label SMARTEDTV \
+            "$RUNNER_TEMP/base/$ARQUIVO_BASE" "$RUNNER_TEMP/unsigned.apk"
+          ls -lh "$RUNNER_TEMP/unsigned.apk"
+
+      - name: 6. Conferir a skin dentro do APK (fileiras e paineis)
+        env:
+          PYTHONPATH: /home/runner/.cache/kode-build/python
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import zipfile, os
+          from pathlib import Path
+          from xml.etree import ElementTree as ET
+
+          apk = Path(os.environ['RUNNER_TEMP']) / 'unsigned.apk'
+          with zipfile.ZipFile(apk) as z:
+              nomes = z.namelist()
+              home = z.read('assets/addons/skin.novatv/xml/Home.xml').decode()
+              nav = z.read('assets/addons/skin.novatv/xml/MyVideoNav.xml').decode()
+              addon = ET.fromstring(z.read('assets/addons/skin.novatv/addon.xml'))
+              raiz = ET.fromstring(home)
+          assert addon.get('id') == 'skin.novatv', addon.get('id')
+          assert addon.get('version') == '1.0.18', addon.get('version')
+
+          def tx(c, tag):
+              return (c.findtext(tag) or '').strip()
+          listas = {c.get('id'): c for c in raiz.iter('control') if c.get('type') == 'list'}
+          assert '9201' in listas and '9203' in listas, sorted(listas)
+          assert '9202' not in listas, 'fileira duplicada (9202) ainda na Home'
+          assert tx(listas['9201'], 'top') == '570', tx(listas['9201'], 'top')
+          assert tx(listas['9201'], 'height') == '194', tx(listas['9201'], 'height')
+          assert tx(listas['9203'], 'top') == '822', tx(listas['9203'], 'top')
+          assert tx(listas['9203'], 'height') == '194', tx(listas['9203'], 'height')
+          fim_9201 = int(tx(listas['9201'], 'top')) + int(tx(listas['9201'], 'height'))
+          respiro = int(tx(listas['9203'], 'top')) - fim_9201
+          assert respiro >= 20, f'fileiras coladas: {respiro}px'
+          assert 'route=recent-movies' in tx(listas['9201'], 'content')
+          assert 'route=recent-series' in tx(listas['9203'], 'content')
+
+          rotulos = {tx(c, 'label') for c in raiz.iter('control') if c.get('type') == 'label'}
+          assert 'Lançamentos' in rotulos and 'Séries' in rotulos, rotulos
+
+          assert 'B3FFFFFF" border="16">pb_rounded.png' not in nav, 'painel claro na lista'
+          assert 'FFFFFFFF" border="16">pb_rounded.png' not in nav, 'painel branco na lista'
+          assert 'CC121212" border="16">pb_rounded.png' in nav, 'fundo escuro ausente'
+          assert 'FF1E1E1E" border="16">pb_rounded.png' in nav, 'foco escuro ausente'
+          print('Skin conferida: Home com 2 fileiras (%d px de respiro) e lista em cinza-escuro.' % respiro)
+          print('Tamanho do APK sem assinatura: %.1f MB' % (apk.stat().st_size / 1048576))
+          PY
+
+      - name: 7. Alinhar e assinar
+        run: |
+          set -eo pipefail
+          CACHE="$HOME/.cache/kode-build"
+          JAVA="$CACHE/python/jdk4py/java-runtime/bin/java"
+          SIGNER="$CACHE/tools/apksigner.jar"
+          python3 tools/kodi/align-apk.py "$RUNNER_TEMP/unsigned.apk" "$RUNNER_TEMP/aligned.apk"
+          "$JAVA" -jar "$SIGNER" sign \
+            --ks "$RUNNER_TEMP/smarted-tv-test.jks" --ks-pass pass:android \
+            --key-pass pass:android --ks-key-alias smarted-tv-test \
+            --v1-signing-enabled true --v2-signing-enabled true \
+            --v3-signing-enabled true --v4-signing-enabled false \
+            --out "$RUNNER_TEMP/signed.apk" "$RUNNER_TEMP/aligned.apk"
+          "$JAVA" -jar "$SIGNER" verify --verbose --print-certs "$RUNNER_TEMP/signed.apk" \
+            | tee "$RUNNER_TEMP/verify.txt"
+          grep -qi "^Signer #1 certificate SHA-256 digest: 855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a$" \
+            "$RUNNER_TEMP/verify.txt" || (echo "certificado inesperado"; exit 1)
+
+      - name: 8. Identidade e conteudo do APK final
+        env:
+          PYTHONPATH: /home/runner/.cache/kode-build/python
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, zipfile
+          from pathlib import Path
+          from pyaxmlparser import APK
+
+          apk = Path(os.environ['RUNNER_TEMP']) / 'signed.apk'
+          a = APK(str(apk))
+          print('pacote=%s nome=%s versao=%s codigo=%s' % (a.package, a.get_app_name(),
+                                                           a.version_name, a.version_code))
+          assert a.package == 'org.xbmc.kodi'
+          assert a.get_app_name() == 'SMARTEDTV', a.get_app_name()
+          assert a.version_name == '1.0.58', a.version_name
+          assert int(a.version_code) == 2103044, a.version_code
+          with zipfile.ZipFile(apk) as z:
+              nomes = z.namelist()
+              skins = sorted({n.split('/')[2] for n in nomes
+                              if n.startswith('assets/addons/skin.') and n.count('/') > 2})
+              assert skins == ['skin.estuary', 'skin.novatv'], skins
+              assert 'lib/arm64-v8a/libkodi.so' in nomes
+              assert 'assets/addons/plugin.video.smarted/default.py' in nomes
+              assert 'assets/addons/service.smarted.bootstrap/service.py' in nomes
+              assert any('brazucap' in n.lower() for n in nomes), 'Brazuca fora do APK'
+              assert not any('bingie' in n.lower() for n in nomes), 'Bingie entrou no build classico'
+          print('APK final: %.1f MB' % (apk.stat().st_size / 1048576))
+          PY
+          cp "$RUNNER_TEMP/signed.apk" "$ARQUIVO_DESTINO"
+          sha256sum "$ARQUIVO_DESTINO" | tee "$ARQUIVO_DESTINO.sha256"
+          cat "$ARQUIVO_DESTINO.sha256"
+
+      - name: 9. Publicar a release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          NOTES="$(python3 -c "import pathlib; print(pathlib.Path('docs/NOTAS-RELEASE-1.0.58-classica.md').read_text())")"
+          if gh release view "$TAG_DESTINO" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG_DESTINO" "$ARQUIVO_DESTINO" "$ARQUIVO_DESTINO.sha256" \
+              -R "$GITHUB_REPOSITORY" --clobber
+            gh release edit "$TAG_DESTINO" -R "$GITHUB_REPOSITORY" --notes "$NOTES"
+          else
+            gh release create "$TAG_DESTINO" "$ARQUIVO_DESTINO" "$ARQUIVO_DESTINO.sha256" \
+              -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title 'SMARTED-TV 1.0.58 (arm64) - linha classica: painel escuro e Home com 2 fileiras' \
+              --notes "$NOTES"
+          fi
+          echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_DESTINO/$ARQUIVO_DESTINO"

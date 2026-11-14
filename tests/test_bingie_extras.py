@@ -50,7 +50,7 @@ class SkinPadraoTest(unittest.TestCase):
     def test_skin_classica_continua_embarcada(self):
         script = BUILD.read_text(encoding='utf-8')
         self.assertIn('SKIN_CLASSIC_ID = "skin.smartedtv.classic"', script)
-        self.assertIn('SKIN_CLASSIC_VERSION = "1.0.17"', script)
+        self.assertIn('SKIN_CLASSIC_VERSION = "1.0.18"', script)
 
     def test_versao_do_apk_mantem_tamanho_do_nome(self):
         """versionName vive no string pool binario: precisa do mesmo tamanho."""

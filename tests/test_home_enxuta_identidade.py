@@ -13,25 +13,28 @@ class HomeEnxutaTest(unittest.TestCase):
     def setUp(self):
         self.home = (XML / 'Home.xml').read_text(encoding='utf-8')
 
-    def test_so_filmes_e_series_abaixo_do_hero(self):
+    def test_so_lancamentos_e_series_abaixo_do_hero(self):
+        # 9201 = Lancamentos/Filmes (tambem alimenta o HERO), 9203 = Series.
+        # A antiga 9202 ("Filmes") se sobrepunha a 9201 e foi removida.
         self.assertNotIn('<control type="list" id="9200">', self.home)
-        self.assertEqual(len(re.findall(r'<control type="list" id="92(?:02|03)">', self.home)), 2)
-        filmes = re.search(r'<control type="list" id="9202">.{0,9000}?</content>', self.home, re.S).group(0)
-        self.assertIn('alvo=filmes', filmes)
+        self.assertNotIn('<control type="list" id="9202">', self.home)
+        self.assertEqual(len(re.findall(r'<control type="list" id="92(?:01|03)">', self.home)), 2)
+        filmes = re.search(r'<control type="list" id="9201">.{0,9000}?</content>', self.home, re.S).group(0)
+        self.assertIn('route=recent-movies', filmes)
         series = re.search(r'<control type="list" id="9203">.{0,9000}?</content>', self.home, re.S).group(0)
         self.assertIn('route=recent-series', series)
 
     def test_titulos_acima_dos_cards_e_bom_espaco(self):
         tops = {cid: int(re.search(r'<control type="list" id="%s"><left>60</left><top>(\d+)</top>' % cid,
-                                   self.home).group(1)) for cid in ('9202', '9203')}
-        self.assertGreaterEqual(tops['9203'] - tops['9202'], 420)  # respiro entre secoes
+                                   self.home).group(1)) for cid in ('9201', '9203')}
+        self.assertGreaterEqual(tops['9203'] - tops['9201'], 194)  # fileiras empilhadas, nao sobrepostas
         for cid, top in tops.items():
             titulo = re.search(r'<control type="label"><left>60</left><top>(\d+)</top>[^>]*>\s*'
                                r'<label>(?:Filmes|Séries)</label>', self.home.replace('\n', ''))
         # o titulo de cada secao fica ~48 px acima da fileira
         for cid, top in tops.items():
             achado = re.search(r'<control type="label"><left>60</left><top>(\d+)</top>'
-                               r'(?:(?!</control>).)*?<label>(?:Filmes|Séries)</label>', self.home, re.S)
+                               r'(?:(?!</control>).)*?<label>(?:Lançamentos|Séries)</label>', self.home, re.S)
             self.assertIsNotNone(achado)
         self.assertIn('<itemgap>28</itemgap>', self.home)
 
