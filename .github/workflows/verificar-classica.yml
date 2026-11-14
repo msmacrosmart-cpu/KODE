@@ -116,7 +116,7 @@ jobs:
               ('app de anuncios referenciado', 'org.smartedtv.ads' in ads),
               ('tela de abertura', 'AppOpenActivity' in ads),
               ('tela de video pre-roll', 'PreRollActivity' in ads),
-              ('ponte StartAndroidActivity', 'StartAndroidActivity(%s,%s)' in ads),
+              ('ponte StartAndroidActivity', "StartAndroidActivity(%s)' % ','.join(campos)" in ads),
               ('gancho xbmc.Player', 'MonitorPreRoll' in ads),
               ('abertura uma vez por instalacao', 'abertura_ja_mostrada' in ads),
               ('intervalo de pre-roll', 'PREROLL_INTERVALO' in ads),
