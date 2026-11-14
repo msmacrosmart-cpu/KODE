@@ -1,0 +1,135 @@
+name: Restaurar SMARTED-TV 1.0.47 (versao classica, sem Bingie)
+
+# Republica, com nome claro, o APK da ultima versao ANTERIOR a linha Bingie
+# (1.0.48 foi a primeira com a skin Bingie). O arquivo NAO e recompilado nem
+# reassinado: baixa o asset da release original, confere o SHA-256 publicado,
+# mede o que tem dentro e sobe a copia identica numa release de nome obvio.
+#
+# Nada aqui altera a 1.0.56 nem a linha 21.4.x.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/7dedf371-kode]
+    paths: [.github/workflows/publicar-versao-classica.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  restaurar:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      TAG_ORIGEM: v1.0.47-smarted-arm64
+      ARQUIVO: SMARTED-TV-v1.0.47-arm64.apk
+      TAG_DESTINO: v1.0.47-classica
+      SHA256_ESPERADO: 70f5429f671a4c29ebb9476715bb8e79206638bba006ee963b02fd16ebe338a3
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Baixar o APK original da 1.0.47
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/restauro"
+          gh release download "$TAG_ORIGEM" -R "$GITHUB_REPOSITORY" \
+            --pattern "$ARQUIVO" --dir "$RUNNER_TEMP/restauro"
+          ls -l "$RUNNER_TEMP/restauro"
+          echo "$SHA256_ESPERADO  $RUNNER_TEMP/restauro/$ARQUIVO" | sha256sum -c -
+
+      - name: 2. Ferramentas para ler o APK
+        run: |
+          python3 -m pip install --disable-pip-version-check --quiet 'pyaxmlparser==0.3.31'
+
+      - name: 3. Relatorio do que existe dentro do APK
+        run: |
+          python3 - "$RUNNER_TEMP/restauro/$ARQUIVO" "$RUNNER_TEMP/relatorio-1.0.47.txt" <<'PY'
+          import sys, zipfile, re, hashlib
+          from pathlib import Path
+          from pyaxmlparser import APK
+
+          apk = Path(sys.argv[1]); saida = Path(sys.argv[2])
+          linhas = []
+          a = APK(str(apk))
+          linhas.append('arquivo: %s' % apk.name)
+          linhas.append('tamanho: %d bytes' % apk.stat().st_size)
+          linhas.append('sha256: %s' % hashlib.sha256(apk.read_bytes()).hexdigest())
+          linhas.append('pacote: %s' % a.package)
+          linhas.append('nome exibido: %s' % a.get_app_name())
+          linhas.append('versionName: %s' % a.version_name)
+          linhas.append('versionCode: %s' % a.version_code)
+          with zipfile.ZipFile(apk) as z:
+              nomes = z.namelist()
+              skins = sorted({n.split('/')[2] for n in nomes
+                              if n.startswith('assets/addons/skin.') and n.count('/') > 2})
+              linhas.append('skins no APK: %s' % ', '.join(skins) or '(nenhuma)')
+              addons = sorted({n.split('/')[2] for n in nomes
+                               if n.startswith('assets/addons/') and n.count('/') > 2})
+              linhas.append('addons de sistema (%d): %s' % (len(addons), ', '.join(addons[:40])))
+              perfil = sorted({n.split('/')[3] for n in nomes
+                               if n.startswith('assets/smarted/profile/addons/') and n.count('/') > 3})
+              linhas.append('addons do perfil semeado (%d): %s'
+                            % (len(perfil), ', '.join(perfil[:40])))
+              gui = [n for n in nomes if n.endswith('guisettings.xml')]
+              for g in gui[:3]:
+                  texto = z.read(g).decode('utf-8', 'replace')
+                  m = re.search(r'lookandfeel\.skin[^>]*>([^<]*)<', texto)
+                  linhas.append('skin padrao em %s: %s' % (g, m.group(1) if m else '?'))
+              linhas.append('bingie no APK: %s' % ('SIM' if any('bingie' in n.lower() for n in nomes) else 'nao'))
+              linhas.append('brazuca no APK: %s' % ('SIM' if any('brazucap' in n.lower() for n in nomes) else 'nao'))
+              linhas.append('bootstrap no APK: %s' % ('SIM' if any('service.smarted.bootstrap' in n for n in nomes) else 'nao'))
+              linhas.append('performance.py no APK: %s' % ('SIM' if any(n.endswith('performance.py') for n in nomes) else 'nao'))
+              linhas.append('libkodi.so: %s' % ('SIM' if 'lib/arm64-v8a/libkodi.so' in nomes else 'nao'))
+              linhas.append('classes dex: %s' % ', '.join(sorted(n for n in nomes if re.fullmatch(r'classes\d*\.dex', n))))
+          saida.write_text('\n'.join(linhas) + '\n', encoding='utf-8')
+          print('\n'.join(linhas))
+          PY
+
+      - name: 4. Publicar a release com nome claro (copia identica)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cp "$RUNNER_TEMP/restauro/$ARQUIVO" "$ARQUIVO"
+          sha256sum "$ARQUIVO" > "$ARQUIVO.sha256"
+          cat "$ARQUIVO.sha256"
+          NOTES="SMARTED-TV 1.0.47 (ARM64) - versao CLASSICA, ANTERIOR a linha Bingie.
+
+          Este e o mesmo APK publicado em v1.0.47-smarted-arm64, byte a byte:
+          SHA-256 ${SHA256_ESPERADO}. Nada foi recompilado, reassinado ou alterado.
+
+          - Skin padrao: a classica do projeto (sem Bingie; a 1.0.48 foi a primeira
+            com a skin Bingie).
+          - Inclui o trabalho de otimizacao/inicializacao feito ate a 1.0.22
+            (splash sem texto, cache de widgets por dia, cache de arquivo e
+            MediaCodec aplicados pelo bootstrap) e tudo o que veio depois ate a 1.0.47.
+          - Mesma assinatura da linha (smarted-tv-test), portanto atualiza por cima
+            de qualquer 1.0.x com essa chave; nao atualiza o Kodi oficial.
+
+          Relatorio do conteudo do APK: docs/relatorio-1.0.47.md"
+          if gh release view "$TAG_DESTINO" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG_DESTINO" "$ARQUIVO" "$ARQUIVO.sha256" \
+              -R "$GITHUB_REPOSITORY" --clobber
+            gh release edit "$TAG_DESTINO" -R "$GITHUB_REPOSITORY" \
+              --title 'SMARTED-TV 1.0.47 (arm64) - versao classica, sem Bingie' \
+              --notes "$NOTES"
+          else
+            gh release create "$TAG_DESTINO" "$ARQUIVO" "$ARQUIVO.sha256" \
+              -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title 'SMARTED-TV 1.0.47 (arm64) - versao classica, sem Bingie' \
+              --notes "$NOTES"
+          fi
+          echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG_DESTINO"
+
+      - name: 5. Guardar o relatorio no repositorio
+        if: always()
+        run: |
+          test -s "$RUNNER_TEMP/relatorio-1.0.47.txt" || exit 0
+          cp "$RUNNER_TEMP/relatorio-1.0.47.txt" docs/relatorio-1.0.47.md
+          git config user.name "SMARTEDTV Build"
+          git config user.email "ci@smarted.local"
+          git add docs/relatorio-1.0.47.md
+          git commit -m "docs: relatorio do conteudo do APK 1.0.47 (versao classica)" || echo "sem mudancas"
+          git push origin HEAD:${GITHUB_REF_NAME}
