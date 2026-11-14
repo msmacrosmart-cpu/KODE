@@ -1,4 +1,4 @@
-name: Conferir APK classico publicado (1.0.61 vs 1.0.60)
+name: Conferir APK classico publicado (1.0.62 vs 1.0.61)
 
 # Diagnostico sob demanda: baixa as duas releases e confere o APK publicado de
 # verdade (nao o que estava no diretorio de build). Mostra sha256, o que mudou
@@ -26,11 +26,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/apks"
+          gh release download v1.0.62-classica -R "$GITHUB_REPOSITORY" \
+            --pattern 'SMARTED-TV-v1.0.62-arm64.apk' --dir "$RUNNER_TEMP/apks"
           gh release download v1.0.61-classica -R "$GITHUB_REPOSITORY" \
             --pattern 'SMARTED-TV-v1.0.61-arm64.apk' --dir "$RUNNER_TEMP/apks"
-          gh release download v1.0.60-classica -R "$GITHUB_REPOSITORY" \
-            --pattern 'SMARTED-TV-v1.0.60-arm64.apk' --dir "$RUNNER_TEMP/apks"
-          gh release download v1.0.61-classica -R "$GITHUB_REPOSITORY" \
+          gh release download v1.0.62-classica -R "$GITHUB_REPOSITORY" \
             --pattern 'SMARTEDTV-Anuncios-*.apk' --dir "$RUNNER_TEMP/apks"
           ls -l "$RUNNER_TEMP/apks"
           sha256sum "$RUNNER_TEMP/apks/"*.apk | tee "$RUNNER_TEMP/sha.txt"
@@ -46,8 +46,8 @@ jobs:
 
           pasta = Path(sys.argv[1])
           sha_txt = Path(sys.argv[2]).read_text()
-          novo = pasta / 'SMARTED-TV-v1.0.61-arm64.apk'
-          velho = pasta / 'SMARTED-TV-v1.0.60-arm64.apk'
+          novo = pasta / 'SMARTED-TV-v1.0.62-arm64.apk'
+          velho = pasta / 'SMARTED-TV-v1.0.61-arm64.apk'
 
           def resumo(apk):
               a = APK(str(apk))
@@ -57,10 +57,11 @@ jobs:
 
           a_novo, i_novo = resumo(novo)
           a_velho, i_velho = resumo(velho)
-          print('1.0.61: %d bytes | %s %s | %s' % (novo.stat().st_size, a_novo.version_name,
+          print('1.0.62: %d bytes | %s %s | %s' % (novo.stat().st_size, a_novo.version_name,
                                                    a_novo.version_code, a_novo.get_app_name()))
-          print('1.0.60: %d bytes | %s %s | %s' % (velho.stat().st_size, a_velho.version_name,
+          print('1.0.61: %d bytes | %s %s | %s' % (velho.stat().st_size, a_velho.version_name,
                                                    a_velho.version_code, a_velho.get_app_name()))
+          print('pacote do APK do Kodi:', a_novo.package)
           for linha in sha_txt.splitlines():
               if linha.endswith('.apk'):
                   print('sha256 publicado:', linha)
@@ -119,6 +120,9 @@ jobs:
               ('abertura uma vez por instalacao', 'abertura_ja_mostrada' in ads),
               ('intervalo de pre-roll', 'PREROLL_INTERVALO' in ads),
               ('pacote smartedtv.full na ponte', "PACKAGE = 'smartedtv.full'" in ads),
+              ('builtin com 9 parametros', "campos = [package or PACKAGE] + [''] * 7 + [atividade]" in ads),
+              ('className no ultimo parametro', "StartAndroidActivity(%s)' % ','.join(campos)" in ads),
+              ('logs com tag SmartAds', '[SmartAds]' in ads),
           ]
           print('')
           for nome, ok in checagens_ads:
@@ -135,6 +139,17 @@ jobs:
               print('pacote do APK de anuncios:', extra.package)
               if extra.package != 'smartedtv.full':
                   raise SystemExit('pacote do APK de anuncios inesperado: %s' % extra.package)
+              with zipfile.ZipFile(anuncios_apk[0]) as z:
+                  dex_ads = b''.join(z.read(n) for n in z.namelist()
+                                     if n.startswith('classes') and n.endswith('.dex'))
+              for unidade_teste in ('ca-app-pub-3940256099942544/9257395921',
+                                    'ca-app-pub-3940256099942544/1033173712'):
+                  print('bloco de teste no APK de anuncios:',
+                        unidade_teste, 'OK' if unidade_teste.encode() in dex_ads else 'FALTANDO')
+                  if unidade_teste.encode() not in dex_ads:
+                      raise SystemExit('APK de anuncios sem o modo de teste')
+              print('tag SmartAds no APK de anuncios:',
+                    'OK' if b'SmartAds' in dex_ads else 'FALTANDO')
           else:
               raise SystemExit('APK de anuncios AUSENTE na release')
 
@@ -155,9 +170,9 @@ jobs:
       - name: Guardar comparacao no repositorio
         run: |
           set -euo pipefail
-          cp "$RUNNER_TEMP/comparacao.txt" docs/comparacao-1.0.61.txt
+          cp "$RUNNER_TEMP/comparacao.txt" docs/comparacao-1.0.62.txt
           git config user.name "SMARTEDTV Build"
           git config user.email "ci@smarted.local"
-          git add docs/comparacao-1.0.61.txt
-          git commit -m "docs: conferencia do APK 1.0.61 publicado (pacote dos anuncios)" || echo "sem mudancas"
+          git add docs/comparacao-1.0.62.txt
+          git commit -m "docs: conferencia do APK 1.0.62 publicado (ponte corrigida + modo de teste)" || echo "sem mudancas"
           git push origin HEAD:${GITHUB_REF_NAME}
