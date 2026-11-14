@@ -10,7 +10,7 @@ on:
     paths: [.github/workflows/verificar-classica.yml]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   conferir:
@@ -94,3 +94,13 @@ jobs:
           print('')
           print('(1.0.47) fileiras antigas:', ', '.join(antigos))
           PY
+
+      - name: Guardar comparacao no repositorio
+        run: |
+          set -euo pipefail
+          cp "$RUNNER_TEMP/comparacao.txt" docs/comparacao-1.0.58.txt
+          git config user.name "SMARTEDTV Build"
+          git config user.email "ci@smarted.local"
+          git add docs/comparacao-1.0.58.txt
+          git commit -m "docs: comparacao APK 1.0.58 (classica) x 1.0.47" || echo "sem mudancas"
+          git push origin HEAD:${GITHUB_REF_NAME}
