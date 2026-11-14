@@ -13,7 +13,7 @@ entradas com tamanho diferente (6):
    assets/addons/service.smarted.bootstrap/repair.py                      12182 -> 15058
    assets/addons/service.smarted.bootstrap/service.py                     11667 -> 14050
 
-bootstrap versao: 1.1
+bootstrap versao: 1.0.9
 advancedsettings buffermode 1        OK
 advancedsettings memorysize 50 MB    OK
 advancedsettings readfactor 20x      OK
