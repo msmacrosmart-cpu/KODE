@@ -1,11 +1,11 @@
 # Build do APK unificado — falhou
 
-Run: 43638117645
+Run: 43651800166
 
 ## disco
 ```
 Filesystem       Size  Used Avail Use% Mounted on
-/dev/root        146G   67G   79G  46% /
+/dev/root        146G   65G   82G  45% /
 tmpfs            7.9G  172K  7.9G   1% /dev/shm
 tmpfs            3.2G  1.0M  3.2G   1% /run
 tmpfs            5.0M     0  5.0M   0% /run/lock
@@ -18,77 +18,72 @@ tmpfs            1.6G   12K  1.6G   1% /run/user/1001
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
-[ 92%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/AddonCallback.cpp.o
-[ 92%] Linking CXX static library videorenderers.a
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/AddonCallback.cpp.o
+[ 94%] Linking CXX static library videorenderers.a
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/AddonClass.cpp.o
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-[ 92%] Built target videorenderers
-[ 92%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/AddonClass.cpp.o
-[ 92%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Addon.cpp.o
-[ 92%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/AddonUtils.cpp.o
-[ 92%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/CallbackFunction.cpp.o
-[ 92%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/CallbackHandler.cpp.o
+[ 94%] Built target videorenderers
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
-[ 92%] Building CXX object build/interfaces/legacy/wsgi/CMakeFiles/legacy_interface_wsgi.dir/WsgiErrorStream.cpp.o
-[ 92%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Control.cpp.o
-[ 92%] Building CXX object build/interfaces/legacy/wsgi/CMakeFiles/legacy_interface_wsgi.dir/WsgiInputStream.cpp.o
-[ 92%] Building CXX object build/interfaces/legacy/wsgi/CMakeFiles/legacy_interface_wsgi.dir/WsgiResponseBody.cpp.o
-[ 93%] Building CXX object build/interfaces/legacy/wsgi/CMakeFiles/legacy_interface_wsgi.dir/WsgiResponse.cpp.o
-[ 93%] Linking CXX static library legacy_interface_wsgi.a
+[ 94%] Building CXX object build/interfaces/legacy/wsgi/CMakeFiles/legacy_interface_wsgi.dir/WsgiErrorStream.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Addon.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/wsgi/CMakeFiles/legacy_interface_wsgi.dir/WsgiInputStream.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/wsgi/CMakeFiles/legacy_interface_wsgi.dir/WsgiResponseBody.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/AddonUtils.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/wsgi/CMakeFiles/legacy_interface_wsgi.dir/WsgiResponse.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/CallbackFunction.cpp.o
+[ 94%] Linking CXX static library legacy_interface_wsgi.a
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-[ 93%] Built target legacy_interface_wsgi
+[ 94%] Built target legacy_interface_wsgi
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/CallbackHandler.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Control.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Dialog.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/DrmCryptoSession.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/File.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/InfoTagGame.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/InfoTagMusic.cpp.o
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
-[ 93%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/AddonPythonInvoker.cpp.o
-[ 93%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Dialog.cpp.o
-[ 93%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/CallbackHandler.cpp.o
-[ 93%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/ContextItemAddonInvoker.cpp.o
-[ 93%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/DrmCryptoSession.cpp.o
-[ 93%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/LanguageHook.cpp.o
-[ 93%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/File.cpp.o
-[ 93%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/InfoTagGame.cpp.o
-[ 93%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/PythonInvoker.cpp.o
-[ 93%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/InfoTagMusic.cpp.o
-[ 93%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/InfoTagPicture.cpp.o
-[ 93%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/InfoTagRadioRDS.cpp.o
-[ 93%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/XBPython.cpp.o
-[ 93%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/InfoTagVideo.cpp.o
-[ 93%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Keyboard.cpp.o
-[ 93%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/swig.cpp.o
-[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/LanguageHook.cpp.o
-[ 95%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/PyContext.cpp.o
+[ 94%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/AddonPythonInvoker.cpp.o
+[ 94%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/CallbackHandler.cpp.o
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/InfoTagPicture.cpp.o
+[ 95%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/ContextItemAddonInvoker.cpp.o
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/InfoTagRadioRDS.cpp.o
+[ 95%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/LanguageHook.cpp.o
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/InfoTagVideo.cpp.o
+[ 95%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/PythonInvoker.cpp.o
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Keyboard.cpp.o
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/LanguageHook.cpp.o
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/ListItem.cpp.o
+[ 95%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/XBPython.cpp.o
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/ModuleXbmc.cpp.o
+[ 95%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/swig.cpp.o
+[ 95%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/PyContext.cpp.o
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/ModuleXbmcgui.cpp.o
 [ 95%] Linking CXX static library python_interface.a
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 [ 95%] Built target python_interface
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
 [ 95%] Generating AddonModuleXbmcwsgi.i.cpp
-[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/ModuleXbmc.cpp.o
-[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/ModuleXbmcgui.cpp.o
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/ModuleXbmcplugin.cpp.o
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/ModuleXbmcvfs.cpp.o
-[ 96%] Generating AddonModuleXbmc.i.cpp
-[ 96%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Monitor.cpp.o
-[ 96%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Player.cpp.o
-[ 96%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/PlayList.cpp.o
-[ 96%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Settings.cpp.o
-[ 96%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/String.cpp.o
-[ 96%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Window.cpp.o
-[ 96%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/WindowDialog.cpp.o
-[ 96%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/WindowDialogMixin.cpp.o
-[ 96%] Generating AddonModuleXbmcaddon.i.cpp
-[ 96%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/WindowXML.cpp.o
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Monitor.cpp.o
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Player.cpp.o
+[ 95%] Generating AddonModuleXbmc.i.cpp
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/PlayList.cpp.o
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Settings.cpp.o
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/String.cpp.o
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Window.cpp.o
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/WindowDialog.cpp.o
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/WindowDialogMixin.cpp.o
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/WindowXML.cpp.o
 [ 96%] Linking CXX static library legacy_interface.a
+[ 96%] Generating AddonModuleXbmcaddon.i.cpp
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 [ 96%] Built target legacy_interface
-make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
-make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
-[ 96%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnP.cpp.o
 [ 96%] Generating AddonModuleXbmcdrm.i.cpp
-[ 96%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnPInternal.cpp.o
 [ 96%] Generating AddonModuleXbmcgui.i.cpp
 /home/runner/work/_temp/kodi/xbmc/interfaces/legacy/Dialog.h:27: Warning 302: Identifier 'INPUT_ALPHANUM' redefined (ignored),
 /home/runner/work/_temp/kodi/xbmc/interfaces/legacy/ModuleXbmcgui.h:134: Warning 302: previous definition of 'INPUT_ALPHANUM'.
@@ -106,45 +101,24 @@ make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
 /home/runner/work/_temp/kodi/xbmc/interfaces/legacy/ModuleXbmcgui.h:144: Warning 302: previous definition of 'PASSWORD_VERIFY'.
 /home/runner/work/_temp/kodi/xbmc/interfaces/legacy/Dialog.h:35: Warning 302: Identifier 'ALPHANUM_HIDE_INPUT' redefined (ignored),
 /home/runner/work/_temp/kodi/xbmc/interfaces/legacy/ModuleXbmcgui.h:145: Warning 302: previous definition of 'ALPHANUM_HIDE_INPUT'.
+[ 96%] Generating AddonModuleXbmcplugin.i.cpp
+[ 96%] Generating AddonModuleXbmcvfs.i.cpp
+make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
+make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
+make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
+[ 96%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnP.cpp.o
+make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
+make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
+[ 96%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcaddon.i.cpp.o
+[ 96%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcdrm.i.cpp.o
+[ 96%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnPInternal.cpp.o
+[ 96%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcgui.i.cpp.o
 [ 96%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnPPlayer.cpp.o
-[ 96%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnPRenderer.cpp.o
+[ 96%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmc.i.cpp.o
+[ 97%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnPRenderer.cpp.o
+[ 97%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcplugin.i.cpp.o
 [ 97%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnPServer.cpp.o
-[ 97%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnPSettings.cpp.o
-[ 97%] Generating AddonModuleXbmcplugin.i.cpp
-[ 97%] Linking CXX static library network_upnp.a
-make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-[ 97%] Built target network_upnp
-make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
-make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
-[ 97%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPFileHandler.cpp.o
-[ 97%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPImageHandler.cpp.o
-[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPImageTransformationHandler.cpp.o
-[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPJsonRpcHandler.cpp.o
-[ 98%] Generating AddonModuleXbmcvfs.i.cpp
-[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPRequestHandlerUtils.cpp.o
-[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPVfsHandler.cpp.o
-[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPWebinterfaceAddonsHandler.cpp.o
-[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPWebinterfaceHandler.cpp.o
-make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
-[ 98%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcaddon.i.cpp.o
-[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/IHTTPRequestHandler.cpp.o
-[ 98%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcdrm.i.cpp.o
-[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPPythonHandler.cpp.o
-[ 98%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcgui.i.cpp.o
-[ 98%] Linking CXX static library network_httprequesthandlers.a
-make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-[ 98%] Built target network_httprequesthandlers
-make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
-make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-[ 98%] Built target kodi-libraries
-[ 98%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmc.i.cpp.o
-make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
-make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-[ 98%] Built target generate-packaging
-[ 98%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcplugin.i.cpp.o
-[ 98%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcvfs.i.cpp.o
+[ 97%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcvfs.i.cpp.o
 [ 98%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcwsgi.i.cpp.o
 [ 98%] Linking CXX static library libpython_binding.a
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
@@ -152,9 +126,35 @@ make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
-[ 98%] Linking CXX static library libkodi.a
+[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPFileHandler.cpp.o
+[ 98%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnPSettings.cpp.o
+[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPImageHandler.cpp.o
+[100%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPImageTransformationHandler.cpp.o
+[100%] Linking CXX static library network_upnp.a
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-[ 98%] Built target libkodi
+[100%] Built target network_upnp
+[100%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPJsonRpcHandler.cpp.o
+[100%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPRequestHandlerUtils.cpp.o
+[100%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPVfsHandler.cpp.o
+make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
+make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
+[100%] Built target kodi-libraries
+[100%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPWebinterfaceAddonsHandler.cpp.o
+[100%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPWebinterfaceHandler.cpp.o
+make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
+make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
+[100%] Built target generate-packaging
+[100%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/IHTTPRequestHandler.cpp.o
+[100%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPPythonHandler.cpp.o
+[100%] Linking CXX static library network_httprequesthandlers.a
+make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
+[100%] Built target network_httprequesthandlers
+make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
+make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
+make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
+[100%] Linking CXX static library libkodi.a
+make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
+[100%] Built target libkodi
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
@@ -164,163 +164,107 @@ make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 [100%] Built target kodi
 make[1]: Leaving directory '/home/runner/work/_temp/kodi-build'
 make: Leaving directory '/home/runner/work/_temp/kodi-build'
-livre após o Kodi:   82G
+livre após o Kodi:   84G
 ```
 ## fim do log das dependências (passos 7b0/7b)
 ```
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/bsf.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/codec.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/codec_desc.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/codec_id.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/codec_par.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/d3d11va.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/defs.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/dirac.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/dv_profile.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/dxva2.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/jni.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/mediacodec.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/packet.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/qsv.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/vdpau.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/version.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/version_major.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/videotoolbox.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/vorbis_parser.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavcodec/xvmc.h
-INSTALL	libavcodec/libavcodec.pc
-INSTALL	libpostproc/libpostproc.pc
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libpostproc/postprocess.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libpostproc/version.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libpostproc/version_major.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libswresample/swresample.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libswresample/version.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libswresample/version_major.h
-INSTALL	libswresample/libswresample.pc
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libswscale/swscale.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libswscale/version.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libswscale/version_major.h
-INSTALL	libswscale/libswscale.pc
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/adler32.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/aes.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/aes_ctr.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/ambient_viewing_environment.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/attributes.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/audio_fifo.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/avassert.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/avstring.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/avutil.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/base64.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/blowfish.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/bprint.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/bswap.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/buffer.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/cast5.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/camellia.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/channel_layout.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/common.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/cpu.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/crc.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/csp.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/des.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/detection_bbox.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/dict.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/display.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/dovi_meta.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/downmix_info.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/encryption_info.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/error.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/eval.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/fifo.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/file.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/frame.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/hash.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/hdr_dynamic_metadata.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/hdr_dynamic_vivid_metadata.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/hmac.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/hwcontext.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/hwcontext_cuda.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/hwcontext_d3d11va.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/hwcontext_drm.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/hwcontext_dxva2.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/hwcontext_qsv.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/hwcontext_mediacodec.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/hwcontext_opencl.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/hwcontext_vaapi.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/hwcontext_videotoolbox.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/hwcontext_vdpau.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/hwcontext_vulkan.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/imgutils.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/intfloat.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/intreadwrite.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/lfg.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/log.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/lzo.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/macros.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/mathematics.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/mastering_display_metadata.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/md5.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/mem.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/motion_vector.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/murmur3.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/opt.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/parseutils.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/pixdesc.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/pixelutils.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/pixfmt.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/random_seed.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/rc4.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/rational.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/replaygain.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/ripemd.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/samplefmt.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/sha.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/sha512.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/spherical.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/stereo3d.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/threadmessage.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/time.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/timecode.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/timestamp.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/tree.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/twofish.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/uuid.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/version.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/video_enc_params.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/xtea.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/tea.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/tx.h
-INSTALL	home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/libavutil/film_grain_params.h
-INSTALL	libavutil/avconfig.h
-INSTALL	libavutil/ffversion.h
-INSTALL	libavutil/libavutil.pc
-make[6]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build/ffmpeg-prefix/src/ffmpeg-build'
-[100%] Completed 'ffmpeg'
-make[5]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-[100%] Built target ffmpeg
-make[4]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-make[3]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-touch .build-aarch64-linux-android-21-debug
-make -C aarch64-linux-android-21-debug/build install
-make[3]: Entering directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-make[4]: Entering directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-make[5]: Entering directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-make[5]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-[100%] Built target ffmpeg
-make[4]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-Install the project...
--- Install configuration: "Debug"
-Done
-make[3]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg/aarch64-linux-android-21-debug/build'
-touch .installed-aarch64-linux-android-21-debug
-make[2]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target/ffmpeg'
-touch .installed-aarch64-linux-android-21-debug
-Dependencies built successfully.
-make[1]: Leaving directory '/home/runner/work/_temp/kodi/tools/depends/target'
-livre após dependências:   85G
+checking build system type... x86_64-pc-linux-gnu
+checking host system type... aarch64-unknown-linux-android
+checking for ccache... no
+checking for curl... /usr/bin/curl
+checking for tar... /usr/bin/tar
+checking for sha512sum... /usr/bin/sha512sum
+checking for sha256sum... /usr/bin/sha256sum
+checking for ranlib... /usr/bin/ranlib
+checking for ld... /usr/bin/ld
+checking for ar... /usr/bin/ar
+checking for readelf... /usr/bin/readelf
+checking for strip... /usr/bin/strip
+checking for as... /usr/bin/as
+checking for nm... /usr/bin/nm
+checking for objdump... /usr/bin/objdump
+checking for clang... /usr/bin/clang
+checking for clang++... /usr/bin/clang++
+checking for aarch64-linux-android-llvm-ranlib... no
+checking for llvm-ranlib... /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ranlib
+configure: WARNING: using cross tools not prefixed with host triplet
+checking for aarch64-linux-android-ld... /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-ld
+checking for aarch64-linux-android-llvm-ar... no
+checking for llvm-ar... /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar
+checking for aarch64-linux-android-llvm-readelf... no
+checking for llvm-readelf... /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf
+checking for aarch64-linux-android-llvm-strip... no
+checking for llvm-strip... /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip
+checking for aarch64-linux-android-llvm-as... no
+checking for llvm-as... /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-as
+checking for aarch64-linux-android-llvm-nm... no
+checking for llvm-nm... /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-nm
+checking for aarch64-linux-android-llvm-objdump... no
+checking for llvm-objdump... /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-objdump
+checking for aarch64-linux-android-aarch64-linux-android21-clang... no
+checking for aarch64-linux-android21-clang... /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang
+checking for aarch64-linux-android-aarch64-linux-android21-clang++... no
+checking for aarch64-linux-android21-clang++... /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++
+checking for aarch64-linux-android-gcc... /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang
+checking whether the C compiler works... yes
+checking for C compiler default output file name... a.out
+checking for suffix of executables... 
+checking whether we are cross compiling... yes
+checking for suffix of object files... o
+checking whether the compiler supports GNU C... yes
+checking whether /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang accepts -g... yes
+checking for /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang option to enable C11 features... none needed
+checking how to run the C preprocessor... /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang -E
+checking for unzip... yes
+checking for zip... yes
+checking whether the compiler supports GNU C++... yes
+checking whether /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ accepts -g... yes
+checking for /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ option to enable C++11 features... none needed
+checking whether /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++ supports C++17 features with -std=c++17... yes
+
+configure: creating ./config.status
+config.status: creating native/config.site.native
+config.status: creating Makefile.include
+config.status: creating target/config.site
+config.status: creating target/config-binaddons.site
+config.status: creating target/Toolchain.cmake
+config.status: creating target/Toolchain_binaddons.cmake
+config.status: creating native/Toolchain-Native.cmake
+'target/config.site' -> '/home/runner/work/_temp/xbmc-depends/aarch64-linux-android-21-debug/share/config.site'
+'target/config-binaddons.site' -> '/home/runner/work/_temp/xbmc-depends/x86_64-linux-gnu-native/share/config-binaddons.site'
+'target/Toolchain.cmake' -> '/home/runner/work/_temp/xbmc-depends/aarch64-linux-android-21-debug/share/Toolchain.cmake'
+'target/Toolchain_binaddons.cmake' -> '/home/runner/work/_temp/xbmc-depends/aarch64-linux-android-21-debug/share/Toolchain_binaddons.cmake'
+'native/config.site.native' -> '/home/runner/work/_temp/xbmc-depends/x86_64-linux-gnu-native/share/config.site'
+'native/Toolchain-Native.cmake' -> '/home/runner/work/_temp/xbmc-depends/x86_64-linux-gnu-native/share/Toolchain-Native.cmake'
+
+
+#------- configuration -------#
+ccache:		 no
+build type:		 debug
+build system:	 x86_64-pc-linux-gnu
+build cpu:		 x86_64
+build includes:	 
+toolchain:		 /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64
+cpu:			 arm64-v8a
+host:		 aarch64-linux-android
+CC:		 /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang
+CXX:		 /usr/local/lib/android/sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++
+asflags:		 
+cflags:		 -DANDROID -fexceptions -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fPIC -DPIC -mtune=cortex-a53 -Og -g -D_DEBUG 
+cxxflags:		 -DANDROID -fexceptions -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fPIC -DPIC -mtune=cortex-a53 -frtti -Og -g -D_DEBUG  -std=c++17
+ldflags:		 -Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libatomic.a -L/home/runner/work/_temp/xbmc-depends/aarch64-linux-android-21-debug/lib/android-21  
+target_platform:	 
+platform_includes:	 -isystem /home/runner/work/_temp/xbmc-depends/aarch64-linux-android-21-debug/include/android-21
+ffmpeg options:	 
+prefix:		 /home/runner/work/_temp/xbmc-depends
+depends:		 /home/runner/work/_temp/xbmc-depends/aarch64-linux-android-21-debug
+ndk-api-level:	 21
+build-tools:	 /usr/local/lib/android/sdk/tools:/usr/local/lib/android/sdk/platform-tools:/usr/local/lib/android/sdk/build-tools/37.0.0
+tools/depends configurado (prefixtemp): 115 linhas
 ```
 ## APKs encontrados no build
 ```
+/home/runner/work/_temp/base/SMARTED-TV-v1.0.63-arm64.apk
 /home/runner/work/_temp/kodi-build/tools/android/packaging/xbmc/build/outputs/apk/debug/xbmc-debug.apk
 /home/runner/work/_temp/kodi/kodiapp-arm64-v8a-debug.apk
 ```
