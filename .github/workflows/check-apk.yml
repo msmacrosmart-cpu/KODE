@@ -70,12 +70,17 @@ jobs:
           SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
           AAPT2=$(ls -d "$SDK"/build-tools/*/ 2>/dev/null | sort -V | tail -1)aapt2
           echo "aapt2: $AAPT2"
+          # stdout E stderr no relatorio: um traceback tambem precisa aparecer
           python3 smartedtv/tools/verify-monolito-apk.py "$APK" \
             --aapt2 "$AAPT2" \
             --pacote "$PACOTE" --versao "$VERSAO" --codigo "$CODIGO" \
             --manifesto-base-sha "$BASE_MANIFESTO_SHA256" \
-            --relatorio "$RUNNER_TEMP/verificacao.txt"
+            --relatorio "$RUNNER_TEMP/verificacao.txt" > "$RUNNER_TEMP/saida.txt" 2>&1
           RC=$?
+          cat "$RUNNER_TEMP/saida.txt"
+          if [ ! -s "$RUNNER_TEMP/verificacao.txt" ]; then
+            cp "$RUNNER_TEMP/saida.txt" "$RUNNER_TEMP/verificacao.txt"
+          fi
           SHA=$(sha256sum "$APK" | cut -d' ' -f1)
           echo "sha256: $SHA"
           {
