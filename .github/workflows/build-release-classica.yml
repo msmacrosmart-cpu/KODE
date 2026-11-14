@@ -4,13 +4,17 @@ name: "Build SMARTED-TV 1.0.63 (linha classica: anuncios com intent correto)"
 # Kodi: baixa o APK da versao anterior, troca a skin e o bootstrap, sobe
 # versionName/versionCode, reassina com a mesma chave da linha e publica.
 #
-# 1.0.62 — ANUNCIOS QUE REALMENTE ABREM
-#   * BUG CORRIGIDO: a ponte chamava StartAndroidActivity(pacote, classe), mas no
+# 1.0.63 — A PONTE DOS ANUNCIOS, AGORA COM A INTENT CERTA
+#   * BUG 1 (1.0.62): a ponte chamava StartAndroidActivity(pacote, classe), mas no
 #     Kodi a ordem e (package, intent, dataType, dataURI, flags, extras, action,
-#     category, className) — a classe e o NONO parametro. O Kodi montava um
-#     intent com action = nome da classe e sem componente, o Android nao achava
-#     ninguem e a tela nunca abria (por isso "sem anuncios": nem eram pedidos).
-#   * agora: StartAndroidActivity(smartedtv.full,,,,,,,,<classe>)
+#     category, className) — a classe e o NONO parametro.
+#   * BUG 2 (agora): com o parametro `intent` (posicao 2) VAZIO o Kodi faz
+#     getLaunchIntentForPackage(package) e, se o app nao tem launcher, faz
+#     `return false` ANTES de olhar o className — nada abre e nada e logado.
+#   * agora: StartAndroidActivity(smartedtv.full,smartedtv.ads.PREROLL,,,,,,,<classe>)
+#     mais plano B por data URI no launcher do app de anuncios.
+#   * marca da abertura versionada (smartedtv-ads-v2): a marca gravada pelas
+#     1.0.60/1.0.61 nao bloqueia mais o pop-up.
 #   * logs com a tag [SmartAds] no kodi.log em cada disparo.
 #
 # 1.0.61 — PACOTE DOS ANUNCIOS
@@ -113,6 +117,9 @@ jobs:
           PYTHONPATH: /home/runner/.cache/kode-build/python
         run: |
           set -euo pipefail
+          # a saida da conferencia tambem fica em arquivo: o log do runner nao
+          # baixa, entao o step 8b grava o motivo da falha no repositorio
+          exec > >(tee "$RUNNER_TEMP/conferencia.log") 2>&1
           python3 - <<'PY'
           import zipfile, os
           from pathlib import Path
@@ -188,7 +195,7 @@ jobs:
           assert 'builtin_launcher' in ads, 'plano B (launcher) ausente'
           assert 'MonitorPreRoll' in ads, 'gancho de reproducao ausente'
           assert 'smart_ads.iniciar_monitor' in serv_ads, 'servico nao liga o pre-roll'
-          assert 'smartedtv-ads-v1' in ads, 'marker dos anuncios ausente'
+          assert 'smartedtv-ads-v2' in ads, 'marker versionado dos anuncios ausente'
           assert '[SmartAds]' in ads, 'logs com a tag SmartAds ausentes'
           print('Anuncios conferidos: abertura + pre-roll ligados no bootstrap embarcado.')
           print('Tamanho do APK sem assinatura: %.1f MB' % (apk.stat().st_size / 1048576))
@@ -252,16 +259,24 @@ jobs:
           set -uo pipefail
           mkdir -p docs
           {
-            echo "# Log do reempacote (build 1.0.63)"
+            echo "# Logs da build 1.0.63 que falhou"
+            echo
+            echo '## Reempacote'
             echo
             echo '```'
             tail -n 200 "$RUNNER_TEMP/repack.log" 2>/dev/null || echo '(sem log)'
             echo '```'
+            echo
+            echo '## Conferencia dentro do APK (passo 6)'
+            echo
+            echo '```'
+            tail -n 120 "$RUNNER_TEMP/conferencia.log" 2>/dev/null || echo '(sem log)'
+            echo '```'
           } > docs/build-log-1.0.63.txt
           git config user.name "smarted-bot"
           git config user.email "smarted-bot@users.noreply.github.com"
-          git add docs/build-log-1.0.61.txt
-          git commit -m "ci: log do reempacote que falhou (1.0.63)" || true
+          git add -f docs/build-log-1.0.63.txt
+          git commit -m "ci: logs da build 1.0.63 que falhou" || true
           git push origin HEAD:arena/7dedf371-kode || true
 
       - name: 8c. Baixar o APK de anuncios para ir junto na release
