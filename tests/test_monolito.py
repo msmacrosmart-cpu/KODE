@@ -153,6 +153,10 @@ class WorkflowDoMonolitoTest(unittest.TestCase):
             self.assertIn(marca, self.fluxo)
         # o pacote comparado é o do env PACOTE (smartedtv.full)
         self.assertIn('PACOTE: smartedtv.full', self.fluxo)
+        # o prefixo das dependências tem subdiretório por alvo (regressão real:
+        # exigir $RUNNER_TEMP/xbmc-depends/lib derrubou dois runs)
+        self.assertIn('xbmc-depends/*-android-*', self.fluxo)
+        self.assertNotIn('test -d "$RUNNER_TEMP/xbmc-depends/lib"', self.fluxo)
         # a conferência é bloqueante (sem continue-on-error)
         bloco = self.fluxo.split('10. Conferir o monolito')[1].split('- name:')[0]
         self.assertNotIn('continue-on-error', self.fluxo.split('10. Conferir o monolito')[1])

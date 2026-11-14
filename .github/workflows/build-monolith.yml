@@ -158,64 +158,68 @@ jobs:
           make -j2
           echo "livre após dependências: $(df -h --output=avail / | tail -1)"
 
-      - name: 7c. Conferir dependências
+      - name: 7c. Fotografar as dependências (não bloqueia)
+        # Não bloqueia de propósito: esta etapa existe para deixar rastro. Quem
+        # decide se o build segue é o passo 8, com o código-fonte na mão.
         run: |
-          set -uo pipefail
-          echo "cache hit: ${{ steps.cache-deps.outputs.cache-hit }}"
-          echo "== espaco em disco =="; df -h / | tail -2
-          echo "== RUNNER_TEMP =="; ls -la "$RUNNER_TEMP" | head -20
+          set -o pipefail
+          LOG=docs/build-log-deps.txt
+          {
+            echo "# Dependências do monolito — run $GITHUB_RUN_ID"
+            echo
+            echo "## cache: ${{ steps.cache-deps.outputs.cache-hit }}"
+            echo
+            echo '## disco'
+            echo '```'; df -h || true; echo '```'
+            echo '## RUNNER_TEMP'
+            echo '```'; ls -la "$RUNNER_TEMP" 2>&1 | head -30; echo '```'
+            echo '## onde estão as bibliotecas (.a) por diretório'
+            echo '```'
+            find "$RUNNER_TEMP" -maxdepth 6 -name '*.a' 2>/dev/null | sed 's#/[^/]*$##' \
+              | sort | uniq -c | sort -rn | head -20
+            echo '```'
+            echo '## libcurl / libssl (amostra)'
+            echo '```'
+            find "$RUNNER_TEMP" -name 'libcurl*' -o -name 'libssl*' 2>/dev/null | head -12
+            echo '```'
+            echo '## diretórios dentro de tools/depends'
+            echo '```'
+            find "$RUNNER_TEMP/kodi/tools/depends" -maxdepth 2 -type d 2>/dev/null | head -40
+            echo '```'
+            echo '## fim do log das dependências'
+            echo '```'
+            tail -n 60 "$RUNNER_TEMP/deps.log" 2>/dev/null || echo '(sem log)'
+            echo '```'
+          } > "$LOG" 2>&1 || true
 
-          DEPENDS_PATH=""
-          for candidato in "$RUNNER_TEMP/xbmc-depends" \
-                           "$RUNNER_TEMP/kodi/tools/depends/xbmc-depends" \
-                           "$RUNNER_TEMP/kodi/tools/depends/target"; do
-            echo "-- $candidato"
-            ls -d "$candidato" 2>/dev/null || { echo "   (nao existe)"; continue; }
-            if ls "$candidato"/lib/*.a >/dev/null 2>&1; then
-              DEPENDS_PATH="$candidato"
-              echo "   ACHADO: $(ls "$candidato"/lib | wc -l) entradas, $(ls "$candidato"/lib/*.a | wc -l) bibliotecas .a"
-              break
-            fi
-            echo "   sem lib/*.a ($(ls "$candidato" 2>/dev/null | head -5 | tr '\n' ' '))"
+          # O prefixo real do tools/depends tem subdiretório por alvo:
+          #   $RUNNER_TEMP/xbmc-depends/aarch64-linux-android-21-release/{lib,include,share}
+          # (configure.ac: deps_dir="$use_host-$use_ndk_api-$build_type").
+          # Exigir .../xbmc-depends/lib é o erro que derrubou os runs anteriores.
+          DEPS=""
+          for candidato in "$RUNNER_TEMP"/xbmc-depends/*-android-* ; do
+            [ -d "$candidato/lib" ] || continue
+            DEPS="$candidato"; break
           done
-
-          if [ -z "$DEPENDS_PATH" ]; then
-            echo "::error::nao achei o prefixo das dependencias"
-            {
-              echo "# Dependencias: prefixo nao encontrado (build do monolito)"
-              echo
-              echo "Run: $GITHUB_RUN_ID"
-              echo
-              echo '## RUNNER_TEMP'
-              echo '```'
-              ls -la "$RUNNER_TEMP" 2>&1 | head -30
-              echo '```'
-              echo '## arvore de tools/depends (2 niveis)'
-              echo '```'
-              find "$RUNNER_TEMP/kodi/tools/depends" -maxdepth 2 -type d 2>/dev/null | head -40
-              echo '```'
-              echo '## fim do log das dependencias'
-              echo '```'
-              tail -n 120 "$RUNNER_TEMP/deps.log" 2>/dev/null || echo '(sem log)'
-              echo '```'
-              echo '## disco'
-              echo '```'
-              df -h 2>&1 | head -10
-              echo '```'
-            } > docs/build-log-monolito.txt
-            git config user.name "smarted-bot"
-            git config user.email "smarted-bot@users.noreply.github.com"
-            git add -f docs/build-log-monolito.txt
-            git commit -m "ci: diagnostico das dependencias (run $GITHUB_RUN_ID)" || true
-            git push origin "HEAD:${GITHUB_REF_NAME}" || true
-            exit 1
+          if [ -n "$DEPS" ]; then
+            echo "DEPENDS_PATH=$DEPS" >> "$GITHUB_ENV"
+            echo "prefixo das dependencias: $DEPS"
+            ls "$DEPS/lib" | wc -l
+          else
+            echo "::warning::prefixo com lib/ nao encontrado; o passo 8 decide"
           fi
-          echo "DEPENDS_PATH=$DEPENDS_PATH" >> "$GITHUB_ENV"
-          echo "ok: prefixo das dependencias em $DEPENDS_PATH"
+          git config user.name "smarted-bot"
+          git config user.email "smarted-bot@users.noreply.github.com"
+          git add -f "$LOG"
+          git commit -m "ci: fotografia das dependencias (run $GITHUB_RUN_ID)" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" || true
+          echo '--- resumo ---'
+          sed -n '1,40p' "$LOG"
 
       - name: 8. Compilar o Kodi para Android
         run: |
           set -euo pipefail
+          exec > >(tee "$RUNNER_TEMP/kodi.log") 2>&1
           mkdir -p "$RUNNER_TEMP/kodi-build"
           make -C "$RUNNER_TEMP/kodi/tools/depends/target/cmakebuildsys" \
             BUILD_DIR="$RUNNER_TEMP/kodi-build"
@@ -327,18 +331,33 @@ jobs:
         run: |
           set -uo pipefail
           mkdir -p docs
+          LOG=docs/build-log-falha.txt
           {
-            echo "# Build do APK unificado (falhou)"
+            echo "# Build do APK unificado — falhou"
             echo
             echo "Run: $GITHUB_RUN_ID"
             echo
-            echo "Etapa que falhou: veja os passos no GitHub Actions."
-          } > docs/build-log-monolito.txt
+            echo '## disco'
+            echo '```'; df -h || true; echo '```'
+            echo '## fim do log do Kodi (passo 8)'
+            echo '```'
+            tail -n 150 "$RUNNER_TEMP/kodi.log" 2>/dev/null || echo '(sem log)'
+            echo '```'
+            echo '## fim do log das dependências (passos 7b0/7b)'
+            echo '```'
+            tail -n 150 "$RUNNER_TEMP/deps.log" 2>/dev/null || echo '(sem log)'
+            echo '```'
+            echo '## APKs encontrados no build'
+            echo '```'
+            find "$RUNNER_TEMP" -name '*.apk' 2>/dev/null | head -10
+            echo '```'
+          } > "$LOG" 2>&1 || true
           git config user.name "smarted-bot"
           git config user.email "smarted-bot@users.noreply.github.com"
-          git add -f docs/build-log-monolito.txt
+          git add -f "$LOG"
           git commit -m "ci: build do APK unificado falhou (run $GITHUB_RUN_ID)" || true
           git push origin "HEAD:${GITHUB_REF_NAME}" || true
+          tail -n 60 "$LOG" || true
 
       - name: 12. Publicar a release
         run: |

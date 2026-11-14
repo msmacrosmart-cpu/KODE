@@ -88,3 +88,16 @@ Se qualquer uma falhar, o APK não é publicado.
    (`plugin.video.smarted`), com a skin e o `service.smarted.bootstrap` que já
    rodam hoje. Se algo do catálogo depender do perfil antigo (`.kodi`), a
    primeira abertura recria — vale testar a Home e as categorias na TV.
+
+## Armadilha das dependências (custou dois runs)
+
+O `tools/depends` **não** instala em `--prefix/lib`. O `configure.ac` faz
+`deps_dir="$use_host-$use_ndk_api-$build_type"`, então as bibliotecas ficam em:
+
+```
+$RUNNER_TEMP/xbmc-depends/aarch64-linux-android-21-release/{lib,include,share}
+```
+
+Checar `$RUNNER_TEMP/xbmc-depends/lib` faz o build morrer depois de ~75 min de
+dependências já compiladas. A conferência atual procura `xbmc-depends/*-android-*`
+e não bloqueia (quem decide é a compilação do Kodi).
