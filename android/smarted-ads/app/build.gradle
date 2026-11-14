@@ -56,12 +56,13 @@ dependencies {
     implementation 'com.google.android.gms:play-services-ads:23.2.0'
 }
 
-// O workflow envia os IDs por -P para nao duplicar valores: se algum dia
-// mudarem, muda-se em um lugar e o build falha se o APK nao bater.
-// Trava de seguranca: o app de anuncios NUNCA pode usar o pacote do Kodi nem
-// um pacote que o Android ja veja como "mesmo app". Com a mesma assinatura da
-// linha, instalar um APK com applicationId org.xbmc.kodi tentaria SUBSTITUIR o
-// Kodi instalado (e falharia por versao, ou apagaria o Kodi do aparelho).
+// Conferencia unica do app de anuncios (roda no CI: `gradle :app:checkAdMob`).
+//
+// 1. TRAVA DE PACOTE: o app de anuncios NUNCA pode usar o pacote do Kodi. Com a
+//    mesma assinatura da linha, um APK com applicationId org.xbmc.kodi tentaria
+//    SUBSTITUIR o Kodi instalado — o Android nao aceita dois apps com o mesmo
+//    pacote (e a versao 1 vs 2103046 ainda faria o instalador recusar).
+// 2. Os IDs REAIS do AdMob tem que estar no manifesto e no codigo.
 def pacotesProibidos = ['org.xbmc.kodi']
 
 tasks.register('checkAdMob') {
@@ -73,22 +74,15 @@ tasks.register('checkAdMob') {
                 "Kodi (falha por versao) ou remover o Kodi do aparelho. Use um pacote " +
                 "proprio, ex.: org.smartedtv.ads")
         }
-        println "Pacote do app de anuncios: ${adsAppId}"
-    }
-}
-
-if (project.hasProperty('admobCheck')) {
-    tasks.register('checkAdMob') {
-        doLast {
-            def manifest = file('src/main/AndroidManifest.xml').text
-            if (!manifest.contains(admobAppId)) {
-                throw new GradleException("APPLICATION_ID do AdMob ausente no manifesto: ${admobAppId}")
-            }
-            def ads = file('src/main/java/org/smartedtv/ads/Ads.java').text
-            if (!ads.contains(adUnitAppOpen) || !ads.contains(adUnitPreRoll)) {
-                throw new GradleException('IDs de bloco de anuncio ausentes em Ads.java')
-            }
-            println "AdMob conferido: app ${admobAppId}, abertura ${adUnitAppOpen}, video ${adUnitPreRoll}"
+        def manifest = file('src/main/AndroidManifest.xml').text
+        if (!manifest.contains(admobAppId)) {
+            throw new GradleException("APPLICATION_ID do AdMob ausente no manifesto: ${admobAppId}")
         }
+        def ads = file('src/main/java/org/smartedtv/ads/Ads.java').text
+        if (!ads.contains(adUnitAppOpen) || !ads.contains(adUnitPreRoll)) {
+            throw new GradleException('IDs de bloco de anuncio ausentes em Ads.java')
+        }
+        println "Pacote do app de anuncios: ${adsAppId}"
+        println "AdMob conferido: app ${admobAppId}, abertura ${adUnitAppOpen}, video ${adUnitPreRoll}"
     }
 }
