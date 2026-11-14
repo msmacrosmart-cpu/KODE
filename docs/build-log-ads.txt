@@ -2,29 +2,9 @@
 
 ## arquivos gerados
 ```
-total 14696
--rw-r--r-- 1 runner runner 5002663 Nov 14 14:33 SMARTEDTV-Anuncios-1.0.0.apk
--rw-r--r-- 1 runner runner   46568 Nov 14 14:33 SMARTEDTV-Anuncios-1.0.0.apk.idsig
--rw-r--r-- 1 runner runner 4984988 Nov 14 14:33 aligned.apk
--rw-r--r-- 1 runner runner     666 Nov 14 14:33 check.log
--rw-r--r-- 1 runner runner    2730 Nov 14 14:33 smarted-tv-test.jks
--rw-r--r-- 1 runner runner 4984988 Nov 14 14:33 unsigned.apk
--rw-r--r-- 1 runner runner    6973 Nov 14 14:33 verify.txt
+(sem pasta)
 ```
 ## conferencia
 ```
-pacote: org.smartedtv.ads
-versao: 1.0.0 1
-APPLICATION_ID no manifesto: OK ca-app-pub-2066014755407744~5076693043
-bloco no dex: ca-app-pub-2066014755407744/4214378379 OK
-bloco no dex: ca-app-pub-2066014755407744/3572039686 OK
-activity no manifesto: AppOpenActivity OK
-activity no manifesto: PreRollActivity OK
-   orientation: A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=6
-   orientation: A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=6
-screenOrientation no APK: [6, 6] (linhas: 2)
-sensorLandscape (enum 6) nas 2 activities: OK
-APPLICATION_ID via aapt2: OK
-classes.dex: 12220304 bytes
-entradas no APK: 139
+(sem log da conferencia)
 ```
