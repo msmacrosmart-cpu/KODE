@@ -6,7 +6,7 @@ recompilar o Kodi inteiro. Por isso o anuncio e exibido pelo app
 ``org.smartedtv.ads`` (pasta ``android/smarted-ads``), assinado com a mesma
 chave da linha, e o Kodi o abre por um builtin nativo:
 
-    StartAndroidActivity(smartedtv.full,,,,,,,,org.smartedtv.ads.PreRollActivity)
+    StartAndroidActivity(smartedtv.full,smartedtv.ads.PREROLL,,,,,,,org.smartedtv.ads.PreRollActivity)
 
 ATENCAO a ordem dos parametros do builtin (Kodi v20+):
 
@@ -17,6 +17,19 @@ O className e o NONO parametro, nao o segundo. Passar a classe em segundo lugar
 faz o Kodi montar um intent com action = nome da classe e sem componente — o
 Android nao acha ninguem e a tela de anuncio nunca abre (foi exatamente o bug
 que deixou os anuncios "sem preencher": na verdade nem eram pedidos).
+
+SEGUNDO BLOQUEIO (1.0.63): o parametro "intent" (posicao 2) NAO pode ser vazio.
+No codigo do Kodi (CXBMCApp::StartActivity):
+
+    newIntent = intent.empty() ? getLaunchIntentForPackage(package) : Intent(intent);
+    if (!newIntent) return false;              // sai aqui, antes do className
+    ...
+    if (!className.empty()) newIntent.setClassName(package, className);
+
+Com intent vazio o Kodi procura a activity de LAUNCHER do pacote; o app de
+anuncios nao tem launcher, entao getLaunchIntentForPackage devolve null e o
+builtin retorna false sem nunca olhar o className. Por isso vai sempre uma
+action nossa na posicao 2 (e o app tambem ganhou um launcher como plano B).
 
 Dois gatilhos:
 
@@ -47,8 +60,20 @@ PACKAGE = 'smartedtv.full'
 ATIVIDADE_ABERTURA = 'org.smartedtv.ads.AppOpenActivity'
 ATIVIDADE_PREROLL = 'org.smartedtv.ads.PreRollActivity'
 
+# action propria de cada tela: vai na posicao 2 do StartAndroidActivity (o
+# "intent" nao pode ser vazio, senao o Kodi procura o launcher do pacote e
+# desiste). Tambem serve de intent-filter no manifesto do app de anuncios.
+ACAO_ABERTURA = 'smartedtv.ads.APPOPEN'
+ACAO_PREROLL = 'smartedtv.ads.PREROLL'
+
+# tela de launcher do app de anuncios (plano B quando o componente explicito
+# nao for aceito): StartAndroidActivity(pacote,,,uri)
+ATIVIDADE_LAUNCHER = 'org.smartedtv.ads.LauncherActivity'
+URI_ABERTURA = 'smartedtv://ads/appopen'
+URI_PREROLL = 'smartedtv://ads/preroll'
+
 # marcas para o relatorio do boot
-MARKER = 'smartedtv-ads-v1'
+MARKER = 'smartedtv-ads-v2'
 
 # quanto esperar a Home desenhar antes do pop-up de abertura
 ABERTURA_DELAY = 6
@@ -68,11 +93,21 @@ def _marker_path():
 
 
 def abertura_ja_mostrada():
+    """So vale marca escrita por ESTA versao da ponte.
+
+    As versoes 1.0.60/1.0.61 gravavam a marca mesmo sem a tela abrir (o builtin
+    estava errado); sem a checagem de versao o pop-up nunca mais apareceria.
+    """
     caminho = _marker_path()
     if not caminho:
         return False
     try:
-        return xbmcvfs.exists(caminho)
+        # os.path (e nao xbmcvfs): o caminho ja vem traduzido e o arquivo e
+        # escrito por nos mesmos
+        if not os.path.exists(caminho):
+            return False
+        with open(caminho) as arquivo:
+            return MARKER in arquivo.read()
     except Exception:
         return False
 
@@ -86,8 +121,9 @@ def marcar_abertura(quando=None):
         if pasta and not os.path.isdir(pasta):
             os.makedirs(pasta)
         with open(caminho, 'w') as arquivo:
-            arquivo.write('abertura mostrada em %s\n'
-                          % time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(quando)))
+            arquivo.write('%s abertura disparada em %s\n'
+                          % (MARKER, time.strftime('%Y-%m-%d %H:%M:%S',
+                                                   time.localtime(quando))))
         return True
     except Exception:
         return False
@@ -101,18 +137,36 @@ def android():
         return False
 
 
-def builtin_para(atividade, package=None):
-    """Builtin com os 9 parametros na ordem do Kodi (className e o ultimo).
+def builtin_para(atividade, package=None, acao=None):
+    """Builtin com os 9 parametros na ordem do Kodi.
 
-    Campos vazios no meio sao obrigatorios: o parser do builtin separa por
-    virgula e as posicoes precisam ser respeitadas.
+    (package, intent, dataType, dataURI, flags, extras, action, category,
+     className)
+
+    - ``intent`` (posicao 2) NAO pode ser vazio: com ele vazio o Kodi usa o
+      launcher do pacote e desiste quando o app nao tem um.
+    - ``className`` (posicao 9) e o que torna a abertura explicita, sem depender
+      da visibilidade de pacotes do Android 11+.
     """
-    campos = [package or PACKAGE] + [''] * 7 + [atividade]
+    if acao is None:
+        acao = ACAO_PREROLL if atividade == ATIVIDADE_PREROLL else ACAO_ABERTURA
+    campos = [package or PACKAGE, acao, '', '', '', '', '', '', atividade]
     return 'StartAndroidActivity(%s)' % ','.join(campos)
 
 
-def tocar_anuncio(atividade, log=None):
-    """Abre a tela de anuncio do app SMARTEDTV Ads. Devolve True se disparou."""
+def builtin_launcher(uri, package=None):
+    """Plano B: abre o launcher do app de anuncios com um data URI."""
+    campos = [package or PACKAGE, 'android.intent.action.MAIN', '', uri, '', '', '', '',
+              ATIVIDADE_LAUNCHER]
+    return 'StartAndroidActivity(%s)' % ','.join(campos)
+
+
+def tocar_anuncio(atividade, log=None, tentar_plano_b=True):
+    """Abre a tela de anuncio do app SMARTEDTV Ads.
+
+    Tenta o componente explicito (className) e, se o app tiver launcher, o data
+    URI como plano B. Devolve True se ao menos um disparo foi enviado.
+    """
     if not android():
         if log:
             log('[SmartAds] ignorado (nao e Android)')
@@ -128,7 +182,31 @@ def tocar_anuncio(atividade, log=None):
         # este e o log que aparece no kodi.log quando o disparo acontece
         log('[SmartAds] disparando %s -> %s/%s'
             % (builtin, PACKAGE, atividade))
+    if tentar_plano_b:
+        uri = URI_PREROLL if atividade == ATIVIDADE_PREROLL else URI_ABERTURA
+        plano_b = builtin_launcher(uri)
+        try:
+            xbmc.executebuiltin(plano_b)
+            if log:
+                log('[SmartAds] plano B (launcher) %s' % plano_b)
+        except Exception as erro:
+            if log:
+                log('[SmartAds] plano B falhou (%s)' % erro, xbmc.LOGWARNING)
     return True
+
+
+def tocar_anuncio_com_aviso(atividade, log=None):
+    """Igual a tocar_anuncio, mas avisa na tela do Kodi (fica no log e na TV)."""
+    disparou = tocar_anuncio(atividade, log)
+    if log:
+        log('[SmartAds] aviso na tela: %s (%s)'
+            % ('enviado' if disparou else 'nao enviado', atividade))
+    try:
+        xbmc.executebuiltin('Notification(SMARTEDTV Anuncios, Abrindo anuncio (%s), 2500)'
+                            % ('video' if atividade == ATIVIDADE_PREROLL else 'abertura'))
+    except Exception:
+        pass
+    return disparou
 
 
 def mostrar_preroll(log=None, intervalo=PREROLL_INTERVALO, agora=None):
@@ -136,7 +214,7 @@ def mostrar_preroll(log=None, intervalo=PREROLL_INTERVALO, agora=None):
     agora = time.time() if agora is None else agora
     if agora - globals().get('_ultimo_preroll', 0.0) < intervalo:
         return False
-    disparou = tocar_anuncio(ATIVIDADE_PREROLL, log)
+    disparou = tocar_anuncio_com_aviso(ATIVIDADE_PREROLL, log)
     if disparou:
         globals()['_ultimo_preroll'] = agora
     return disparou
@@ -148,7 +226,7 @@ def mostrar_abertura(log=None):
         if log:
             log('[SmartAds] abertura ja exibida nesta instalacao')
         return False
-    if not tocar_anuncio(ATIVIDADE_ABERTURA, log):
+    if not tocar_anuncio_com_aviso(ATIVIDADE_ABERTURA, log):
         return False
     marcar_abertura()
     if log:

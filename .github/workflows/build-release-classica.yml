@@ -1,4 +1,4 @@
-name: "Build SMARTED-TV 1.0.62 (linha classica: anuncios com diagnostico)"
+name: "Build SMARTED-TV 1.0.63 (linha classica: anuncios com intent correto)"
 
 # Corrige a versao CLASSICA (a mesma familia da 1.0.47, ~240 MB) SEM recompilar o
 # Kodi: baixa o APK da versao anterior, troca a skin e o bootstrap, sobe
@@ -56,14 +56,14 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     env:
-      TAG_BASE: v1.0.61-classica
-      ARQUIVO_BASE: SMARTED-TV-v1.0.61-arm64.apk
-      SHA256_BASE: f4d1a2038fd4ddac17564cb284aab108d7df3185e638bf118c96c1ef3ffb9629
-      VERSAO_NOVA: "1.0.62"
-      CODIGO_NOVO: "2103048"
+      TAG_BASE: v1.0.62-classica
+      ARQUIVO_BASE: SMARTED-TV-v1.0.62-arm64.apk
+      SHA256_BASE: 5fe9024e0a487c9f8f53b4b9e40469623753ec56308c27c0d7019276ef74964f
+      VERSAO_NOVA: "1.0.63"
+      CODIGO_NOVO: "2103049"
       SKIN_NOVA: "1.0.18"
-      TAG_DESTINO: v1.0.62-classica
-      ARQUIVO_DESTINO: SMARTED-TV-v1.0.62-arm64.apk
+      TAG_DESTINO: v1.0.63-classica
+      ARQUIVO_DESTINO: SMARTED-TV-v1.0.63-arm64.apk
     steps:
       - uses: actions/checkout@v4
 
@@ -98,7 +98,7 @@ jobs:
           # erro fica legivel no proprio repositorio (o log do runner nao baixa)
           exec > >(tee "$RUNNER_TEMP/repack.log") 2>&1
           python3 tools/kodi/build-release-apk.py \
-            --from-version 1.0.61 \
+            --from-version 1.0.62 \
             --to-version "$VERSAO_NOVA" \
             --to-code "$CODIGO_NOVO" \
             --skin-version "$SKIN_NOVA" \
@@ -181,8 +181,11 @@ jobs:
           assert 'AppOpenActivity' in ads and 'PreRollActivity' in ads, 'telas de anuncio ausentes'
           assert "StartAndroidActivity(%s)' % ','.join(campos)" in ads, \
               'builtin sem os 9 parametros (className e o ultimo)'
-          assert "campos = [package or PACKAGE] + [''] * 7 + [atividade]" in ads, \
+          assert "campos = [package or PACKAGE, acao, '', '', '', '', '', '', atividade]" in ads, \
               'ordem dos parametros do StartAndroidActivity errada'
+          assert "if acao is None:" in ads and 'ACAO_PREROLL' in ads, \
+              'parametro intent (posicao 2) vazio: o Kodi desiste no launcher'
+          assert 'builtin_launcher' in ads, 'plano B (launcher) ausente'
           assert 'MonitorPreRoll' in ads, 'gancho de reproducao ausente'
           assert 'smart_ads.iniciar_monitor' in serv_ads, 'servico nao liga o pre-roll'
           assert 'smartedtv-ads-v1' in ads, 'marker dos anuncios ausente'
@@ -225,8 +228,8 @@ jobs:
                                                            a.version_name, a.version_code))
           assert a.package == 'org.xbmc.kodi'
           assert a.get_app_name() == 'SMARTEDTV', a.get_app_name()
-          assert a.version_name == '1.0.62', a.version_name
-          assert int(a.version_code) == 2103048, a.version_code
+          assert a.version_name == '1.0.63', a.version_name
+          assert int(a.version_code) == 2103049, a.version_code
           with zipfile.ZipFile(apk) as z:
               nomes = z.namelist()
               skins = sorted({n.split('/')[2] for n in nomes
@@ -249,16 +252,16 @@ jobs:
           set -uo pipefail
           mkdir -p docs
           {
-            echo "# Log do reempacote (build 1.0.62)"
+            echo "# Log do reempacote (build 1.0.63)"
             echo
             echo '```'
             tail -n 200 "$RUNNER_TEMP/repack.log" 2>/dev/null || echo '(sem log)'
             echo '```'
-          } > docs/build-log-1.0.62.txt
+          } > docs/build-log-1.0.63.txt
           git config user.name "smarted-bot"
           git config user.email "smarted-bot@users.noreply.github.com"
           git add docs/build-log-1.0.61.txt
-          git commit -m "ci: log do reempacote que falhou (1.0.62)" || true
+          git commit -m "ci: log do reempacote que falhou (1.0.63)" || true
           git push origin HEAD:arena/7dedf371-kode || true
 
       - name: 8c. Baixar o APK de anuncios para ir junto na release
@@ -268,7 +271,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/ads"
-          gh release download v1.0.2-ads -R "$GITHUB_REPOSITORY" \
+          gh release download v1.0.3-ads -R "$GITHUB_REPOSITORY" \
             --pattern '*Anuncios*' --dir "$RUNNER_TEMP/ads" || exit 0
           ls -l "$RUNNER_TEMP/ads"
 
@@ -277,7 +280,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          NOTES="$(python3 -c "import pathlib; print(pathlib.Path('docs/NOTAS-RELEASE-1.0.62-classica.md').read_text())")"
+          NOTES="$(python3 -c "import pathlib; print(pathlib.Path('docs/NOTAS-RELEASE-1.0.63-classica.md').read_text())")"
           # o APK de anuncios vai na MESMA release: um lugar so para instalar
           EXTRA=()
           for apk_ads in "$RUNNER_TEMP"/ads/*Anuncios*.apk "$RUNNER_TEMP"/ads/*Anuncios*.sha256; do
@@ -291,7 +294,7 @@ jobs:
           else
             gh release create "$TAG_DESTINO" "$ARQUIVO_DESTINO" "$ARQUIVO_DESTINO.sha256" \
               "${EXTRA[@]}" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title 'SMARTED-TV 1.0.62 (arm64) - linha classica: anuncios com diagnostico no logcat' \
+              --title 'SMARTED-TV 1.0.63 (arm64) - linha classica: ponte dos anuncios com intent correto' \
               --notes "$NOTES"
           fi
           echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_DESTINO/$ARQUIVO_DESTINO"

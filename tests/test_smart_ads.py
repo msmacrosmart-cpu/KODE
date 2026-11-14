@@ -48,8 +48,8 @@ class AdMobNoAppAndroidTest(unittest.TestCase):
         self.assertIn(UNIT_PREROLL, self.java)
 
     def test_as_duas_activities_em_landscape(self):
-        for activity in ('AppOpenActivity', 'PreRollActivity'):
-            bloco = re.search(r'<activity\b[^>]*%s[^>]*/>' % activity, self.manifest, re.S)
+        for activity in ('AppOpenActivity', 'PreRollActivity', 'LauncherActivity'):
+            bloco = re.search(r'<activity\b[^>]*%s[^>]*>' % activity, self.manifest, re.S)
             self.assertIsNotNone(bloco, activity)
             self.assertIn('android:screenOrientation="sensorLandscape"', bloco.group(0))
             self.assertIn('android:exported="true"', bloco.group(0))
@@ -116,13 +116,49 @@ class PontePythonTest(unittest.TestCase):
         modulo, chamadas = carregar_smart_ads()
         self.assertTrue(modulo.tocar_anuncio(modulo.ATIVIDADE_PREROLL))
         self.assertTrue(modulo.tocar_anuncio(modulo.ATIVIDADE_ABERTURA))
-        # pacote (applicationId) e classe (namespace) sao coisas diferentes
+        # cada disparo manda o componente explicito e tambem o plano B (launcher)
         self.assertEqual(chamadas, [
             modulo.builtin_para(modulo.ATIVIDADE_PREROLL),
+            modulo.builtin_launcher(modulo.URI_PREROLL),
             modulo.builtin_para(modulo.ATIVIDADE_ABERTURA),
+            modulo.builtin_launcher(modulo.URI_ABERTURA),
         ])
         self.assertEqual(modulo.PACKAGE, 'smartedtv.full')
         self.assertTrue(modulo.ATIVIDADE_PREROLL.startswith('org.smartedtv.ads.'))
+
+    def test_parametro_intent_nao_pode_ser_vazio(self):
+        # CXBMCApp::StartActivity: intent vazio -> getLaunchIntentForPackage()
+        # -> null (app sem launcher) -> return false, sem olhar o className.
+        modulo, _ = carregar_smart_ads()
+        for atividade, acao in ((modulo.ATIVIDADE_PREROLL, modulo.ACAO_PREROLL),
+                                (modulo.ATIVIDADE_ABERTURA, modulo.ACAO_ABERTURA)):
+            campos = modulo.builtin_para(atividade)[len('StartAndroidActivity('):-1].split(',')
+            self.assertTrue(campos[1], 'parametro intent vazio (builtin morre no launcher)')
+            self.assertEqual(campos[1], acao)
+            self.assertEqual(campos[8], atividade)
+
+    def test_plano_b_usa_o_launcher_com_data_uri(self):
+        modulo, _ = carregar_smart_ads()
+        builtin = modulo.builtin_launcher(modulo.URI_PREROLL)
+        campos = builtin[len('StartAndroidActivity('):-1].split(',')
+        self.assertEqual(campos[0], modulo.PACKAGE)
+        self.assertEqual(campos[3], 'smartedtv://ads/preroll')
+        self.assertEqual(campos[8], modulo.ATIVIDADE_LAUNCHER)
+
+    def test_marca_da_abertura_tem_versao(self):
+        # as versoes antigas gravavam a marca sem o pop-up abrir; marca velha
+        # nao pode bloquear a abertura nova
+        modulo, chamadas = carregar_smart_ads()
+        shutil.rmtree('/tmp/smarted-ads-test', ignore_errors=True)
+        self.addCleanup(shutil.rmtree, '/tmp/smarted-ads-test', True)
+        caminho = os.path.join('/tmp/smarted-ads-test', 'addon_data',
+                               'service.smarted.bootstrap', 'ads-abertura.txt')
+        os.makedirs(os.path.dirname(caminho))
+        with open(caminho, 'w') as arquivo:
+            arquivo.write('abertura mostrada em 2026-01-01 00:00:00\n')   # marca antiga
+        self.assertFalse(modulo.abertura_ja_mostrada())
+        self.assertTrue(modulo.mostrar_abertura())
+        self.assertTrue(modulo.abertura_ja_mostrada())
 
     def test_builtin_tem_a_classe_no_ultimo_parametro(self):
         # ORDEM DO KODI (v20+): package, intent, dataType, dataURI, flags,
@@ -133,7 +169,8 @@ class PontePythonTest(unittest.TestCase):
         campos = builtin[builtin.index('(') + 1:-1].split(',')
         self.assertEqual(len(campos), 9, builtin)
         self.assertEqual(campos[0], modulo.PACKAGE)
-        self.assertEqual(campos[1:8], [''] * 7, 'campos do meio precisam ficar vazios')
+        self.assertTrue(campos[1], 'posicao 2 (intent) nao pode ser vazia')
+        self.assertEqual(campos[2:8], [''] * 6, 'campos do meio precisam ficar vazios')
         self.assertEqual(campos[8], modulo.ATIVIDADE_PREROLL)
         self.assertIn('PreRollActivity', campos[8])
         self.assertNotIn(modulo.ATIVIDADE_PREROLL, campos[1], 'classe nao pode ir em 2o lugar')
@@ -148,13 +185,14 @@ class PontePythonTest(unittest.TestCase):
         shutil.rmtree('/tmp/smarted-ads-test', ignore_errors=True)
         self.addCleanup(shutil.rmtree, '/tmp/smarted-ads-test', True)
         modulo, chamadas = carregar_smart_ads()
-        # primeira vez: mostra e grava a marca
+        # primeira vez: mostra e grava a marca (componente + plano B + aviso)
         self.assertTrue(modulo.mostrar_abertura())
         self.assertTrue(modulo.abertura_ja_mostrada())
-        self.assertEqual(len(chamadas), 1)
+        disparos = [c for c in chamadas if c.startswith('StartAndroidActivity(')]
+        self.assertEqual(len(disparos), 2)
         # segunda vez: nem toca no builtin
         self.assertFalse(modulo.mostrar_abertura())
-        self.assertEqual(len(chamadas), 1)
+        self.assertEqual(len([c for c in chamadas if c.startswith('StartAndroidActivity(')]), 2)
 
     def test_fora_do_android_nao_chama_nada(self):
         modulo, chamadas = carregar_smart_ads(android=False)
@@ -263,6 +301,22 @@ class DiagnosticoTest(unittest.TestCase):
         self.assertIn('mostrarDiagnostico', self.base)
         self.assertIn('Ads.testeAtivo()', self.base)
         self.assertIn('mostrarDiagnostico("Falha ao CARREGAR o video"', self.preroll)
+
+    def test_launcher_e_intent_filters_no_manifesto(self):
+        manifesto = MANIFEST.read_text()
+        # launcher (plano B do start) ...
+        self.assertIn('org.smartedtv.ads.LauncherActivity', manifesto)
+        self.assertIn('android.intent.category.LAUNCHER', manifesto)
+        # ... e as actions usadas na posicao 2 do StartAndroidActivity
+        self.assertIn('smartedtv.ads.PREROLL', manifesto)
+        self.assertIn('smartedtv.ads.APPOPEN', manifesto)
+
+    def test_toast_visivel_em_caso_de_falha(self):
+        self.assertIn('Toast.makeText', self.base)
+        self.assertIn('Toast.makeText', self.abertura) if 'Toast' in self.abertura else None
+        launcher = (ADS_DIR / 'app/src/main/java/org/smartedtv/ads/LauncherActivity.java').read_text()
+        self.assertIn('Toast.makeText', launcher)
+        self.assertIn('Smartedtv'.lower(), launcher.lower())
 
     def test_visibilidade_de_pacotes_android_11(self):
         # componente explicito (className) nao depende de <queries>, mas a

@@ -13,6 +13,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 import android.widget.TextView;
 
 /**
@@ -65,6 +66,9 @@ public abstract class AdActivity extends Activity {
                 + " android=" + Build.VERSION.RELEASE
                 + " intent=" + descreverIntent(getIntent()));
 
+        Toast.makeText(this, "SMARTEDTV Ads: " + nome() + " aberta (teste="
+                + Ads.testeAtivo() + ")", Toast.LENGTH_SHORT).show();
+
         handler.postDelayed(fecharPorTempo, LIMITE_SEM_ANUNCIO);
         carregar();
     }
@@ -116,6 +120,8 @@ public abstract class AdActivity extends Activity {
      */
     protected void mostrarDiagnostico(String titulo, String detalhe) {
         Log.w(Ads.TAG, nome() + ": " + titulo + " | " + detalhe);
+        Toast.makeText(this, "SMARTEDTV Ads: " + titulo + " | " + detalhe,
+                Toast.LENGTH_LONG).show();
         if (!Ads.testeAtivo() || fundo == null) {
             fechar(titulo);
             return;

@@ -31,6 +31,28 @@
 
         <!-- Os dois anuncios sao abertos pelo Kodi com StartAndroidActivity():
              activity exportada e sem filtro de intent (componente explicito). -->
+        <!-- Plano B: da um launcher ao pacote (o Kodi cai nele quando o
+             parametro "intent" do StartAndroidActivity vai vazio) e roteia
+             pelo data URI smartedtv://ads/appopen | /preroll -->
+        <activity
+            android:name="org.smartedtv.ads.LauncherActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:screenOrientation="sensorLandscape"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="smartedtv.ads.PREROLL" />
+                <action android:name="smartedtv.ads.APPOPEN" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name="org.smartedtv.ads.AppOpenActivity"
             android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode"
@@ -38,7 +60,12 @@
             android:excludeFromRecents="true"
             android:noHistory="true"
             android:screenOrientation="sensorLandscape"
-            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+            <intent-filter>
+                <action android:name="smartedtv.ads.APPOPEN" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name="org.smartedtv.ads.PreRollActivity"
@@ -47,6 +74,11 @@
             android:excludeFromRecents="true"
             android:noHistory="true"
             android:screenOrientation="sensorLandscape"
-            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+            <intent-filter>
+                <action android:name="smartedtv.ads.PREROLL" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

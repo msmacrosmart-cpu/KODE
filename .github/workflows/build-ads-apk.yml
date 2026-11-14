@@ -17,10 +17,10 @@ permissions:
   contents: write
 
 env:
-  VERSAO_ADS: "1.0.2"
-  CODIGO_ADS: "3"
-  ARQUIVO_ADS: SMARTEDTV-Anuncios-1.0.2.apk
-  TAG_ADS: v1.0.2-ads
+  VERSAO_ADS: "1.0.3"
+  CODIGO_ADS: "4"
+  ARQUIVO_ADS: SMARTEDTV-Anuncios-1.0.3.apk
+  TAG_ADS: v1.0.3-ads
   # MODO DE TESTE do AdMob (blocos de teste do Google = sempre preenchem).
   # Trocar para "false" quando a homologacao terminar.
   ADS_TESTE: "true"
@@ -133,7 +133,7 @@ jobs:
               assert contem(dex, unidade), 'bloco %s nao esta no dex' % unidade
               print('bloco no dex:', unidade, 'OK')
 
-          for activity in ('AppOpenActivity', 'PreRollActivity'):
+          for activity in ('AppOpenActivity', 'PreRollActivity', 'LauncherActivity'):
               assert contem(manifesto, activity), '%s fora do manifesto' % activity
               print('activity no manifesto:', activity, 'OK')
           # screenOrientation e atributo de ENUM do AXML (vale o inteiro 6 =
@@ -160,10 +160,10 @@ jobs:
                   valores.append(int(pedaco))
           print('screenOrientation no APK:', valores,
                 '(linhas: %d)' % linhas_orient)
-          if len(valores) < 2:
+          if len(valores) < 3:
               print('--- trecho do manifesto compilado ---')
               print(arvore[:4000])
-              raise SystemExit('esperava screenOrientation nas 2 activities; achei %r' % valores)
+              raise SystemExit('esperava screenOrientation nas 3 activities; achei %r' % valores)
           for valor in valores:
               if valor != 6:   # ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
                   raise SystemExit('orientacao diferente de sensorLandscape (6): %r' % valor)
