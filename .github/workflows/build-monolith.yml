@@ -1,0 +1,330 @@
+name: "SMARTEDTV UNIFICADO - compilar o Kodi do fonte com AdMob dentro (arm64)"
+
+# UM APK SÓ: compila o Kodi 21.3-Omega do código-fonte com
+#   1. applicationId smartedtv.full (o app auxiliar deixa de existir);
+#   2. AdMob NATIVO (AppOpenActivity + PreRollActivity dentro do próprio APK,
+#      play-services-ads no Gradle, APPLICATION_ID no manifesto);
+#   3. o conteúdo da linha clássica (skin.novatv + plugin.video.smarted +
+#      service.smarted.bootstrap + resource.uisounds.silencio).
+#
+# A receita de compilação é a mesma que já compilou este Kodi neste tipo de
+# runner (workflow smartedtv-build-source.yml, ~1h05): depends -> cmakebuildsys
+# -> make -j2 -> make apk, com limpeza de disco antes.
+#
+# Falhas conhecidas dessa receita estão documentadas no outro workflow (disco
+# cheio, /opt quebrando o apt, Pillow em python errado, prefixo de dependências).
+# Não repetir.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/7dedf371-kode]
+    paths:
+      - .github/workflows/build-monolith.yml
+      - smartedtv/tools/integrate-monolith.py
+      - smartedtv/tools/patch-source.py
+      - smartedtv/tools/ads-java/**
+      - kodi/addons/**
+      - 'kodi/skin.estilo.personalizado/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: smartedtv-monolith-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  KODI_TAG: 21.3-Omega
+  KODI_COMMIT: a3a448d26b8d560a65655dab2cd122994dc4e146
+  NDK_VERSION: 21.4.7075529
+  VERSAO: "1.0.64"
+  CODIGO: "2103050"
+  PACOTE: smartedtv.full
+  TAG_DESTINO: v1.0.64-unificado
+  ARQUIVO_DESTINO: SMARTEDTV-1.0.64-unificado-arm64-v8a.apk
+  CERT_SHA256: 855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a
+
+jobs:
+  arm64:
+    name: Kodi 21.3 + AdMob -> smartedtv.full
+    runs-on: ubuntu-22.04
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Libertar espaço em disco
+        run: |
+          echo "== antes =="; df -h /
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /opt/ghc /usr/local/.ghcup || true
+          sudo rm -rf /opt/hostedtoolcache/CodeQL || true
+          sudo rm -rf /usr/local/lib/android/sdk/system-images || true
+          sudo apt-get clean
+          docker image prune -af 2>/dev/null || true
+          echo "== depois =="; df -h /
+
+      - name: 2. JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: 3. Dependências de sistema
+        run: |
+          set -uo pipefail
+          sudo apt-get update -o Acquire::Retries=5 -qq 2>/dev/null || true
+          sudo apt-get install -y -qq --no-install-recommends \
+            autoconf automake bison build-essential curl flex gawk git gperf \
+            lib32stdc++6 lib32z1 libcurl4-openssl-dev unzip zip zlib1g-dev \
+            libtool pkg-config cmake 2>/dev/null || true
+          missing=""
+          for t in cmake make git curl unzip python3 autoconf automake libtoolize pkg-config gperf bison flex; do
+            command -v "$t" >/dev/null 2>&1 || missing="$missing $t"
+          done
+          [ -z "$missing" ] || { echo "::error::faltando:$missing"; exit 1; }
+          echo "ok: ferramentas presentes"
+          python3 -m pip install --quiet --break-system-packages 'Pillow==11.3.0' \
+            || python3 -m pip install --quiet --user 'Pillow==11.3.0'
+          python3 -c 'import PIL,sys;print("Pillow",PIL.__version__,"em",sys.executable)'
+
+      - name: 4. SDK/NDK do Kodi 21.3
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
+            'platforms;android-34' 'build-tools;33.0.1' "ndk;$NDK_VERSION"
+          test -d "$ANDROID_HOME/ndk/$NDK_VERSION"
+          echo "ok: SDK 34, build-tools 33.0.1, NDK $NDK_VERSION"
+
+      - name: 5. Identidade visual SMARTEDTV (artes oficiais)
+        run: |
+          python3 smartedtv/tools/make-brand-assets.py
+          test -f smartedtv/out/media/splash.jpg
+          ls smartedtv/out/media | head -6
+
+      - name: 6. Código-fonte + INTEGRAÇÃO DO MONÓLITO
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch "$KODI_TAG" https://github.com/xbmc/xbmc.git "$RUNNER_TEMP/kodi"
+          test "$(git -C "$RUNNER_TEMP/kodi" rev-parse HEAD)" = "$KODI_COMMIT"
+          echo "commit ok: $KODI_COMMIT"
+
+          # pt-BR oficial (o Kodi só embarca en_gb)
+          git clone --depth 1 -b omega https://github.com/xbmc/repo-resources.git "$RUNNER_TEMP/res"
+          mkdir -p "$RUNNER_TEMP/lang"
+          cp -r "$RUNNER_TEMP/res/resource.language.pt_br" "$RUNNER_TEMP/lang/"
+
+          python3 smartedtv/tools/integrate-monolith.py "$RUNNER_TEMP/kodi" \
+            --repo . \
+            --brand-dir smartedtv/out \
+            --language-addon "$RUNNER_TEMP/lang/resource.language.pt_br"
+
+          # o script já confere tudo; aqui ficam as provas no log
+          grep -q "^APP_PACKAGE smartedtv.full$" "$RUNNER_TEMP/kodi/version.txt"
+          grep -q 'play-services-ads' "$RUNNER_TEMP/kodi/tools/android/packaging/xbmc/build.gradle.in"
+          grep -q 'PreRollActivity' "$RUNNER_TEMP/kodi/tools/android/packaging/xbmc/AndroidManifest.xml.in"
+          grep -q 'src/SmartAds.java' "$RUNNER_TEMP/kodi/cmake/scripts/android/Install.cmake"
+          echo "integração do monólito aplicada"
+
+      - name: 7a. Cache das dependências
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/xbmc-depends
+          key: depends-${{ env.KODI_TAG }}-ndk${{ env.NDK_VERSION }}-mono-${{ runner.os }}-v1
+
+      - name: 7b. Compilar dependências Android (só se não houver cache)
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/kodi/tools/depends"
+          ./bootstrap
+          ./configure --with-tarballs="$RUNNER_TEMP/tarballs" --host=aarch64-linux-android \
+            --with-sdk-path="$ANDROID_HOME" --with-ndk-path="$ANDROID_HOME/ndk/$NDK_VERSION" \
+            --prefix="$RUNNER_TEMP/xbmc-depends"
+          make -j2
+          echo "livre após dependências: $(df -h --output=avail / | tail -1)"
+
+      - name: 7c. Conferir dependências
+        run: |
+          set -euo pipefail
+          test -d "$RUNNER_TEMP/xbmc-depends" || { echo "::error::prefixo de dependências ausente"; exit 1; }
+          echo "cache hit: ${{ steps.cache-deps.outputs.cache-hit }}"
+          test -d "$RUNNER_TEMP/xbmc-depends/lib" || { echo "::error::falta lib no prefixo"; exit 1; }
+          ls "$RUNNER_TEMP/xbmc-depends/lib" | grep -q '\.so\|\.a' || \
+            { echo "::error::prefixo sem bibliotecas compiladas"; exit 1; }
+          echo "libs: $(ls "$RUNNER_TEMP/xbmc-depends/lib" | wc -l) entradas"
+
+      - name: 8. Compilar o Kodi para Android
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/kodi-build"
+          make -C "$RUNNER_TEMP/kodi/tools/depends/target/cmakebuildsys" \
+            BUILD_DIR="$RUNNER_TEMP/kodi-build"
+          make -C "$RUNNER_TEMP/kodi-build" -j2
+          echo "livre após o Kodi: $(df -h --output=avail / | tail -1)"
+
+      - name: 9. Empacotar e assinar o APK único
+        env:
+          KODI_ANDROID_STORE_FILE: ${{ github.workspace }}/dropbox/smarted-tv-test.jks
+          KODI_ANDROID_STORE_PASSWORD: android
+          KODI_ANDROID_KEY_ALIAS: smarted-tv-test
+          KODI_ANDROID_KEY_PASSWORD: android
+        run: |
+          set -euo pipefail
+          make -C "$RUNNER_TEMP/kodi-build" apk
+          OUT="$GITHUB_WORKSPACE/smartedtv/out-apk"
+          mkdir -p "$OUT"
+          APK=$(find "$RUNNER_TEMP/kodi-build" "$RUNNER_TEMP/kodi" -type f -name '*.apk' \
+                | grep -v 'unaligned\|unsigned\|intermediate' | head -1)
+          [ -n "$APK" ] || { echo "::error::nenhum APK gerado"; exit 1; }
+          echo "APK: $APK"
+          cp "$APK" "$OUT/$ARQUIVO_DESTINO"
+          ( cd "$OUT" && sha256sum "$ARQUIVO_DESTINO" > "$ARQUIVO_DESTINO.sha256" )
+          ls -la "$OUT"
+          cat "$OUT"/*.sha256
+
+      - name: 10. Conferir o monolito (bloqueante)
+        run: |
+          set -euo pipefail
+          APK="smartedtv/out-apk/$ARQUIVO_DESTINO"
+          AAPT2="$ANDROID_HOME/build-tools/33.0.1/aapt2"
+          python3 - "$APK" "$AAPT2" <<'PY'
+          import os, subprocess, sys, zipfile
+
+          apk, aapt2 = sys.argv[1], sys.argv[2]
+          pacote = os.environ['PACOTE']
+          versao = os.environ['VERSAO']
+          codigo = int(os.environ['CODIGO'])
+
+          def saida(*args):
+              return subprocess.run([aapt2, *args], capture_output=True, text=True, check=True).stdout
+
+          badging = saida('dump', 'badging', apk)
+          print(badging.splitlines()[0])
+          if "package: name='%s'" % pacote not in badging:
+              sys.exit('::error::pacote do APK nao e %s' % pacote)
+          if "versionName='%s'" % versao not in badging:
+              sys.exit('::error::versionName diferente de %s' % versao)
+          if "versionCode='%d'" % codigo not in badging:
+              sys.exit('::error::versionCode diferente de %d' % codigo)
+
+          arvore = saida('dump', 'xmltree', '--file', 'AndroidManifest.xml', apk)
+          obrigatorios = {
+              'ACTIVITY_APPOPEN': '.AppOpenActivity',
+              'ACTIVITY_PREROLL': '.PreRollActivity',
+              'ADMob APPLICATION_ID': 'ca-app-pub-2066014755407744~5076693043',
+              'permissao AD_ID': 'com.google.android.gms.permission.AD_ID',
+          }
+          for rotulo, agulha in obrigatorios.items():
+              if agulha not in arvore:
+                  sys.exit('::error::falta no manifesto: %s (%s)' % (rotulo, agulha))
+              print('%-24s OK' % rotulo)
+
+          orientacoes = [linha for linha in arvore.splitlines() if 'screenOrientation' in linha]
+          print('screenOrientation no manifesto:', len(orientacoes), 'linhas')
+          if not any('sensorLandscape' in linha or '0x6' in linha for linha in orientacoes):
+              sys.exit('::error::nenhuma tela de anuncio em sensorLandscape')
+
+          with zipfile.ZipFile(apk) as z:
+              nomes = z.namelist()
+              dex = b''.join(z.read(n) for n in nomes
+                             if n.startswith('classes') and n.endswith('.dex'))
+              if 'assets/addons/skin.novatv/addon.xml' not in nomes:
+                  sys.exit('::error::skin.novatv ausente no APK')
+              for addon in ('plugin.video.smarted', 'service.smarted.bootstrap',
+                            'resource.uisounds.silencio'):
+                  if 'assets/addons/%s/addon.xml' % addon not in nomes:
+                      sys.exit('::error::addon ausente no APK: %s' % addon)
+              manifesto_addons = z.read('assets/system/addon-manifest.xml').decode()
+              if '<addon>skin.novatv</addon>' not in manifesto_addons:
+                  sys.exit('::error::skin.novatv fora do addon-manifest.xml')
+              bridge = z.read('assets/addons/service.smarted.bootstrap/smart_ads.py').decode()
+
+          for rotulo, agulha in {
+              'bloco abertura': b'ca-app-pub-2066014755407744/4214378379',
+              'bloco pre-roll': b'ca-app-pub-2066014755407744/3572039686',
+              'APPLICATION_ID': b'ca-app-pub-2066014755407744~5076693043',
+              'classes de anuncio': b'AppOpenActivity',
+              'SDK do AdMob': b'com/google/android/gms/ads',
+              'tag SmartAds': b'SmartAds',
+          }.items():
+              if agulha not in dex:
+                  sys.exit('::error::%s ausente no dex' % rotulo)
+              print('%-24s OK' % rotulo)
+
+          for agulha in ("ATIVIDADE_PREROLL = 'smartedtv.full.PreRollActivity'",
+                         "ATIVIDADE_ABERTURA = 'smartedtv.full.AppOpenActivity'",
+                         'tentar_plano_b=False'):
+              if agulha not in bridge:
+                  sys.exit('::error::ponte do bootstrap nao aponta para dentro: %s' % agulha)
+          print('ponte interna           OK')
+
+          print('tamanho: %.1f MB' % (os.path.getsize(apk) / 1048576.0))
+          print('APK UNICO conferido: um arquivo, com player + anuncios + conteudo.')
+          PY
+
+      - name: 11. Guardar o log quando falhar
+        if: failure()
+        run: |
+          set -uo pipefail
+          mkdir -p docs
+          {
+            echo "# Build do APK unificado (falhou)"
+            echo
+            echo "Run: $GITHUB_RUN_ID"
+            echo
+            echo "Etapa que falhou: veja os passos no GitHub Actions."
+          } > docs/build-log-monolito.txt
+          git config user.name "smarted-bot"
+          git config user.email "smarted-bot@users.noreply.github.com"
+          git add -f docs/build-log-monolito.txt
+          git commit -m "ci: build do APK unificado falhou (run $GITHUB_RUN_ID)" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" || true
+
+      - name: 12. Publicar a release
+        run: |
+          set -euo pipefail
+          OUT=smartedtv/out-apk
+          NOTAS="$RUNNER_TEMP/notas.md"
+          {
+            echo "# SMARTEDTV $VERSAO — APK ÚNICO (arm64-v8a)"
+            echo
+            echo "Um arquivo só, pacote \`$PACOTE\`: player completo, anúncios do AdMob"
+            echo "**dentro do app** e o conteúdo da linha clássica. Não existe mais app"
+            echo "auxiliar de anúncios para instalar."
+            echo
+            echo "## O que tem dentro"
+            echo
+            echo "| Peça | Onde |"
+            echo "|---|---|"
+            echo "| Motor do Kodi 21.3-Omega | compilado do código-fonte |"
+            echo "| AdMob (App Open + pre-roll) | \`AppOpenActivity\` / \`PreRollActivity\` no próprio APK |"
+            echo "| Skin | \`skin.novatv\` (padrão) + \`skin.smartedtv.classic\` (alternativa) |"
+            echo "| Catálogo | \`plugin.video.smarted\` (mesmo da linha clássica) |"
+            echo "| Ponte dos anúncios | \`service.smarted.bootstrap\` apontando para as classes internas |"
+            echo
+            echo "Blocos: abertura \`ca-app-pub-2066014755407744/4214378379\`,";
+            echo "vídeo \`ca-app-pub-2066014755407744/3572039686\`;"
+            echo "APPLICATION_ID \`ca-app-pub-2066014755407744~5076693043\`."
+            echo
+            echo "## Instalação"
+            echo
+            echo "Instale **este** APK. O antigo \`org.xbmc.kodi\` (repack das 1.0.x) e o"
+            echo "app de anúncios podem ser desinstalados: o pacote é outro."
+            echo
+            echo "Modo de teste do AdMob ligado (blocos do Google). Para produção,"
+            echo "recompilar com o modo de teste desligado no \`SmartAds.java.in\`."
+            echo
+            echo "Assinado com o certificado \`$CERT_SHA256\`."
+          } > "$NOTAS"
+          if gh release view "$TAG_DESTINO" >/dev/null 2>&1; then
+            gh release edit "$TAG_DESTINO" --title "SMARTEDTV $VERSAO (APK unico, arm64)" --notes-file "$NOTAS"
+          else
+            gh release create "$TAG_DESTINO" --title "SMARTEDTV $VERSAO (APK unico, arm64)" \
+              --notes-file "$NOTAS" --target "$GITHUB_SHA"
+          fi
+          gh release upload "$TAG_DESTINO" \
+            "$OUT/$ARQUIVO_DESTINO" "$OUT/$ARQUIVO_DESTINO.sha256" --clobber
+          gh release view "$TAG_DESTINO" --json assets -q '.assets[] | "\(.name) \(.size) bytes"'
+        env:
+          GH_TOKEN: ${{ github.token }}

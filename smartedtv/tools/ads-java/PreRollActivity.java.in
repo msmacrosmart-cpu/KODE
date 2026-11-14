@@ -1,0 +1,74 @@
+package @APP_PACKAGE@;
+
+import com.google.android.gms.ads.AdError;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.ResponseInfo;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
+
+/**
+ * GATILHO 2 - video pre-roll antes de canal/filme/serie.
+ *
+ * Bloco real: ca-app-pub-2066014755407744/3572039686.
+ * Em modo de teste usa o bloco de teste do Google.
+ *
+ * Roda no MESMO processo do player: o video continua carregando atras da tela
+ * do anuncio, porque nenhum app externo precisa ser aberto.
+ */
+public class PreRollActivity extends AdTela {
+
+    private InterstitialAd anuncio;
+
+    @Override
+    protected void carregar() {
+        String unidade = SmartAds.unidadePreRoll();
+        log("carregando VIDEO unidade=" + unidade + " (teste=" + SmartAds.testeAtivo() + ")");
+        InterstitialAd.load(this, unidade, new AdRequest.Builder().build(),
+                new InterstitialAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(InterstitialAd carregado) {
+                        anuncio = carregado;
+                        ResponseInfo info = carregado.getResponseInfo();
+                        log("onAdLoaded VIDEO | responseId="
+                                + (info == null ? "?" : info.getResponseId()));
+                        anuncio.setFullScreenContentCallback(new FullScreenContentCallback() {
+                            @Override
+                            public void onAdShowedFullScreenContent() {
+                                log("onAdShowedFullScreenContent VIDEO (anuncio na tela)");
+                            }
+
+                            @Override
+                            public void onAdImpression() {
+                                log("onAdImpression VIDEO (impressao contabilizada)");
+                            }
+
+                            @Override
+                            public void onAdClicked() {
+                                log("onAdClicked VIDEO");
+                            }
+
+                            @Override
+                            public void onAdDismissedFullScreenContent() {
+                                log("onAdDismissedFullScreenContent VIDEO");
+                                fechar("video encerrado");
+                            }
+
+                            @Override
+                            public void onAdFailedToShowFullScreenContent(AdError erro) {
+                                mostrarDiagnostico("Falha ao EXIBIR o video",
+                                        AppOpenActivity.descrever(erro));
+                            }
+                        });
+                        anuncio.show(PreRollActivity.this);
+                    }
+
+                    @Override
+                    public void onAdFailedToLoad(LoadAdError erro) {
+                        mostrarDiagnostico("Falha ao CARREGAR o video",
+                                AppOpenActivity.descrever(erro));
+                    }
+                });
+    }
+}

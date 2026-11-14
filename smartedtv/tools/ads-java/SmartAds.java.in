@@ -1,0 +1,97 @@
+package @APP_PACKAGE@;
+
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.RequestConfiguration;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * Constantes, modo de teste e inicializacao unica do AdMob DENTRO do app.
+ *
+ * Este arquivo e copiado para tools/android/packaging/xbmc/src/ pelo
+ * smartedtv/tools/integrate-monolith.py e entra no APK unico (applicationId
+ * smartedtv.full). Nao existe mais app auxiliar: o anuncio roda no mesmo
+ * processo do player.
+ *
+ * Tag de log unica: "SmartAds" (adb logcat -s SmartAds).
+ */
+public final class SmartAds {
+
+    public static final String TAG = "SmartAds";
+
+    /** APPLICATION_ID do AdMob (o mesmo do AndroidManifest.xml). */
+    public static final String APP_ID = "ca-app-pub-2066014755407744~5076693043";
+
+    /** Blocos REAIS do projeto. */
+    public static final String UNIT_APP_OPEN = "ca-app-pub-2066014755407744/4214378379";
+    public static final String UNIT_PREROLL = "ca-app-pub-2066014755407744/3572039686";
+
+    /** Blocos de TESTE oficiais do Google (sempre preenchem). */
+    public static final String UNIT_APP_OPEN_TESTE = "ca-app-pub-3940256099942544/9257395921";
+    public static final String UNIT_PREROLL_TESTE = "ca-app-pub-3940256099942544/1033173712";
+
+    /** true = usa os blocos de teste do Google. Controlado pelo intent (teste=0/1). */
+    private static boolean teste = true;
+
+    private static boolean inicializado;
+
+    private SmartAds() {
+    }
+
+    public static boolean testeAtivo() {
+        return teste;
+    }
+
+    public static String unidadeAppOpen() {
+        return teste ? UNIT_APP_OPEN_TESTE : UNIT_APP_OPEN;
+    }
+
+    public static String unidadePreRoll() {
+        return teste ? UNIT_PREROLL_TESTE : UNIT_PREROLL;
+    }
+
+    /**
+     * Troca o modo de teste sem recompilar: o data do intent
+     * smartedtv://ads?teste=0 (ou =1) vindo do Kodi.
+     */
+    public static void aplicarIntent(Intent intent) {
+        if (intent == null) {
+            return;
+        }
+        String data = intent.getDataString();
+        if (data == null || !data.contains("teste=")) {
+            return;
+        }
+        boolean antes = teste;
+        teste = !data.endsWith("teste=0");
+        Log.i(TAG, "modo de teste alterado pelo intent (" + data + "): " + antes + " -> " + teste);
+    }
+
+    public static synchronized void init(Context context) {
+        if (inicializado) {
+            return;
+        }
+        inicializado = true;
+        try {
+            List<String> dispositivos = new ArrayList<>();
+            MobileAds.setRequestConfiguration(
+                    new RequestConfiguration.Builder()
+                            .setTestDeviceIds(dispositivos.isEmpty()
+                                    ? Arrays.<String>asList() : dispositivos)
+                            .build());
+            Log.i(TAG, "config: teste=" + teste
+                    + " unidades=" + (teste ? "TESTE do Google" : "REAIS do projeto")
+                    + " appId=" + APP_ID);
+            MobileAds.initialize(context, status ->
+                    Log.i(TAG, "AdMob inicializado: " + status.getAdapterStatusMap().keySet()));
+        } catch (Throwable erro) {
+            Log.e(TAG, "AdMob nao inicializou: " + erro, erro);
+        }
+    }
+}

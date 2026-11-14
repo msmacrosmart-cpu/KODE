@@ -1,0 +1,104 @@
+package @APP_PACKAGE@;
+
+import com.google.android.gms.ads.AdError;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.ResponseInfo;
+import com.google.android.gms.ads.appopen.AppOpenAd;
+
+/**
+ * GATILHO 1 - pop-up de abertura (uma vez por abertura do app).
+ *
+ * Bloco real: ca-app-pub-2066014755407744/4214378379.
+ * Em modo de teste usa o bloco de teste do Google.
+ */
+public class AppOpenActivity extends AdTela {
+
+    private AppOpenAd anuncio;
+
+    @Override
+    protected void carregar() {
+        String unidade = SmartAds.unidadeAppOpen();
+        log("carregando ABERTURA unidade=" + unidade + " (teste=" + SmartAds.testeAtivo() + ")");
+        AppOpenAd.load(this, unidade, new AdRequest.Builder().build(),
+                new AppOpenAd.AppOpenAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(AppOpenAd carregado) {
+                        anuncio = carregado;
+                        ResponseInfo info = carregado.getResponseInfo();
+                        log("onAdLoaded ABERTURA | responseId="
+                                + (info == null ? "?" : info.getResponseId()));
+                        anuncio.setFullScreenContentCallback(new FullScreenContentCallback() {
+                            @Override
+                            public void onAdShowedFullScreenContent() {
+                                log("onAdShowedFullScreenContent ABERTURA (anuncio na tela)");
+                            }
+
+                            @Override
+                            public void onAdImpression() {
+                                log("onAdImpression ABERTURA (impressao contabilizada)");
+                            }
+
+                            @Override
+                            public void onAdClicked() {
+                                log("onAdClicked ABERTURA");
+                            }
+
+                            @Override
+                            public void onAdDismissedFullScreenContent() {
+                                log("onAdDismissedFullScreenContent ABERTURA");
+                                fechar("abertura encerrada");
+                            }
+
+                            @Override
+                            public void onAdFailedToShowFullScreenContent(AdError erro) {
+                                mostrarDiagnostico("Falha ao EXIBIR a abertura", descrever(erro));
+                            }
+                        });
+                        anuncio.show(AppOpenActivity.this);
+                    }
+
+                    @Override
+                    public void onAdFailedToLoad(LoadAdError erro) {
+                        mostrarDiagnostico("Falha ao CARREGAR a abertura", descrever(erro));
+                    }
+                });
+    }
+
+    /** "codigo 3 (NO_FILL) - dominio - mensagem", sem depender de toString. */
+    public static String descrever(AdError erro) {
+        if (erro == null) {
+            return "erro desconhecido";
+        }
+        return "codigo " + erro.getCode() + " (" + nomeDoCodigo(erro.getCode()) + ")"
+                + " | " + erro.getDomain() + " | " + erro.getMessage();
+    }
+
+    public static String descrever(LoadAdError erro) {
+        if (erro == null) {
+            return "erro desconhecido";
+        }
+        return "codigo " + erro.getCode() + " (" + nomeDoCodigo(erro.getCode()) + ")"
+                + " | " + erro.getDomain() + " | " + erro.getMessage();
+    }
+
+    private static String nomeDoCodigo(int codigo) {
+        switch (codigo) {
+            case 0:
+                return "INTERNAL_ERROR";
+            case 1:
+                return "INVALID_REQUEST";
+            case 2:
+                return "NETWORK_ERROR";
+            case 3:
+                return "NO_FILL";
+            case 4:
+                return "APP_ID_MISSING/MISMATCH";
+            case 8:
+                return "MEDIATION_NO_FILL";
+            default:
+                return "ver documentacao";
+        }
+    }
+}
