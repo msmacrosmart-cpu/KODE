@@ -1,0 +1,14 @@
+# Log da conferencia do APK de anuncios
+
+```
+pacote: org.smartedtv.ads
+versao: 1.0.0 1
+APPLICATION_ID no manifesto: OK ca-app-pub-2066014755407744~5076693043
+bloco no dex: ca-app-pub-2066014755407744/4214378379 OK
+bloco no dex: ca-app-pub-2066014755407744/3572039686 OK
+activity no manifesto: AppOpenActivity OK
+activity no manifesto: PreRollActivity OK
+Traceback (most recent call last):
+  File "<stdin>", line 31, in <module>
+AssertionError: landscape nao forcado
+```
