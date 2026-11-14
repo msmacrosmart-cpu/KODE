@@ -49,3 +49,22 @@ depois de instalar o 1.0.1 — os dois convivem sem conflito, mas o Kodi só cha
 - **APK do Kodi:** falha se `versionName`/`versionCode` não forem `1.0.61`/`2103047`, se a
   ponte no `smart_ads.py` embarcado não apontar para o pacote de `app-id.txt`, se as
   classes das activities mudarem, se as checagens de player/skin/anúncios regredirem.
+
+## CONFERÊNCIA DO ARQUIVO PUBLICADO
+
+Lido dos APKs **baixados das releases** (`docs/comparacao-1.0.61.txt`):
+
+| Arquivo | Pacote / versão | Tamanho | sha256 |
+|---|---|---|---|
+| `SMARTED-TV-v1.0.61-arm64.apk` | `org.xbmc.kodi` · 1.0.61 / 2103047 | 242.222.254 B | `f4d1a2038fd4ddac17564cb284aab108d7df3185e638bf118c96c1ef3ffb9629` |
+| `SMARTEDTV-Anuncios-1.0.1.apk` | **`smartedtv.full`** · 1.0.1 / 2 | 5.002.663 B | `a75c656292b131df88edc42c9bb18c6ce1e278a47d886c87518ec8c339beeb4e` |
+| base `v1.0.60` (conferida de novo) | `org.xbmc.kodi` · 1.0.60 / 2103046 | 242.222.254 B | `79ff859b7a37eb634d5d864bfb36240029128b27cabfd5f6f44aa628df0d65dc` |
+
+- Diff do ZIP contra a 1.0.60: **0 entradas novas, 0 removidas**, e **só**
+  `service.smarted.bootstrap/smart_ads.py` mudou (6.542 → 6.925 B — comentários e o
+  `PACKAGE = 'smartedtv.full'`). Binário do Kodi, dex, perfil, skin e player intactos.
+- 8/8 checagens de anúncio **OK** no APK do Kodi, incluindo **`pacote smartedtv.full na ponte`**.
+- 9/9 checagens de velocidade **OK**; skin sem regressão (`9201@570 h194`, `9203@822 h194`,
+  9202 ausente, `CC121212`, `FF1E1E1E`).
+- O APK de anúncios anexado na release foi lido de novo no CI: **pacote `smartedtv.full`**,
+  versão 1.0.1 / 2 — é exatamente o valor de `android/smarted-ads/app-id.txt`.
