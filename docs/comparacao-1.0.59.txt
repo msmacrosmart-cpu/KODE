@@ -1,0 +1,32 @@
+1.0.59: 242218060 bytes | 1.0.59 2103045 | SMARTEDTV
+1.0.58: 242209666 bytes | 1.0.58 2103044 | SMARTEDTV
+sha256 publicado: ece4fb03cde87beb7fb351c3683c1cb5f834eb6270783daf97429eaca7cee6cf  /home/runner/work/_temp/apks/SMARTED-TV-v1.0.58-arm64.apk
+sha256 publicado: 5e3dc5c36be6b630ced417f2feab85af6507c2d00b7c2e86256f6491d08cf51b  /home/runner/work/_temp/apks/SMARTED-TV-v1.0.59-arm64.apk
+
+entradas novas (2): ['assets/addons/service.smarted.bootstrap/menu_smarted.py', 'assets/addons/service.smarted.bootstrap/repository.py']
+entradas removidas (0): []
+entradas com tamanho diferente (6):
+   META-INF/MANIFEST.MF                                                   1200531 -> 1200783
+   META-INF/SMARTED-.SF                                                   1200658 -> 1200910
+   assets/addons/service.smarted.bootstrap/addon.xml                      987 -> 985
+   assets/addons/service.smarted.bootstrap/performance.py                 4858 -> 5871
+   assets/addons/service.smarted.bootstrap/repair.py                      12182 -> 15058
+   assets/addons/service.smarted.bootstrap/service.py                     11667 -> 14050
+
+bootstrap versao: 1.1
+advancedsettings buffermode 1        OK
+advancedsettings memorysize 50 MB    OK
+advancedsettings readfactor 20x      OK
+marker v2 do advancedsettings        OK
+setting memorysize 48 MB             OK
+setting readfactor 2000 (20x)        OK
+sem troca de modo de video           OK
+nav-check em segundo plano           OK
+performance antes do nav-check       OK
+
+skin.novatv versao: 1.0.18
+9201: top=570 height=194 (esperado 570/194)
+9203: top=822 height=194 (esperado 822/194)
+9202 presente: False
+painel escuro CC121212 na lista: True
+foco escuro FF1E1E1E na lista: True
