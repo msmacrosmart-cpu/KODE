@@ -2,9 +2,109 @@
 
 ## arquivos gerados
 ```
-(sem pasta)
+total 15044
+-rw-r--r-- 1 runner runner 5124024 Nov 14 16:24 SMARTEDTV-Anuncios-1.0.5.apk
+-rw-r--r-- 1 runner runner   46568 Nov 14 16:24 SMARTEDTV-Anuncios-1.0.5.apk.idsig
+-rw-r--r-- 1 runner runner      95 Nov 14 16:24 SMARTEDTV-Anuncios.sha256
+-rw-r--r-- 1 runner runner 5101785 Nov 14 16:24 aligned.apk
+-rw-r--r-- 1 runner runner    1273 Nov 14 16:24 check.log
+-rw-r--r-- 1 runner runner     439 Nov 14 16:24 notas.md
+-rw-r--r-- 1 runner runner    2730 Nov 14 16:24 smarted-tv-test.jks
+-rw-r--r-- 1 runner runner 5101785 Nov 14 16:24 unsigned.apk
+-rw-r--r-- 1 runner runner    6973 Nov 14 16:24 verify.txt
 ```
+## compilacao (gradle)
+```
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.7/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preReleaseBuild UP-TO-DATE
+> Task :app:generateReleaseBuildConfig
+> Task :app:javaPreCompileRelease
+> Task :app:generateReleaseResValues
+> Task :app:checkReleaseAarMetadata
+> Task :app:mapReleaseSourceSetPaths
+> Task :app:generateReleaseResources
+> Task :app:packageReleaseResources
+> Task :app:mergeReleaseResources
+> Task :app:createReleaseCompatibleScreenManifests
+> Task :app:extractDeepLinksRelease
+> Task :app:parseReleaseLocalResources
+> Task :app:processReleaseMainManifest
+> Task :app:processReleaseManifest
+> Task :app:extractProguardFiles
+> Task :app:processReleaseManifestForPackage
+> Task :app:mergeReleaseJniLibFolders
+> Task :app:processReleaseResources
+> Task :app:mergeReleaseNativeLibs NO-SOURCE
+
+> Task :app:compileReleaseJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :app:generateReleaseLintVitalReportModel
+> Task :app:stripReleaseDebugSymbols NO-SOURCE
+> Task :app:extractReleaseNativeSymbolTables NO-SOURCE
+> Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:checkReleaseDuplicateClasses
+> Task :app:dexBuilderRelease
+> Task :app:desugarReleaseFileDependencies
+> Task :app:mergeReleaseStartupProfile
+> Task :app:lintVitalAnalyzeRelease
+> Task :app:mergeExtDexRelease
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
+> Task :app:mergeReleaseArtProfile
+> Task :app:mergeDexRelease
+> Task :app:mergeReleaseGlobalSynthetics
+> Task :app:mergeReleaseShaders
+> Task :app:compileReleaseArtProfile
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseAssets
+> Task :app:compressReleaseAssets
+> Task :app:extractReleaseVersionControlInfo
+> Task :app:processReleaseJavaRes NO-SOURCE
+> Task :app:optimizeReleaseResources
+> Task :app:collectReleaseDependencies
+> Task :app:sdkReleaseDependencyData
+> Task :app:writeReleaseAppMetadata
+> Task :app:writeReleaseSigningConfigVersions
+> Task :app:mergeReleaseJavaResource
+> Task :app:packageRelease
+> Task :app:createReleaseApkListingFileRedirect
+> Task :app:assembleRelease
+
+BUILD SUCCESSFUL in 1m 40s
+43 actionable tasks: 43 executed
+total 4984
+-rw-r--r-- 1 runner runner 5101785 Nov 14 16:24 unsigned.apk
+```
+
 ## conferencia
 ```
-(sem log da conferencia)
+pacote: smartedtv.full
+versao: 1.0.5 6
+pacote esperado: smartedtv.full
+APPLICATION_ID no manifesto: OK ca-app-pub-2066014755407744~5076693043
+bloco no dex: ca-app-pub-2066014755407744/4214378379 OK
+bloco no dex: ca-app-pub-2066014755407744/3572039686 OK
+activity no manifesto: AppOpenActivity OK
+activity no manifesto: PreRollActivity OK
+activity no manifesto: LauncherActivity OK
+   orientation: A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=6
+   orientation: A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=6
+   orientation: A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=6
+   orientation: A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=6
+screenOrientation no APK: [6, 6, 6, 6] (linhas: 4)
+sensorLandscape (enum 6) nas 4 activities: OK
+APPLICATION_ID via aapt2: OK
+modo de TESTE ligado: blocos do Google no dex OK
+tag de log SmartAds: OK
+link do APK principal no dex: https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.63-classica/SMARTED-TV-v1.0.63-arm64.apk
+manifesto do instalador: OK (permissao + FileProvider + BoasVindas)
+logica de download no dex: OK
+tamanho do APK de anuncios: 4.9 MB
+classes.dex: 12372280 bytes
+entradas no APK: 185
 ```
