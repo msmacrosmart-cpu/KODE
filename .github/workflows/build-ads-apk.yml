@@ -85,6 +85,7 @@ jobs:
       - name: 7. Conferir o APK final (AdMob, landscape, SDK)
         run: |
           set -euo pipefail
+          exec > >(tee "$RUNNER_TEMP/ads/check.log") 2>&1
           python3 -m pip install --quiet 'pyaxmlparser==0.3.31'
           python3 - "$RUNNER_TEMP/ads/$ARQUIVO_ADS" <<'PY'
           import sys, zipfile
@@ -101,26 +102,48 @@ jobs:
               manifesto = z.read('AndroidManifest.xml')
               dex = b''.join(z.read(n) for n in nomes if n.startswith('classes') and n.endswith('.dex'))
 
-          # o manifesto e binario: os textos do AdMob aparecem em UTF-16 no pool
+          def contem(blob, texto):
+              # o string pool do AXML alterna UTF-8 e UTF-16 conforme o build
+              return (texto.encode('utf-8') in blob) or (texto.encode('utf-16-le') in blob)
+
           app_id = 'ca-app-pub-2066014755407744~5076693043'
-          assert app_id.encode('utf-16-le') in manifesto, 'APPLICATION_ID do AdMob fora do manifesto'
-          print('APPLICATION_ID no manifesto: OK')
+          assert contem(manifesto, app_id), 'APPLICATION_ID do AdMob fora do manifesto'
+          print('APPLICATION_ID no manifesto: OK', app_id)
 
           for unidade in ('ca-app-pub-2066014755407744/4214378379',
                           'ca-app-pub-2066014755407744/3572039686'):
-              assert unidade.encode() in dex, 'bloco %s nao esta no dex' % unidade
+              assert contem(dex, unidade), 'bloco %s nao esta no dex' % unidade
               print('bloco no dex:', unidade, 'OK')
 
           for activity in ('AppOpenActivity', 'PreRollActivity'):
-              assert activity.encode('utf-16-le') in manifesto, '%s fora do manifesto' % activity
-          assert 'sensorLandscape'.encode('utf-16-le') in manifesto, 'landscape nao forcado'
-          print('activities e sensorLandscape: OK')
+              assert contem(manifesto, activity), '%s fora do manifesto' % activity
+              print('activity no manifesto:', activity, 'OK')
+          assert contem(manifesto, 'sensorLandscape'), 'landscape nao forcado'
+          print('sensorLandscape: OK')
 
           # o SDK do AdMob tem que ter entrado de verdade
           assert any(n.startswith('classes') for n in nomes), 'sem dex'
           print('classes.dex: %d bytes' % len(dex))
           print('entradas no APK:', len(nomes))
           PY
+
+      - name: 7b. Guardar o log da conferencia quando falhar
+        if: failure()
+        run: |
+          set -uo pipefail
+          mkdir -p docs
+          {
+            echo "# Log da conferencia do APK de anuncios"
+            echo
+            echo '```'
+            tail -n 120 "$RUNNER_TEMP/ads/check.log" 2>/dev/null || echo '(sem log)'
+            echo '```'
+          } > docs/build-log-ads.txt
+          git config user.name "smarted-bot"
+          git config user.email "smarted-bot@users.noreply.github.com"
+          git add docs/build-log-ads.txt
+          git commit -m "ci: log da conferencia dos anuncios" || true
+          git push origin HEAD:arena/7dedf371-kode || true
 
       - name: 8. Guardar o APK como artefato
         uses: actions/upload-artifact@v4
