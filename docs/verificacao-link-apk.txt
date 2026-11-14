@@ -1,0 +1,21 @@
+# Conferencia do link do APK principal
+
+Feita pelo CI do GitHub, **sem token e sem login** — do mesmo jeito
+que o app de anuncios faz na TV.
+
+- versionCode minimo esperado: `2103049`
+- links configurados: 1
+
+## https://www.dropbox.com/scl/fi/p5blo0t1rw86bwhcmkkns/SMARTEDTV.apk?rlkey=aapugrey7gcidvb40e8ajxykg&st=1luk07h0&dl=1
+
+- HTTP/resultado: `200 application/binary 242222254`
+- tamanho: 242222254 bytes (231.0 MB)
+- sha256: `82c206e3eac9df9068414bc59908449008424927106e87a867e64f90b5bcee8d`
+- pacote: `org.xbmc.kodi`
+- versao: `1.0.63` (2103049)
+- app: SMARTEDTV
+- **OK**: o app consegue baixar e instalar este arquivo
+
+---
+
+Veredito: **link funcionando** (pelo menos um entrega o SMARTEDTV).
