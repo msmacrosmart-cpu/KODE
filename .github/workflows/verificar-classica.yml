@@ -1,0 +1,93 @@
+name: Conferir APK classico publicado (1.0.58 vs 1.0.47)
+
+# Diagnostico sob demanda: baixa as duas releases e compara o conteudo do ZIP,
+# mostrando exatamente o que mudou (skin, versao, tamanho). Nao publica nada.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  conferir:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Baixar as duas releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/apks"
+          gh release download v1.0.58-classica -R "$GITHUB_REPOSITORY" \
+            --pattern 'SMARTED-TV-v1.0.58-arm64.apk' --dir "$RUNNER_TEMP/apks"
+          gh release download v1.0.47-classica -R "$GITHUB_REPOSITORY" \
+            --pattern 'SMARTED-TV-v1.0.47-arm64.apk' --dir "$RUNNER_TEMP/apks"
+          ls -l "$RUNNER_TEMP/apks"
+          sha256sum "$RUNNER_TEMP/apks/"*.apk
+
+      - name: Comparar conteudo
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet 'pyaxmlparser==0.3.31'
+          python3 - "$RUNNER_TEMP/apks" <<'PY' | tee "$RUNNER_TEMP/comparacao.txt"
+          import sys, zipfile, re
+          from pathlib import Path
+          from pyaxmlparser import APK
+
+          pasta = Path(sys.argv[1])
+          novo = pasta / 'SMARTED-TV-v1.0.58-arm64.apk'
+          velho = pasta / 'SMARTED-TV-v1.0.47-arm64.apk'
+
+          def resumo(apk):
+              a = APK(str(apk))
+              with zipfile.ZipFile(apk) as z:
+                  infos = {i.filename: i.file_size for i in z.infolist() if not i.is_dir()}
+              return a, infos
+
+          a_novo, i_novo = resumo(novo)
+          a_velho, i_velho = resumo(velho)
+          print('1.0.58: %d bytes | %s %s | %s' % (novo.stat().st_size, a_novo.version_name,
+                                                   a_novo.version_code, a_novo.get_app_name()))
+          print('1.0.47: %d bytes | %s %s | %s' % (velho.stat().st_size, a_velho.version_name,
+                                                   a_velho.version_code, a_velho.get_app_name()))
+
+          so_novo = sorted(set(i_novo) - set(i_velho))
+          so_velho = sorted(set(i_velho) - set(i_novo))
+          mudados = sorted(n for n in set(i_novo) & set(i_velho) if i_novo[n] != i_velho[n])
+          print('')
+          print('entradas novas (%d): %s' % (len(so_novo), so_novo[:10]))
+          print('entradas removidas (%d): %s' % (len(so_velho), so_velho[:10]))
+          print('entradas com tamanho diferente (%d):' % len(mudados))
+          for n in mudados[:20]:
+              print('   %-70s %d -> %d' % (n, i_velho[n], i_novo[n]))
+
+          with zipfile.ZipFile(novo) as z:
+              home = z.read('assets/addons/skin.novatv/xml/Home.xml').decode()
+              nav = z.read('assets/addons/skin.novatv/xml/MyVideoNav.xml').decode()
+              addon = z.read('assets/addons/skin.novatv/addon.xml').decode()
+          print('')
+          print('skin.novatv versao:', re.search(r'version="([^"]+)"', addon).group(1))
+          for cid, topo, alt in (('9201', '570', '194'), ('9203', '822', '194')):
+              padrao = (r'<control type="list" id="%s"><left>60</left><top>(\d+)</top>'
+                        r'<right>60</right><height>(\d+)</height>' % cid)
+              m = re.search(padrao, home)
+              print('%s: top=%s height=%s (esperado %s/%s)' % (cid, m.group(1) if m else '?',
+                                                              m.group(2) if m else '?', topo, alt))
+          print('9202 presente:', '<control type="list" id="9202">' in home)
+          print('painel claro B3FFFFFF na lista:', 'B3FFFFFF" border="16">pb_rounded.png' in nav)
+          print('painel escuro CC121212 na lista:', 'CC121212" border="16">pb_rounded.png' in nav)
+          print('foco escuro FF1E1E1E na lista:', 'FF1E1E1E" border="16">pb_rounded.png' in nav)
+
+          with zipfile.ZipFile(velho) as z:
+              home_v = z.read('assets/addons/skin.novatv/xml/Home.xml').decode()
+          antigos = []
+          for c in ('9201', '9202', '9203'):
+              m = re.search(r'id="%s"><left>60</left><top>(\d+)</top>' % c, home_v)
+              antigos.append('%s@%s' % (c, m.group(1) if m else '?'))
+          print('')
+          print('(1.0.47) fileiras antigas:', ', '.join(antigos))
+          PY
