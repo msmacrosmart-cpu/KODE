@@ -159,8 +159,13 @@ def _escrever_len_utf16(valor: int) -> bytes:
     return struct.pack('<H', valor)
 
 
-def principal(dados: bytes, antigo: str, novo: str) -> tuple[bytes, int]:
-    """Devolve (arsc novo, quantidade de ocorrencias trocadas)."""
+def principal(dados: bytes, antigo: str, novo: str,
+              tolerante: bool = False) -> tuple[bytes, int]:
+    """Devolve (arsc novo, quantidade de ocorrencias trocadas).
+
+    Com ``tolerante=True``, um APK que ja tem o nome novo (rebuild em cima de
+    uma release nossa) passa sem erro: devolve os bytes originais e 0 trocas.
+    """
     if len(dados) < 12:
         raise ERRO('resources.arsc curto demais (%d bytes)' % len(dados))
     tipo, header_size, tamanho = struct.unpack_from(FORMATO, dados, 0)
@@ -181,6 +186,10 @@ def principal(dados: bytes, antigo: str, novo: str) -> tuple[bytes, int]:
         else:
             novas.append(texto)
     if not trocas:
+        # build em cima de um APK que JA foi renomeado (1.0.58 em diante): nada
+        # a trocar, e isso nao e erro — devolve o arquivo como veio.
+        if tolerante and novo in pool.strings:
+            return dados, 0
         raise ERRO('texto %r nao existe no pool (nada foi alterado)' % antigo)
 
     corpo_novo = pool.montar(novas)

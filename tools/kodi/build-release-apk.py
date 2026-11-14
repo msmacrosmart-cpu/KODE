@@ -300,10 +300,14 @@ def main():
             if "resources.arsc" not in names:
                 raise SystemExit("APK sem resources.arsc: nao da para trocar o nome exibido")
             patcher = carregar_patcher()
-            arsc, trocas = patcher.principal(src.read("resources.arsc"), "SMARTED-TV", app_label)
+            arsc, trocas = patcher.principal(src.read("resources.arsc"), "SMARTED-TV",
+                                             app_label, tolerante=True)
             replacements["resources.arsc"] = arsc
-            print(f"Nome exibido: SMARTED-TV -> {app_label} "
-                  f"({trocas} ocorrencia(s) no resources.arsc)")
+            if trocas:
+                print("Nome exibido: SMARTED-TV -> %s (%d ocorrencia(s) no resources.arsc)"
+                      % (app_label, trocas))
+            else:
+                print("Nome exibido: ja e %s no APK base (nada a trocar)" % app_label)
         for arcname, data in {**skin_files, **bridge_files}.items():
             replacements[arcname] = data if isinstance(data, (bytes, bytearray)) else Path(data).read_bytes()
 

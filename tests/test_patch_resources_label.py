@@ -70,6 +70,18 @@ class ResourcesLabelTest(unittest.TestCase):
         self.assertEqual(tamanho_pool % 4, 0)
         self.assertLessEqual(12 + tamanho_pool, len(novo))
 
+    def test_apk_que_ja_tem_o_nome_novo_passa_sem_alterar(self):
+        # rebuild em cima de uma release nossa (1.0.58 em diante): o rotulo ja e
+        # SMARTEDTV, entao reaplicar o patch nao pode abortar o build
+        dados = montar_arsc(['Kodi', 'SMARTEDTV', 'xbmc_version'])
+        novo, trocas = patch.principal(dados, 'SMARTED-TV', 'SMARTEDTV', tolerante=True)
+        self.assertEqual((novo, trocas), (dados, 0))
+
+    def test_tolerante_ainda_falha_quando_nem_o_novo_esta_no_pool(self):
+        with self.assertRaises(patch.ERRO):
+            patch.principal(montar_arsc(['Kodi', 'Outro']), 'SMARTED-TV', 'SMARTEDTV',
+                            tolerante=True)
+
     def test_texto_inexistente_falha_sem_alterar(self):
         with self.assertRaises(patch.ERRO):
             patch.principal(montar_arsc(STRINGS), 'NAO-EXISTE', 'X')
