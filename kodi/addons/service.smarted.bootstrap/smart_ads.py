@@ -28,10 +28,12 @@ import time
 import xbmc
 import xbmcvfs
 
-# PACKAGE = applicationId do app de anuncios (android/smarted-ads). Tem que ser
-# um pacote proprio: org.xbmc.kodi e o pacote do Kodi e o Android nao aceita
-# dois apps com o mesmo nome — um sobrescreveria o outro.
-PACKAGE = 'org.smartedtv.ads'
+# PACKAGE = applicationId do app de anuncios (android/smarted-ads/app-id.txt).
+# Precisa ser um pacote proprio: org.xbmc.kodi e o pacote do Kodi e o Android
+# nao aceita dois apps com o mesmo nome — um sobrescreveria o outro.
+# As CLASSES continuam no namespace org.smartedtv.ads (o applicationId nao muda
+# o nome das classes): e por isso que a ponte leva pacote e classe separados.
+PACKAGE = 'smartedtv.full'
 ATIVIDADE_ABERTURA = 'org.smartedtv.ads.AppOpenActivity'
 ATIVIDADE_PREROLL = 'org.smartedtv.ads.PreRollActivity'
 

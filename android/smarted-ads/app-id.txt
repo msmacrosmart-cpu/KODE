@@ -1,1 +1,1 @@
-org.smartedtv.ads
+smartedtv.full

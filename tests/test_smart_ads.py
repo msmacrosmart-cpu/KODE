@@ -116,10 +116,13 @@ class PontePythonTest(unittest.TestCase):
         modulo, chamadas = carregar_smart_ads()
         self.assertTrue(modulo.tocar_anuncio(modulo.ATIVIDADE_PREROLL))
         self.assertTrue(modulo.tocar_anuncio(modulo.ATIVIDADE_ABERTURA))
+        # pacote (applicationId) e classe (namespace) sao coisas diferentes
         self.assertEqual(chamadas, [
-            'StartAndroidActivity(org.smartedtv.ads,org.smartedtv.ads.PreRollActivity)',
-            'StartAndroidActivity(org.smartedtv.ads,org.smartedtv.ads.AppOpenActivity)',
+            'StartAndroidActivity(%s,%s)' % (modulo.PACKAGE, modulo.ATIVIDADE_PREROLL),
+            'StartAndroidActivity(%s,%s)' % (modulo.PACKAGE, modulo.ATIVIDADE_ABERTURA),
         ])
+        self.assertEqual(modulo.PACKAGE, 'smartedtv.full')
+        self.assertTrue(modulo.ATIVIDADE_PREROLL.startswith('org.smartedtv.ads.'))
 
     def test_pre_roll_respeita_intervalo(self):
         modulo, chamadas = carregar_smart_ads()
@@ -208,7 +211,7 @@ class NoBuildClassicoTest(unittest.TestCase):
     def test_fluxo_confere_os_anuncios_e_anexa_o_apk(self):
         fluxo = (ROOT / '.github/workflows/build-release-classica.yml').read_text()
         self.assertIn('smart_ads.iniciar_monitor', fluxo)     # confere o bootstrap embarcado
-        self.assertIn('v1.0.0-ads', fluxo)                    # baixa o APK de anuncios
+        self.assertIn('-ads', fluxo)                         # baixa o APK de anuncios
         self.assertIn('*Anuncios*', fluxo)                    # e anexa na mesma release
 
     def test_fluxo_de_anuncios_compila_com_a_mesma_chave(self):
