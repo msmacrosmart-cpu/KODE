@@ -1,6 +1,7 @@
 package org.smartedtv.ads;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.ActivityNotFoundException;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -50,6 +51,8 @@ public class BoasVindasActivity extends Activity {
     private Button secundario;
 
     private boolean instalacaoDisparada;
+    /** true quando ja pulamos para o proximo link depois de uma falha. */
+    private boolean pulouDeLink;
 
     private final Runnable acompanhar = new Runnable() {
         @Override
@@ -170,7 +173,7 @@ public class BoasVindasActivity extends Activity {
                 new LinearLayout.LayoutParams(dp(300), ViewGroup.LayoutParams.WRAP_CONTENT);
         medidaSecundario.topMargin = dp(12);
         secundario.setLayoutParams(medidaSecundario);
-        secundario.setOnClickListener(v -> atualizar());
+        secundario.setOnClickListener(v -> aoTocarSecundario());
         coluna.addView(secundario);
 
         fundo.addView(coluna, new FrameLayout.LayoutParams(
@@ -251,12 +254,26 @@ public class BoasVindasActivity extends Activity {
         }
 
         if (progresso.falhou()) {
+            // link 1 respondeu 404? tenta o link 2 sozinho, uma vez
+            if (!pulouDeLink && Instalador.temProximoUrl(this)) {
+                pulouDeLink = true;
+                log("falhou (" + progresso.detalhe + "); tentando o proximo link");
+                if (Instalador.avancarUrl(this)) {
+                    iniciarDownload(true);
+                    return;
+                }
+            }
             titulo.setText("O download falhou");
-            status.setText("Nao consegui baixar o SMARTEDTV.");
-            detalhe.setText(progresso.detalhe + "\nVerifique a internet e tente de novo.");
+            status.setText(Instalador.totalDeUrls() > 1
+                    ? "Nenhum dos " + Instalador.totalDeUrls() + " links funcionou."
+                    : "Nao consegui baixar o SMARTEDTV.");
+            detalhe.setText(progresso.detalhe
+                    + "\nLink " + Instalador.urlNumero(this) + " de " + Instalador.totalDeUrls()
+                    + ": " + Instalador.urlAtual(this)
+                    + "\n\nVoce pode baixar pelo navegador e instalar na mao.");
             barra.setVisibility(View.GONE);
             mostrar(principal, "Tentar de novo", true);
-            mostrar(secundario, Kodi.instalado(this) ? "Abrir SMARTEDTV" : "Verificar de novo", true);
+            mostrar(secundario, "Abrir no navegador", true);
             return;
         }
 
@@ -283,12 +300,15 @@ public class BoasVindasActivity extends Activity {
         status.setText("O aplicativo principal ainda nao esta no aparelho.");
         detalhe.setText("O download do aplicativo (cerca de 242 MB) e automatico:\n"
                 + "ao terminar, a tela de instalacao do Android aparece para voce confirmar."
+                + (Instalador.totalDeUrls() > 1
+                        ? "\nLinks configurados: " + Instalador.totalDeUrls() + "."
+                        : "")
                 + (Instalador.podeInstalar(this)
                         ? ""
                         : "\nDepois autorize 'instalar apps desconhecidos' para este app."));
         barra.setVisibility(View.GONE);
         mostrar(principal, "Baixar e instalar", true);
-        mostrar(secundario, "Ja tenho o SMARTEDTV instalado", true);
+        mostrar(secundario, "Abrir no navegador", true);
     }
 
     private void mostrar(Button vista, String rotulo, boolean habilitado) {
@@ -308,10 +328,63 @@ public class BoasVindasActivity extends Activity {
             return;
         }
         if (progresso.falhou()) {
-            // tentar de novo precisa de um pedido novo
+            // tentar de novo precisa de um pedido novo; se ainda houver link na
+            // lista, ele passa a ser o da vez
             Instalador.apagarArquivo(this);
+            Instalador.avancarUrl(this);
+            pulouDeLink = false;
         }
         iniciarDownload(false);
+    }
+
+    /** O botao secundario muda de papel conforme o estado da tela. */
+    private void aoTocarSecundario() {
+        String rotulo = String.valueOf(secundario.getText());
+        if (rotulo.startsWith("Abrir SMARTEDTV") || rotulo.startsWith("Ja tenho")) {
+            abrirKodi();
+            return;
+        }
+        if (rotulo.startsWith("Baixar de novo")) {
+            reiniciarDownload();
+            return;
+        }
+        if (rotulo.startsWith("Continuar em segundo plano")) {
+            // o DownloadManager continua mesmo com o app fora da tela
+            Log.i(Ads.TAG, "BoasVindas: indo para segundo plano, download continua");
+            moveTaskToBack(true);
+            return;
+        }
+        abrirNoNavegador();
+    }
+
+    private void reiniciarDownload() {
+        log("reiniciando o download do zero");
+        Instalador.apagarArquivo(this);
+        Instalador.reiniciarUrls(this);
+        pulouDeLink = false;
+        instalacaoDisparada = false;
+        iniciarDownload(false);
+    }
+
+    /**
+     * Saida de emergencia: o navegador da TV abre a pagina da release, onde o
+     * usuario baixa o APK e instala na mao. Serve para o caso em que todos os
+     * links diretos falham (ex.: repositorio privado respondendo 404).
+     */
+    private void abrirNoNavegador() {
+        String destino = Instalador.PAGINA != null && !Instalador.PAGINA.isEmpty()
+                ? Instalador.PAGINA : Instalador.urlAtual(this);
+        log("abrindo no navegador: " + destino);
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(destino));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        } catch (Throwable erro) {
+            Log.e(Ads.TAG, "BoasVindas: nao consegui abrir o navegador: " + erro, erro);
+            Toast.makeText(this, "SMARTEDTV: o aparelho nao tem navegador\n" + destino,
+                    Toast.LENGTH_LONG).show();
+            detalhe.setText("Sem navegador. Baixe em outro aparelho e copie o APK:\n" + destino);
+        }
     }
 
     private void iniciarDownload(boolean automatico) {

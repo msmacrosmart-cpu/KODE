@@ -35,22 +35,32 @@ class LinkDoApkPrincipalTest(unittest.TestCase):
     def setUp(self):
         self.texto = APK_URL_TXT.read_text()
         self.campos = {}
+        self.urls = []
         for linha in self.texto.splitlines():
             linha = linha.strip()
             if not linha or linha.startswith('#') or '=' not in linha:
                 continue
             chave, valor = linha.split('=', 1)
-            self.campos[chave.strip()] = valor.strip()
+            chave, valor = chave.strip(), valor.strip()
+            if chave == 'url':
+                self.urls.append(valor)
+            else:
+                self.campos[chave] = valor
 
     def test_link_direto_https_do_apk(self):
-        url = self.campos['url']
-        self.assertTrue(url.startswith('https://'), url)
-        self.assertTrue(url.endswith('.apk'), url)
-        # link direto de anexo de release (sem pagina de HTML no meio)
-        self.assertIn('/releases/download/', url)
+        for url in self.urls:
+            self.assertTrue(url.startswith('https://'), url)
+            self.assertTrue(url.endswith('.apk'), url)
+        # pelo menos um link direto de anexo de release (sem HTML no meio)
+        self.assertTrue(any('/releases/download/' in u for u in self.urls), self.urls)
+
+    def test_pagina_de_reserva_para_o_navegador(self):
+        # se todos os links diretos falharem, o app abre esta pagina
+        pagina = self.campos['pagina']
+        self.assertTrue(pagina.startswith('https://'), pagina)
 
     def test_link_aponta_para_release_real_da_linha_classica(self):
-        url = self.campos['url']
+        url = self.urls[0]
         self.assertRegex(url, r'/releases/download/v1\.0\.\d+-classica/SMARTED-TV-v1\.0\.\d+-arm64\.apk')
         tag = re.search(r'/releases/download/([^/]+)/', url).group(1)
         arquivo = url.rsplit('/', 1)[-1]
@@ -65,10 +75,12 @@ class LinkDoApkPrincipalTest(unittest.TestCase):
     def test_gradle_gera_buildconfig_a_partir_do_arquivo(self):
         gradle = APP_GRADLE.read_text()
         self.assertIn("rootProject.file('apk-url.txt')", gradle)
+        self.assertIn('buildConfigField "String", "APK_URLS"', gradle)
         self.assertIn('buildConfigField "String", "APK_URL"', gradle)
+        self.assertIn('buildConfigField "String", "APK_PAGINA"', gradle)
         self.assertIn('buildConfigField "int", "APK_CODIGO_MINIMO"', gradle)
         # o CI pode sobrescrever o endereco sem editar o arquivo
-        self.assertIn("findProperty('apkUrl')", gradle)
+        self.assertIn("findProperty('apkUrls')", gradle)
 
 
 class VerificacaoDoKodiTest(unittest.TestCase):
@@ -96,6 +108,19 @@ class VerificacaoDoKodiTest(unittest.TestCase):
 class DownloadEInstalacaoTest(unittest.TestCase):
     def setUp(self):
         self.instalador = ler('Instalador')
+
+    def test_varios_links_com_fallback(self):
+        # anexo de repositorio privado responde 404 para quem nao esta logado:
+        # o app precisa poder tentar o proximo endereco
+        self.assertIn('BuildConfig.APK_URLS', self.instalador)
+        self.assertIn('avancarUrl', self.instalador)
+        self.assertIn('temProximoUrl', self.instalador)
+        self.assertIn('urlAtual', self.instalador)
+
+    def test_traduz_o_http_404(self):
+        self.assertIn('HTTP ', self.instalador)
+        self.assertIn('release privada', self.instalador)
+        self.assertIn('case 404', self.instalador)
 
     def test_usa_o_downloadmanager_do_sistema(self):
         # 242 MB nao podem passar pela memoria do app
@@ -143,6 +168,16 @@ class TelaDeBoasVindasTest(unittest.TestCase):
 
     def test_abre_a_instalacao_ao_terminar(self):
         self.assertIn('Instalador.instalar(this)', self.tela)
+
+    def test_saida_pelo_navegador_quando_tudo_falha(self):
+        # botao "Abrir no navegador" -> pagina da release (apk-url.txt, pagina=)
+        self.assertIn('abrirNoNavegador', self.tela)
+        self.assertIn('Instalador.PAGINA', self.tela)
+        self.assertIn('Intent.ACTION_VIEW', self.tela)
+
+    def test_pula_sozinho_para_o_proximo_link(self):
+        self.assertIn('pulouDeLink', self.tela)
+        self.assertIn('Instalador.avancarUrl(this)', self.tela)
 
     def test_sempre_horizontal_e_sem_apagar_a_tela(self):
         self.assertIn('SCREEN_ORIENTATION_SENSOR_LANDSCAPE', self.tela)
@@ -233,14 +268,19 @@ class WorkflowDoAppTest(unittest.TestCase):
         self.fluxo = WORKFLOW.read_text()
 
     def test_versao_nova(self):
-        self.assertIn('VERSAO_ADS: "1.0.4"', self.fluxo)
-        self.assertIn('CODIGO_ADS: "5"', self.fluxo)
-        self.assertIn('TAG_ADS: v1.0.4-ads', self.fluxo)
+        self.assertIn('VERSAO_ADS: "1.0.5"', self.fluxo)
+        self.assertIn('CODIGO_ADS: "6"', self.fluxo)
+        self.assertIn('TAG_ADS: v1.0.5-ads', self.fluxo)
 
     def test_le_o_apk_url_e_confere_a_release(self):
         self.assertIn('apk-url.txt', self.fluxo)
-        self.assertIn('-PapkUrl="$APK_URL"', self.fluxo)
-        self.assertIn('gh release view "$TAG_KODI"', self.fluxo)
+        self.assertIn('-PapkUrls="$APK_URLS"', self.fluxo)
+        self.assertIn("'gh', 'release', 'view'", self.fluxo)
+
+    def test_avisa_quando_o_link_exige_login(self):
+        # o CI checa o link SEM token: anexo de repo privado da 404
+        self.assertIn('sem login: repositorio privado', self.fluxo)
+        self.assertIn("'404', '403', '401'", self.fluxo)
 
     def test_confere_a_logica_do_instalador_antes_de_compilar(self):
         self.assertIn('4b. Conferir a logica do instalador', self.fluxo)

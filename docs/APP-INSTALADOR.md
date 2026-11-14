@@ -37,13 +37,39 @@ Detalhes técnicos que evitam as falhas clássicas:
 - o pacote `org.xbmc.kodi` está em `<queries>` — sem isso o Android 11+ esconde
   o app e a resposta seria sempre “não instalado”.
 
-## Como trocar o APK que ele distribui
+## Erro 404 na TV? O repositório é privado (não é o link)
 
-Editar **uma** linha em `android/smarted-ads/apk-url.txt`:
+Anexo de **repositório privado** no GitHub responde **404** para quem não está
+autenticado — e o app na TV nunca está. O GitHub usa 404 (e não 403) de propósito,
+para não revelar que o repositório existe. Teste sem login:
 
 ```
-url=https://github.com/msmacrosmart-cpu/KODE/releases/download/<tag>/<arquivo>.apk
-codigo=<versionCode>
+curl -o /dev/null -w "%{http_code}\n" -I <link-do-apk>     # 404 = privado, 302 = publico
+```
+
+O app 1.0.5 lida com isso de três formas:
+
+1. mostra o código real (**“HTTP 404 (não encontrado — release privada ou link antigo)”**);
+2. tenta o **próximo** link da lista sozinho (`apk-url.txt` aceita várias linhas `url=`);
+3. se todos falharem, o botão **“Abrir no navegador”** abre a `pagina=` para baixar na mão.
+
+O CI também avisa: o passo `0b` faz a checagem **sem token** e imprime
+`::warning:: … responde HTTP 404 sem login: repositório privado`.
+
+> Cuidado ao tornar o repositório público: `dropbox/smarted-tv-test.jks` (a **chave
+> de assinatura**, senha `android`) está versionado. Publicar o repositório
+> publicaria a chave, e qualquer pessoa poderia assinar um “update” falso do app.
+> Prefira hospedar o APK num link público e manter o código privado.
+
+## Como trocar o APK que ele distribui
+
+Editar `android/smarted-ads/apk-url.txt` (pode ter **vários** `url=`, tentados na ordem):
+
+```
+url=https://link-publico-1/SMARTED-TV-v1.0.63-arm64.apk
+url=https://link-publico-2/reserva.apk
+codigo=2103049
+pagina=https://github.com/msmacrosmart-cpu/KODE/releases/tag/v1.0.63-classica
 ```
 
 O build falha (de propósito) se o link não for `https://….apk`, se a release ou o

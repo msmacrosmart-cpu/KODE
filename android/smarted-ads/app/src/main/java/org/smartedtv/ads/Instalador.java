@@ -34,8 +34,22 @@ import java.util.Locale;
  */
 public final class Instalador {
 
-    /** Endereco do APK principal (BuildConfig vem de android/smarted-ads/apk-url.txt). */
+    /**
+     * Enderecos do APK principal, em ordem de tentativa (BuildConfig vem de
+     * android/smarted-ads/apk-url.txt). O primeiro e o URL_APK.
+     *
+     * Por que uma lista: link de release de repositorio PRIVADO responde 404
+     * para quem nao esta autenticado (o app na TV nunca esta), e hospedagem
+     * gratuita muda de endereco. Com varios links o app tenta o proximo em vez
+     * de mandar o usuario instalar na mao.
+     */
+    public static final String[] URLS = BuildConfig.APK_URLS.split("\\|");
+
+    /** Endereco principal (primeiro da lista). */
     public static final String URL_APK = BuildConfig.APK_URL;
+
+    /** Pagina humana (release/site) para o botao "Abrir no navegador". */
+    public static final String PAGINA = BuildConfig.APK_PAGINA;
 
     /** versionCode minimo aceito (o "codigo=" do apk-url.txt). */
     public static final int CODIGO_MINIMO = BuildConfig.APK_CODIGO_MINIMO;
@@ -48,6 +62,7 @@ public final class Instalador {
 
     private static final String PREFERENCIAS = "instalador";
     private static final String CHAVE_ID = "download";
+    private static final String CHAVE_URL = "url_indice";
     private static final String CHAVE_JA_TENTOU = "ja_tentou_baixar";
     private static final String MIME_APK = "application/vnd.android.package-archive";
     private static final long TAMANHO_MINIMO_PLAUSIVEL = 1024L * 1024L;
@@ -125,6 +140,45 @@ public final class Instalador {
         return new File(pasta, NOME_ARQUIVO);
     }
 
+    /** Link que sera usado agora (indice salvo nas preferencias). */
+    public static String urlAtual(Context contexto) {
+        int indice = prefs(contexto).getInt(CHAVE_URL, 0);
+        if (indice < 0 || indice >= URLS.length) {
+            return URLS.length == 0 ? "" : URLS[0];
+        }
+        return URLS[indice];
+    }
+
+    /** 1-based, para mostrar "link 2 de 3". */
+    public static int urlNumero(Context contexto) {
+        return Math.min(URLS.length, prefs(contexto).getInt(CHAVE_URL, 0) + 1);
+    }
+
+    public static int totalDeUrls() {
+        return URLS.length;
+    }
+
+    public static boolean temProximoUrl(Context contexto) {
+        return prefs(contexto).getInt(CHAVE_URL, 0) + 1 < URLS.length;
+    }
+
+    /** Passa para o proximo link. Devolve false quando a lista acabou. */
+    public static boolean avancarUrl(Context contexto) {
+        int indice = prefs(contexto).getInt(CHAVE_URL, 0) + 1;
+        if (indice >= URLS.length) {
+            return false;
+        }
+        prefs(contexto).edit().putInt(CHAVE_URL, indice).apply();
+        Log.i(Ads.TAG, "Instalador: passando para o link " + (indice + 1) + "/" + URLS.length
+                + " -> " + URLS[indice]);
+        return true;
+    }
+
+    /** Volta para o primeiro link (botao "Tentar de novo"). */
+    public static void reiniciarUrls(Context contexto) {
+        prefs(contexto).edit().putInt(CHAVE_URL, 0).apply();
+    }
+
     public static boolean jaTentouBaixar(Context contexto) {
         return prefs(contexto).getBoolean(CHAVE_JA_TENTOU, false);
     }
@@ -147,8 +201,9 @@ public final class Instalador {
             Log.i(Ads.TAG, "Instalador: APK ja esta no aparelho, nao baixa de novo");
             return prefs(contexto).getLong(CHAVE_ID, 0L);
         }
-        if (URL_APK == null || !URL_APK.startsWith("http")) {
-            Log.e(Ads.TAG, "Instalador: URL do APK invalida (" + URL_APK + ")");
+        String url = urlAtual(contexto);
+        if (url == null || !url.startsWith("http")) {
+            Log.e(Ads.TAG, "Instalador: URL do APK invalida (" + url + ")");
             return 0L;
         }
         try {
@@ -158,7 +213,7 @@ public final class Instalador {
                 Log.e(Ads.TAG, "Instalador: o sistema nao tem DownloadManager");
                 return 0L;
             }
-            DownloadManager.Request pedido = new DownloadManager.Request(Uri.parse(URL_APK));
+            DownloadManager.Request pedido = new DownloadManager.Request(Uri.parse(url));
             pedido.setTitle("SMARTEDTV");
             pedido.setDescription("Baixando o aplicativo principal");
             pedido.setMimeType(MIME_APK);
@@ -169,7 +224,8 @@ public final class Instalador {
             pedido.setDestinationInExternalFilesDir(contexto, Environment.DIRECTORY_DOWNLOADS, NOME_ARQUIVO);
             long id = dm.enqueue(pedido);
             prefs(contexto).edit().putLong(CHAVE_ID, id).putBoolean(CHAVE_JA_TENTOU, true).apply();
-            Log.i(Ads.TAG, "Instalador: download enfileirado id=" + id + " url=" + URL_APK);
+            Log.i(Ads.TAG, "Instalador: download enfileirado id=" + id
+                    + " link=" + urlNumero(contexto) + "/" + URLS.length + " url=" + url);
             return id;
         } catch (Throwable erro) {
             Log.e(Ads.TAG, "Instalador: nao conseguiu baixar: " + erro, erro);
@@ -209,6 +265,7 @@ public final class Instalador {
             int motivo = lerInteiro(cursor, DownloadManager.COLUMN_REASON, 0);
             return new Progresso(status, baixado, total,
                     status == DownloadManager.STATUS_FAILED ? explicar(motivo) : "");
+            // COLUMN_REASON carrega o codigo HTTP (404/403/...) nesses casos
         } catch (Throwable erro) {
             Log.w(Ads.TAG, "Instalador: falha ao consultar o download: " + erro);
             return new Progresso(Progresso.AUSENTE, 0L, 0L, "consulta falhou: " + erro);
@@ -236,6 +293,25 @@ public final class Instalador {
     }
 
     private static String explicar(int motivo) {
+        // O DownloadManager guarda o codigo HTTP cru em COLUMN_REASON quando o
+        // servidor responde erro — e 404 aqui quase sempre quer dizer
+        // "repositorio privado" (o GitHub esconde o anexo de quem nao logou).
+        if (motivo >= 400 && motivo <= 599) {
+            String dica;
+            switch (motivo) {
+                case 401:
+                case 403:
+                    dica = "acesso negado (o link exige login)";
+                    break;
+                case 404:
+                    dica = "nao encontrado — release privada ou link antigo";
+                    break;
+                default:
+                    dica = "o servidor recusou o download";
+                    break;
+            }
+            return "HTTP " + motivo + " (" + dica + ")";
+        }
         switch (motivo) {
             case DownloadManager.ERROR_INSUFFICIENT_SPACE:
                 return "sem espaco livre no aparelho";

@@ -25,18 +25,32 @@ def adsTesteHash = (project.findProperty('adsTesteHash') ?: '').toString()
 
 // APK PRINCIPAL que este app instala. Fonte unica: apk-url.txt (chave=valor),
 // com sobrescrita pelo CI (-PapkUrl=... / -PapkCodigo=...).
+// apk-url.txt pode ter VARIAS linhas url= (tentadas na ordem) e uma pagina=
 def distribuicao = [:]
+def listaUrls = []
 rootProject.file('apk-url.txt').eachLine { linha ->
     def texto = linha.trim()
     if (texto.isEmpty() || texto.startsWith('#')) {
         return
     }
     def corte = texto.indexOf('=')
-    if (corte > 0) {
-        distribuicao[texto.substring(0, corte).trim()] = texto.substring(corte + 1).trim()
+    if (corte <= 0) {
+        return
+    }
+    def chave = texto.substring(0, corte).trim()
+    def valor = texto.substring(corte + 1).trim()
+    if (chave == 'url') {
+        listaUrls << valor
+    } else {
+        distribuicao[chave] = valor
     }
 }
-def apkUrl = (project.findProperty('apkUrl') ?: distribuicao['url'] ?: '').toString()
+// sobrescrita do CI/manual: -PapkUrls="a|b" (lista) ou -PapkUrl="a" (uma so)
+def apkUrls = (project.findProperty('apkUrls')
+        ?: project.findProperty('apkUrl')
+        ?: listaUrls.join('|')).toString()
+def apkUrl = apkUrls.split('\\|')[0]
+def apkPagina = (project.findProperty('apkPagina') ?: distribuicao['pagina'] ?: '').toString()
 def apkCodigo = (project.findProperty('apkCodigo')
         ?: distribuicao['codigo'] ?: '0').toString().toInteger()
 
@@ -57,7 +71,9 @@ android {
 
         buildConfigField "boolean", "ADS_TESTE", adsTeste
         buildConfigField "String", "ADS_TESTE_HASH", '\"' + adsTesteHash + '\"'
+        buildConfigField "String", "APK_URLS", '\"' + apkUrls + '\"'
         buildConfigField "String", "APK_URL", '\"' + apkUrl + '\"'
+        buildConfigField "String", "APK_PAGINA", '\"' + apkPagina + '\"'
         buildConfigField "int", "APK_CODIGO_MINIMO", apkCodigo.toString()
     }
 
@@ -120,8 +136,14 @@ tasks.register('checkAdMob') {
         }
         // 3. INSTALADOR: o APK principal tem que ter um endereco https valido e a
         //    tela de boas-vindas / FileProvider tem que estar no manifesto.
-        if (!apkUrl.startsWith('https://') || !apkUrl.endsWith('.apk')) {
-            throw new GradleException("apk-url.txt sem um link https de .apk valido: '${apkUrl}'")
+        apkUrls.split('\\|').each { link ->
+            if (!link.startsWith('https://') || !link.endsWith('.apk')) {
+                throw new GradleException(
+                    "apk-url.txt tem um link que nao e https://...apk valido: '${link}'")
+            }
+        }
+        if (apkPagina && !apkPagina.startsWith('https://')) {
+            throw new GradleException("a 'pagina=' do apk-url.txt precisa ser https")
         }
         if (apkCodigo <= 0) {
             throw new GradleException("apk-url.txt sem 'codigo=' (versionCode minimo do Kodi)")
@@ -136,6 +158,7 @@ tasks.register('checkAdMob') {
         }
         println "Pacote do app de anuncios: ${adsAppId}"
         println "AdMob conferido: app ${admobAppId}, abertura ${adUnitAppOpen}, video ${adUnitPreRoll}"
-        println "APK principal: ${apkUrl} (versionCode minimo ${apkCodigo})"
+        println "APK principal: ${apkUrls} (versionCode minimo ${apkCodigo})"
+        println "Pagina de reserva: ${apkPagina ?: '(sem)'}"
     }
 }

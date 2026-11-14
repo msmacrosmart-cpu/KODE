@@ -21,10 +21,10 @@ permissions:
   contents: write
 
 env:
-  VERSAO_ADS: "1.0.4"
-  CODIGO_ADS: "5"
-  ARQUIVO_ADS: SMARTEDTV-Anuncios-1.0.4.apk
-  TAG_ADS: v1.0.4-ads
+  VERSAO_ADS: "1.0.5"
+  CODIGO_ADS: "6"
+  ARQUIVO_ADS: SMARTEDTV-Anuncios-1.0.5.apk
+  TAG_ADS: v1.0.5-ads
   # MODO DE TESTE do AdMob (blocos de teste do Google = sempre preenchem).
   # Trocar para "false" quando a homologacao terminar.
   ADS_TESTE: "true"
@@ -49,31 +49,74 @@ jobs:
           fi
 
       - name: 0b. APK principal a distribuir (android/smarted-ads/apk-url.txt)
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          ARQ=android/smarted-ads/apk-url.txt
-          URL="$(grep -E '^url=' "$ARQ" | head -1 | cut -d= -f2- | tr -d '[:space:]')"
-          CODIGO="$(grep -E '^codigo=' "$ARQ" | head -1 | cut -d= -f2- | tr -d '[:space:]')"
-          echo "APK_URL=$URL" >> "$GITHUB_ENV"
-          echo "APK_CODIGO=$CODIGO" >> "$GITHUB_ENV"
-          echo "::notice::APK principal: $URL (versionCode minimo $CODIGO)"
-          case "$URL" in
-            https://*.apk) ;;
-            *) echo "::error::apk-url.txt precisa de um link https de .apk (achei '$URL')"; exit 1 ;;
-          esac
-          if [ -z "$CODIGO" ] || [ "$CODIGO" -le 0 ] 2>/dev/null; then
-            echo "::error::apk-url.txt precisa de codigo= (versionCode minimo)"; exit 1
-          fi
-          # a release do APK tem que existir (senao o instalador baixa 404)
-          RESTO="${URL#*/releases/download/}"
-          TAG_KODI="${RESTO%%/*}"
-          ARQUIVO_KODI="$(basename "$URL")"
-          echo "::notice::confiro o anexo $ARQUIVO_KODI na release $TAG_KODI"
-          GH_TOKEN="$GITHUB_TOKEN" gh release view "$TAG_KODI" --json assets \
-            -q '.assets[].name' | grep -qx "$ARQUIVO_KODI" \
-            || { echo "::error::$TAG_KODI nao tem o anexo $ARQUIVO_KODI"; exit 1; }
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+          python3 - <<'PY'
+          import os, subprocess, sys
+          from pathlib import Path
+
+          arquivo = Path('android/smarted-ads/apk-url.txt')
+          urls, campos = [], {}
+          for linha in arquivo.read_text().splitlines():
+              linha = linha.strip()
+              if not linha or linha.startswith('#') or '=' not in linha:
+                  continue
+              chave, valor = linha.split('=', 1)
+              chave, valor = chave.strip(), valor.strip()
+              if chave == 'url':
+                  urls.append(valor)
+              else:
+                  campos[chave] = valor
+
+          if not urls:
+              sys.exit('::error::apk-url.txt sem nenhuma linha url=')
+          for url in urls:
+              if not url.startswith('https://') or not url.endswith('.apk'):
+                  sys.exit('::error::link invalido no apk-url.txt (precisa ser https://...apk): %s' % url)
+
+          codigo = campos.get('codigo', '')
+          if not codigo.isdigit() or int(codigo) <= 0:
+              sys.exit('::error::apk-url.txt precisa de codigo= (versionCode minimo do Kodi)')
+          pagina = campos.get('pagina', '')
+          if pagina and not pagina.startswith('https://'):
+              sys.exit('::error::a pagina= do apk-url.txt precisa ser https')
+
+          # link de release do GitHub tem que existir E ser publico: anexo de
+          # repositorio privado responde 404 para quem nao esta logado (o app
+          # na TV nunca esta). Por isso checamos tambem sem token.
+          for url in urls:
+              if '/releases/download/' not in url:
+                  print('::notice::link externo (nao e release do GitHub): %s' % url)
+                  continue
+              resto = url.split('/releases/download/', 1)[1]
+              tag, arquivo_apk = resto.split('/', 1)
+              if not tag or not arquivo_apk:
+                  sys.exit('::error::nao entendi o link: %s' % url)
+              saida = subprocess.run(
+                  ['gh', 'release', 'view', tag, '--repo', os.environ['GITHUB_REPOSITORY'],
+                   '--json', 'assets,tagName'], capture_output=True, text=True)
+              if saida.returncode != 0:
+                  sys.exit('::error::a release %s nao existe (%s)' % (tag, saida.stderr.strip()[:200]))
+              if '"name":"%s"' % arquivo_apk not in saida.stdout.replace(' ', ''):
+                  sys.exit('::error::a release %s nao tem o anexo %s' % (tag, arquivo_apk))
+              print('::notice::release %s tem o anexo %s' % (tag, arquivo_apk))
+              anonimo = subprocess.run(
+                  ['curl', '-sS', '-o', '/dev/null', '-w', '%{http_code}', '-I', url],
+                  capture_output=True, text=True)
+              codigo_http = anonimo.stdout.strip()
+              if codigo_http in ('404', '403', '401'):
+                  print('::warning::%s responde HTTP %s sem login: repositorio privado. '
+                        'O app vai mostrar 404 na TV. Publique o APK num link publico '
+                        '(apk-url.txt) ou torne a release publica.' % (url, codigo_http))
+
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('APK_URLS=%s\n' % '|'.join(urls))
+              env.write('APK_CODIGO=%s\n' % codigo)
+              env.write('APK_PAGINA=%s\n' % pagina)
+          print('::notice::APK principal: %s (versionCode minimo %s)' % (' -> '.join(urls), codigo))
+          PY
 
       - name: 1. Java 17 + Android SDK + Gradle
         uses: actions/setup-java@v4
@@ -121,6 +164,10 @@ jobs:
               ('checa permissao de instalar', 'canRequestPackageInstalls' in codigo['Instalador']),
               ('checa o pacote do Kodi', 'PACOTE = "org.xbmc.kodi"' in codigo['Kodi']),
               ('abertura automatica do download', 'baixarSozinho' in codigo['BoasVindasActivity']),
+              ('saida pelo navegador quando falha',
+               'abrirNoNavegador' in codigo['BoasVindasActivity']),
+              ('lista de links (nao um so)',
+               'BuildConfig.APK_URLS.split' in codigo['Instalador'] and 'avancarUrl' in codigo['Instalador']),
               ('barra de progresso', 'ProgressBar' in codigo['BoasVindasActivity']),
               ('so o data da ponte vai para anuncio',
                'startsWith(URI_ADS)' in codigo['LauncherActivity']),
@@ -145,7 +192,7 @@ jobs:
           gradle -p android/smarted-ads assembleRelease --no-daemon --console=plain \
             -PadsVersionName="$VERSAO_ADS" -PadsVersionCode="$CODIGO_ADS" \
             -PadsAppId="$ADS_APP_ID" -PadsTeste="$ADS_TESTE" \
-            -PapkUrl="$APK_URL" -PapkCodigo="$APK_CODIGO"
+            -PapkUrls="$APK_URLS" -PapkPagina="$APK_PAGINA" -PapkCodigo="$APK_CODIGO"
           mkdir -p "$RUNNER_TEMP/ads"
           cp android/smarted-ads/app/build/outputs/apk/release/app-release-unsigned.apk \
              "$RUNNER_TEMP/ads/unsigned.apk"
@@ -258,9 +305,9 @@ jobs:
           print('tag de log SmartAds: OK')
 
           # --- INSTALADOR (launcher leve que baixa o APK principal) ----------
-          url_apk = os.environ['APK_URL']
-          assert contem(dex, url_apk), 'link do APK principal fora do dex'
-          print('link do APK principal no dex:', url_apk)
+          for url_apk in os.environ['APK_URLS'].split('|'):
+              assert contem(dex, url_apk), 'link do APK principal fora do dex: %s' % url_apk
+              print('link do APK principal no dex:', url_apk)
           assert contem(manifesto, 'REQUEST_INSTALL_PACKAGES'), \
               'sem permissao REQUEST_INSTALL_PACKAGES'
           assert contem(manifesto, 'androidx.core.content.FileProvider'), 'sem FileProvider'
