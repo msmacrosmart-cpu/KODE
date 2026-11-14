@@ -229,10 +229,15 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
     if layout:
         rel.exige("progressBar1" in layout or "progressDrawable" in layout,
                   "layout da splash", "activity_splash.xml legível")
-        # aapt2 imprime enums como 0x8 (hex) ou 8 (decimal), conforme a versão
-        escondido = ("gone" in layout or "0x8" in layout
-                     or any(l.strip().endswith("=8") for l in layout.splitlines()
-                            if "visibility" in l))
+        # diagnóstico: o dump cru do layout vai para o relatório
+        visib = [l.strip() for l in layout.splitlines() if "isib" in l]
+        rel.texto("dump do layout (linhas com visibility): " + (" | ".join(visib) if visib else "(nenhuma)"))
+        escondido = False
+        for linha in visib:
+            valor = linha.split("=")[-1].split()[0] if "=" in linha else ""
+            valor = valor.rstrip(")").lower()
+            if valor in ("8", "0x8", "0x08", "0x00000008"):
+                escondido = True
         rel.exige(escondido, "texto de status", "escondido (gone)")
     else:
         rel.aviso("layout da splash", "não consegui ler activity_splash.xml")
