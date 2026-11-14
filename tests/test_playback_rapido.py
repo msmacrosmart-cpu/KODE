@@ -100,11 +100,11 @@ class FluxoDeBuildTest(unittest.TestCase):
 
     def test_fluxo_anda_em_cima_da_release_anterior(self):
         fluxo = FLUXO.read_text(encoding='utf-8')
-        self.assertIn('--from-version 1.0.59', fluxo)
-        self.assertIn('5e3dc5c36be6b630ced417f2feab85af6507c2d00b7c2e86256f6491d08cf51b', fluxo)
-        self.assertIn('VERSAO_NOVA: "1.0.60"', fluxo)
-        self.assertIn('CODIGO_NOVO: "2103046"', fluxo)
-        self.assertIn('v1.0.60-classica', fluxo)
+        self.assertIn('--from-version 1.0.60', fluxo)
+        self.assertIn('79ff859b7a37eb634d5d864bfb36240029128b27cabfd5f6f44aa628df0d65dc', fluxo)
+        self.assertIn('VERSAO_NOVA: "1.0.61"', fluxo)
+        self.assertIn('CODIGO_NOVO: "2103047"', fluxo)
+        self.assertIn('v1.0.61-classica', fluxo)
 
 
 if __name__ == '__main__':
