@@ -37,3 +37,13 @@ ASSINATURA E ATUALIZACAO
   da 1.0.56/1.0.57, nao instala por cima do Kodi oficial.
 - versionName 1.0.58 / versionCode 2103044 (maior que 2103033 da 1.0.47, entao
   atualiza sem desinstalar e sem perder o perfil).
+
+CONFERENCIA DO ARQUIVO PUBLICADO (docs/comparacao-1.0.58.txt)
+- 1.0.58: 242.209.666 bytes | versionName 1.0.58 | versionCode 2103044 | SMARTEDTV
+- 1.0.47: 242.209.666 bytes | versionName 1.0.47 | versionCode 2103033 | SMARTED-TV
+- Entradas do APK que mudaram (4): skin.novatv/addon.xml, skin.novatv/changelog.txt,
+  skin.novatv/xml/Home.xml e resources.arsc (nome exibido). Nenhuma entrada nova,
+  nenhuma removida. MyVideoNav.xml mudou de conteudo mantendo o mesmo tamanho
+  (as cores novas tem o mesmo numero de caracteres).
+- O arquivo ficou do mesmo tamanho da 1.0.47 porque as mudancas de skin sao
+  neutras em bytes: o motor, o dex, o perfil e os addons nao foram tocados.

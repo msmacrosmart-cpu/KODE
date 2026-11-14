@@ -1,9 +1,0 @@
-<?xml version="1.0" ?>
-<buttonmap>
-    <device name="uinput-fpc" provider="android" vid="0666" pid="0888" buttoncount="2">
-        <configuration />
-        <controller id="game.controller.default">
-            <feature name="a" button="1" />
-        </controller>
-    </device>
-</buttonmap>
