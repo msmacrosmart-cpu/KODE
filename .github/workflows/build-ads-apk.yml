@@ -356,7 +356,13 @@ jobs:
             echo "   o APK principal e abre a tela de instalacao do Android."
             echo "3. Autorize 'instalar apps desconhecidos' quando o Android pedir."
             echo
-            echo "APK principal configurado: \`$APK_URL\` (versionCode minimo \`$APK_CODIGO\`)."
+            echo "APK principal configurado (tentado na ordem):"
+            printf '%s\n' "$APK_URLS" | tr '|' '\n' | sed 's/^/  - /'
+            echo
+            echo "versionCode minimo: \`$APK_CODIGO\`"
+            echo "Se o download der HTTP 404, o link exige login (release de repositorio"
+            echo "privado) ou mudou de lugar; o app oferece \`Abrir no navegador\`."
+            echo "Pagina de reserva: \`$APK_PAGINA\`."
             echo
             echo "## Anuncios"
             echo
