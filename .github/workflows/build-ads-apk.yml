@@ -1,7 +1,11 @@
 name: "Build SMARTEDTV Ads (AdMob nativo)"
 
-# Compila o app de anuncios (org.smartedtv.ads) que o Kodi abre por
+# Compila o app de anuncios (smartedtv.full) que o Kodi abre por
 # StartAndroidActivity(): App Open + video pre-roll, sempre em landscape.
+#
+# A partir da 1.0.4 ele tambem e o INSTALADOR leve: ao abrir pelo icone,
+# verifica se o app principal (org.xbmc.kodi) esta instalado e, se nao estiver,
+# baixa o APK indicado em android/smarted-ads/apk-url.txt e abre a instalacao.
 # O APK sai assinado com a MESMA chave da linha SMARTED-TV (sem isso o Android
 # nao aceitaria atualizar o app de anuncios depois).
 
@@ -17,10 +21,10 @@ permissions:
   contents: write
 
 env:
-  VERSAO_ADS: "1.0.3"
-  CODIGO_ADS: "4"
-  ARQUIVO_ADS: SMARTEDTV-Anuncios-1.0.3.apk
-  TAG_ADS: v1.0.3-ads
+  VERSAO_ADS: "1.0.4"
+  CODIGO_ADS: "5"
+  ARQUIVO_ADS: SMARTEDTV-Anuncios-1.0.4.apk
+  TAG_ADS: v1.0.4-ads
   # MODO DE TESTE do AdMob (blocos de teste do Google = sempre preenchem).
   # Trocar para "false" quando a homologacao terminar.
   ADS_TESTE: "true"
@@ -43,6 +47,33 @@ jobs:
             echo "::error::org.xbmc.kodi e o pacote do Kodi: o Android nao aceita dois apps com o mesmo pacote"
             exit 1
           fi
+
+      - name: 0b. APK principal a distribuir (android/smarted-ads/apk-url.txt)
+        run: |
+          set -euo pipefail
+          ARQ=android/smarted-ads/apk-url.txt
+          URL="$(grep -E '^url=' "$ARQ" | head -1 | cut -d= -f2- | tr -d '[:space:]')"
+          CODIGO="$(grep -E '^codigo=' "$ARQ" | head -1 | cut -d= -f2- | tr -d '[:space:]')"
+          echo "APK_URL=$URL" >> "$GITHUB_ENV"
+          echo "APK_CODIGO=$CODIGO" >> "$GITHUB_ENV"
+          echo "::notice::APK principal: $URL (versionCode minimo $CODIGO)"
+          case "$URL" in
+            https://*.apk) ;;
+            *) echo "::error::apk-url.txt precisa de um link https de .apk (achei '$URL')"; exit 1 ;;
+          esac
+          if [ -z "$CODIGO" ] || [ "$CODIGO" -le 0 ] 2>/dev/null; then
+            echo "::error::apk-url.txt precisa de codigo= (versionCode minimo)"; exit 1
+          fi
+          # a release do APK tem que existir (senao o instalador baixa 404)
+          RESTO="${URL#*/releases/download/}"
+          TAG_KODI="${RESTO%%/*}"
+          ARQUIVO_KODI="$(basename "$URL")"
+          echo "::notice::confiro o anexo $ARQUIVO_KODI na release $TAG_KODI"
+          GH_TOKEN="$GITHUB_TOKEN" gh release view "$TAG_KODI" --json assets \
+            -q '.assets[].name' | grep -qx "$ARQUIVO_KODI" \
+            || { echo "::error::$TAG_KODI nao tem o anexo $ARQUIVO_KODI"; exit 1; }
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: 1. Java 17 + Android SDK + Gradle
         uses: actions/setup-java@v4
@@ -68,13 +99,53 @@ jobs:
       - name: 4. Conferir os IDs do AdMob no codigo
         run: gradle -p android/smarted-ads :app:checkAdMob -PadmobCheck --no-daemon --console=plain
 
+      - name: 4b. Conferir a logica do instalador (fontes)
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          base = Path('android/smarted-ads/app/src/main/java/org/smartedtv/ads')
+          codigo = {n: (base / (n + '.java')).read_text() for n in
+                    ('BoasVindasActivity', 'Instalador', 'Kodi', 'LauncherActivity')}
+          manifesto = Path('android/smarted-ads/app/src/main/AndroidManifest.xml').read_text()
+          obrigatorio = [
+              ('instalador usa DownloadManager', 'DownloadManager' in codigo['Instalador']),
+              ('destino na pasta privada do app',
+               'setDestinationInExternalFilesDir' in codigo['Instalador']),
+              ('instala por content:// (FileProvider)',
+               'FileProvider.getUriForFile' in codigo['Instalador']),
+              ('tipo APK no intent',
+               'application/vnd.android.package-archive' in codigo['Instalador']),
+              ('libera leitura do URI',
+               'FLAG_GRANT_READ_URI_PERMISSION' in codigo['Instalador']),
+              ('checa permissao de instalar', 'canRequestPackageInstalls' in codigo['Instalador']),
+              ('checa o pacote do Kodi', 'PACOTE = "org.xbmc.kodi"' in codigo['Kodi']),
+              ('abertura automatica do download', 'baixarSozinho' in codigo['BoasVindasActivity']),
+              ('barra de progresso', 'ProgressBar' in codigo['BoasVindasActivity']),
+              ('so o data da ponte vai para anuncio',
+               'startsWith(URI_ADS)' in codigo['LauncherActivity']),
+              ('icone do app cai no instalador',
+               'BoasVindasActivity.class' in codigo['LauncherActivity']),
+              ('REQUEST_INSTALL_PACKAGES no manifesto',
+               'REQUEST_INSTALL_PACKAGES' in manifesto),
+              ('FileProvider declarado', 'androidx.core.content.FileProvider' in manifesto),
+              ('path do FileProvider', '@xml/file_paths' in manifesto),
+              ('visibilidade do pacote do Kodi', 'android:name="org.xbmc.kodi"' in manifesto),
+          ]
+          for nome, ok in obrigatorio:
+              print('%-40s %s' % (nome, 'OK' if ok else 'FALTANDO'))
+          if not all(ok for _, ok in obrigatorio):
+              raise SystemExit('instalador incompleto')
+          PY
+
       - name: 5. Compilar o APK (release, sem assinatura)
         run: |
           set -euo pipefail
           exec > >(tee "$RUNNER_TEMP/gradle.log") 2>&1
           gradle -p android/smarted-ads assembleRelease --no-daemon --console=plain \
             -PadsVersionName="$VERSAO_ADS" -PadsVersionCode="$CODIGO_ADS" \
-            -PadsAppId="$ADS_APP_ID" -PadsTeste="$ADS_TESTE"
+            -PadsAppId="$ADS_APP_ID" -PadsTeste="$ADS_TESTE" \
+            -PapkUrl="$APK_URL" -PapkCodigo="$APK_CODIGO"
           mkdir -p "$RUNNER_TEMP/ads"
           cp android/smarted-ads/app/build/outputs/apk/release/app-release-unsigned.apk \
              "$RUNNER_TEMP/ads/unsigned.apk"
@@ -186,6 +257,22 @@ jobs:
           assert b'SmartAds' in dex, 'tag de log SmartAds ausente no dex'
           print('tag de log SmartAds: OK')
 
+          # --- INSTALADOR (launcher leve que baixa o APK principal) ----------
+          url_apk = os.environ['APK_URL']
+          assert contem(dex, url_apk), 'link do APK principal fora do dex'
+          print('link do APK principal no dex:', url_apk)
+          assert contem(manifesto, 'REQUEST_INSTALL_PACKAGES'), \
+              'sem permissao REQUEST_INSTALL_PACKAGES'
+          assert contem(manifesto, 'androidx.core.content.FileProvider'), 'sem FileProvider'
+          assert contem(manifesto, 'BoasVindasActivity'), 'sem a tela de boas-vindas'
+          print('manifesto do instalador: OK (permissao + FileProvider + BoasVindas)')
+          for pedaco in ('DownloadManager', 'SMARTED-TV.apk'):
+              assert contem(dex, pedaco), '%s fora do dex' % pedaco
+          print('logica de download no dex: OK')
+          tamanho_mb = os.path.getsize(apk_path) / 1048576.0
+          print('tamanho do APK de anuncios: %.1f MB' % tamanho_mb)
+          assert tamanho_mb < 10, 'o app de anuncios passou de 10 MB (%.1f MB)' % tamanho_mb
+
           # o SDK do AdMob tem que ter entrado de verdade
           assert any(n.startswith('classes') for n in nomes), 'sem dex'
           print('classes.dex: %d bytes' % len(dex))
@@ -212,8 +299,19 @@ jobs:
           {
             echo "# SMARTEDTV Anuncios $VERSAO_ADS (AdMob nativo)"
             echo
-            echo "App Android que exibe os anuncios do AdMob em cima do Kodi SMARTEDTV."
-            echo "Instale junto com o APK do Kodi: **SMARTEDTV-Anuncios.apk**."
+            echo "App Android leve que (1) exibe os anuncios do AdMob em cima do Kodi"
+            echo "SMARTEDTV e (2) e o INSTALADOR do app principal."
+            echo
+            echo "## Instalacao"
+            echo
+            echo "1. Instale **SMARTEDTV-Anuncios-$VERSAO_ADS.apk** (e o primeiro app)."
+            echo "2. Abra o icone: se o SMARTEDTV ainda nao estiver no aparelho, ele baixa"
+            echo "   o APK principal e abre a tela de instalacao do Android."
+            echo "3. Autorize 'instalar apps desconhecidos' quando o Android pedir."
+            echo
+            echo "APK principal configurado: \`$APK_URL\` (versionCode minimo \`$APK_CODIGO\`)."
+            echo
+            echo "## Anuncios"
             echo
             echo "| Tela | Bloco AdMob | Quando aparece |"
             echo "|---|---|---|"

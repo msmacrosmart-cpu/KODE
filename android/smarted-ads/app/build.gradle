@@ -23,6 +23,23 @@ def adsTeste = (project.findProperty('adsTeste') ?: 'true').toString()
 // hash do dispositivo de teste (opcional): -PadsTesteHash=ABCDEF123...
 def adsTesteHash = (project.findProperty('adsTesteHash') ?: '').toString()
 
+// APK PRINCIPAL que este app instala. Fonte unica: apk-url.txt (chave=valor),
+// com sobrescrita pelo CI (-PapkUrl=... / -PapkCodigo=...).
+def distribuicao = [:]
+rootProject.file('apk-url.txt').eachLine { linha ->
+    def texto = linha.trim()
+    if (texto.isEmpty() || texto.startsWith('#')) {
+        return
+    }
+    def corte = texto.indexOf('=')
+    if (corte > 0) {
+        distribuicao[texto.substring(0, corte).trim()] = texto.substring(corte + 1).trim()
+    }
+}
+def apkUrl = (project.findProperty('apkUrl') ?: distribuicao['url'] ?: '').toString()
+def apkCodigo = (project.findProperty('apkCodigo')
+        ?: distribuicao['codigo'] ?: '0').toString().toInteger()
+
 // versao vem do CI (-PadsVersionName / -PadsVersionCode) com padrao local
 def adsVersionName = (project.findProperty('adsVersionName') ?: '1.0.0').toString()
 def adsVersionCode = (project.findProperty('adsVersionCode') ?: '1').toString().toInteger()
@@ -40,6 +57,8 @@ android {
 
         buildConfigField "boolean", "ADS_TESTE", adsTeste
         buildConfigField "String", "ADS_TESTE_HASH", '\"' + adsTesteHash + '\"'
+        buildConfigField "String", "APK_URL", '\"' + apkUrl + '\"'
+        buildConfigField "int", "APK_CODIGO_MINIMO", apkCodigo.toString()
     }
 
     buildTypes {
@@ -69,6 +88,8 @@ android {
 dependencies {
     // Google Play Services Ads (AdMob): App Open + interstitial com criativo de video
     implementation 'com.google.android.gms:play-services-ads:23.2.0'
+    // so o FileProvider (entrega o APK baixado ao instalador por content://)
+    implementation 'androidx.core:core:1.12.0'
 }
 
 // Conferencia unica do app de anuncios (roda no CI: `gradle :app:checkAdMob`).
@@ -97,7 +118,24 @@ tasks.register('checkAdMob') {
         if (!ads.contains(adUnitAppOpen) || !ads.contains(adUnitPreRoll)) {
             throw new GradleException('IDs de bloco de anuncio ausentes em Ads.java')
         }
+        // 3. INSTALADOR: o APK principal tem que ter um endereco https valido e a
+        //    tela de boas-vindas / FileProvider tem que estar no manifesto.
+        if (!apkUrl.startsWith('https://') || !apkUrl.endsWith('.apk')) {
+            throw new GradleException("apk-url.txt sem um link https de .apk valido: '${apkUrl}'")
+        }
+        if (apkCodigo <= 0) {
+            throw new GradleException("apk-url.txt sem 'codigo=' (versionCode minimo do Kodi)")
+        }
+        ['android.permission.REQUEST_INSTALL_PACKAGES',
+         'org.smartedtv.ads.BoasVindasActivity',
+         'androidx.core.content.FileProvider',
+         '@xml/file_paths'].each { item ->
+            if (!manifest.contains(item)) {
+                throw new GradleException("manifesto sem '${item}' (instalador incompleto)")
+            }
+        }
         println "Pacote do app de anuncios: ${adsAppId}"
         println "AdMob conferido: app ${admobAppId}, abertura ${adUnitAppOpen}, video ${adUnitPreRoll}"
+        println "APK principal: ${apkUrl} (versionCode minimo ${apkCodigo})"
     }
 }

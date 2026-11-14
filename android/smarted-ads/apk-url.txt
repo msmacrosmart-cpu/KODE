@@ -1,0 +1,7 @@
+# Onde esta o APK principal (SMARTED-TV / Kodi) que o app de anuncios instala.
+# Fonte unica deste endereco: o Gradle gera BuildConfig.APK_URL a partir daqui
+# (o CI tambem pode sobrescrever com -PapkUrl=...).
+url=https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.63-classica/SMARTED-TV-v1.0.63-arm64.apk
+# versionCode minimo aceito. Se o Kodi instalado estiver abaixo disso, a tela
+# oferece atualizar; acima ou igual, o app so abre o SMARTEDTV.
+codigo=2103049

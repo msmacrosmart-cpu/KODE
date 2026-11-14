@@ -5,6 +5,10 @@
     <!-- exigido pelo AdMob no Android 13+ (ID de publicidade) -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
+    <!-- instalar o APK principal (Kodi). Em Android 8+ o usuario ainda precisa
+         liberar "instalar apps desconhecidos" para ESTE app. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
     <!-- roda em TV Box / projetor: toque nao e obligatorio -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <uses-feature android:name="android.hardware.leanback" android:required="false" />
@@ -53,6 +57,16 @@
             </intent-filter>
         </activity>
 
+        <!-- INSTALADOR LEVE: tela de boas-vindas, download e instalacao do APK
+             principal. Nao tem intent-filter: so o LauncherActivity abre esta
+             tela (o Kodi nunca cai aqui por engano). -->
+        <activity
+            android:name="org.smartedtv.ads.BoasVindasActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode"
+            android:exported="false"
+            android:screenOrientation="sensorLandscape"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+
         <activity
             android:name="org.smartedtv.ads.AppOpenActivity"
             android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode"
@@ -80,5 +94,16 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <!-- FileProvider: entrega o APK baixado ao instalador do Android por
+             content:// (file:// e proibido desde o Android 7). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.arquivos"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>

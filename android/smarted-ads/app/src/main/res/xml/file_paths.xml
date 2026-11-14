@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Caminhos que o FileProvider pode entregar ao instalador do Android.
+     O download do APK principal vai para getExternalFilesDir(DIRECTORY_DOWNLOADS),
+     que no aparelho e Android/data/<pacote>/files/Download/ -> "Download/". -->
+<paths>
+    <external-files-path name="downloads" path="Download/" />
+    <files-path name="interno" path="." />
+</paths>
