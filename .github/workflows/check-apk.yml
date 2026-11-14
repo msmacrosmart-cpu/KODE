@@ -104,4 +104,45 @@ jobs:
           git add -f docs/verificacao-apk.txt
           git commit -m "ci: conferencia do APK $VERSAO pelo artifact (run $RUN_ID)" || true
           git push origin "HEAD:${GITHUB_REF_NAME}" || true
-          exit $RC
+
+          if [ "$RC" -ne 0 ]; then
+            echo "::error::conferencia reprovou o APK do run $RUN_ID"
+            exit "$RC"
+          fi
+
+          # conferência limpa: publica a release, se ela ainda não existir
+          # (o build pode ter morrido num passo anterior só por causa da
+          #  própria conferência — o APK já está pronto e assinado)
+          TAG="v${VERSAO}-unificado"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release $TAG já existe; nada a publicar"
+            exit 0
+          fi
+          APK_NOME="SMARTEDTV-${VERSAO}-unificado-arm64-v8a.apk"
+          cp "$APK" "$APK_NOME"
+          sha256sum "$APK_NOME" > "$APK_NOME.sha256"
+          {
+            echo "# SMARTEDTV $VERSAO — APK ÚNICO (arm64-v8a)"
+            echo
+            echo "Um arquivo só, pacote \`$PACOTE\`: player completo, anúncios do AdMob"
+            echo "dentro do app, catálogo e a base da linha clássica restaurada"
+            echo "(perfil semeado com skin, menus e Brazuca Play configurado)."
+            echo
+            echo "## Splash"
+            echo
+            echo "Barra de progresso branca, sem textos, logo widescreen centralizada."
+            echo
+            echo "## Instalação"
+            echo
+            echo "Instale este APK. Pacote \`$PACOTE\` — convive com o \`org.xbmc.kodi\` antigo."
+            echo "Na primeira abertura o app instala o perfil da base e abre a skin SMARTEDTV."
+            echo
+            echo "Verificação automática do APK (aapt2 + dex + assets): 0 falhas."
+            echo "sha256 e tamanho estão no arquivo .sha256 ao lado do APK."
+          } > notas.md
+          gh release create "$TAG" --title "SMARTEDTV $VERSAO (APK unico, arm64)" \
+            --notes-file notas.md --target "$GITHUB_SHA"
+          gh release upload "$TAG" "$APK_NOME" "$APK_NOME.sha256"
+          gh release view "$TAG" --json assets -q '.assets[] | "\(.name) \(.size) bytes"'
+        env:
+          GH_TOKEN: ${{ github.token }}

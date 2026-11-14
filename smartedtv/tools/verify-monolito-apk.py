@@ -229,8 +229,11 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
     if layout:
         rel.exige("progressBar1" in layout or "progressDrawable" in layout,
                   "layout da splash", "activity_splash.xml legível")
-        rel.exige("0x8" in layout or "gone" in layout,
-                  "texto de status", "escondido (gone)")
+        # aapt2 imprime enums como 0x8 (hex) ou 8 (decimal), conforme a versão
+        escondido = ("gone" in layout or "0x8" in layout
+                     or any(l.strip().endswith("=8") for l in layout.splitlines()
+                            if "visibility" in l))
+        rel.exige(escondido, "texto de status", "escondido (gone)")
     else:
         rel.aviso("layout da splash", "não consegui ler activity_splash.xml")
 
