@@ -14,6 +14,8 @@ name: "SMARTEDTV UNIFICADO - compilar o Kodi do fonte com AdMob dentro (arm64)"
 # Falhas conhecidas dessa receita estão documentadas no outro workflow (disco
 # cheio, /opt quebrando o apt, Pillow em python errado, prefixo de dependências).
 # Não repetir.
+#
+# Disparo: só push nestes caminhos (o filtro abaixo). Commit vazio NÃO dispara.
 
 on:
   workflow_dispatch:
