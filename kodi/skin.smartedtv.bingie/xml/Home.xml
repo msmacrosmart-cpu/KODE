@@ -15,6 +15,20 @@
 	<onload>Skin.SetBool(tmdbhelper.directcallauto)</onload>
 	<onload condition="String.IsEmpty(Skin.String(HomeLayout))">Skin.SetString(HomeLayout,bingie)</onload>
 	
+	<!-- Tema escuro SMARTEDTV: paineis sempre em cinza-escuro, nunca branco -->
+	<onload condition="!String.IsEqual(Skin.String(GeneralPanelsColor),cc121212)">Skin.SetString(GeneralPanelsColor,cc121212)</onload>
+	<onload condition="!String.IsEqual(Skin.String(GeneralPanelsColor.name),Black)">Skin.SetString(GeneralPanelsColor.name,Black)</onload>
+	<onload condition="!String.IsEqual(Skin.String(ViewDetailsPanelColor),cc121212)">Skin.SetString(ViewDetailsPanelColor,cc121212)</onload>
+	<onload condition="!String.IsEqual(Skin.String(ViewDetailsPanelColor.name),Black)">Skin.SetString(ViewDetailsPanelColor.name,Black)</onload>
+	<onload condition="!String.IsEqual(Skin.String(HomeWidgetsBorderColor),cc121212)">Skin.SetString(HomeWidgetsBorderColor,cc121212)</onload>
+	<onload condition="!String.IsEqual(Skin.String(HomeWidgetsBorderColor.name),Black)">Skin.SetString(HomeWidgetsBorderColor.name,Black)</onload>
+	<onload condition="!String.IsEqual(Skin.String(SideBladePanelColor),cc121212)">Skin.SetString(SideBladePanelColor,cc121212)</onload>
+	<onload condition="!String.IsEqual(Skin.String(FooterPanelColor),00FFFFFF)">Skin.SetString(FooterPanelColor,00FFFFFF)</onload>
+	<onload condition="!String.IsEqual(Skin.String(HeaderPanelColor),00FFFFFF)">Skin.SetString(HeaderPanelColor,00FFFFFF)</onload>
+	<!-- Fileiras landscape (212 px): duas cabem com respiro na area dos carrosseis -->
+	<onload condition="!String.IsEqual(Skin.String(widgetstyle),landscape)">Skin.SetString(widgetstyle,landscape)</onload>
+	<onload condition="!String.IsEqual(Window(Home).Property(widgetstyle),landscape)">SetProperty(widgetstyle,landscape,Home)</onload>
+
 	<!-- Build Menu (menu estatico SMARTEDTV: nao regerar) -->
     <onload condition="String.IsEmpty(Window(Home).Property(widgetstyle))">SetProperty(widgetstyle,$INFO[Skin.String(widgetstyle)])</onload>
 

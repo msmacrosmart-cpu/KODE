@@ -1,4 +1,4 @@
-# build 1.0.56 - Vikings Repo registrado no build + nome exibido SMARTEDTV.
+# build 1.0.57 - paineis cinza-escuro (sem branco) + 2 fileiras na Home sem sobreposicao.
 #
 #   1. Vikings Repo: fetch-vikings-repo.py baixa repository.vikings.zip, valida
 #      o addon e deixa a pasta pronta; o build injeta em assets/addons/ e no
@@ -95,7 +95,7 @@ jobs:
       - name: Montar candidato sem assinatura (versão + skin.novatv + ponte)
         run: |
           export PYTHONPATH="$HOME/.cache/kode-build/python:$PYTHONPATH"
-          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.56 --to-code 2103042 --extra-addons "$RUNNER_TEMP/extra" --default-skin "$RUNNER_TEMP/extra/skin.titan.bingie.mod" --skin-overlay kodi/skin.smartedtv.bingie --app-label SMARTEDTV "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
+          python3 tools/kodi/build-release-apk.py --from-version 1.0.22 --to-version 1.0.57 --to-code 2103043 --extra-addons "$RUNNER_TEMP/extra" --default-skin "$RUNNER_TEMP/extra/skin.titan.bingie.mod" --skin-overlay kodi/skin.smartedtv.bingie --app-label SMARTEDTV "$RUNNER_TEMP/base/SMARTED-TV-v1.0.22-arm64.apk" "$RUNNER_TEMP/unsigned.apk"
           ls -lh "$RUNNER_TEMP/unsigned.apk"
 
       - name: Verificar integridade de boot (simulação do launcher dex)
@@ -161,8 +161,8 @@ jobs:
           base = Path(os.environ["RUNNER_TEMP"]) / "base/SMARTED-TV-v1.0.22-arm64.apk"
           out = Path(os.environ["RUNNER_TEMP"]) / "signed.apk"
           a = APK(str(out))
-          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTEDTV', '1.0.56', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
-          assert int(a.version_code) == 2103042, f"versionCode inesperado: {a.version_code}"
+          assert (a.package, a.get_app_name(), a.version_name, str(a.version_code)) == ('org.xbmc.kodi', 'SMARTEDTV', '1.0.57', str(int(a.version_code))), (a.package, a.get_app_name(), a.version_name, a.version_code)
+          assert int(a.version_code) == 2103043, f"versionCode inesperado: {a.version_code}"
           print(f"Identidade: {a.package} {a.get_app_name()} {a.version_name} ({a.version_code})")
           with zipfile.ZipFile(base) as before, zipfile.ZipFile(out) as after:
               assert after.testzip() is None
@@ -208,8 +208,26 @@ jobs:
               # TV ao vivo segue na barra, mas sem carrossel de canais na Home
               assert 'route=carrossel&amp;alvo=canais' not in menu, "carrossel de canais voltou para a Home"
               # cada botao abre a listagem final do Brazuca (modo 1 = base16/base64)
-              for alvo in ('filmes', 'series', 'novelas', 'animes', 'doramas', 'desenhos'):
-                  assert f'route=favoritos-{alvo}' in menu, f"linha de favoritos ausente: {alvo}"
+              # uma fileira por categoria (a duplicata de lancamentos vinha do
+              # segundo widget) e apenas a Home com duas fileiras: Filmes e Series
+              assert 'route=favoritos-' not in menu, "widget de favoritos duplicando a fileira"
+              itens_menu = ET.fromstring(after.read(
+                  f'assets/addons/{SKIN_ID}/xml/script-skinshortcuts-includes.xml')).findall(
+                      './include[@name="skinshortcuts-mainmenu"]/item')
+              def fileiras(item):
+                  nomes = {(p.get('name') or '') for p in item.findall('property')}
+                  return len([n for n in nomes if n == 'widget'
+                              or (n.startswith('widget.') and n[7:].isdigit())])
+              por_rotulo = {i.findtext('label'): fileiras(i) for i in itens_menu}
+              assert por_rotulo.get('Home') == 2, f"Home sem as duas fileiras: {por_rotulo}"
+              for rotulo in ('Filmes', 'S\u00e9ries', 'Doramas', 'Novelas', 'Animes', 'Desenhos'):
+                  assert por_rotulo.get(rotulo) == 1, f"fileira duplicada em {rotulo}: {por_rotulo}"
+              # painel: cinza-escuro de fabrica (o "None" da Bingie virava branco)
+              assert 'Skin.SetString(GeneralPanelsColor,cc121212)' in home, "painel claro na Home"
+              assert 'Skin.SetString(HomeWidgetsBorderColor,cc121212)' in home, "borda branca na Home"
+              widgets_xml = after.read(f'assets/addons/{SKIN_ID}/xml/IncludesHomeBingie.xml').decode()
+              assert '<itemgap>2</itemgap>' not in widgets_xml, "fileiras coladas (itemgap 2)"
+              assert '<itemgap>36</itemgap>' in widgets_xml, "respiro entre as fileiras ausente"
               assert menu.count('&amp;mode=1&amp;') >= 6, "botoes sem a listagem final do Brazuca (mode=1)"
               assert '%23todoscanais' in menu, "TV nao abre a listagem de canais"
               for intermediario in ('%23filmes_menu', '%23series_menu', '%23animes_menu',
@@ -255,7 +273,8 @@ jobs:
                              'special://skin/playlists/'):
                   assert legado not in menu, f"widget legado ainda chamado: {legado}"
               for item, rel in (('Home.xml', 'xml/Home.xml'),
-                                ('script-skinshortcuts-includes.xml', 'xml/script-skinshortcuts-includes.xml')):
+                                ('script-skinshortcuts-includes.xml', 'xml/script-skinshortcuts-includes.xml'),
+                                ('IncludesHomeBingie.xml', 'xml/IncludesHomeBingie.xml')):
                   origem = Path('kodi/skin.smartedtv.bingie') / rel
                   assert after.read(f'assets/addons/{SKIN_ID}/{rel}') == origem.read_bytes(), f"overlay divergente: {rel}"
               # modulos Python que faltavam nos logs do Kodi (ModuleNotFoundError)
@@ -313,16 +332,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp "$RUNNER_TEMP/signed.apk" "SMARTEDTV-v1.0.56-arm64.apk"
-          sha256sum "SMARTEDTV-v1.0.56-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
-          TAG=v1.0.56-smarted-arm64
-          NOTES="$(python3 -c "import pathlib,sys; print(pathlib.Path('docs/NOTAS-RELEASE-1.0.56.md').read_text())")"
+          cp "$RUNNER_TEMP/signed.apk" "SMARTEDTV-v1.0.57-arm64.apk"
+          sha256sum "SMARTEDTV-v1.0.57-arm64.apk" | tee "$RUNNER_TEMP/sha.txt"
+          TAG=v1.0.57-smarted-arm64
+          NOTES="$(python3 -c "import pathlib,sys; print(pathlib.Path('docs/NOTAS-RELEASE-1.0.57.md').read_text())")"
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" "SMARTEDTV-v1.0.56-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
+            gh release upload "$TAG" "SMARTEDTV-v1.0.57-arm64.apk" --repo "$GITHUB_REPOSITORY" --clobber
             gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --notes "$NOTES"
             echo "Release $TAG atualizada com o APK assinado."
           else
-          gh release create v1.0.56-smarted-arm64 "SMARTEDTV-v1.0.56-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTEDTV 1.0.56 (arm64-v8a) - Bingie Mod, Vikings Repo e VOD na Home' --notes "$NOTES"
+          gh release create v1.0.57-smarted-arm64 "SMARTEDTV-v1.0.57-arm64.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'SMARTEDTV 1.0.57 (arm64-v8a) - paineis escuros e Home com 2 fileiras' --notes "$NOTES"
           fi
-          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.56-smarted-arm64/SMARTEDTV-v1.0.56-arm64.apk"
+          echo "::notice::Release publicada: https://github.com/$GITHUB_REPOSITORY/releases/download/v1.0.57-smarted-arm64/SMARTEDTV-v1.0.57-arm64.apk"
 # Os blocos do APK base ficam em .github/private-apk-chunks.json; a assinatura usa dropbox/smarted-tv-test.jks.

@@ -86,8 +86,8 @@ class MenuSuperiorTest(unittest.TestCase):
         for fonte in (overlay.FILMES, overlay.SERIES, overlay.DORAMAS, overlay.NOVELAS,
                       overlay.ANIMES, overlay.DESENHOS):
             self.assertIn(overlay.codificar(fonte), texto, fonte.rsplit('/', 1)[-1])
-        for alvo in ('filmes', 'series', 'novelas', 'animes', 'doramas', 'desenhos'):
-            self.assertIn('route=favoritos-' + alvo, texto, alvo)
+        # a rota de favoritos como segundo widget empilhava uma fileira repetida
+        self.assertNotIn('route=favoritos-', texto)
 
     def test_nenhum_widget_usa_bridge_generico(self):
         texto = MENU.read_text(encoding='utf-8')
@@ -99,6 +99,34 @@ class MenuSuperiorTest(unittest.TestCase):
         self.assertNotIn('plugin://script.skin.helper.widgets/', texto)
         self.assertNotIn('plugin://plugin.video.themoviedb.helper', texto)
         self.assertNotIn('special://skin/playlists/', texto)
+
+    def test_uma_fileira_por_categoria_e_duas_na_home(self):
+        """Sem widget repetido: Home com Filmes em cima e Series embaixo."""
+        fileiras = {}
+        for item in itens_do_menu():
+            nomes = {p.get('name') or '' for p in item.findall('property')}
+            fileiras[item.findtext('label')] = len(
+                [n for n in nomes if n == 'widget' or (n.startswith('widget.') and n[7:].isdigit())])
+        self.assertEqual(fileiras['Home'], 2)
+        for categoria in ('Filmes', 'S\u00e9ries', 'Doramas', 'Novelas', 'Animes', 'Desenhos'):
+            self.assertEqual(fileiras[categoria], 1, categoria)
+
+    def test_home_fixa_paineis_escuros(self):
+        """O branco vinha de Skin.String(HomeWidgetsBorderColor)=None -> colordiffuse invalido."""
+        texto = HOME.read_text(encoding='utf-8')
+        for chave in ('GeneralPanelsColor', 'ViewDetailsPanelColor',
+                      'HomeWidgetsBorderColor', 'SideBladePanelColor'):
+            self.assertIn('Skin.SetString(%s,cc121212)' % chave, texto, chave)
+        self.assertNotIn('Skin.SetString(HeaderPanelColor,None)', texto)
+        self.assertIn('Skin.SetString(FooterPanelColor,00FFFFFF)', texto)
+
+    def test_fileiras_da_home_tem_respiro_vertical(self):
+        widgets = OVERLAY / 'xml/IncludesHomeBingie.xml'
+        self.assertTrue(widgets.is_file())
+        texto = widgets.read_text(encoding='utf-8')
+        self.assertNotIn('<itemgap>2</itemgap>', texto)
+        self.assertIn('<itemgap>36</itemgap>', texto)
+        ET.parse(widgets)
 
 
 class BuildOverlayTest(unittest.TestCase):
