@@ -4,6 +4,12 @@ name: "Build SMARTED-TV 1.0.61 (linha classica: anuncios com pacote smartedtv.fu
 # Kodi: baixa o APK da versao anterior, troca a skin e o bootstrap, sobe
 # versionName/versionCode, reassina com a mesma chave da linha e publica.
 #
+# 1.0.61 — PACOTE DOS ANUNCIOS
+#   * o app de anuncios passou a usar applicationId smartedtv.full (fonte unica:
+#     android/smarted-ads/app-id.txt); as classes seguem em org.smartedtv.ads.
+#   * esta build confere que a ponte embarcada aponta para o pacote do arquivo e
+#     anexa o APK de anuncios (release v1.0.1-ads) NA MESMA release.
+#
 # 1.0.60 — ANUNCIOS ADMOB
 #   * bootstrap 1.0.10 liga o app org.smartedtv.ads pela ponte nativa
 #     StartAndroidActivity(): pop-up de abertura uma vez (bloco .../4214378379)
