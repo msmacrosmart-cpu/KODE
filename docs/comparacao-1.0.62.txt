@@ -1,0 +1,46 @@
+1.0.62: 242222254 bytes | 1.0.62 2103048 | SMARTEDTV
+1.0.61: 242222254 bytes | 1.0.61 2103047 | SMARTEDTV
+pacote do APK do Kodi: org.xbmc.kodi
+sha256 publicado: f4d1a2038fd4ddac17564cb284aab108d7df3185e638bf118c96c1ef3ffb9629  /home/runner/work/_temp/apks/SMARTED-TV-v1.0.61-arm64.apk
+sha256 publicado: 5fe9024e0a487c9f8f53b4b9e40469623753ec56308c27c0d7019276ef74964f  /home/runner/work/_temp/apks/SMARTED-TV-v1.0.62-arm64.apk
+sha256 publicado: cb6405ceb54deeba0a2b7de96a7abb76d593868067b9bfd103c30bbdb7395886  /home/runner/work/_temp/apks/SMARTEDTV-Anuncios-1.0.2.apk
+
+entradas novas (0): []
+entradas removidas (0): []
+entradas com tamanho diferente (1):
+   assets/addons/service.smarted.bootstrap/smart_ads.py                   6925 -> 7951
+
+bootstrap versao: 1.0.12
+advancedsettings buffermode 1        OK
+advancedsettings memorysize 50 MB    OK
+advancedsettings readfactor 20x      OK
+marker v2 do advancedsettings        OK
+setting memorysize 48 MB             OK
+setting readfactor 2000 (20x)        OK
+sem troca de modo de video           OK
+nav-check em segundo plano           OK
+performance antes do nav-check       OK
+
+app de anuncios referenciado         OK
+tela de abertura                     OK
+tela de video pre-roll               OK
+ponte StartAndroidActivity           OK
+gancho xbmc.Player                   OK
+abertura uma vez por instalacao      OK
+intervalo de pre-roll                OK
+pacote smartedtv.full na ponte       OK
+builtin com 9 parametros             OK
+className no ultimo parametro        OK
+logs com tag SmartAds                OK
+APK de anuncios na release: SMARTEDTV-Anuncios-1.0.2.apk (5006759 bytes, 1.0.2 3)
+pacote do APK de anuncios: smartedtv.full
+bloco de teste no APK de anuncios: ca-app-pub-3940256099942544/9257395921 OK
+bloco de teste no APK de anuncios: ca-app-pub-3940256099942544/1033173712 OK
+tag SmartAds no APK de anuncios: OK
+
+skin.novatv versao: 1.0.18
+9201: top=570 height=194 (esperado 570/194)
+9203: top=822 height=194 (esperado 822/194)
+9202 presente: False
+painel escuro CC121212 na lista: True
+foco escuro FF1E1E1E na lista: True
