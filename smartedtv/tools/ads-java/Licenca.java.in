@@ -78,8 +78,26 @@ public final class Licenca {
         return vale;
     }
 
-    /** Endereco que valida o codigo comprado no site (producao). */
+    /**
+     * Rota de validacao do codigo no site (producao).
+     *
+     * O site e uma SPA: qualquer caminho desconhecido devolve HTML de 404, nao
+     * JSON. Por isso tentamos as rotas candidatas em ordem e paramos na
+     * primeira que responder JSON — assim a ativacao funciona sem precisar de
+     * rebuild se a rota real for outra. Se existir
+     * ``<files>/vip-endpoint.txt`` com uma URL, ela e tentada primeiro.
+     */
     public static final String VALIDAR_URL = "https://smartedtv-vip.lovable.app/api/validar";
+
+    public static final String[] VALIDAR_URIS = {
+        VALIDAR_URL,
+        "https://smartedtv-vip.lovable.app/api/validate",
+        "https://smartedtv-vip.lovable.app/api/ativar",
+        "https://smartedtv-vip.lovable.app/api/codigos/validar",
+        "https://smartedtv-vip.lovable.app/functions/v1/validar-codigo",
+    };
+
+    private static String ultimaRotaBoa;
 
     /**
      * Valida um codigo no site e, dando certo, grava a licenca.
@@ -94,18 +112,39 @@ public final class Licenca {
         }
         String corpo = "{\"codigo\":\"" + escapar(limpo) + "\",\"app\":\"smartedtv\","
                 + "\"device\":\"" + escapar(identificador(contexto)) + "\"}";
-        String resposta;
-        try {
-            resposta = post(VALIDAR_URL, corpo);
-        } catch (Exception erro) {
-            Log.w(TAG, "Licenca: falha ao validar (" + erro.getClass().getSimpleName() + ")");
-            return "Sem conexão com o servidor de ativação.";
+        String[] rotas = rotas(contexto);
+        Boolean respondeu = null;
+        String resposta = "";
+        for (int i = 0; i < rotas.length; i++) {
+            try {
+                resposta = post(rotas[i], corpo);
+            } catch (Exception erro) {
+                Log.w(TAG, "Licenca: rota " + rotas[i] + " falhou (" + erro.getClass().getSimpleName() + ")");
+                continue;
+            }
+            String bruta = resposta.trim();
+            if (!bruta.startsWith("{")) {
+                continue;                 // página 404 da SPA, não é API
+            }
+            ultimaRotaBoa = rotas[i];
+            Log.i(TAG, "Licenca: validação respondida por " + rotas[i]);
+            respondeu = Boolean.valueOf(bruta.matches("(?s).*\"(ativo|valido|ok|success)\"\\s*:\\s*true.*"));
+            boolean recusado = bruta.matches("(?s).*\"(valido|ativo|ok|success)\"\\s*:\\s*false.*");
+            if (respondeu.booleanValue() || recusado) {
+                break;
+            }
         }
-        boolean ok = resposta.matches("(?s).*\"(ativo|valido|ok|success)\"\\s*:\\s*true.*");
-        if (!ok) {
+        if (respondeu == null) {
+            Log.w(TAG, "Licenca: nenhuma rota de validação respondeu JSON");
+            return "Não consegui falar com o servidor de ativação. Tente de novo em instantes.";
+        }
+        if (!respondeu.booleanValue()) {
             String mensagem = valor(resposta, "mensagem");
             if (mensagem.length() == 0) {
                 mensagem = valor(resposta, "message");
+            }
+            if (mensagem.length() == 0) {
+                mensagem = valor(resposta, "error");
             }
             return mensagem.length() > 0 ? mensagem : "Código não reconhecido.";
         }
@@ -152,6 +191,33 @@ public final class Licenca {
                 }
             }
         }
+    }
+
+    /** Rotas a tentar: arquivo de override (se existir) + candidatas. */
+    public static String[] rotas(Context contexto) {
+        java.util.ArrayList<String> lista = new java.util.ArrayList<String>();
+        try {
+            File home = contexto.getExternalFilesDir("");
+            File extra = home == null ? null : new File(home, "vip-endpoint.txt");
+            if (extra != null && extra.isFile() && extra.length() < 4096) {
+                String texto = ler(extra).trim();
+                if (texto.startsWith("http")) {
+                    lista.add(texto);
+                    Log.i(TAG, "Licenca: rota de override " + texto);
+                }
+            }
+        } catch (Exception erro) {
+            Log.w(TAG, "Licenca: sem vip-endpoint.txt (" + erro.getClass().getSimpleName() + ")");
+        }
+        if (ultimaRotaBoa != null) {
+            lista.add(ultimaRotaBoa);
+        }
+        for (int i = 0; i < VALIDAR_URIS.length; i++) {
+            if (!lista.contains(VALIDAR_URIS[i])) {
+                lista.add(VALIDAR_URIS[i]);
+            }
+        }
+        return lista.toArray(new String[0]);
     }
 
     private static String post(String url, String corpo) throws Exception {

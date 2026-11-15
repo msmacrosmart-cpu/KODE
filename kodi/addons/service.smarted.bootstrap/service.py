@@ -20,7 +20,8 @@ from favourites import ensure_favourites
 from performance import ensure_performance
 from menu_smarted import garantir_menu, rodar_validacao_navegacao, silenciar_avisos_brazuca
 from repository import ensure_repository
-from skin_setup import ensure_home_nodes, ensure_skin, home_xml_candidates
+from skin_setup import (ensure_home_nodes, ensure_shortcuts, ensure_skin,
+                        home_xml_candidates)
 
 ADDON = xbmcaddon.Addon()
 ADDON_ID = ADDON.getAddonInfo('id')
@@ -330,8 +331,10 @@ def main():
         home_xml_candidates(addons_dir),
         os.path.join(home, 'userdata', 'favourites.xml'),
         log=log)
-    log('skin=%s (alterada=%s, instalada=%s) e %d nós da Home' % (
-        skin['skin'], skin['changed'], skin['installed'], len(nodes['routes'])))
+    atalhos = ensure_shortcuts(log=log)
+    log('skin=%s (alterada=%s, instalada=%s), %d nós da Home e %d atalho(s) VIP' % (
+        skin['skin'], skin['changed'], skin['installed'], len(nodes['routes']),
+        len(atalhos)))
 
     if report['ok'] and not failed:
         log('pronto após %d tentativa(s): %d addons verificados, %d otimizações' % (
@@ -353,6 +356,17 @@ def main():
     abertura.daemon = True
     abertura.start()
 
+    # PONTO DE RETOMADA: guarda onde o usuario parou e, quando o Kodi vai
+    # fechar, salva o ponto e para o player pelo caminho normal (sem travar).
+    try:
+        import retomar
+        retomar.iniciar(log)
+        ponto = retomar.ultimo()
+        if ponto:
+            log('retomada disponivel: %s em %ds' % (ponto['titulo'], ponto['posicao']))
+    except Exception as erro:  # noqa: BLE001
+        log('retomada indisponivel (%s)' % erro, xbmc.LOGWARNING)
+
     # o HERO alterna sozinho entre os lancamentos enquanto a Home esta aberta
     rotacao = threading.Thread(target=rotate_hero, args=(monitor,), name='hero-rotate')
     rotacao.daemon = True
@@ -369,6 +383,7 @@ def main():
             ensure_skin(home, log=log)
             ensure_home_nodes(home_xml_candidates(addons_dir),
                               os.path.join(home, 'userdata', 'favourites.xml'), log=log)
+            ensure_shortcuts(log=log)
 
 
 if __name__ == '__main__':

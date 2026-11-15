@@ -5,7 +5,7 @@ Roda no codigo-fonte do Kodi 21.3-Omega (clonado pelo workflow) e transforma o
 build em um monolito:
 
     applicationId  smartedtv.full      (era org.xbmc.kodi)
-    versao         1.0.70 / 2103056
+    versao         1.0.71 / 2103057
     anuncios       AppOpenActivity + PreRollActivity dentro do app (AdMob nativo)
     conteudo       skin.novatv + plugin.video.smarted + service.smarted.bootstrap
                    + resource.uisounds.silencio (o mesmo pacote da linha classica)
@@ -33,8 +33,8 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 
 APP_PACKAGE = "smartedtv.full"
-VERSAO_NOME = "1.0.70"
-VERSAO_CODIGO = 2103056
+VERSAO_NOME = "1.0.71"
+VERSAO_CODIGO = 2103057
 
 ADS_APP_ID = "ca-app-pub-2066014755407744~5076693043"
 PLAY_SERVICES_ADS = "com.google.android.gms:play-services-ads:23.2.0"
@@ -613,6 +613,10 @@ def main() -> int:
     cmake = ler(src / "cmake/scripts/android/Install.cmake")
     for classe in JAVA_ADS:
         assert f"src/{classe}.java" in cmake, f"{classe} fora do Install.cmake"
+    qr = src / "addons/script.smartedtv.ajustes/resources/qrcode.png"
+    assert qr.is_file() and qr.stat().st_size > 1000, "QR de compartilhamento ausente"
+    assert (src / "addons/service.smarted.bootstrap/retomar.py").is_file(), \
+        "modulo do ponto de retomada ausente"
     for addon_id in [SKIN_ID, SKIN_CLASSICA_ID] + ADDONS:
         assert (src / "addons" / addon_id / "addon.xml").is_file(), f"addon {addon_id}"
         assert f"addons/{addon_id}/*" in ler(src / "cmake/installdata/common/addons.txt")

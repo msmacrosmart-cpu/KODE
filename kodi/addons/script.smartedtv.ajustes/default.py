@@ -6,7 +6,8 @@ Abre o diálogo "Deseja assistir sem anúncios?" com:
   1. Sim, quero o VIP (R$ 24,90)  -> checkout da Cakto
   2. Já tenho um código           -> teclado do Kodi -> valida no site
   3. Compartilhar aplicativo      -> folha de compartilhamento do Android
-  4. Configurações do Kodi        -> janela normal de ajustes
+  4. Mostrar QR Code              -> QR do site para o celular apontar
+  5. Configurações do Kodi        -> janela normal de ajustes
 
 Funciona igual em TV (controle remoto) e em celular/tablet (toque): tudo é
 diálogo nativo do Kodi, então o D-pad navega e o toque seleciona.
@@ -46,6 +47,7 @@ def _dialogo():
         'Assistir sem anúncios (VIP R$ 24,90)',
         'Já tenho um código de ativação',
         'Compartilhar aplicativo',
+        'Mostrar QR Code para baixar o app',
         'Configurações do Kodi',
     ]
     if vip is not None and vip.ativa():
@@ -67,6 +69,18 @@ def _ativar():
     else:
         xbmcgui.Dialog().ok('SMARTEDTV VIP', mensagem,
                             'Compre um código em pay.cakto.com.br ou tente de novo.')
+
+
+def _mostrar_qr():
+    """Abre o QR do site como imagem; sem arquivo, mostra o link no diálogo."""
+    qr = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'qrcode.png')
+    site = getattr(vip, 'SITE', 'https://smartedtv-vip.lovable.app/') if vip else 'https://smartedtv-vip.lovable.app/'
+    if os.path.isfile(qr):
+        xbmc.executebuiltin('ShowPicture(%s)' % qr)
+        return True
+    xbmcgui.Dialog().ok('SMARTEDTV', 'QR Code indisponível neste aparelho.',
+                        'Baixe o app em ' + site)
+    return False
 
 
 def main():
@@ -93,6 +107,8 @@ def main():
     elif escolha == 2:
         if vip is not None:
             vip.compartilhar()
+    elif escolha == 3:
+        _mostrar_qr()
     else:
         xbmc.executebuiltin('ActivateWindow(Settings)')
 

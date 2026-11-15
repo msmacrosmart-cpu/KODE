@@ -199,6 +199,43 @@ def ensure_home_nodes(home_xml_paths=None, favourites_path=None, log=None):
             'routes': rotas}
 
 
+# Atalhos permanentes na barra da Home. A navegação ocupa os slots 1..8
+# (navigation.SLOTS) e limpa o que sobra nesse intervalo; por isso usamos 9 e 10,
+# que a skin já desenha e ninguém mais escreve.
+ATALHOS = (
+    (9, 'VIP', 'plugin://plugin.video.smarted/?route=vip'),
+    (10, 'Compartilhar',
+     'plugin://plugin.video.smarted/?route=vip-acao&acao=compartilhar'),
+)
+
+
+def ensure_shortcuts(log=None):
+    """Garante "VIP" e "Compartilhar" nos slots 9 e 10 da barra da Home.
+
+    Idempotente: se o slot já está com o nosso rótulo, não mexe (o usuário pode
+    trocar o texto pela skin sem a gente sobrescrever a cada arranque).
+    """
+    preenchidos = []
+    for slot, rotulo, url in ATALHOS:
+        try:
+            atual = xbmc.getInfoLabel('Skin.String(smarted_nav_%d)' % slot) or ''
+        except Exception:  # noqa: BLE001
+            atual = ''
+        if atual.strip() == rotulo:
+            continue
+        try:
+            xbmc.executebuiltin('Skin.SetString(smarted_nav_%d,%s)' % (slot, rotulo))
+            xbmc.executebuiltin('Skin.SetString(smarted_nav_url_%d,%s)' % (slot, url))
+            preenchidos.append('slot %d = %s' % (slot, rotulo))
+        except Exception as erro:  # noqa: BLE001
+            _log(log, 'atalho %s não entrou (%s)' % (rotulo, erro), xbmc.LOGWARNING)
+    if preenchidos:
+        _log(log, 'atalhos da Home: ' + ', '.join(preenchidos))
+    else:
+        _log(log, 'atalhos da Home: já presentes')
+    return preenchidos
+
+
 def home_xml_candidates(addons_dir):
     """Home.xml da skin: no perfil e/ou nos add-ons de sistema (assets do APK)."""
     caminhos, vistos = [], set()

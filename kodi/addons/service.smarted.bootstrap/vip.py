@@ -37,9 +37,19 @@ ARQUIVO = 'vip.json'
 CHECKOUT = 'https://pay.cakto.com.br/nkvbegd_1323120'
 SITE = 'https://smartedtv-vip.lovable.app/'
 SITE_ATIVAR = 'https://smartedtv-vip.lovable.app/#ativar'
-# Endpoint que recebe {"codigo": "...", "device": "...", "app": "smartedtv"}
-# e responde JSON. Confirmar o caminho exato no projeto do site.
+# Rota que recebe {"codigo": "...", "device": "...", "app": "smartedtv"} e
+# responde JSON. O site é uma SPA: caminho desconhecido devolve HTML de 404, não
+# JSON — por isso testamos as candidatas em ordem e paramos na primeira que
+# responder JSON. Um arquivo `vip-endpoint.txt` (pasta do app ou addon_data)
+# com uma URL tem prioridade, sem precisar recompilar.
 VALIDAR = 'https://smartedtv-vip.lovable.app/api/validar'
+VALIDAR_URIS = (
+    VALIDAR,
+    'https://smartedtv-vip.lovable.app/api/validate',
+    'https://smartedtv-vip.lovable.app/api/ativar',
+    'https://smartedtv-vip.lovable.app/api/codigos/validar',
+    'https://smartedtv-vip.lovable.app/functions/v1/validar-codigo',
+)
 TIMEOUT = 12
 
 # --- ponte Android (abrir link / compartilhar) ------------------------------
@@ -155,6 +165,27 @@ def _ler_resposta(resposta):
     return ok, str(expira), mensagem
 
 
+def rotas():
+    """Candidatas de rota, com o override do aparelho na frente."""
+    lista = []
+    for candidato in (os.path.join(pasta(), 'vip-endpoint.txt'),
+                      os.path.join(perfil(), 'vip-endpoint.txt')):
+        try:
+            if os.path.isfile(candidato):
+                with open(candidato, 'r', encoding='utf-8') as handle:
+                    texto = handle.read().strip()
+                if texto.startswith('http'):
+                    lista.append(texto)
+                    _log('rota de override: %s' % texto)
+                    break
+        except Exception:  # noqa: BLE001
+            continue
+    for rota in VALIDAR_URIS:
+        if rota not in lista:
+            lista.append(rota)
+    return lista
+
+
 def validar(codigo):
     """(ok, mensagem). Valida o código no site e grava a licença se der certo."""
     codigo = (codigo or '').strip().upper()
@@ -162,11 +193,23 @@ def validar(codigo):
         return False, 'Digite o código.'
     corpo = {'codigo': codigo, 'app': 'smartedtv',
              'device': _aparelho(), 'versao': xbmcaddon.Addon().getAddonInfo('version')}
-    try:
-        resposta = _post(VALIDAR, corpo)
-    except Exception as erro:  # noqa: BLE001 - rede, 404, timeout...
-        _log('falha ao validar no site: %s' % erro, xbmc.LOGWARNING)
-        return False, 'Sem conexão com o servidor de ativação.'
+    resposta = None
+    for rota in rotas():
+        try:
+            bruta = _post(rota, corpo)
+        except Exception as erro:  # noqa: BLE001 - rede, 404, timeout...
+            _log('rota %s falhou: %s' % (rota, erro), xbmc.LOGDEBUG)
+            continue
+        if isinstance(bruta, dict) and 'bruto' in bruta:
+            continue                      # HTML da SPA, não é API
+        resposta = bruta
+        _log('validação respondida por %s' % rota)
+        ok, expira, mensagem = _ler_resposta(resposta)
+        if ok or 'error' in resposta or 'erro' in resposta \
+                or 'valido' in resposta or 'ativo' in resposta:
+            break
+    if resposta is None:
+        return False, 'Não consegui falar com o servidor de ativação. Tente de novo.'
     ok, expira, mensagem = _ler_resposta(resposta)
     if not ok:
         return False, mensagem or 'Código não reconhecido.'

@@ -38,10 +38,10 @@ class IntegracaoNoFonteTest(unittest.TestCase):
 
     def test_pacote_unico_e_versao(self):
         self.assertIn(f'APP_PACKAGE = "{PACOTE}"', self.script)
-        self.assertIn('VERSAO_NOME = "1.0.70"', self.script)
-        self.assertIn('VERSAO_CODIGO = 2103056', self.script)
+        self.assertIn('VERSAO_NOME = "1.0.71"', self.script)
+        self.assertIn('VERSAO_CODIGO = 2103057', self.script)
         # tem que ser maior que a 1.0.63 (2103049) para nao regredir instalacao
-        self.assertGreater(2103056, 2103053)
+        self.assertGreater(2103057, 2103053)
 
     def test_gradle_ganha_o_admob_e_a_versao(self):
         self.assertIn("com.google.android.gms:play-services-ads:23.2.0", self.script)
@@ -221,7 +221,7 @@ class VerificadorDoApkTest(unittest.TestCase):
             for i in range(900):
                 z.writestr(f"assets/addons/skin.novatv/media/img{i}.png", b"p")
             z.writestr("assets/addons/skin.novatv/media/DefaultAddon.png", b"p")
-            for nome in ("catalogue.py", "default.py", "navigation.py", "search.py"):
+            for nome in ("catalogue.py", "navigation.py", "search.py"):
                 z.writestr(f"assets/addons/plugin.video.smarted/{nome}", b"#")
             for i in range(12):
                 z.writestr(f"assets/addons/plugin.video.smarted/mod{i}.py", b"#")
@@ -239,6 +239,16 @@ class VerificadorDoApkTest(unittest.TestCase):
                        b"Licenca adsPermitidos AbrirUrlActivity CompartilharActivity "
                        b"BoasVindas iniciarKodi "
                                        b"com/google/android/gms/ads"))
+            z.writestr("assets/addons/script.smartedtv.ajustes/resources/qrcode.png",
+                       b"\x89PNG\r\n\x1a\n" + b"0" * 2000)
+            z.writestr("assets/addons/service.smarted.bootstrap/retomar.py",
+                       "def encerrar():\n    pass\n")
+            z.writestr("assets/addons/service.smarted.bootstrap/skin_setup.py",
+                       "def ensure_shortcuts(log=None):\n    return []\n")
+            z.writestr("assets/addons/service.smarted.bootstrap/vip.py",
+                       "VALIDAR_URIS = ('https://smartedtv-vip.lovable.app/api/validar',)\n")
+            z.writestr("assets/addons/plugin.video.smarted/default.py",
+                       "# rota vip\nif route == 'vip':\n    pass\n")
             z.writestr("assets/addons/service.smarted.bootstrap/smart_ads.py",
                        "ATIVIDADE_PREROLL = 'smartedtv.full.PreRollActivity'\n"
                        "ATIVIDADE_ABERTURA = 'smartedtv.full.AppOpenActivity'\n"
@@ -258,7 +268,7 @@ class VerificadorDoApkTest(unittest.TestCase):
         caminho = Path(tmp) / "aapt2"
         caminho.write_text("""#!/bin/sh
 if [ "$2" = badging ]; then
-  echo "package: name='smartedtv.full' versionCode='2103056' versionName='1.0.70'"
+  echo "package: name='smartedtv.full' versionCode='2103057' versionName='1.0.71'"
 elif [ "$2" = resources ]; then
   echo "drawable/progresswhite type=drawable"
 elif [ "$2" = xmltree ] && [ "$4" = "res/layout/activity_splash.xml" ]; then
@@ -532,7 +542,7 @@ class ProducaoTest(unittest.TestCase):
 
 
 class BoasVindasTest(unittest.TestCase):
-    """Tela de ativação antes do anúncio, intersticial por troca e saída limpa."""
+    """Tela de ativacao a cada abertura, intersticial por troca, QR e saida limpa."""
 
     def setUp(self):
         self.ads = Path('smartedtv/tools/ads-java')
@@ -543,33 +553,97 @@ class BoasVindasTest(unittest.TestCase):
         tela = self.texto['BoasVindas']
         self.assertIn('Deseja assistir sem anúncios?', tela)
         self.assertIn('pay.cakto.com.br/nkvbegd_1323120', tela)
-        self.assertIn('Código de ativação', tela)
+        self.assertIn('Já tenho um código', tela)
+        self.assertIn('Digite o código aqui', tela)      # campo sempre visivel
         self.assertIn('Compartilhar aplicativo', tela)
-        self.assertIn('Licenca.validar(', tela)       # valida no servidor
-        # a splash só abre o Kodi depois que essa tela fecha
+        self.assertIn('Licenca.validar(', tela)          # valida no servidor
+        # a splash so abre o Kodi depois que essa tela fecha
         self.assertIn('BoasVindas.mostrar(activity)', self.texto['SeedBase'])
         self.assertIn('BoasVindas.mostrar(alvo)', self.texto['SeedBase'])
         self.assertIn('public static void iniciarKodi', self.texto['SeedBase'])
 
-    def test_vip_nunca_ve_a_tela(self):
-        self.assertIn('if (Licenca.ativa(splash))', self.texto['BoasVindas'])
-        self.assertIn('jaMostrou', self.texto['BoasVindas'])
+    def test_tela_aparece_em_toda_abertura(self):
+        tela = self.texto['BoasVindas']
+        # a regra "uma vez por versao" saiu: sem flag persistida, sem arquivo
+        for proibido in ('jaMostrou', 'welcome.json', 'marcar(', 'getSharedPreferences'):
+            self.assertNotIn(proibido, tela)
+        self.assertIn('private static volatile boolean aberta', tela)
 
-    def test_intersticial_na_troca_de_conteudo(self):
-        ponte = Path('kodi/addons/service.smarted.bootstrap/smart_ads.py').read_text(encoding='utf-8')
-        self.assertIn('def _troca_de_conteudo', ponte)
-        self.assertIn('getPlayingFile', ponte)
-        self.assertIn('PREROLL_INTERVALO = 45', ponte)
-        self.assertIn('def intervalo_configurado', ponte)
-        self.assertIn('ads_intervalo', ponte)
-        self.assertIn('def vip_ativo', ponte)          # VIP desliga os gatilhos
-        # D-pad continua travado no anúncio
-        self.assertIn('KEYCODE_DPAD_UP', self.texto['AdTela'])
+    def test_codigo_com_um_clique_e_layout_responsivo(self):
+        tela = self.texto['BoasVindas']
+        self.assertIn('setOnFocusChangeListener', tela)
+        self.assertIn('showSoftInput', tela)              # 1a acao abre o teclado
+        self.assertIn('requestFocus();', tela)
+        self.assertIn('Configuration.ORIENTATION_LANDSCAPE', tela)
+        self.assertIn('LinearLayout.HORIZONTAL', tela)    # 2 colunas deitado
+        self.assertIn('LinearLayout.VERTICAL', tela)      # 1 coluna em pe
+        self.assertIn('ScrollView', tela)                 # cabe em TV e celular
 
-    def test_saida_limpa(self):
+    def test_qr_de_compartilhamento_no_app(self):
+        import struct
+        tela = self.texto['BoasVindas']
+        self.assertIn('script.smartedtv.ajustes/resources/qrcode.png', tela)
+        self.assertIn('BitmapFactory.decodeStream', tela)
+        self.assertIn('getAssets().open(QR)', tela)
+        qr = Path('kodi/addons/script.smartedtv.ajustes/resources/qrcode.png')
+        self.assertTrue(qr.is_file())
+        dados = qr.read_bytes()
+        self.assertGreater(len(dados), 1000)
+        self.assertEqual(dados[:8], b'\x89PNG\r\n\x1a\n')
+        largura, altura = struct.unpack('>II', dados[16:24])   # IHDR
+        self.assertEqual((largura, altura), (512, 512))
+
+    def test_atalhos_vip_e_compartilhar(self):
+        skin = Path('kodi/addons/service.smarted.bootstrap/skin_setup.py').read_text(encoding='utf-8')
+        self.assertIn('def ensure_shortcuts', skin)
+        self.assertIn("(9, 'VIP'", skin)
+        self.assertIn("(10, 'Compartilhar'", skin)
+        self.assertIn('Skin.SetString(smarted_nav_%d,%s)', skin)
+        servico = Path('kodi/addons/service.smarted.bootstrap/service.py').read_text(encoding='utf-8')
+        self.assertIn('ensure_shortcuts(log=log)', servico)
+        # a barra usa 1..8 (navigation.SLOTS) e limpa o resto: 9/10 sao nossos
+        nav = Path('kodi/addons/plugin.video.smarted/navigation.py').read_text(encoding='utf-8')
+        self.assertIn('SLOTS = 8', nav)
+        plugin = Path('kodi/addons/plugin.video.smarted/default.py').read_text(encoding='utf-8')
+        self.assertIn("route == 'vip'", plugin)
+        self.assertIn("route == 'vip-acao'", plugin)
+        self.assertIn("'qrcode'", plugin)
+        self.assertIn('ShowPicture(', plugin)
+
+    def test_qr_no_menu_de_ajustes(self):
+        ajustes = Path('kodi/addons/script.smartedtv.ajustes/default.py').read_text(encoding='utf-8')
+        self.assertIn('def _mostrar_qr', ajustes)
+        self.assertIn('Mostrar QR Code', ajustes)
+        self.assertIn('ShowPicture(', ajustes)
+
+    def test_ativacao_por_codigo_tenta_as_rotas_do_site(self):
+        licenca = self.texto['Licenca']
+        self.assertIn('VALIDAR_URIS', licenca)
+        self.assertIn('/api/validar', licenca)
+        self.assertIn('vip-endpoint.txt', licenca)        # override sem recompilar
+        self.assertIn('startsWith("{")', licenca)          # HTML da SPA nao vale
+        vip = Path('kodi/addons/service.smarted.bootstrap/vip.py').read_text(encoding='utf-8')
+        self.assertIn('VALIDAR_URIS', vip)
+        self.assertIn('def rotas()', vip)
+        self.assertIn('/api/validar', vip)
+
+    def test_ponto_de_retomada_e_saida_limpa(self):
+        retomar = Path('kodi/addons/service.smarted.bootstrap/retomar.py').read_text(encoding='utf-8')
+        self.assertIn('Player.GetItem', retomar)
+        self.assertIn('Player.GetProperties', retomar)
+        self.assertIn("'command': 'stop'", retomar)
+        self.assertIn('def encerrar', retomar)
+        self.assertIn('StartOffset', retomar)
+        self.assertIn('class MonitorRetomar', retomar)
+        self.assertIn('def onAbortRequested', retomar)
+        servico = Path('kodi/addons/service.smarted.bootstrap/service.py').read_text(encoding='utf-8')
+        self.assertIn('retomar.iniciar(log)', servico)
+        # o fechamento ficou a cargo do Kodi: nada de finish/kill em onStop
         tela = self.texto['AdTela']
         self.assertIn('public void onBackPressed()', tela)
-        self.assertIn('onUserLeaveHint', tela)
-        self.assertIn('onStop', tela)
+        self.assertNotIn('public void onUserLeaveHint', tela)
+        self.assertNotIn('protected void onStop', tela)
         self.assertIn('activity.isFinishing()', self.texto['SeedBase'])
         self.assertIn('activity.isDestroyed()', self.texto['SeedBase'])
+        self.assertNotIn('killProcess', self.texto['SeedBase'])
+

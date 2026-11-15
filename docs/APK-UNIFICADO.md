@@ -569,3 +569,82 @@ Java (`Licenca.VALIDAR_URL`) quanto pelo Python (`vip.VALIDAR`). Trocada a URL,
 o campo de código da tela de boas-vindas e o do menu Ajustes passam a ativar de
 verdade — o restante do fluxo (`vip.json` → `Licenca.ativa` → anúncios param)
 já está pronto.
+
+## 1.0.71 — ativação a cada abertura, código em 1 clique, QR, atalhos e retomada
+
+### 1. Tela de ativação em TODA abertura
+
+`BoasVindas` deixou de ser "uma vez por versão": saiu a flag persistida
+(`jaMostrou`/`welcome.json`/preferências) e sobrou só um `aberta` em memória,
+que evita montar a tela duas vezes na mesma splash. Todo arranque do app passa
+por ela antes do anúncio de abertura — perfil da base pronto, base recém-copiada
+ou reaproveitamento de `.kodi` antigo (`SeedBase.pronto` chama
+`BoasVindas.mostrar` nos três caminhos).
+
+### 2. Código com um clique e layout de tela inteira
+
+* o campo de código nasce **visível**, com `setOnFocusChangeListener` →
+  `showSoftInput`: um clique/toque no campo (ou em "Ativar agora") já abre o
+  teclado; com menos de 4 caracteres o botão foca o campo e abre o teclado na
+  mesma ação, em vez de pedir dois toques;
+* em paisagem (TV, box, projetor, celular deitado) a tela monta **duas colunas**
+  — texto à esquerda, ações à direita, cada uma com peso `1` e largura de botão
+  proporcional; em pé vira uma coluna. `ScrollView` + `fillViewport` garantem
+  que nada corte em telas pequenas.
+
+### 3. Ativação por código com rotas candidatas
+
+O site é uma SPA e devolve HTML de 404 para caminho desconhecido. Por isso
+`Licenca.VALIDAR_URIS` (Java) e `vip.VALIDAR_URIS` (Python) tentam, em ordem:
+
+```
+/api/validar · /api/validate · /api/ativar · /api/codigos/validar
+/functions/v1/validar-codigo
+```
+
+Só resposta que começa com `{` vale (`startsWith("{")` no Java, checagem de
+`bruto` no Python); a rota que respondeu fica memorizada (`ultimaRotaBoa`) e um
+arquivo `vip-endpoint.txt` (pasta do app ou `addon_data`) tem prioridade — dá
+para apontar a rota real **sem recompilar**. Sucesso → `vip.json` →
+`Licenca.ativa()` → anúncios desligados na hora.
+
+### 4. Fechamento sem travar e ponto exato salvo
+
+* `AdTela` não fecha mais em `onStop`/`onUserLeaveHint` (era o "fecha sozinho"):
+  só VOLTAR encerra a tela do anúncio;
+* `retomar.py` acompanha a reprodução a cada 20 s (`Player.GetItem` +
+  `Player.GetProperties`), grava `…/addon_data/service.smarted.bootstrap/retomar.json`
+  com arquivo, título e segundo exato; quando o Kodi pede para sair
+  (`onAbortRequested`) salva uma última vez e manda `PlayerControl(Stop)` — o
+  player fecha pelo caminho normal e o Kodi grava a retomada no banco;
+* na abertura seguinte o menu VIP mostra **"Continuar assistindo: <título>"**,
+  que retoma com `StartOffset` no ponto salvo (válido por 7 dias, mínimo 20 s).
+
+### 5. QR Code funcional de compartilhamento
+
+`script.smartedtv.ajustes/resources/qrcode.png` (512×512, aponta para
+`https://smartedtv-vip.lovable.app/`) agora aparece em três lugares:
+
+* na tela de abertura (Java), lida do próprio APK por
+  `getAssets().open("addons/script.smartedtv.ajustes/resources/qrcode.png")` —
+  se o arquivo faltar, o bloco simplesmente não é montado;
+* no menu VIP (`Mostrar QR Code` → `ShowPicture`);
+* no menu **Ajustes** do Kodi (`Mostrar QR Code para baixar o app`).
+
+### 6. Atalhos permanentes na Home
+
+`skin_setup.ensure_shortcuts` grava, de forma idempotente, os slots **9** e
+**10** da barra da Home (`smarted_nav_9/10` + `smarted_nav_url_9/10`) com
+**VIP** e **Compartilhar**. A navegação usa 1..8 (`navigation.SLOTS = 8`) e
+limpa o resto desse intervalo, então nada do menu atual é sobrescrito. As rotas
+novas do plugin são `?route=vip` (menu: VIP, código, compartilhar, QR,
+continuar) e `?route=vip-acao&acao=…`.
+
+### 7. Verificação e testes
+
+`verify-monolito-apk.py` passou a exigir, no APK: `qrcode.png` (PNG válido) em
+`assets/addons/script.smartedtv.ajustes/resources/`,
+`service.smarted.bootstrap/retomar.py`, `ensure_shortcuts` no `skin_setup.py`,
+`VALIDAR_URIS` no `vip.py` e `route == 'vip'` no plugin. `integrate-monolith.py`
+falha o build antes de compilar se o QR ou o `retomar.py` não existirem.
+`tests/test_monolito.py` cobre tudo isso (400 testes).

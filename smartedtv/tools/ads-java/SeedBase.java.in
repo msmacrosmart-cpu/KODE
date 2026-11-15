@@ -96,6 +96,9 @@ public final class SeedBase {
             // um .kodi antigo já foi guardado: não fica em laço de splash
             registrar(home, "desisto: ja existe .kodi antigo guardado");
             liberado = Boolean.TRUE;
+            if (BoasVindas.mostrar(activity)) {
+                return false;              // a tela de ativacao conduz a abertura
+            }
             return true;
         }
         if (Boolean.FALSE.equals(liberado)) {

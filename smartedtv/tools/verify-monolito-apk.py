@@ -20,8 +20,8 @@ import zipfile
 from pathlib import Path
 
 PACOTE = "smartedtv.full"
-VERSAO = "1.0.70"
-CODIGO = 2103056
+VERSAO = "1.0.71"
+CODIGO = 2103057
 
 BLOCO_ABERTURA = "ca-app-pub-2066014755407744/4214378379"
 BLOCO_PREROLL = "ca-app-pub-2066014755407744/3572039686"
@@ -144,6 +144,32 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
                   f"{len(plugin)} arquivos")
         rel.exige("assets/addons/plugin.video.smarted/catalogue.py" in presentes,
                   "catálogo do plugin (abas)", "plugin.video.smarted/catalogue.py")
+
+        # --- QR de compartilhamento / ponto de retomada ----------------------
+        qr = "assets/addons/script.smartedtv.ajustes/resources/qrcode.png"
+        rel.exige(qr in presentes, "QR Code no pacote", qr)
+        if qr in presentes:
+            dados_qr = z.read(qr)
+            rel.exige(dados_qr[:8] == b"\x89PNG\r\n\x1a\n", "QR é PNG", f"{len(dados_qr)} bytes")
+        bootstrap = "assets/addons/service.smarted.bootstrap/retomar.py"
+        rel.exige(bootstrap in presentes, "ponto de retomada", bootstrap)
+        b_skin = "assets/addons/service.smarted.bootstrap/skin_setup.py"
+        if b_skin in presentes:
+            texto_skin = z.read(b_skin).decode("utf-8", "replace")
+            rel.exige("def ensure_shortcuts" in texto_skin,
+                      "atalhos VIP/Compartilhar na Home", "ensure_shortcuts")
+        else:
+            rel.falha("skin_setup do bootstrap", f"{b_skin} ausente")
+        b_vip = "assets/addons/service.smarted.bootstrap/vip.py"
+        if b_vip in presentes:
+            texto_vip = z.read(b_vip).decode("utf-8", "replace")
+            rel.exige("VALIDAR_URIS" in texto_vip,
+                      "ativação por código (rotas)", "VALIDAR_URIS")
+        plugin_src = "assets/addons/plugin.video.smarted/default.py"
+        if plugin_src in presentes:
+            texto_plugin = z.read(plugin_src).decode("utf-8", "replace")
+            rel.exige("route == 'vip'" in texto_plugin,
+                      "atalho VIP no plugin", "route == 'vip'")
 
         # --- menu de ajustes / VIP -------------------------------------------
         alvo_ajustes = "assets/addons/script.smartedtv.ajustes/addon.xml"
