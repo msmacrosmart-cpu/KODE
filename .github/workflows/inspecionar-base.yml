@@ -1,0 +1,68 @@
+name: Inspecionar a base de referencia (APK do Dropbox)
+
+# Só diagnostico: baixa o APK de referencia do usuario, mede tudo o que importa
+# (skin, perfil, addons, splash, anuncios) e grava docs/base-dropbox.txt.
+# Não compila nada e não publica release.
+
+on:
+  push:
+    branches: [arena/7dedf371-kode]
+    paths:
+      - '.github/workflows/inspecionar-base.yml'
+      - 'smartedtv/tools/inspecionar-base.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  BASE_URL: "https://www.dropbox.com/scl/fi/p5blo0t1rw86bwhcmkkns/SMARTEDTV.apk?rlkey=aapugrey7gcidvb40e8ajxykg&st=obzovikj&dl=1"
+  BASE_BYTES: "242222254"
+
+jobs:
+  inspecionar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Baixar o APK de referencia
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/base"
+          curl -sSL --retry 3 -o "$RUNNER_TEMP/base/referencia.apk" "$BASE_URL"
+          TAM=$(stat -c%s "$RUNNER_TEMP/base/referencia.apk")
+          echo "baixado: $TAM bytes (esperado $BASE_BYTES)"
+          sha256sum "$RUNNER_TEMP/base/referencia.apk" | tee "$RUNNER_TEMP/base/sha.txt"
+          head -c 4 "$RUNNER_TEMP/base/referencia.apk" | xxd | head -1
+          [ "$TAM" = "$BASE_BYTES" ] || echo "::warning::tamanho diferente do informado pelo Dropbox"
+          export BASE_APK="$RUNNER_TEMP/base/referencia.apk"
+          echo "BASE_APK=$BASE_APK" >> "$GITHUB_ENV"
+
+      - name: 2. aapt2
+        run: |
+          set -euo pipefail
+          AAPT2=$(ls -d /usr/local/lib/android/sdk/build-tools/*/aapt2 2>/dev/null | sort -V | tail -1)
+          if [ -z "${AAPT2:-}" ]; then
+            yes | sdkmanager "build-tools;34.0.0" > /dev/null 2>&1 || true
+            AAPT2=$(ls -d /usr/local/lib/android/sdk/build-tools/*/aapt2 | sort -V | tail -1)
+          fi
+          echo "AAPT2=$AAPT2" >> "$GITHUB_ENV"
+
+      - name: 3. Medir tudo
+        run: |
+          set +e
+          python3 smartedtv/tools/inspecionar-base.py --apk "$BASE_APK" --aapt2 "$AAPT2" \
+            --saida docs/base-dropbox.txt 2>&1 | tail -60
+          echo "exit=$?"
+          set -e
+          head -40 docs/base-dropbox.txt || true
+
+      - name: 4. Guardar o relatorio
+        run: |
+          set -euo pipefail
+          git config user.name "smarted-bot"
+          git config user.email "smarted-bot@users.noreply.github.com"
+          git add -f docs/base-dropbox.txt
+          git commit -m "ci: inspecao do APK de referencia do Dropbox (run $GITHUB_RUN_ID)" || echo "sem mudancas"
+          git pull --rebase -q origin "$GITHUB_REF_NAME" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" || echo "push falhou"
