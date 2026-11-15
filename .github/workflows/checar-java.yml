@@ -38,17 +38,28 @@ jobs:
       - name: play-services-ads (AdMob)
         run: |
           set +e
+          BASE=https://dl.google.com/dl/android/maven2/com/google/android/gms
           mkdir -p /tmp/j/ads
-          # play-services-ads é só um "pom" que puxa a API: o código de verdade
-          # (appopen, interstitial, AdRequest…) está em play-services-ads-api.
-          for nome in play-services-ads play-services-ads-api; do
-            curl -sSL -o "/tmp/j/$nome.aar" \
-              "https://dl.google.com/dl/android/maven2/com/google/android/gms/$nome/23.2.0/$nome-23.2.0.aar"
-            mkdir -p "/tmp/j/$nome" && ( cd "/tmp/j/$nome" && unzip -o -q "/tmp/j/$nome.aar" classes.jar || true )
-            ls -la "/tmp/j/$nome/classes.jar" || true
+          # o AAR do "ads" e a biblioteca de verdade; a API (appopen/interstitial)
+          # vem como dependencia declarada no POM — descobrimos a versao lá
+          curl -sSL -o /tmp/j/ads.aar "$BASE/play-services-ads/23.2.0/play-services-ads-23.2.0.aar"
+          ( cd /tmp/j/ads && unzip -o -q /tmp/j/ads.aar classes.jar )
+          echo "::error title=diag::ADS $(unzip -l /tmp/j/ads/classes.jar | grep -c 'appopen\|interstitial')"
+          API_VER=$(curl -s "$BASE/play-services-ads/23.2.0/play-services-ads-23.2.0.pom" \
+                    | tr -d '\n' | sed 's/.*play-services-ads-api<\/artifactId>//' \
+                    | sed 's/.*<version>\([^<]*\)<\/version>.*/\1/' | cut -c1-20)
+          echo "::error title=diag::APIVER $API_VER"
+          for ver in "$API_VER" 23.2.0 25.5.0; do
+            [ -n "$ver" ] || continue
+            mkdir -p "/tmp/j/api-$ver"
+            if curl -sfSL -o "/tmp/j/api-$ver.aar" "$BASE/play-services-ads-api/$ver/play-services-ads-api-$ver.aar"; then
+              ( cd "/tmp/j/api-$ver" && unzip -o -q "/tmp/j/api-$ver.aar" classes.jar )
+              echo "::error title=diag::API baixado $ver $(unzip -l /tmp/j/api-$ver/classes.jar | grep -c 'appopen')"
+              echo "$ver" > /tmp/j/api-ver.txt
+              break
+            fi
           done
-          cp -f /tmp/j/play-services-ads/classes.jar /tmp/j/ads/classes.jar || true
-          unzip -l /tmp/j/ads/classes.jar | grep -c 'appopen\|interstitial' || true
+          ls -la /tmp/j/api-*/classes.jar 2>&1 | tr '\n' '|'
 
       - name: javac das classes do app
         run: |
@@ -63,14 +74,10 @@ jobs:
           done
           find /tmp/j/src -name '*.java' | sort > /tmp/j/files.txt
           wc -l /tmp/j/files.txt
-          echo "::error title=diag::AJAR $(ls -la "$AJAR" 2>&1 | head -1 | tr '\n' ' ')"
-          echo "::error title=diag::AAR $(ls -l /tmp/j/*.aar 2>&1 | tr '\n' '|')"
           echo "::error title=diag::API $(unzip -l /tmp/j/play-services-ads-api/classes.jar 2>&1 | head -6 | tr '\n' '|')"
-          echo "::error title=diag::META $(curl -s https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-ads-api/maven-metadata.xml | tr '\n' ' ' | tail -c 400)"
-          echo "::error title=diag::POM $(curl -s https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-ads/23.2.0/play-services-ads-23.2.0.pom | tr '\n' ' ' | head -c 900)"
           # JDK 17 não aceita mais -bootclasspath: android.jar vai no classpath
           javac -nowarn -source 8 -target 8 \
-            -cp "$AJAR:/tmp/j/play-services-ads-api/classes.jar:/tmp/j/play-services-ads/classes.jar" \
+            -cp "$AJAR:$(ls /tmp/j/api-*/classes.jar 2>/dev/null | head -1):/tmp/j/ads/classes.jar" \
             -d /tmp/j/out @/tmp/j/files.txt > /tmp/j/javac.txt 2>&1
           echo "javac exit=$?"
           # canal 1: anotações da checagem (o log do Actions não abre por aqui)
