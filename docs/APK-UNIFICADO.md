@@ -948,3 +948,32 @@ anúncio (canto inferior direito). A partir da 1.0.80 quem manda é o anúncio:
   `semFoco()` só bloqueia o D-pad (nenhum clique acidental no anúncio), sem
   exceção de view;
 * verificador do APK e testes deixaram de exigir a string "Pular anúncio".
+
+## 1.0.81 — Boas-Vindas monocromática do blueprint (logo do projeto)
+
+A tela aprovada em `docs/boas-vindas-blueprint.html` virou código nativo. O
+arquivo tocado foi **só** o `BoasVindas.java.in` (mais testes, versão e este
+doc): player, catálogo, anúncios e o resto do app não mudaram.
+
+* **paleta monocromática** — só preto (`#050505`), branco e cinzas. Nenhuma
+  cor: os cards usam vidro `0x12FFFFFF→0x05FFFFFF` com borda `0x1AFFFFFF`,
+  os textos são `#F7F7F7`, `#BCBCBC` e `#838383`. Foco do D-pad é anel branco;
+* **logo do projeto** — o cabeçalho usa o **ícone do app** (`getApplicationIcon`,
+  que é a marca enviada, já embarcada no APK) ao lado do wordmark SMARTEDTV;
+  se o ícone não carregar, cai num quadro branco→cinza desenhado;
+* **três colunas + barra** — boas-vindas / sem anúncios (QR do checkout) /
+  indique e ganhe (QR do site); embaixo a barra "Já é assinante? Ative seu VIP"
+  com campo, "Ativar" e "Continuar com anúncios";
+* **dois QR ao mesmo tempo** — cada um no seu cartão, em **placa branca
+  quadrada de 168 dp** com 6 dp de margem e `FIT_CENTER` sobre o PNG 512×512:
+  nada de corte, máscara, arredondamento ou moldura retangular;
+* **sem dados demonstrativos** — sem preço na tela (o valor aparece no
+  checkout), sem selo de simulação, sem código de teste. O status da ativação
+  usa uma linha própria (validando / erro / VIP ativado);
+* **tela única em paisagem** — quadro de 960×540 dp com escala
+  `clamp(0.55, 1.35)`: TV 16:9 e celular deitado usam o mesmo desenho, sem
+  rolagem; o seletor Android TV | Celular troca o modo (`Plataforma`);
+* **compartilhar** continua sendo Intent nativo e só aparece no celular; na TV
+  o cartão mostra o endereço do site;
+* validação no servidor, cão de guarda de 2 min, VIP sem tela e saída limpa
+  para o Kodi seguem iguais.

@@ -46,7 +46,7 @@ def carregar_vip(respostas, tabela=None, supabase=('https://projeto.supabase.co'
 
     class Addon(object):
         def getAddonInfo(self, chave):
-            return 'service.smarted.bootstrap' if chave == 'id' else '1.0.80'
+            return 'service.smarted.bootstrap' if chave == 'id' else '1.0.81'
 
     fake_addon.Addon = Addon
 
