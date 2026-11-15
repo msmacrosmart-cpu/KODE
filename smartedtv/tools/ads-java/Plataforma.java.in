@@ -1,0 +1,154 @@
+package @APP_PACKAGE@;
+
+import android.app.UiModeManager;
+import android.content.Context;
+import android.content.res.Configuration;
+import android.content.pm.PackageManager;
+import android.util.Log;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
+
+/**
+ * Em que tipo de aparelho o app está rodando — e o que o usuário escolheu.
+ *
+ * A escolha é feita na primeira abertura (tela de boas-vindas) e fica gravada
+ * em ``<files>/plataforma.txt`` (``celular`` ou ``tv``). Ela muda o conteúdo da
+ * tela de ativação:
+ *
+ *  * CELULAR: botão de compartilhar nativo (Intent do Android) e pagamento no
+ *    checkout da Cakto direto;
+ *  * TV/BOX/PROJETOR: dois QR codes grandes no topo — "Escaneie e Compartilhe"
+ *    (indicação do app) e "Escaneie e compre o acesso mensal" (checkout).
+ *
+ * Se o arquivo não existir, ``detectar`` tenta adivinhar pelo sistema
+ * (leanback/TV) para sugerir a opção certa; quem decide é o usuário.
+ */
+public final class Plataforma {
+
+    private static final String TAG = "SmartAds";
+    private static final String ARQUIVO = "plataforma.txt";
+
+    public static final String CELULAR = "celular";
+    public static final String TV = "tv";
+
+    private Plataforma() {
+    }
+
+    private static File arquivo(Context contexto) {
+        File base = contexto.getFilesDir();
+        if (base == null) {
+            base = contexto.getExternalFilesDir("");
+        }
+        return base == null ? null : new File(base, ARQUIVO);
+    }
+
+    /** "celular", "tv" ou "" quando o usuário ainda não escolheu. */
+    public static String escolhida(Context contexto) {
+        File arquivo = arquivo(contexto);
+        if (arquivo == null || !arquivo.isFile() || arquivo.length() > 128L) {
+            return "";
+        }
+        try {
+            String texto = ler(arquivo).trim().toLowerCase(java.util.Locale.ROOT);
+            if (texto.startsWith(TV)) {
+                return TV;
+            }
+            if (texto.startsWith(CELULAR)) {
+                return CELULAR;
+            }
+        } catch (Exception erro) {
+            Log.w(TAG, "Plataforma: nao consegui ler (" + erro.getClass().getSimpleName() + ")");
+        }
+        return "";
+    }
+
+    public static boolean salvar(Context contexto, String modo) {
+        File arquivo = arquivo(contexto);
+        if (arquivo == null) {
+            return false;
+        }
+        String texto = TV.equals(modo) ? TV : CELULAR;
+        OutputStream saida = null;
+        try {
+            saida = new FileOutputStream(arquivo);
+            saida.write((texto + "\n").getBytes(Charset.forName("UTF-8")));
+            saida.flush();
+            Log.i(TAG, "Plataforma: escolhida " + texto);
+            return true;
+        } catch (Exception erro) {
+            Log.w(TAG, "Plataforma: nao consegui gravar (" + erro + ")");
+            return false;
+        } finally {
+            if (saida != null) {
+                try {
+                    saida.close();
+                } catch (Exception ignorado) {
+                    // nada a fazer
+                }
+            }
+        }
+    }
+
+    /** Sugestão do sistema quando o usuário ainda não escolheu. */
+    public static String detectar(Context contexto) {
+        try {
+            UiModeManager modo = (UiModeManager)
+                    contexto.getSystemService(Context.UI_MODE_SERVICE);
+            if (modo != null && modo.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION) {
+                return TV;
+            }
+        } catch (Throwable ignorado) {
+            // alguns aparelhos nao expoem o UiModeManager
+        }
+        try {
+            PackageManager pm = contexto.getPackageManager();
+            if (pm.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+                    || pm.hasSystemFeature("android.hardware.type.television")) {
+                return TV;
+            }
+        } catch (Throwable ignorado) {
+            // idem
+        }
+        try {
+            // TV box e projetor costumam nao ter tela sensivel ao toque
+            if (!contexto.getPackageManager().hasSystemFeature(
+                    PackageManager.FEATURE_TOUCHSCREEN)) {
+                return TV;
+            }
+        } catch (Throwable ignorado) {
+            // idem
+        }
+        return CELULAR;
+    }
+
+    /** Modo efetivo: o que o usuário escolheu ou, na primeira vez, a sugestão. */
+    public static String atual(Context contexto) {
+        String escolhido = escolhida(contexto);
+        return escolhido.length() == 0 ? detectar(contexto) : escolhido;
+    }
+
+    public static boolean eTV(Context contexto) {
+        return TV.equals(atual(contexto));
+    }
+
+    private static String ler(File arquivo) throws Exception {
+        InputStream entrada = new FileInputStream(arquivo);
+        try {
+            ByteArrayOutputStream saida = new ByteArrayOutputStream();
+            byte[] buffer = new byte[256];
+            int lidos;
+            while ((lidos = entrada.read(buffer)) > 0) {
+                saida.write(buffer, 0, lidos);
+            }
+            return new String(saida.toByteArray(), Charset.forName("UTF-8"));
+        } finally {
+            entrada.close();
+        }
+    }
+}

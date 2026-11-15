@@ -78,20 +78,20 @@ MARKER = 'smartedtv-ads-v2'
 # quanto esperar a Home desenhar antes do pop-up de abertura
 ABERTURA_DELAY = 6
 
-# Intervalo minimo entre intersticiais. Como o gatilho e TROCA DE CONTEUDO
-# (canal, filme, serie, proximo episodio), 45 s deixa o anúncio acompanhar a
-# troca sem virar dois anúncios seguidos no zapping rápido. Vem da configuração
-# do add-on quando existir (ads_intervalo); o padrão é este.
-PREROLL_INTERVALO = 45
+# O intersticial e OBRIGATORIO em toda troca de conteudo (1.0.73): nao existe
+# mais intervalo minimo entre anuncios. O que fica e so uma janela curta
+# anti-duplicidade: o Kodi chama onPlay e onAVStarted para o MESMO inicio de
+# stream, e sem essa janela o mesmo filme levaria dois anuncios seguidos.
+PREROLL_INTERVALO = 2
 
 
 def intervalo_configurado(padrao=PREROLL_INTERVALO):
-    """Lê o intervalo das configurações do add-on (segundos)."""
+    """Janela anti-duplicidade (segundos) — configurável em ads_intervalo."""
     try:
         import xbmcaddon
         bruto = xbmcaddon.Addon().getSetting('ads_intervalo')
         valor = int(float(bruto))
-        return valor if 10 <= valor <= 3600 else padrao
+        return valor if 1 <= valor <= 15 else padrao
     except Exception:
         return padrao
 
@@ -231,8 +231,13 @@ def vip_ativo():
         return False
 
 
-def mostrar_preroll(log=None, intervalo=None, agora=None):
-    """Intersticial a cada troca de conteúdo (respeita o intervalo)."""
+def mostrar_preroll(log=None, intervalo=None, agora=None, caminho=None):
+    """Intersticial em TODA troca de conteúdo (exceto VIP).
+
+    ``intervalo`` aqui é só a janela anti-duplicidade do mesmo stream (o Kodi
+    avisa o mesmo início duas vezes: ``onPlay`` e ``onAVStarted``). Troca de
+    canal, de filme, de episódio ou de série sempre dispara.
+    """
     if intervalo is None:
         intervalo = intervalo_configurado()
     agora = time.time() if agora is None else agora
@@ -240,11 +245,18 @@ def mostrar_preroll(log=None, intervalo=None, agora=None):
         if log:
             log('[SmartAds] VIP ativo: nenhum anuncio')
         return False
-    if agora - globals().get('_ultimo_preroll', 0.0) < intervalo:
+    anterior = globals().get('_ultimo_momento', 0.0)
+    if (caminho and caminho == globals().get('_ultimo_caminho_preroll')
+            and agora - anterior < intervalo):
+        if log:
+            log('[SmartAds] mesmo inicio de stream (anti-duplicidade), sem anuncio')
         return False
     disparou = tocar_anuncio_com_aviso(ATIVIDADE_PREROLL, log)
-    if disparou:
-        globals()['_ultimo_preroll'] = agora
+    globals()['_ultimo_momento'] = agora
+    globals()['_ultimo_caminho_preroll'] = caminho
+    if log:
+        log('[SmartAds] intersticial pedido na troca de conteudo (%s): %s'
+            % (caminho or '?', 'disparado' if disparou else 'nao disparado'))
     return disparou
 
 
@@ -300,6 +312,11 @@ class MonitorPreRoll(_BasePlayer):
 
     Vale para canal de TV, filme e serie, venha do Brazuca ou de outro addon:
     o gancho e o proprio xbmc.Player, nao a rota do addon.
+
+    Regra (1.0.73): TODO inicio de reproducao conta como troca de conteudo e
+    pede anuncio — canal->canal, filme->filme, serie->filme e voltar para o
+    MESMO conteudo depois de parar. O único filtro é o par
+    ``onPlay``/``onAVStarted`` do mesmo inicio (janela curta).
     """
 
     def __init__(self, log=None, intervalo=None):
@@ -308,35 +325,44 @@ class MonitorPreRoll(_BasePlayer):
         self.log = log
         self.intervalo = intervalo
         self.ultimo_caminho = None
+        self.geracao = 0
+        self.pedido_na_geracao = -1
 
-    def _troca_de_conteudo(self):
-        """True só quando o stream mudou (canal novo, outro filme/série)."""
+    def _caminho(self):
         try:
-            caminho = xbmc.Player().getPlayingFile()
+            return xbmc.Player().getPlayingFile()
         except Exception:
-            caminho = None
-        anterior = self.ultimo_caminho
-        self.ultimo_caminho = caminho
-        if caminho and anterior and caminho == anterior:
-            if self.log:
-                self.log('[SmartAds] mesmo conteudo, sem anuncio (%s)' % caminho)
-            return False
-        return True
+            return None
 
     def onPlay(self, **kwargs):  # Kodi chama no inicio do stream (buffer incluso)
+        self.geracao += 1
+        self.ultimo_caminho = self._caminho()
         self._talvez_mostrar()
 
     def onAVStarted(self):
-        # alguns streams so disparam aqui; o intervalo evita anuncio duplicado
+        # o mesmo inicio costuma passar aqui também: só pede se ainda não pediu
         self._talvez_mostrar()
+
+    def onPlayBackStopped(self):
+        # parar zera a sessão: começar o MESMO filme de novo leva anúncio
+        self.ultimo_caminho = None
+
+    def onPlayBackEnded(self):
+        self.ultimo_caminho = None
 
     def _talvez_mostrar(self):
         try:
             if not _e_video(self):
                 return
-            if not self._troca_de_conteudo():
+            if self.pedido_na_geracao == self.geracao:
                 return
-            mostrar_preroll(self.log, self.intervalo)
+            caminho = self._caminho() or self.ultimo_caminho
+            self.pedido_na_geracao = self.geracao
+            if caminho and self.ultimo_caminho and caminho != self.ultimo_caminho:
+                self.log and self.log('[SmartAds] troca de conteudo: %s -> %s'
+                                      % (self.ultimo_caminho, caminho))
+            self.ultimo_caminho = caminho
+            mostrar_preroll(self.log, self.intervalo, caminho=caminho)
         except Exception as erro:  # nunca derrubar o servico por causa do anuncio
             if self.log:
                 self.log('[SmartAds] pre-roll falhou (%s)' % erro, xbmc.LOGWARNING)
@@ -355,8 +381,8 @@ def iniciar_monitor(log=None, intervalo=None):
     try:
         _monitor = MonitorPreRoll(log, intervalo)
         if log:
-            log('[SmartAds] gancho de intersticial ligado (%s, minimo %d s entre anuncios)'
-                % (MARKER, intervalo))
+            log('[SmartAds] gancho de intersticial ligado (%s, obrigatorio em toda '
+                'troca; anti-duplicidade %d s)' % (MARKER, intervalo))
     except Exception as erro:
         if log:
             log('[SmartAds] nao foi possivel ligar o pre-roll (%s)' % erro, xbmc.LOGWARNING)

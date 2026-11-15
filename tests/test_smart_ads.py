@@ -175,11 +175,19 @@ class PontePythonTest(unittest.TestCase):
         self.assertIn('PreRollActivity', campos[8])
         self.assertNotIn(modulo.ATIVIDADE_PREROLL, campos[1], 'classe nao pode ir em 2o lugar')
 
-    def test_pre_roll_respeita_intervalo(self):
+    def test_pre_roll_obrigatorio_em_toda_troca(self):
+        """1.0.73: nao existe mais "espera X segundos" entre anuncios."""
         modulo, chamadas = carregar_smart_ads()
-        self.assertTrue(modulo.mostrar_preroll(agora=1000.0))
-        self.assertFalse(modulo.mostrar_preroll(agora=1010.0))   # zapping: nao repete
-        self.assertTrue(modulo.mostrar_preroll(agora=1000.0 + modulo.PREROLL_INTERVALO + 1))
+        # canal -> canal em sequencia (zapping rapido) dispara SEMPRE
+        self.assertTrue(modulo.mostrar_preroll(agora=1000.0, caminho='canal1'))
+        self.assertTrue(modulo.mostrar_preroll(agora=1001.0, caminho='canal2'))
+        self.assertTrue(modulo.mostrar_preroll(agora=1002.0, caminho='filme'))
+        # o MESMO inicio avisado duas vezes (onPlay + onAVStarted) nao duplica
+        self.assertFalse(modulo.mostrar_preroll(agora=1003.0, caminho='filme'))
+        # passada a janela, o mesmo conteudo de novo (replay) volta a mostrar
+        self.assertTrue(modulo.mostrar_preroll(
+            agora=1003.0 + modulo.PREROLL_INTERVALO + 1, caminho='filme'))
+        self.assertLessEqual(modulo.PREROLL_INTERVALO, 15)
 
     def test_abertura_uma_vez_por_instalacao(self):
         shutil.rmtree('/tmp/smarted-ads-test', ignore_errors=True)

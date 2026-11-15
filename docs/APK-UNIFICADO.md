@@ -701,3 +701,83 @@ Checagens de status em ciclos curtos, de **6 em 6 minutos** (`sleep 360` +
 `gh run list`), sem pausas longas do tipo 25–30 min: assim um ajuste de layout,
 QR ou validação é testado e corrigido no mesmo ciclo, e não se perde tempo
 esperando. Como cada build leva ~30–45 min, o ciclo médio são 5 a 8 checagens.
+
+## 1.0.73 — escolha Celular/TV, intersticial 100%, Supabase e botão Pular
+
+### 1. Primeira abertura pergunta a plataforma
+
+`Plataforma.java` (novo) grava a escolha em `<files>/plataforma.txt`
+(`celular` ou `tv`) e sugere a opção certa pelo sistema
+(`UiModeManager` TELEVISION, `FEATURE_LEANBACK`, ausência de touchscreen). A
+tela de boas-vindas mostra **"Onde você está usando o app?"** com os botões
+**Celular** e **TV / Box / Projetor** (o sugerido aparece com o selo
+"recomendado para este aparelho"); no rodapé há **"Estou na TV / Estou no
+celular"** para trocar o modo depois, sem reinstalar.
+
+* **Celular** — "Compartilhar aplicativo" dispara o **Intent nativo**
+  (`ACTION_SEND` + `createChooser`: WhatsApp, Telegram, e-mail…) com o link do
+  app; o botão de VIP abre o **checkout da Cakto direto**; e ainda um QR
+  pequeno para instalar em outro aparelho.
+* **TV / Box / Projetor** — no topo, dois cartões com **QR codes dedicados e
+  legíveis** (512×512, vindos do próprio APK):
+  **"Escaneie e Compartilhe"** (`qrcode.png` → site do app) e
+  **"Escaneie e compre o acesso mensal"** (`qrcode-cakto.png` → checkout).
+  O botão de compartilhamento por Intent fica escondido (não existe folha de
+  compartilhamento na TV) e o QR faz esse papel.
+
+### 2. Intersticial obrigatório em 100% das trocas
+
+`smart_ads.py` deixou de ter intervalo mínimo entre anúncios (`PREROLL_INTERVALO`
+virou **janela anti-duplicidade de 2 s**). O `MonitorPreRoll` conta uma
+**geração por início de reprodução** (`onPlay`) e só ignora o segundo aviso do
+mesmo início (`onAVStarted`). Resultado: canal→canal, filme→filme,
+série→filme, filme→série e repetir o mesmo conteúdo depois de parar **sempre**
+passam pelo intersticial; `onPlayBackStopped`/`onPlayBackEnded` zeram a sessão
+para o replay também contar. `vip.json` ativo continua desligando tudo (checado
+no Python e de novo no Java por `SmartAds.adsPermitidos`).
+
+### 3. Ponte de validação com o Supabase do site
+
+`Supabase.java` (novo) descobre o projeto do site **automaticamente**: baixa o
+HTML, segue os `<script src>` do bundle e extrai `https://<projeto>.supabase.co`
++ a chave anon (`eyJ…`), gravando em `<files>/supabase.txt`. `Licenca.validar`
+passa a tentar, nesta ordem:
+
+1. `vip-endpoint.txt` (override manual) e a última rota que funcionou;
+2. rotas do próprio site (`/api/validar`, `/api/validate`, `/api/ativar`,
+   `/api/codigos/validar`, `/functions/v1/validar-codigo`);
+3. **Edge Functions do Supabase**: `/functions/v1/validar-codigo`, `/validar`,
+   `/ativar-codigo`, `/ativa-codigo` (POST JSON com `apikey` +
+   `Authorization: Bearer`);
+4. **tabela do painel**: `GET /rest/v1/codigos?codigo=eq.<código>&select=*`.
+
+Configuração manual, sem recompilar: `<files>/supabase-url.txt` +
+`<files>/supabase-chave.txt`, ou `supabase.txt` (URL e chave, uma por linha) em
+`addon_data/service.smarted.bootstrap/`. O caminho Python (`vip.py`) faz o
+mesmo — os dois aceitam resposta `{…}` ou a linha da tabela `[{…}]`.
+
+**Prazos**: os códigos de **teste (10 minutos)** e os **mensais (30 dias)**
+passam a ser lidos da resposta — `expira`/`expira_em`/`expires_at`,
+`minutos`/`duracao_minutos` ou `dias`/`duracao_dias`, com `tipo`/`plano`
+contendo "teste"/"trial" caindo em 10 minutos e o mensal em 30 dias. O
+`vip.json` passa a guardar data **com hora** (`AAAA-MM-DDTHH:MM:SSZ`); os dois
+lados aceitam `AAAA-MM-DD` (vale até o fim do dia UTC) e o formato ISO. Ao
+validar, o Java grava o arquivo na hora e a tela já responde com o VIP
+liberado; a próxima tela de anúncio não abre.
+
+### 4. Botão "Pular anúncio" selecionado por padrão na TV
+
+`AdTela` ganhou o botão **"Pular anúncio ▶"** (canto inferior direito), e no
+modelo TV ele **nasce com o foco**: o OK do controle fecha a tela na hora —
+ninguém fica preso. O bloqueio de D-pad continua valendo para o anúncio em si
+(as views do anúncio não recebem foco: `FOCUS_BLOCK_DESCENDANTS`, e o "Pular" é
+a exceção). Toque no celular funciona no mesmo botão. O fechamento automático
+(45 s) continua como rede de segurança.
+
+### 5. Layout sem barra de rolagem
+
+A tela de ativação monta em **uma tela**: duas colunas em paisagem (texto/QRs |
+ações) e uma em pé, com `setVerticalScrollBarEnabled(false)` e
+`OVER_SCROLL_NEVER` — a rolagem por toque existe só como rede de segurança em
+aparelhos muito pequenos, sem barra visível. D-pad percorre os botões na ordem
+e o toque age nos mesmos elementos.

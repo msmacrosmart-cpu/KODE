@@ -38,10 +38,10 @@ class IntegracaoNoFonteTest(unittest.TestCase):
 
     def test_pacote_unico_e_versao(self):
         self.assertIn(f'APP_PACKAGE = "{PACOTE}"', self.script)
-        self.assertIn('VERSAO_NOME = "1.0.72"', self.script)
-        self.assertIn('VERSAO_CODIGO = 2103058', self.script)
+        self.assertIn('VERSAO_NOME = "1.0.73"', self.script)
+        self.assertIn('VERSAO_CODIGO = 2103059', self.script)
         # tem que ser maior que a 1.0.63 (2103049) para nao regredir instalacao
-        self.assertGreater(2103058, 2103053)
+        self.assertGreater(2103059, 2103053)
 
     def test_gradle_ganha_o_admob_e_a_versao(self):
         self.assertIn("com.google.android.gms:play-services-ads:23.2.0", self.script)
@@ -237,7 +237,8 @@ class VerificadorDoApkTest(unittest.TestCase):
                                        b"AppOpenActivity PreRollActivity SmartAds "
                                        b"perfilSmarted .kodi.antigo- smarted-seed.log "
                        b"Licenca adsPermitidos AbrirUrlActivity CompartilharActivity "
-                       b"BoasVindas iniciarKodi "
+                       b"BoasVindas iniciarKodi Plataforma Supabase "
+                       b"Pular an\xc3\xbancio qrcode-cakto "
                                        b"com/google/android/gms/ads"))
             z.writestr("assets/addons/script.smartedtv.ajustes/vipmenu.py",
                        "BASE = 'plugin://script.smartedtv.ajustes/'\n")
@@ -246,6 +247,8 @@ class VerificadorDoApkTest(unittest.TestCase):
                        'point="xbmc.python.pluginsource" library="vipmenu.py"/></addon>')
             z.writestr("assets/addons/script.smartedtv.ajustes/resources/qrcode.png",
                        b"\x89PNG\r\n\x1a\n" + b"0" * 2000)
+            z.writestr("assets/addons/script.smartedtv.ajustes/resources/qrcode-cakto.png",
+                       b"\x89PNG\r\n\x1a\n" + b"1" * 3000)
             z.writestr("assets/addons/service.smarted.bootstrap/retomar.py",
                        "def encerrar():\n    pass\n")
             z.writestr("assets/addons/service.smarted.bootstrap/skin_setup.py",
@@ -275,7 +278,7 @@ class VerificadorDoApkTest(unittest.TestCase):
         caminho = Path(tmp) / "aapt2"
         caminho.write_text("""#!/bin/sh
 if [ "$2" = badging ]; then
-  echo "package: name='smartedtv.full' versionCode='2103058' versionName='1.0.72'"
+  echo "package: name='smartedtv.full' versionCode='2103059' versionName='1.0.73'"
 elif [ "$2" = resources ]; then
   echo "drawable/progresswhite type=drawable"
 elif [ "$2" = xmltree ] && [ "$4" = "res/layout/activity_splash.xml" ]; then
@@ -558,7 +561,8 @@ class BoasVindasTest(unittest.TestCase):
 
     def test_tela_antes_do_anuncio_de_abertura(self):
         tela = self.texto['BoasVindas']
-        self.assertIn('Deseja assistir sem anúncios?', tela)
+        self.assertIn('Deseja assistir', tela)
+        self.assertIn('sem anúncios?', tela)
         self.assertIn('pay.cakto.com.br/nkvbegd_1323120', tela)
         self.assertIn('Já tenho um código', tela)
         self.assertIn('Digite o código aqui', tela)      # campo sempre visivel
@@ -591,7 +595,8 @@ class BoasVindasTest(unittest.TestCase):
         tela = self.texto['BoasVindas']
         self.assertIn('script.smartedtv.ajustes/resources/qrcode.png', tela)
         self.assertIn('BitmapFactory.decodeStream', tela)
-        self.assertIn('getAssets().open(QR)', tela)
+        self.assertIn('getAssets().open(caminho)', tela)
+        self.assertIn('qrcode-cakto.png', tela)
         qr = Path('kodi/addons/script.smartedtv.ajustes/resources/qrcode.png')
         self.assertTrue(qr.is_file())
         dados = qr.read_bytes()
@@ -663,3 +668,97 @@ class BoasVindasTest(unittest.TestCase):
         self.assertIn('activity.isDestroyed()', self.texto['SeedBase'])
         self.assertNotIn('killProcess', self.texto['SeedBase'])
 
+
+
+class PlataformaTvTest(unittest.TestCase):
+    """1.0.73: escolha Celular/TV, QR do checkout e botão Pular no anúncio."""
+
+    def setUp(self):
+        self.ads = Path('smartedtv/tools/ads-java')
+        self.texto = {p.stem.replace('.java', ''): p.read_text(encoding='utf-8')
+                      for p in self.ads.glob('*.java.in')}
+
+    def test_escolha_celular_ou_tv(self):
+        plataforma = self.texto['Plataforma']
+        self.assertIn('public static final String CELULAR = "celular"', plataforma)
+        self.assertIn('public static final String TV = "tv"', plataforma)
+        self.assertIn('plataforma.txt', plataforma)
+        self.assertIn('UI_MODE_TYPE_TELEVISION', plataforma)      # sugere TV
+        self.assertIn('FEATURE_LEANBACK', plataforma)
+        self.assertIn('public static boolean salvar', plataforma)
+        tela = self.texto['BoasVindas']
+        self.assertIn('Plataforma.escolhida(splash)', tela)
+        self.assertIn('"Celular"', tela)
+        self.assertIn('"TV / Box / Projetor"', tela)
+        self.assertIn('Plataforma.salvar(splash', tela)
+        self.assertIn('Estou na TV', tela)          # troca de modo sem reinstalar
+
+    def test_tv_mostra_os_dois_qr_com_titulo(self):
+        tela = self.texto['BoasVindas']
+        self.assertIn('Escaneie e Compartilhe', tela)
+        self.assertIn('Escaneie e compre o acesso mensal', tela)
+        self.assertIn('qrcode.png', tela)                 # indicação do app
+        self.assertIn('qrcode-cakto.png', tela)           # checkout mensal
+        self.assertIn('colunaTv', tela)
+        for nome in ('qrcode.png', 'qrcode-cakto.png'):
+            arquivo = Path('kodi/addons/script.smartedtv.ajustes/resources') / nome
+            self.assertTrue(arquivo.is_file(), nome)
+            self.assertGreater(arquivo.stat().st_size, 1000, nome)
+
+    def test_celular_compartilha_pelo_intent(self):
+        tela = self.texto['BoasVindas']
+        self.assertIn('Intent.ACTION_SEND', tela)
+        self.assertIn('Intent.createChooser', tela)
+        self.assertIn('https://smartedtv-vip.lovable.app/', tela)
+        # celular: botão de compartilhar visível; TV: QR no topo
+        self.assertIn('compartilhar.setVisibility(View.GONE)', tela)
+
+    def test_sem_barra_de_rolagem(self):
+        tela = self.texto['BoasVindas']
+        self.assertIn('setVerticalScrollBarEnabled(false)', tela)
+        self.assertIn('setOverScrollMode(View.OVER_SCROLL_NEVER)', tela)
+        self.assertIn('ScrollView', tela)                 # rola por toque se faltar espaço
+
+    def test_tv_tem_botao_pular_com_foco(self):
+        tela = self.texto['AdTela']
+        self.assertIn('Pular anúncio', tela)
+        self.assertIn('criarBotaoPular()', tela)
+        self.assertIn('pular.requestFocus()', tela)       # foco padrão no modelo TV
+        self.assertIn('Plataforma.eTV(this)', tela)
+        self.assertIn('if (pular != null && pular.hasFocus())', tela)
+        # D-pad continua sem entrar no anúncio
+        self.assertIn('KEYCODE_DPAD_DOWN', tela)
+        self.assertIn('FOCUS_BLOCK_DESCENDANTS', tela)
+
+    def test_ponte_supabase(self):
+        supabase = self.texto['Supabase']
+        self.assertIn('(https://[a-z0-9]{6,}', supabase)   # regex do projeto
+        self.assertIn('supabase-url.txt', supabase)
+        self.assertIn('supabase-chave.txt', supabase)
+        self.assertIn('/rest/v1/codigos?codigo=eq.', self.texto['Licenca'])
+        self.assertIn('/functions/v1/validar-codigo', self.texto['Licenca'])
+        self.assertIn('"apikey"', self.texto['Licenca'])
+        vip = Path('kodi/addons/service.smarted.bootstrap/vip.py').read_text(encoding='utf-8')
+        self.assertIn('def supabase(', vip)
+        self.assertIn('SUPABASE_FUNCOES', vip)
+        self.assertIn('rest/v1/codigos', vip)
+
+    def test_codigo_de_teste_10min_e_mensal_30dias(self):
+        licenca = self.texto['Licenca']
+        self.assertIn('public static String expiraDe', licenca)
+        self.assertIn('600L', licenca)                    # teste: 10 minutos
+        self.assertIn('30L * 86400L', licenca)            # mensal: 30 dias
+        self.assertIn("yyyy-MM-dd'T'HH:mm:ss'Z'", licenca)  # prazo com hora
+        vip = Path('kodi/addons/service.smarted.bootstrap/vip.py').read_text(encoding='utf-8')
+        self.assertIn('def expira_de', vip)
+        self.assertIn('em_instantes(600)', vip)
+        self.assertIn('30 * 86400', vip)
+        self.assertIn('def dentro_do_prazo', vip)
+
+    def test_classes_novas_entram_no_apk(self):
+        script = Path('smartedtv/tools/integrate-monolith.py').read_text(encoding='utf-8')
+        for classe in ('Plataforma', 'Supabase'):
+            self.assertIn('"%s"' % classe, script)
+        verificador = Path('smartedtv/tools/verify-monolito-apk.py').read_text(encoding='utf-8')
+        self.assertIn('qrcode-cakto.png', verificador)
+        self.assertIn('Plataforma', verificador)

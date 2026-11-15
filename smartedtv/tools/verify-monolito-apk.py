@@ -20,8 +20,8 @@ import zipfile
 from pathlib import Path
 
 PACOTE = "smartedtv.full"
-VERSAO = "1.0.72"
-CODIGO = 2103058
+VERSAO = "1.0.73"
+CODIGO = 2103059
 
 BLOCO_ABERTURA = "ca-app-pub-2066014755407744/4214378379"
 BLOCO_PREROLL = "ca-app-pub-2066014755407744/3572039686"
@@ -148,6 +148,11 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
         # --- QR de compartilhamento / ponto de retomada ----------------------
         qr = "assets/addons/script.smartedtv.ajustes/resources/qrcode.png"
         rel.exige(qr in presentes, "QR Code no pacote", qr)
+        qr_cakto = "assets/addons/script.smartedtv.ajustes/resources/qrcode-cakto.png"
+        rel.exige(qr_cakto in presentes, "QR do checkout (Cakto) no pacote", qr_cakto)
+        if qr_cakto in presentes:
+            rel.exige(z.read(qr_cakto)[:8] == b"\x89PNG\r\n\x1a\n", "QR do checkout é PNG",
+                      f"{len(z.read(qr_cakto))} bytes")
         if qr in presentes:
             dados_qr = z.read(qr)
             rel.exige(dados_qr[:8] == b"\x89PNG\r\n\x1a\n", "QR é PNG", f"{len(dados_qr)} bytes")
@@ -337,6 +342,10 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
         ("compartilhar aplicativo", b"CompartilharActivity"),
         ("tela de boas-vindas/VIP", b"BoasVindas"),
         ("abertura limpa do Kodi", b"iniciarKodi"),
+        ("escolha Celular/TV", b"Plataforma"),
+        ("ponte com o Supabase", b"Supabase"),
+        ("botao pular anuncio", b"Pular an"),
+        ("QR do checkout mensal", b"qrcode-cakto"),
     ):
         rel.exige(agulha in dex, rotulo, agulha.decode()[:44])
 

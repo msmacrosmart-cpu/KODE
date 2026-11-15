@@ -100,14 +100,27 @@ def ativa():
     dados = estado()
     if not dados.get('ativo'):
         return False
-    expira = (dados.get('expira') or '').strip()
+    return dentro_do_prazo(dados.get('expira'))
+
+
+def dentro_do_prazo(expira):
+    """Aceita ``AAAA-MM-DD`` (fim do dia UTC) e ISO ``…T…Z`` (código de teste)."""
+    expira = (expira or '').strip()
     if not expira:
         return True
+    import calendar
     try:
-        limite = time.strptime(expira, '%Y-%m-%d')
-    except ValueError:
+        if len(expira) == 10:
+            limite = calendar.timegm(time.strptime(expira, '%Y-%m-%d')) + 86399
+        else:
+            texto = expira.replace(' ', 'T').rstrip('Z')
+            if '.' in texto:
+                texto = texto.split('.', 1)[0]
+            limite = calendar.timegm(time.strptime(texto, '%Y-%m-%dT%H:%M:%S'))
+    except Exception:  # noqa: BLE001
+        _log('prazo invalido: %r' % expira, xbmc.LOGWARNING)
         return False
-    return time.time() <= time.mktime(limite) + 86399
+    return time.time() <= limite
 
 
 def salvar(codigo, expira='', origem='cakto', extra=None):
@@ -134,7 +147,7 @@ def desativar():
         return False
 
 
-def _post(url, corpo):
+def _post(url, corpo, chave=''):
     """POST JSON → dict. Levanta exceção em erro de rede/HTTP."""
     import urllib.error
     import urllib.request
@@ -144,6 +157,10 @@ def _post(url, corpo):
     pedido.add_header('Content-Type', 'application/json; charset=utf-8')
     pedido.add_header('Accept', 'application/json')
     pedido.add_header('User-Agent', 'SMARTEDTV/%s' % xbmcaddon.Addon().getAddonInfo('version'))
+    if chave:
+        # Edge Functions e PostgREST do Supabase pedem a chave anon nos dois
+        pedido.add_header('apikey', chave)
+        pedido.add_header('Authorization', 'Bearer ' + chave)
     with urllib.request.urlopen(pedido, timeout=TIMEOUT) as resposta:
         texto = resposta.read().decode('utf-8', 'replace')
     try:
@@ -152,17 +169,188 @@ def _post(url, corpo):
         return {'bruto': texto}
 
 
+def _get(url, chave=''):
+    """GET JSON (tabela do Supabase). Devolve dict/lista ou {'bruto': texto}."""
+    import urllib.request
+
+    pedido = urllib.request.Request(url, method='GET')
+    pedido.add_header('Accept', 'application/json')
+    pedido.add_header('User-Agent', 'SMARTEDTV/%s' % xbmcaddon.Addon().getAddonInfo('version'))
+    if chave:
+        pedido.add_header('apikey', chave)
+        pedido.add_header('Authorization', 'Bearer ' + chave)
+    with urllib.request.urlopen(pedido, timeout=TIMEOUT) as resposta:
+        texto = resposta.read().decode('utf-8', 'replace')
+    try:
+        return json.loads(texto)
+    except ValueError:
+        return {'bruto': texto}
+
+
+SUPABASE_FUNCOES = ('/functions/v1/validar-codigo', '/functions/v1/validar',
+                    '/functions/v1/ativar-codigo', '/functions/v1/ativa-codigo')
+SITE = SITE if 'SITE' in globals() else 'https://smartedtv-vip.lovable.app/'
+
+
+def _arquivo_texto(caminho):
+    try:
+        if not os.path.isfile(caminho):
+            return ''
+        with open(caminho, 'r', encoding='utf-8') as handle:
+            return handle.read()
+    except Exception:  # noqa: BLE001
+        return ''
+
+
+def supabase():
+    """(url, chave) do projeto Supabase do site — override, cache ou descoberta."""
+    for base in (pasta(), perfil()):
+        texto = _arquivo_texto(os.path.join(base, 'supabase.txt'))
+        par = _par_supabase(texto)
+        if par:
+            _log('supabase (configuracao): %s' % par[0])
+            return par
+    url = _arquivo_texto(os.path.join(pasta(), 'supabase-url.txt')).strip()
+    if url.startswith('http'):
+        chave = _arquivo_texto(os.path.join(pasta(), 'supabase-chave.txt')).strip()
+        _log('supabase (manual): %s' % url)
+        return (url.rstrip('/'), chave)
+    par = _par_supabase(_arquivo_texto(os.path.join(pasta(), 'supabase-cache.txt')))
+    if par:
+        return par
+    par = _descobrir_supabase()
+    if par:
+        try:
+            with open(os.path.join(pasta(), 'supabase-cache.txt'), 'w', encoding='utf-8') as handle:
+                handle.write('%s\n%s\n' % par)
+        except Exception:  # noqa: BLE001
+            pass
+    return par
+
+
+def _par_supabase(texto):
+    url, chave = None, ''
+    for linha in (texto or '').splitlines():
+        linha = linha.strip()
+        if not linha:
+            continue
+        if linha.startswith('http') and 'supabase.co' in linha:
+            url = linha.rstrip('/')
+        elif linha.startswith('eyJ'):
+            chave = linha
+    return (url, chave) if url else None
+
+
+def _descobrir_supabase():
+    """Lê o bundle do site e acha ``https://<projeto>.supabase.co`` + chave anon."""
+    import re
+    import urllib.request
+
+    def baixar(endereco):
+        pedido = urllib.request.Request(endereco, method='GET')
+        pedido.add_header('User-Agent', 'SMARTEDTV/1.0')
+        with urllib.request.urlopen(pedido, timeout=TIMEOUT) as resposta:
+            return resposta.read(4 * 1024 * 1024).decode('utf-8', 'replace')
+
+    try:
+        html = baixar(SITE)
+    except Exception as erro:  # noqa: BLE001
+        _log('supabase: site fora do ar (%s)' % erro, xbmc.LOGWARNING)
+        return None
+    projeto = re.compile(r'(https://[a-z0-9]{6,}\.supabase\.co)')
+    chave_re = re.compile(r'(eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,})')
+    projetos = projeto.findall(html)
+    chave = (chave_re.findall(html) or [''])[0]
+    for src in re.findall(r'src="([^"]+\.js[^"]*)"', html)[:6]:
+        if projetos and chave:
+            break
+        endereco = src if src.startswith('http') else SITE + src.lstrip('/')
+        try:
+            texto = baixar(endereco)
+        except Exception:  # noqa: BLE001
+            continue
+        projetos += projeto.findall(texto)
+        if not chave:
+            achadas = chave_re.findall(texto)
+            chave = achadas[0] if achadas else ''
+    if not projetos:
+        _log('supabase: nada encontrado no JavaScript do site', xbmc.LOGWARNING)
+        return None
+    par = (projetos[0].rstrip('/'), chave)
+    _log('supabase (descoberto): %s (chave %s)' % (par[0], 'ok' if chave else 'ausente'))
+    return par
+
+
+def rotas_supabase():
+    """Rotas do Supabase (Edge Functions) para o código."""
+    par = supabase()
+    if not par:
+        return [], ''
+    base, chave = par
+    return [base + funcao for funcao in SUPABASE_FUNCOES], chave
+
+
 def _ler_resposta(resposta):
-    """Aceita as formas comuns de resposta do servidor do site."""
+    """Aceita as formas comuns de resposta do site, da Edge Function e da tabela."""
+    tabela = False
+    if isinstance(resposta, list):
+        tabela = True
+        resposta = resposta[0] if resposta else {}
     if not isinstance(resposta, dict):
         return False, '', 'resposta inesperada'
     ok = bool(resposta.get('ativo') or resposta.get('valido')
-              or resposta.get('ok') or resposta.get('success'))
+              or resposta.get('valid') or resposta.get('ok')
+              or resposta.get('success') or resposta.get('liberado'))
+    if not ok and str(resposta.get('status') or '').lower() in ('ativo', 'valido', 'liberado', 'ok'):
+        ok = True
+    if not ok and tabela and resposta:
+        # linha do painel: existe o código e ele (ainda) não foi usado
+        if resposta.get('usado') in (False, 0, 'false', 'False', None) \
+                or resposta.get('ativo') in (True, 'true', 'True'):
+            ok = True
     if resposta.get('error') or resposta.get('erro'):
         return False, '', str(resposta.get('error') or resposta.get('erro'))
-    expira = resposta.get('expira') or resposta.get('expires') or resposta.get('validade') or ''
     mensagem = resposta.get('mensagem') or resposta.get('message') or ''
-    return ok, str(expira), mensagem
+    if not ok:
+        return False, '', mensagem
+    return True, expira_de(resposta), mensagem
+
+
+def expira_de(resposta):
+    """Prazo: data/hora explícita, minutos (teste, 10) ou dias (mensal, 30)."""
+    for chave in ('expira', 'expira_em', 'expires', 'expires_at', 'validade',
+                  'data_expiracao', 'expiration'):
+        valor = resposta.get(chave)
+        if valor:
+            texto = str(valor).strip().replace(' ', 'T')
+            if len(texto) == 10:
+                return texto + 'T23:59:59Z'
+            if not texto.endswith('Z') and '+' not in texto[10:]:
+                texto += 'Z'
+            return texto
+    for chave in ('minutos', 'duracao_minutos', 'validade_minutos', 'duration_minutes'):
+        try:
+            minutos = int(float(resposta.get(chave)))
+        except (TypeError, ValueError):
+            continue
+        if minutos > 0:
+            return em_instantes(minutos * 60)
+    for chave in ('dias', 'duracao_dias', 'validade_dias', 'duration_days'):
+        try:
+            dias = int(float(resposta.get(chave)))
+        except (TypeError, ValueError):
+            continue
+        if dias > 0:
+            return em_instantes(dias * 86400)
+    tipo = ' '.join(str(resposta.get(c) or '') for c in ('tipo', 'type', 'plano')).lower()
+    if any(palavra in tipo for palavra in ('teste', 'trial', 'demo', '10')):
+        return em_instantes(600)            # código de teste: 10 minutos
+    return em_instantes(30 * 86400)         # código mensal: 30 dias
+
+
+def em_instantes(segundos):
+    """Data/hora UTC no formato do vip.json (…T…Z)."""
+    return time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(time.time() + segundos))
 
 
 def rotas():
@@ -187,13 +375,26 @@ def rotas():
 
 
 def validar(codigo):
-    """(ok, mensagem). Valida o código no site e grava a licença se der certo."""
+    """(ok, mensagem). Valida o código (site ou Supabase) e grava a licença."""
     codigo = (codigo or '').strip().upper()
     if not codigo:
         return False, 'Digite o código.'
     corpo = {'codigo': codigo, 'app': 'smartedtv',
              'device': _aparelho(), 'versao': xbmcaddon.Addon().getAddonInfo('version')}
-    resposta = None
+
+    def concluir(resposta, origem):
+        ok, expira, mensagem = _ler_resposta(resposta)
+        if not ok:
+            return False, mensagem or 'Código não reconhecido.'
+        if not salvar(codigo, expira, origem='app' if 'supabase' in origem else 'site',
+                      extra={'resposta': resposta, 'rota': origem}):
+            return False, 'Licença validada, mas não consegui gravar no aparelho.'
+        _log('licenca ativa por %s ate %s' % (origem, expira))
+        return True, mensagem or ('VIP ativo até %s' % expira if expira else 'VIP ativado!')
+
+    # 1º: rotas do próprio site (mais rápido quando existirem)
+    achou = False
+    recusa = ''
     for rota in rotas():
         try:
             bruta = _post(rota, corpo)
@@ -201,21 +402,51 @@ def validar(codigo):
             _log('rota %s falhou: %s' % (rota, erro), xbmc.LOGDEBUG)
             continue
         if isinstance(bruta, dict) and 'bruto' in bruta:
-            continue                      # HTML da SPA, não é API
-        resposta = bruta
-        _log('validação respondida por %s' % rota)
-        ok, expira, mensagem = _ler_resposta(resposta)
-        if ok or 'error' in resposta or 'erro' in resposta \
-                or 'valido' in resposta or 'ativo' in resposta:
-            break
-    if resposta is None:
+            continue                       # HTML da SPA, não é API
+        achou = True
+        ok, _, mensagem = _ler_resposta(bruta)
+        if ok:
+            return concluir(bruta, rota)
+        recusa = recusa or mensagem
+
+    # 2º: Supabase do site (Edge Functions, depois a tabela do painel)
+    try:
+        funcoes, chave = rotas_supabase()
+    except Exception as erro:  # noqa: BLE001
+        _log('supabase indisponivel: %s' % erro, xbmc.LOGDEBUG)
+        funcoes, chave = [], ''
+    for rota in funcoes:
+        try:
+            bruta = _post(rota, corpo, chave)
+        except Exception as erro:  # noqa: BLE001
+            _log('supabase %s falhou: %s' % (rota, erro), xbmc.LOGDEBUG)
+            continue
+        if isinstance(bruta, dict) and 'bruto' in bruta:
+            continue
+        achou = True
+        ok, _, mensagem = _ler_resposta(bruta)
+        if ok:
+            return concluir(bruta, rota)
+        recusa = recusa or mensagem
+    if funcoes:
+        base = funcoes[0].split('/functions/v1/')[0]
+        try:
+            import urllib.parse
+            tabela = '%s/rest/v1/codigos?codigo=eq.%s&select=*' % (
+                base, urllib.parse.quote(codigo))
+            bruta = _get(tabela, chave)
+            if not (isinstance(bruta, dict) and 'bruto' in bruta):
+                achou = True
+                ok, _, mensagem = _ler_resposta(bruta)
+                if ok:
+                    return concluir(bruta, tabela)
+                recusa = recusa or mensagem
+        except Exception as erro:  # noqa: BLE001
+            _log('tabela do supabase falhou: %s' % erro, xbmc.LOGDEBUG)
+
+    if not achou:
         return False, 'Não consegui falar com o servidor de ativação. Tente de novo.'
-    ok, expira, mensagem = _ler_resposta(resposta)
-    if not ok:
-        return False, mensagem or 'Código não reconhecido.'
-    if not salvar(codigo, expira, extra={'resposta': resposta}):
-        return False, 'Licença validada, mas não consegui gravar no aparelho.'
-    return True, mensagem or ('VIP ativo até %s' % expira if expira else 'VIP ativado!')
+    return False, recusa or 'Código não reconhecido.'
 
 
 def _aparelho():

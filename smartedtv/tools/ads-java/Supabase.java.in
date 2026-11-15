@@ -1,0 +1,297 @@
+package @APP_PACKAGE@;
+
+import android.content.Context;
+import android.util.Log;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * Descobre (e memoriza) o projeto Supabase que o site oficial usa.
+ *
+ * O site ``smartedtv-vip.lovable.app`` é uma SPA: o endereço do Supabase e a
+ * chave pública (anon) não aparecem no HTML, e sim no JavaScript do bundle.
+ * Então, na primeira validação de código, o app:
+ *
+ *  1. baixa o HTML do site e lista os ``<script src>``;
+ *  2. baixa os primeiros bundles e procura ``https://<projeto>.supabase.co`` e
+ *     a chave ``eyJ…`` (JWT anon);
+ *  3. grava em ``<files>/supabase.txt`` (duas linhas: URL e chave) e reusa nas
+ *     próximas vezes — nenhuma requisição extra depois disso.
+ *
+ * Também aceita configuração manual, sem recompilar:
+ *
+ *  * ``<files>/supabase-url.txt``   (ex.: https://abcd.supabase.co)
+ *  * ``<files>/supabase-chave.txt`` (a chave anon/public do projeto)
+ *  * ``<perfil>/.kodi/userdata/addon_data/service.smarted.bootstrap/supabase.txt``
+ *    (mesmo formato ``url`` + ``chave``) — é o que o add-on do Kodi grava.
+ */
+public final class Supabase {
+
+    public static final String TAG = "SmartAds";
+    public static final String SITE = "https://smartedtv-vip.lovable.app/";
+
+    private static final String CACHE = "supabase.txt";
+    private static final Pattern PROJETO =
+            Pattern.compile("(https://[a-z0-9]{6,}\\.supabase\\.co)");
+    private static final Pattern CHAVE =
+            Pattern.compile("(eyJ[A-Za-z0-9_\\-]{10,}\\.[A-Za-z0-9_\\-]{10,}\\.[A-Za-z0-9_\\-]{10,})");
+    private static final Pattern SCRIPT =
+            Pattern.compile("src=\"([^\"]+\\.js[^\"]*)\"");
+    private static final int LIMITE_BYTES = 4 * 1024 * 1024;
+
+    private Supabase() {
+    }
+
+    /**
+     * (url, chave) do projeto — do cache, dos arquivos de override ou da
+     * descoberta no site. ``null`` quando não deu para descobrir.
+     */
+    public static synchronized String[] configuracao(Context contexto) {
+        String[] manual = manual(contexto);
+        if (manual != null) {
+            return manual;
+        }
+        String[] cache = cache(contexto);
+        if (cache != null) {
+            return cache;
+        }
+        String[] achado = descobrir(contexto);
+        if (achado != null) {
+            gravarCache(contexto, achado[0], achado[1]);
+        }
+        return achado;
+    }
+
+    private static File arquivo(Context contexto, String nome) {
+        File base = contexto.getFilesDir();
+        if (base == null) {
+            base = contexto.getExternalFilesDir("");
+        }
+        if (base == null) {
+            return null;
+        }
+        if (nome == null) {
+            return base;
+        }
+        File arquivo = new File(base, nome);
+        return arquivo.exists() ? arquivo : null;
+    }
+
+    private static String[] manual(Context contexto) {
+        String url = lerArquivo(arquivo(contexto, "supabase-url.txt"));
+        String chave = lerArquivo(arquivo(contexto, "supabase-chave.txt"));
+        if (url != null && url.toLowerCase(java.util.Locale.ROOT).contains("supabase.co")) {
+            Log.i(TAG, "Supabase: configuração manual (" + url + ")");
+            return new String[]{semBarra(url), chave == null ? "" : chave.trim()};
+        }
+        File perfil = arquivo(contexto, null);
+        if (perfil != null) {
+            File addon = new File(perfil, ".kodi/userdata/addon_data/service.smarted.bootstrap/supabase.txt");
+            String[] par = paraPar(lerArquivo(addon));
+            if (par != null) {
+                Log.i(TAG, "Supabase: configuração do add-on (" + par[0] + ")");
+                return par;
+            }
+        }
+        return null;
+    }
+
+    private static String[] cache(Context contexto) {
+        String[] par = paraPar(lerArquivo(arquivo(contexto, CACHE)));
+        if (par != null) {
+            Log.i(TAG, "Supabase: cache do aparelho (" + par[0] + ")");
+        }
+        return par;
+    }
+
+    private static String[] paraPar(String texto) {
+        if (texto == null) {
+            return null;
+        }
+        String url = null;
+        String chave = "";
+        for (String linha : texto.split("\\n")) {
+            String limpo = linha.trim();
+            if (limpo.length() == 0) {
+                continue;
+            }
+            if (limpo.startsWith("http") && limpo.contains("supabase.co")) {
+                url = semBarra(limpo);
+            } else if (limpo.startsWith("eyJ")) {
+                chave = limpo;
+            }
+        }
+        return url == null ? null : new String[]{url, chave};
+    }
+
+    private static void gravarCache(Context contexto, String url, String chave) {
+        File base = contexto.getFilesDir();
+        if (base == null) {
+            base = contexto.getExternalFilesDir("");
+        }
+        if (base == null) {
+            return;
+        }
+        OutputStream saida = null;
+        try {
+            saida = new FileOutputStream(new File(base, CACHE));
+            saida.write((url + "\n" + chave + "\n").getBytes(Charset.forName("UTF-8")));
+            saida.flush();
+            Log.i(TAG, "Supabase: descoberto e memorizado (" + url + ")");
+        } catch (Exception erro) {
+            Log.w(TAG, "Supabase: não consegui gravar o cache (" + erro + ")");
+        } finally {
+            if (saida != null) {
+                try {
+                    saida.close();
+                } catch (Exception ignorado) {
+                    // nada a fazer
+                }
+            }
+        }
+    }
+
+    /** Baixa o site e procura a URL do projeto + a chave anon no JavaScript. */
+    public static String[] descobrir(Context contexto) {
+        Log.i(TAG, "Supabase: procurando o projeto no site…");
+        String html = baixar(SITE);
+        if (html == null) {
+            Log.w(TAG, "Supabase: site fora do ar");
+            return null;
+        }
+        Set<String> projetos = new LinkedHashSet<String>();
+        String chave = primeira(CHAVE, html);
+        coletar(PROJETO, html, projetos);
+
+        List<String> bundles = new ArrayList<String>();
+        Matcher m = SCRIPT.matcher(html);
+        while (m.find() && bundles.size() < 6) {
+            bundles.add(m.group(1));
+        }
+        for (String bundle : bundles) {
+            String endereco = bundle.startsWith("http") ? bundle : SITE + (bundle.startsWith("/")
+                    ? bundle.substring(1) : bundle);
+            String texto = baixar(endereco);
+            if (texto == null) {
+                continue;
+            }
+            coletar(PROJETO, texto, projetos);
+            if (chave == null) {
+                chave = primeira(CHAVE, texto);
+            }
+            if (chave != null && !projetos.isEmpty()) {
+                break;
+            }
+        }
+        if (projetos.isEmpty()) {
+            Log.w(TAG, "Supabase: nenhum projeto encontrado no JavaScript do site");
+            return null;
+        }
+        String url = semBarra(projetos.iterator().next());
+        Log.i(TAG, "Supabase: projeto " + url + " (chave " + (chave == null ? "ausente" : "ok") + ")");
+        return new String[]{url, chave == null ? "" : chave};
+    }
+
+    private static void coletar(Pattern padrao, String texto, Set<String> destino) {
+        Matcher m = padrao.matcher(texto == null ? "" : texto);
+        while (m.find()) {
+            destino.add(m.group(1));
+        }
+    }
+
+    private static String primeira(Pattern padrao, String texto) {
+        Matcher m = padrao.matcher(texto == null ? "" : texto);
+        return m.find() ? m.group(1) : null;
+    }
+
+    /** GET simples com limite de tamanho (texto). */
+    public static String baixar(String endereco) {
+        HttpURLConnection conexao = null;
+        try {
+            conexao = (HttpURLConnection) new URL(endereco).openConnection();
+            conexao.setConnectTimeout(6000);
+            conexao.setReadTimeout(9000);
+            conexao.setRequestProperty("User-Agent", "SMARTEDTV/1.0");
+            conexao.setRequestProperty("Accept", "*/*");
+            int codigo = conexao.getResponseCode();
+            InputStream entrada = codigo >= 400 ? conexao.getErrorStream()
+                    : conexao.getInputStream();
+            if (entrada == null) {
+                return null;
+            }
+            ByteArrayOutputStream saida = new ByteArrayOutputStream();
+            byte[] buffer = new byte[16 * 1024];
+            int lidos;
+            int total = 0;
+            while ((lidos = entrada.read(buffer)) > 0) {
+                saida.write(buffer, 0, lidos);
+                total += lidos;
+                if (total > LIMITE_BYTES) {
+                    break;
+                }
+            }
+            entrada.close();
+            return new String(saida.toByteArray(), Charset.forName("UTF-8"));
+        } catch (Exception erro) {
+            Log.w(TAG, "Supabase: falha ao baixar " + endereco + " (" + erro + ")");
+            return null;
+        } finally {
+            if (conexao != null) {
+                try {
+                    conexao.disconnect();
+                } catch (Exception ignorado) {
+                    // nada a fazer
+                }
+            }
+        }
+    }
+
+    private static String semBarra(String url) {
+        String limpo = url == null ? "" : url.trim();
+        while (limpo.endsWith("/")) {
+            limpo = limpo.substring(0, limpo.length() - 1);
+        }
+        return limpo;
+    }
+
+    private static String lerArquivo(File arquivo) {
+        if (arquivo == null || !arquivo.isFile() || arquivo.length() > 8192L) {
+            return null;
+        }
+        InputStream entrada = null;
+        try {
+            entrada = new FileInputStream(arquivo);
+            ByteArrayOutputStream saida = new ByteArrayOutputStream();
+            byte[] buffer = new byte[4096];
+            int lidos;
+            while ((lidos = entrada.read(buffer)) > 0) {
+                saida.write(buffer, 0, lidos);
+            }
+            return new String(saida.toByteArray(), Charset.forName("UTF-8"));
+        } catch (Exception erro) {
+            return null;
+        } finally {
+            if (entrada != null) {
+                try {
+                    entrada.close();
+                } catch (Exception ignorado) {
+                    // nada a fazer
+                }
+            }
+        }
+    }
+}

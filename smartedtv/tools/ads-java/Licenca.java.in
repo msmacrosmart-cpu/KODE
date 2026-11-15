@@ -97,6 +97,18 @@ public final class Licenca {
         "https://smartedtv-vip.lovable.app/functions/v1/validar-codigo",
     };
 
+    /**
+     * Edge Functions do Supabase do site (descobertas por ``Supabase``): é o
+     * backend de verdade do painel — códigos de TESTE (10 minutos) e MENSAIS
+     * (30 dias) saem de lá.
+     */
+    private static final String[] SUPABASE_FUNCOES = {
+        "/functions/v1/validar-codigo",
+        "/functions/v1/validar",
+        "/functions/v1/ativar-codigo",
+        "/functions/v1/ativa-codigo",
+    };
+
     private static String ultimaRotaBoa;
 
     /**
@@ -112,33 +124,85 @@ public final class Licenca {
         }
         String corpo = "{\"codigo\":\"" + escapar(limpo) + "\",\"app\":\"smartedtv\","
                 + "\"device\":\"" + escapar(identificador(contexto)) + "\"}";
-        String[] rotas = rotas(contexto);
-        Boolean respondeu = null;
+
+        boolean achouJson = false;
+        boolean aceito = false;
         String resposta = "";
-        for (int i = 0; i < rotas.length; i++) {
+        String usada = "";
+
+        for (String rota : rotas(contexto)) {
             try {
-                resposta = post(rotas[i], corpo);
+                resposta = post(rota, corpo, "");
             } catch (Exception erro) {
-                Log.w(TAG, "Licenca: rota " + rotas[i] + " falhou (" + erro.getClass().getSimpleName() + ")");
+                Log.w(TAG, "Licenca: rota " + rota + " falhou ("
+                        + erro.getClass().getSimpleName() + ")");
                 continue;
             }
-            String bruta = resposta.trim();
-            if (!bruta.startsWith("{")) {
+            if (!pareceJson(resposta)) {
                 continue;                 // página 404 da SPA, não é API
             }
-            ultimaRotaBoa = rotas[i];
-            Log.i(TAG, "Licenca: validação respondida por " + rotas[i]);
-            respondeu = Boolean.valueOf(bruta.matches("(?s).*\"(ativo|valido|ok|success)\"\\s*:\\s*true.*"));
-            boolean recusado = bruta.matches("(?s).*\"(valido|ativo|ok|success)\"\\s*:\\s*false.*");
-            if (respondeu.booleanValue() || recusado) {
+            achouJson = true;
+            usada = rota;
+            aceito = respostaAceita(resposta, false);
+            if (aceito || respostaRecusa(resposta)) {
                 break;
             }
         }
-        if (respondeu == null) {
+
+        // Supabase (Edge Function e tabela) — backend do site
+        if (!aceito) {
+            String[] projeto = null;
+            try {
+                projeto = Supabase.configuracao(contexto);
+            } catch (Throwable erro) {
+                Log.w(TAG, "Licenca: sem Supabase (" + erro + ")");
+            }
+            if (projeto != null) {
+                String base = projeto[0];
+                String chave = projeto[1];
+                for (int i = 0; i < SUPABASE_FUNCOES.length; i++) {
+                    String rota = base + SUPABASE_FUNCOES[i];
+                    try {
+                        String bruta = post(rota, corpo, chave);
+                        if (!pareceJson(bruta)) {
+                            continue;
+                        }
+                        achouJson = true;
+                        usada = rota;
+                        resposta = bruta;
+                        aceito = respostaAceita(bruta, false);
+                        if (aceito || respostaRecusa(bruta)) {
+                            break;
+                        }
+                    } catch (Exception erro) {
+                        Log.w(TAG, "Licenca: supabase " + rota + " falhou ("
+                                + erro.getClass().getSimpleName() + ")");
+                    }
+                }
+                if (!aceito) {
+                    // tabela do painel: REST com filtro pelo código
+                    String rota = base + "/rest/v1/codigos?codigo=eq."
+                            + java.net.URLEncoder.encode(limpo) + "&select=*";
+                    try {
+                        String bruta = get(rota, chave);
+                        if (pareceJson(bruta)) {
+                            achouJson = true;
+                            usada = rota;
+                            resposta = bruta;
+                            aceito = respostaAceita(bruta, true);
+                        }
+                    } catch (Exception erro) {
+                        Log.w(TAG, "Licenca: tabela do Supabase falhou (" + erro + ")");
+                    }
+                }
+            }
+        }
+
+        if (!achouJson) {
             Log.w(TAG, "Licenca: nenhuma rota de validação respondeu JSON");
             return "Não consegui falar com o servidor de ativação. Tente de novo em instantes.";
         }
-        if (!respondeu.booleanValue()) {
+        if (!aceito) {
             String mensagem = valor(resposta, "mensagem");
             if (mensagem.length() == 0) {
                 mensagem = valor(resposta, "message");
@@ -146,17 +210,127 @@ public final class Licenca {
             if (mensagem.length() == 0) {
                 mensagem = valor(resposta, "error");
             }
+            if (mensagem.length() == 0) {
+                mensagem = valor(resposta, "detail");
+            }
             return mensagem.length() > 0 ? mensagem : "Código não reconhecido.";
         }
-        String expira = valor(resposta, "expira");
-        if (expira.length() == 0) {
-            expira = valor(resposta, "expires");
-        }
+        ultimaRotaBoa = usada;
+        String expira = expiraDe(resposta);
         if (!gravar(contexto, limpo, expira)) {
             return "Licença validada, mas não consegui gravar no aparelho.";
         }
-        Log.i(TAG, "Licenca: VIP ativado ate " + (expira.length() == 0 ? "sem prazo" : expira));
+        Log.i(TAG, "Licenca: VIP ativado por " + usada + " ate "
+                + (expira.length() == 0 ? "sem prazo" : expira));
         return null;
+    }
+
+    /** A resposta do site/edge/tabela vale como "ativo"? */
+    private static boolean respostaAceita(String json, boolean tabela) {
+        String texto = json == null ? "" : json;
+        if (texto.matches("(?s).*\"(ativo|val[id]o|ok|success|valid|liberado)\"\\s*:\\s*true.*")) {
+            return true;
+        }
+        if (texto.matches("(?s).*\"(status|situacao|estado)\"\\s*:\\s*\"(ativo|valido|liberado|ok)\""
+                + ".*")) {
+            return true;
+        }
+        if (texto.matches("(?s).*\"(usado|utilizado|resgatado)\"\\s*:\\s*false.*")) {
+            return true;                  // linha da tabela ainda não usada
+        }
+        if (tabela && texto.trim().startsWith("[") && !texto.trim().equals("[]")) {
+            // REST devolveu a linha do código
+            return true;
+        }
+        return false;
+    }
+
+    /** Resposta explícita de recusa: para de tentar outras rotas. */
+    private static boolean respostaRecusa(String json) {
+        String texto = json == null ? "" : json;
+        if (texto.matches("(?s).*\"(ativo|val[id]o|ok|success|valid)\"\\s*:\\s*false.*")) {
+            return true;
+        }
+        return texto.matches("(?s).*\"(error|erro)\"\\s*:\\s*\"[^\"]+\".*")
+                && !respostaAceita(texto, false);
+    }
+
+    /**
+     * Prazo da licença a partir da resposta.
+     *
+     * Aceita, nesta ordem: data/hora explícita (``expira``, ``expira_em``,
+     * ``expires_at``…), duração em minutos (código de TESTE, 10 min) ou em
+     * dias (código MENSAL, 30 dias). Sem nada disso, assume 30 dias.
+     */
+    public static String expiraDe(String json) {
+        for (String chave : new String[]{"expira", "expira_em", "expires", "expires_at",
+                "validade", "data_expiracao", "expiration"}) {
+            String bruto = valor(json, chave);
+            if (bruto.length() > 0) {
+                return normalizarPrazo(bruto);
+            }
+        }
+        int minutos = numero(json, "minutos", "duracao_minutos", "validade_minutos",
+                "duration_minutes");
+        if (minutos > 0) {
+            return emInstantes(minutos * 60L);
+        }
+        int dias = numero(json, "dias", "duracao_dias", "validade_dias", "duration_days");
+        if (dias > 0) {
+            return emInstantes(dias * 86400L);
+        }
+        String tipo = (valor(json, "tipo") + valor(json, "type") + valor(json, "plano")).toLowerCase(Locale.ROOT);
+        if (tipo.contains("teste") || tipo.contains("trial") || tipo.contains("demo")
+                || tipo.contains("10")) {
+            return emInstantes(600L);     // código de teste: 10 minutos
+        }
+        return emInstantes(30L * 86400L); // código mensal: 30 dias
+    }
+
+    private static int numero(String json, String... chaves) {
+        for (int i = 0; i < chaves.length; i++) {
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("\"" + chaves[i] + "\"\\s*:\\s*\"?([0-9]{1,6})\"?")
+                    .matcher(json == null ? "" : json);
+            if (m.find()) {
+                try {
+                    return Integer.parseInt(m.group(1));
+                } catch (NumberFormatException ignorado) {
+                    // tenta a próxima chave
+                }
+            }
+        }
+        return 0;
+    }
+
+    /** Data/hora UTC no formato do arquivo (yyyy-MM-dd'T'HH:mm:ss'Z'). */
+    public static String emInstantes(long segundos) {
+        SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT);
+        formato.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return formato.format(new Date(System.currentTimeMillis() + segundos * 1000L));
+    }
+
+    /** Aceita "2027-01-31", "2027-01-31T10:00:00Z" e devolve ISO UTC. */
+    private static String normalizarPrazo(String bruto) {
+        String texto = bruto.trim().replace(" ", "T");
+        if (texto.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            return texto + "T23:59:59Z";   // data cheia: vale até o fim do dia (UTC)
+        }
+        if (texto.length() == 10) {
+            return texto + "T23:59:59Z";
+        }
+        if (texto.endsWith("Z") || texto.indexOf('+') > 10) {
+            return texto;
+        }
+        return texto + "Z";
+    }
+
+    private static boolean pareceJson(String resposta) {
+        if (resposta == null) {
+            return false;
+        }
+        String limpo = resposta.trim();
+        return limpo.startsWith("{") || limpo.startsWith("[");
     }
 
     /** Escreve o vip.json no perfil (mesmo formato que o addon do Kodi usa). */
@@ -220,7 +394,7 @@ public final class Licenca {
         return lista.toArray(new String[0]);
     }
 
-    private static String post(String url, String corpo) throws Exception {
+    private static String post(String url, String corpo, String chave) throws Exception {
         java.net.HttpURLConnection conexao =
                 (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
         conexao.setConnectTimeout(8000);
@@ -229,6 +403,12 @@ public final class Licenca {
         conexao.setDoOutput(true);
         conexao.setRequestProperty("Content-Type", "application/json; charset=utf-8");
         conexao.setRequestProperty("Accept", "application/json");
+        if (chave != null && chave.length() > 0) {
+            // Supabase: a chave anon/public vai nos dois cabeçalhos que as
+            // Edge Functions e o PostgREST esperam
+            conexao.setRequestProperty("apikey", chave);
+            conexao.setRequestProperty("Authorization", "Bearer " + chave);
+        }
         java.io.OutputStream saida = conexao.getOutputStream();
         try {
             saida.write(corpo.getBytes("UTF-8"));
@@ -237,6 +417,34 @@ public final class Licenca {
         }
         int codigo = conexao.getResponseCode();
         java.io.InputStream fluxo = codigo >= 400 ? conexao.getErrorStream() : conexao.getInputStream();
+        if (fluxo == null) {
+            throw new java.io.IOException("HTTP " + codigo);
+        }
+        ByteArrayOutputStream acumulado = new ByteArrayOutputStream();
+        byte[] buffer = new byte[4096];
+        int lidos;
+        while ((lidos = fluxo.read(buffer)) > 0) {
+            acumulado.write(buffer, 0, lidos);
+        }
+        fluxo.close();
+        return new String(acumulado.toByteArray(), "UTF-8");
+    }
+
+    /** GET (usado na tabela do Supabase). */
+    private static String get(String url, String chave) throws Exception {
+        java.net.HttpURLConnection conexao =
+                (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+        conexao.setConnectTimeout(8000);
+        conexao.setReadTimeout(12000);
+        conexao.setRequestMethod("GET");
+        conexao.setRequestProperty("Accept", "application/json");
+        if (chave != null && chave.length() > 0) {
+            conexao.setRequestProperty("apikey", chave);
+            conexao.setRequestProperty("Authorization", "Bearer " + chave);
+        }
+        int codigo = conexao.getResponseCode();
+        java.io.InputStream fluxo = codigo >= 400 ? conexao.getErrorStream()
+                : conexao.getInputStream();
         if (fluxo == null) {
             throw new java.io.IOException("HTTP " + codigo);
         }
@@ -290,19 +498,32 @@ public final class Licenca {
         return m.find() ? m.group(1).trim() : "";
     }
 
-    /** Compara a data (yyyy-MM-dd) com hoje em UTC. */
+    /**
+     * Prazo em dia (yyyy-MM-dd, vale até o fim do dia UTC) ou em data/hora
+     * (yyyy-MM-dd'T'HH:mm:ss'Z', usado pelos códigos de teste de 10 minutos).
+     */
     private static boolean dentroDoPrazo(String data) {
+        String texto = data == null ? "" : data.trim();
+        Date limite = null;
         try {
-            SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT);
-            formato.setTimeZone(TimeZone.getTimeZone("UTC"));
-            formato.setLenient(false);
-            Date limite = formato.parse(data.trim());
-            Date hoje = new Date();
-            return limite != null && limite.getTime() + 86399000L >= hoje.getTime();
+            if (texto.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                SimpleDateFormat dia = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT);
+                dia.setTimeZone(TimeZone.getTimeZone("UTC"));
+                dia.setLenient(false);
+                Date base = dia.parse(texto);
+                limite = base == null ? null : new Date(base.getTime() + 86399000L);
+            } else {
+                SimpleDateFormat completo = new SimpleDateFormat(
+                        "yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT);
+                completo.setTimeZone(TimeZone.getTimeZone("UTC"));
+                completo.setLenient(false);
+                limite = completo.parse(texto.replace(" ", "T"));
+            }
         } catch (Exception erro) {
-            Log.w(TAG, "Licenca: data invalida (" + data + ")");
+            Log.w(TAG, "Licenca: prazo invalido (" + texto + ")");
             return false;
         }
+        return limite != null && limite.getTime() >= System.currentTimeMillis();
     }
 
     private static String ler(File arquivo) throws Exception {

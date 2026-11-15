@@ -5,7 +5,7 @@ Roda no codigo-fonte do Kodi 21.3-Omega (clonado pelo workflow) e transforma o
 build em um monolito:
 
     applicationId  smartedtv.full      (era org.xbmc.kodi)
-    versao         1.0.72 / 2103058
+    versao         1.0.73 / 2103059
     anuncios       AppOpenActivity + PreRollActivity dentro do app (AdMob nativo)
     conteudo       skin.novatv + plugin.video.smarted + service.smarted.bootstrap
                    + resource.uisounds.silencio (o mesmo pacote da linha classica)
@@ -33,14 +33,15 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 
 APP_PACKAGE = "smartedtv.full"
-VERSAO_NOME = "1.0.72"
-VERSAO_CODIGO = 2103058
+VERSAO_NOME = "1.0.73"
+VERSAO_CODIGO = 2103059
 
 ADS_APP_ID = "ca-app-pub-2066014755407744~5076693043"
 PLAY_SERVICES_ADS = "com.google.android.gms:play-services-ads:23.2.0"
 
 JAVA_ADS = ["SmartAds", "AdTela", "AppOpenActivity", "PreRollActivity", "SeedBase",
-            "Licenca", "CompartilharActivity", "AbrirUrlActivity", "BoasVindas"]
+            "Licenca", "CompartilharActivity", "AbrirUrlActivity", "BoasVindas",
+            "Plataforma", "Supabase"]
 
 SKIN_ORIGEM = "kodi/skin.estilo.personalizado"
 SKIN_ID = "skin.novatv"
@@ -615,6 +616,9 @@ def main() -> int:
         assert f"src/{classe}.java" in cmake, f"{classe} fora do Install.cmake"
     qr = src / "addons/script.smartedtv.ajustes/resources/qrcode.png"
     assert qr.is_file() and qr.stat().st_size > 1000, "QR de compartilhamento ausente"
+    qr_cakto = src / "addons/script.smartedtv.ajustes/resources/qrcode-cakto.png"
+    assert qr_cakto.is_file() and qr_cakto.stat().st_size > 1000, \
+        "QR do checkout (Cakto) ausente"
     assert (src / "addons/service.smarted.bootstrap/retomar.py").is_file(), \
         "modulo do ponto de retomada ausente"
     assert (src / "addons/script.smartedtv.ajustes/vipmenu.py").is_file(), \
