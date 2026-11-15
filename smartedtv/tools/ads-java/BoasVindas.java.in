@@ -1,0 +1,336 @@
+package @APP_PACKAGE@;
+
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.text.InputType;
+import android.util.Log;
+import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.KeyEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
+
+/**
+ * Modal de boas-vindas, exibido na splash ANTES de qualquer anúncio.
+ *
+ * Pergunta "Deseja assistir sem anúncios?" e oferece, num só lugar:
+ *
+ *  1. Quero ser VIP  -> checkout da Cakto;
+ *  2. Já tenho um código -> campo para digitar + validação no site;
+ *  3. Compartilhar aplicativo -> folha do Android;
+ *  4. Continuar com anúncios -> fecha e o Kodi abre normalmente.
+ *
+ * Feito com views nativas: funciona igual no controle remoto (D-pad foca os
+ * botões em sequência, o campo de texto abre o teclado) e no toque.
+ *
+ * Aparece uma vez por versão; quem é VIP nunca vê. A mesma tela continua
+ * acessível depois pelo menu Ajustes do Kodi.
+ */
+public final class BoasVindas {
+
+    private static final String TAG = "SmartAds";
+    private static final String PREF = "smartedtv_boas_vindas";
+    public static final String CHECKOUT = "https://pay.cakto.com.br/nkvbegd_1323120";
+
+    private BoasVindas() {
+    }
+
+    /** true = a tela foi montada (a splash NÃO deve abrir o Kodi ainda). */
+    public static boolean mostrar(final Activity splash) {
+        if (splash == null) {
+            return false;
+        }
+        if (Licenca.ativa(splash)) {
+            Log.i(TAG, "BoasVindas: VIP ativo, sem tela inicial");
+            return false;
+        }
+        if (jaMostrou(splash)) {
+            Log.i(TAG, "BoasVindas: já exibida nesta versão");
+            return false;
+        }
+        try {
+            montar(splash);
+            return true;
+        } catch (Throwable erro) {
+            Log.w(TAG, "BoasVindas: nao consegui montar (" + erro + ")");
+            return false;
+        }
+    }
+
+    // ------------------------------------------------------------------ estado
+
+    private static SharedPreferences prefs(Context contexto) {
+        return contexto.getSharedPreferences(PREF, Context.MODE_PRIVATE);
+    }
+
+    private static String chave(Context contexto) {
+        String versao = "?";
+        try {
+            versao = contexto.getPackageManager()
+                    .getPackageInfo(contexto.getPackageName(), 0).versionName;
+        } catch (Exception ignorado) {
+            // sem versão, a chave fica genérica
+        }
+        return "vista_" + versao;
+    }
+
+    private static boolean jaMostrou(Context contexto) {
+        try {
+            return prefs(contexto).getBoolean(chave(contexto), false);
+        } catch (Exception erro) {
+            return false;
+        }
+    }
+
+    private static void marcar(Context contexto) {
+        try {
+            prefs(contexto).edit().putBoolean(chave(contexto), true).apply();
+        } catch (Exception ignorado) {
+            // só conveniência
+        }
+    }
+
+    // ------------------------------------------------------------------- tela
+
+    private static void montar(final Activity splash) {
+        final FrameLayout fundo = new FrameLayout(splash);
+        fundo.setBackgroundColor(Color.rgb(8, 8, 10));
+        fundo.setFocusable(false);
+
+        ScrollView rolagem = new ScrollView(splash);
+        rolagem.setFillViewport(true);
+
+        LinearLayout coluna = new LinearLayout(splash);
+        coluna.setOrientation(LinearLayout.VERTICAL);
+        coluna.setGravity(Gravity.CENTER_HORIZONTAL);
+        int margem = dp(splash, 48);
+        coluna.setPadding(margem, margem, margem, margem);
+        coluna.setFocusable(false);
+        rolagem.addView(coluna, new ScrollView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        TextView titulo = new TextView(splash);
+        titulo.setText("SMARTEDTV");
+        titulo.setTextColor(Color.WHITE);
+        titulo.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26);
+        titulo.setGravity(Gravity.CENTER);
+        coluna.addView(titulo);
+
+        TextView pergunta = new TextView(splash);
+        pergunta.setText("Deseja assistir sem anúncios?");
+        pergunta.setTextColor(Color.WHITE);
+        pergunta.setTextSize(TypedValue.COMPLEX_UNIT_SP, 34);
+        pergunta.setGravity(Gravity.CENTER);
+        pergunta.setPadding(0, dp(splash, 18), 0, dp(splash, 8));
+        coluna.addView(pergunta);
+
+        TextView detalhe = new TextView(splash);
+        detalhe.setText("Plano VIP por R$ 24,90: zero anúncios, até 3 aparelhos.\n"
+                + "Já comprou? Digite o código e libere na hora.");
+        detalhe.setTextColor(Color.rgb(190, 190, 200));
+        detalhe.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
+        detalhe.setGravity(Gravity.CENTER);
+        detalhe.setPadding(0, 0, 0, dp(splash, 26));
+        coluna.addView(detalhe);
+
+        final TextView status = new TextView(splash);
+        status.setTextColor(Color.rgb(120, 220, 160));
+        status.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        status.setGravity(Gravity.CENTER);
+        status.setPadding(0, dp(splash, 10), 0, 0);
+        status.setVisibility(View.GONE);
+        coluna.addView(status);
+
+        final LinearLayout areaCodigo = new LinearLayout(splash);
+        areaCodigo.setOrientation(LinearLayout.VERTICAL);
+        areaCodigo.setGravity(Gravity.CENTER_HORIZONTAL);
+        areaCodigo.setVisibility(View.GONE);
+        areaCodigo.setPadding(0, dp(splash, 14), 0, 0);
+
+        final EditText campo = new EditText(splash);
+        campo.setHint("Código de ativação");
+        campo.setTextColor(Color.WHITE);
+        campo.setHintTextColor(Color.rgb(150, 150, 160));
+        campo.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+        campo.setSingleLine(true);
+        campo.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+        campo.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        LinearLayout.LayoutParams larguraCampo = new LinearLayout.LayoutParams(
+                dp(splash, 420), ViewGroup.LayoutParams.WRAP_CONTENT);
+        areaCodigo.addView(campo, larguraCampo);
+
+        final Button ativar = botao(splash, "Ativar meu código", true);
+        areaCodigo.addView(ativar, margemBotao(splash));
+        coluna.addView(areaCodigo);
+
+        final Button vip = botao(splash, "Quero assistir sem anúncios", true);
+        final Button codigo = botao(splash, "Já tenho um código", false);
+        final Button compartilhar = botao(splash, "Compartilhar aplicativo", false);
+        final Button continuar = botao(splash, "Continuar com anúncios", false);
+
+        coluna.addView(vip, margemBotao(splash));
+        coluna.addView(codigo, margemBotao(splash));
+        coluna.addView(compartilhar, margemBotao(splash));
+        coluna.addView(continuar, margemBotao(splash));
+
+        // --- ações -----------------------------------------------------------
+        vip.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                abrir(splash, CHECKOUT);
+            }
+        });
+
+        codigo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                boolean escondido = areaCodigo.getVisibility() != View.VISIBLE;
+                areaCodigo.setVisibility(escondido ? View.VISIBLE : View.GONE);
+                if (escondido) {
+                    campo.requestFocus();
+                }
+            }
+        });
+
+        ativar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final String texto = campo.getText() == null ? "" : campo.getText().toString();
+                ativar.setEnabled(false);
+                ativar.setText("Validando...");
+                status.setVisibility(View.VISIBLE);
+                status.setTextColor(Color.rgb(200, 200, 210));
+                status.setText("Falando com o servidor de ativação...");
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        final String erro = Licenca.validar(splash, texto);
+                        splash.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                ativar.setEnabled(true);
+                                ativar.setText("Ativar meu código");
+                                if (erro == null) {
+                                    status.setTextColor(Color.rgb(120, 220, 160));
+                                    status.setText("VIP ativado! Os anúncios já param nesta abertura.");
+                                    vip.setVisibility(View.GONE);
+                                    codigo.setVisibility(View.GONE);
+                                    areaCodigo.setVisibility(View.GONE);
+                                    continuar.setText("Entrar no SMARTEDTV");
+                                    continuar.requestFocus();
+                                } else {
+                                    status.setTextColor(Color.rgb(235, 140, 140));
+                                    status.setText(erro);
+                                }
+                            }
+                        });
+                    }
+                }, "smarted-vip").start();
+            }
+        });
+
+        compartilhar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    Intent enviar = new Intent(Intent.ACTION_SEND);
+                    enviar.setType("text/plain");
+                    enviar.putExtra(Intent.EXTRA_TEXT,
+                            "Estou usando o SMARTEDTV e recomendo: "
+                                    + "https://smartedtv-vip.lovable.app/");
+                    Intent escolha = Intent.createChooser(enviar, "Compartilhar aplicativo");
+                    splash.startActivity(escolha);
+                } catch (Exception erro) {
+                    Log.w(TAG, "BoasVindas: compartilhar falhou (" + erro + ")");
+                }
+            }
+        });
+
+        continuar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                fechar(splash, fundo);
+            }
+        });
+
+        fundo.addView(rolagem, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        splash.setContentView(fundo);
+        vip.requestFocus();
+        Log.i(TAG, "BoasVindas: tela de ativação exibida");
+    }
+
+    /** Fecha a tela e segue para o Kodi (mesmo caminho que o Splash usa). */
+    private static void fechar(Activity splash, View tela) {
+        marcar(splash);
+        tela.setVisibility(View.GONE);
+        SeedBase.iniciarKodi(splash);
+    }
+
+    private static void abrir(Activity splash, String url) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url));
+            splash.startActivity(intent);
+            Log.i(TAG, "BoasVindas: abrindo " + url);
+        } catch (Exception erro) {
+            Log.w(TAG, "BoasVindas: sem navegador para " + url);
+        }
+    }
+
+    // -------------------------------------------------------------- utilidades
+
+    private static int dp(Context contexto, int valor) {
+        return (int) (valor * contexto.getResources().getDisplayMetrics().density);
+    }
+
+    private static LinearLayout.LayoutParams margemBotao(Context contexto) {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                dp(contexto, 420), dp(contexto, 64));
+        params.topMargin = dp(contexto, 14);
+        return params;
+    }
+
+    private static Button botao(Context contexto, String texto, boolean destaque) {
+        Button botao = new Button(contexto);
+        aplicarFundo(botao, destaque, false);
+        botao.setText(texto);
+        botao.setTextSize(TypedValue.COMPLEX_UNIT_SP, 19);
+        botao.setTextColor(destaque ? Color.rgb(10, 10, 10) : Color.WHITE);
+        botao.setAllCaps(false);
+        botao.setFocusable(true);
+        botao.setFocusableInTouchMode(true);
+        final boolean claro = destaque;
+        botao.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean temFoco) {
+                aplicarFundo((Button) v, claro, temFoco);
+                v.setScaleX(temFoco ? 1.03f : 1.0f);
+                v.setScaleY(temFoco ? 1.03f : 1.0f);
+            }
+        });
+        return botao;
+    }
+
+    private static void aplicarFundo(Button botao, boolean destaque, boolean foco) {
+        GradientDrawable forma = new GradientDrawable();
+        forma.setCornerRadius(32f);
+        if (destaque) {
+            forma.setColor(foco ? Color.rgb(255, 255, 255) : Color.rgb(235, 235, 240));
+        } else {
+            forma.setColor(foco ? Color.rgb(70, 70, 80) : Color.rgb(32, 32, 38));
+            forma.setStroke(2, foco ? Color.WHITE : Color.rgb(70, 70, 80));
+        }
+        botao.setBackground(forma);
+    }
+}

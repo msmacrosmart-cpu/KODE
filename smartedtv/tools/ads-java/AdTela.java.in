@@ -109,6 +109,31 @@ public abstract class AdTela extends Activity {
         }
     }
 
+    /**
+     * Sair do app com um anúncio na tela não pode travar nada: VOLTAR e o
+     * botão HOME fecham a tela na hora, e o Kodi segue o fechamento normal.
+     */
+    @Override
+    public void onBackPressed() {
+        log("voltar: fechando a tela de anuncio");
+        fechar("voltar");
+    }
+
+    @Override
+    protected void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        fechar("usuario saiu do app");
+    }
+
+    @Override
+    protected void onStop() {
+        if (!isFinishing()) {
+            // app foi para segundo plano (HOME, troca de app, desligar a TV)
+            fechar("segundo plano");
+        }
+        super.onStop();
+    }
+
     /** Nenhuma view do anúncio aceita foco do controle. */
     protected void semFoco(View raiz) {
         if (raiz == null) {

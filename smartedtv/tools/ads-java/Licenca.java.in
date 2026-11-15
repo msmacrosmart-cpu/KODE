@@ -78,6 +78,133 @@ public final class Licenca {
         return vale;
     }
 
+    /** Endereco que valida o codigo comprado no site (producao). */
+    public static final String VALIDAR_URL = "https://smartedtv-vip.lovable.app/api/validar";
+
+    /**
+     * Valida um codigo no site e, dando certo, grava a licenca.
+     *
+     * Roda em thread propria (chamador cuida disso): devolve null quando deu
+     * certo e a mensagem de erro quando nao.
+     */
+    public static String validar(Context contexto, String codigo) {
+        String limpo = codigo == null ? "" : codigo.trim().toUpperCase(Locale.ROOT);
+        if (limpo.length() < 4) {
+            return "Digite o código completo.";
+        }
+        String corpo = "{\"codigo\":\"" + escapar(limpo) + "\",\"app\":\"smartedtv\","
+                + "\"device\":\"" + escapar(identificador(contexto)) + "\"}";
+        String resposta;
+        try {
+            resposta = post(VALIDAR_URL, corpo);
+        } catch (Exception erro) {
+            Log.w(TAG, "Licenca: falha ao validar (" + erro.getClass().getSimpleName() + ")");
+            return "Sem conexão com o servidor de ativação.";
+        }
+        boolean ok = resposta.matches("(?s).*\"(ativo|valido|ok|success)\"\\s*:\\s*true.*");
+        if (!ok) {
+            String mensagem = valor(resposta, "mensagem");
+            if (mensagem.length() == 0) {
+                mensagem = valor(resposta, "message");
+            }
+            return mensagem.length() > 0 ? mensagem : "Código não reconhecido.";
+        }
+        String expira = valor(resposta, "expira");
+        if (expira.length() == 0) {
+            expira = valor(resposta, "expires");
+        }
+        if (!gravar(contexto, limpo, expira)) {
+            return "Licença validada, mas não consegui gravar no aparelho.";
+        }
+        Log.i(TAG, "Licenca: VIP ativado ate " + (expira.length() == 0 ? "sem prazo" : expira));
+        return null;
+    }
+
+    /** Escreve o vip.json no perfil (mesmo formato que o addon do Kodi usa). */
+    public static boolean gravar(Context contexto, String codigo, String expira) {
+        File arquivo = arquivo(contexto);
+        if (arquivo == null) {
+            return false;
+        }
+        File pasta = arquivo.getParentFile();
+        if (pasta != null && !pasta.isDirectory() && !pasta.mkdirs()) {
+            Log.w(TAG, "Licenca: nao consegui criar " + pasta);
+            return false;
+        }
+        String json = "{\n  \"ativo\": true,\n  \"codigo\": \"" + escapar(codigo)
+                + "\",\n  \"expira\": \"" + escapar(expira)
+                + "\",\n  \"origem\": \"app\"\n}\n";
+        java.io.OutputStream saida = null;
+        try {
+            saida = new java.io.FileOutputStream(arquivo);
+            saida.write(json.getBytes("UTF-8"));
+            saida.flush();
+            return true;
+        } catch (Exception erro) {
+            Log.w(TAG, "Licenca: nao consegui gravar vip.json (" + erro + ")");
+            return false;
+        } finally {
+            if (saida != null) {
+                try {
+                    saida.close();
+                } catch (Exception ignorado) {
+                    // nada a fazer
+                }
+            }
+        }
+    }
+
+    private static String post(String url, String corpo) throws Exception {
+        java.net.HttpURLConnection conexao =
+                (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+        conexao.setConnectTimeout(8000);
+        conexao.setReadTimeout(12000);
+        conexao.setRequestMethod("POST");
+        conexao.setDoOutput(true);
+        conexao.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        conexao.setRequestProperty("Accept", "application/json");
+        java.io.OutputStream saida = conexao.getOutputStream();
+        try {
+            saida.write(corpo.getBytes("UTF-8"));
+        } finally {
+            saida.close();
+        }
+        int codigo = conexao.getResponseCode();
+        java.io.InputStream fluxo = codigo >= 400 ? conexao.getErrorStream() : conexao.getInputStream();
+        if (fluxo == null) {
+            throw new java.io.IOException("HTTP " + codigo);
+        }
+        ByteArrayOutputStream acumulado = new ByteArrayOutputStream();
+        byte[] buffer = new byte[4096];
+        int lidos;
+        while ((lidos = fluxo.read(buffer)) > 0) {
+            acumulado.write(buffer, 0, lidos);
+        }
+        fluxo.close();
+        return new String(acumulado.toByteArray(), "UTF-8");
+    }
+
+    private static String escapar(String texto) {
+        return texto.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    /** Identificacao curta do aparelho (sem dado sensivel). */
+    private static String identificador(Context contexto) {
+        String base = contexto.getPackageName() + "|" + android.os.Build.MODEL
+                + "|" + android.os.Build.FINGERPRINT;
+        try {
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] resumo = digest.digest(base.getBytes("UTF-8"));
+            StringBuilder texto = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                texto.append(String.format(Locale.ROOT, "%02x", resumo[i] & 255));
+            }
+            return texto.toString();
+        } catch (Exception erro) {
+            return "desconhecido";
+        }
+    }
+
     /** Codigo guardado no arquivo (vazio se nao houver). */
     public static String codigo(Context contexto) {
         File arquivo = arquivo(contexto);

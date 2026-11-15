@@ -38,10 +38,10 @@ class IntegracaoNoFonteTest(unittest.TestCase):
 
     def test_pacote_unico_e_versao(self):
         self.assertIn(f'APP_PACKAGE = "{PACOTE}"', self.script)
-        self.assertIn('VERSAO_NOME = "1.0.69"', self.script)
-        self.assertIn('VERSAO_CODIGO = 2103055', self.script)
+        self.assertIn('VERSAO_NOME = "1.0.70"', self.script)
+        self.assertIn('VERSAO_CODIGO = 2103056', self.script)
         # tem que ser maior que a 1.0.63 (2103049) para nao regredir instalacao
-        self.assertGreater(2103055, 2103053)
+        self.assertGreater(2103056, 2103053)
 
     def test_gradle_ganha_o_admob_e_a_versao(self):
         self.assertIn("com.google.android.gms:play-services-ads:23.2.0", self.script)
@@ -237,6 +237,7 @@ class VerificadorDoApkTest(unittest.TestCase):
                                        b"AppOpenActivity PreRollActivity SmartAds "
                                        b"perfilSmarted .kodi.antigo- smarted-seed.log "
                        b"Licenca adsPermitidos AbrirUrlActivity CompartilharActivity "
+                       b"BoasVindas iniciarKodi "
                                        b"com/google/android/gms/ads"))
             z.writestr("assets/addons/service.smarted.bootstrap/smart_ads.py",
                        "ATIVIDADE_PREROLL = 'smartedtv.full.PreRollActivity'\n"
@@ -257,7 +258,7 @@ class VerificadorDoApkTest(unittest.TestCase):
         caminho = Path(tmp) / "aapt2"
         caminho.write_text("""#!/bin/sh
 if [ "$2" = badging ]; then
-  echo "package: name='smartedtv.full' versionCode='2103055' versionName='1.0.69'"
+  echo "package: name='smartedtv.full' versionCode='2103056' versionName='1.0.70'"
 elif [ "$2" = resources ]; then
   echo "drawable/progresswhite type=drawable"
 elif [ "$2" = xmltree ] && [ "$4" = "res/layout/activity_splash.xml" ]; then
@@ -528,3 +529,47 @@ class ProducaoTest(unittest.TestCase):
         self.assertEqual(quantos, 1)
         self.assertIn(b"RunAddon(script.smartedtv.ajustes)", novo)
         self.assertNotIn(b"ActivateWindow(Settings)", novo)
+
+
+class BoasVindasTest(unittest.TestCase):
+    """Tela de ativação antes do anúncio, intersticial por troca e saída limpa."""
+
+    def setUp(self):
+        self.ads = Path('smartedtv/tools/ads-java')
+        self.texto = {p.stem.replace('.java', ''): p.read_text(encoding='utf-8')
+                      for p in self.ads.glob('*.java.in')}
+
+    def test_tela_antes_do_anuncio_de_abertura(self):
+        tela = self.texto['BoasVindas']
+        self.assertIn('Deseja assistir sem anúncios?', tela)
+        self.assertIn('pay.cakto.com.br/nkvbegd_1323120', tela)
+        self.assertIn('Código de ativação', tela)
+        self.assertIn('Compartilhar aplicativo', tela)
+        self.assertIn('Licenca.validar(', tela)       # valida no servidor
+        # a splash só abre o Kodi depois que essa tela fecha
+        self.assertIn('BoasVindas.mostrar(activity)', self.texto['SeedBase'])
+        self.assertIn('BoasVindas.mostrar(alvo)', self.texto['SeedBase'])
+        self.assertIn('public static void iniciarKodi', self.texto['SeedBase'])
+
+    def test_vip_nunca_ve_a_tela(self):
+        self.assertIn('if (Licenca.ativa(splash))', self.texto['BoasVindas'])
+        self.assertIn('jaMostrou', self.texto['BoasVindas'])
+
+    def test_intersticial_na_troca_de_conteudo(self):
+        ponte = Path('kodi/addons/service.smarted.bootstrap/smart_ads.py').read_text(encoding='utf-8')
+        self.assertIn('def _troca_de_conteudo', ponte)
+        self.assertIn('getPlayingFile', ponte)
+        self.assertIn('PREROLL_INTERVALO = 45', ponte)
+        self.assertIn('def intervalo_configurado', ponte)
+        self.assertIn('ads_intervalo', ponte)
+        self.assertIn('def vip_ativo', ponte)          # VIP desliga os gatilhos
+        # D-pad continua travado no anúncio
+        self.assertIn('KEYCODE_DPAD_UP', self.texto['AdTela'])
+
+    def test_saida_limpa(self):
+        tela = self.texto['AdTela']
+        self.assertIn('public void onBackPressed()', tela)
+        self.assertIn('onUserLeaveHint', tela)
+        self.assertIn('onStop', tela)
+        self.assertIn('activity.isFinishing()', self.texto['SeedBase'])
+        self.assertIn('activity.isDestroyed()', self.texto['SeedBase'])

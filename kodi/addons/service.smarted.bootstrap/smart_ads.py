@@ -78,9 +78,22 @@ MARKER = 'smartedtv-ads-v2'
 # quanto esperar a Home desenhar antes do pop-up de abertura
 ABERTURA_DELAY = 6
 
-# dois anuncios em sequencia (zapping, proximo episodio) atrapalham: intervalo
-# minimo entre pre-rolls. Ajuste aqui se quiser mais ou menos frequencia.
-PREROLL_INTERVALO = 120
+# Intervalo minimo entre intersticiais. Como o gatilho e TROCA DE CONTEUDO
+# (canal, filme, serie, proximo episodio), 45 s deixa o anúncio acompanhar a
+# troca sem virar dois anúncios seguidos no zapping rápido. Vem da configuração
+# do add-on quando existir (ads_intervalo); o padrão é este.
+PREROLL_INTERVALO = 45
+
+
+def intervalo_configurado(padrao=PREROLL_INTERVALO):
+    """Lê o intervalo das configurações do add-on (segundos)."""
+    try:
+        import xbmcaddon
+        bruto = xbmcaddon.Addon().getSetting('ads_intervalo')
+        valor = int(float(bruto))
+        return valor if 10 <= valor <= 3600 else padrao
+    except Exception:
+        return padrao
 
 
 def _marker_path():
@@ -209,9 +222,24 @@ def tocar_anuncio_com_aviso(atividade, log=None):
     return disparou
 
 
-def mostrar_preroll(log=None, intervalo=PREROLL_INTERVALO, agora=None):
-    """Video pre-roll antes de canal/filme/serie (respeita o intervalo)."""
+def vip_ativo():
+    """Licença VIP desliga todos os gatilhos (a checagem também existe no Java)."""
+    try:
+        import vip
+        return bool(vip.ativa())
+    except Exception:
+        return False
+
+
+def mostrar_preroll(log=None, intervalo=None, agora=None):
+    """Intersticial a cada troca de conteúdo (respeita o intervalo)."""
+    if intervalo is None:
+        intervalo = intervalo_configurado()
     agora = time.time() if agora is None else agora
+    if vip_ativo():
+        if log:
+            log('[SmartAds] VIP ativo: nenhum anuncio')
+        return False
     if agora - globals().get('_ultimo_preroll', 0.0) < intervalo:
         return False
     disparou = tocar_anuncio_com_aviso(ATIVIDADE_PREROLL, log)
@@ -222,6 +250,10 @@ def mostrar_preroll(log=None, intervalo=PREROLL_INTERVALO, agora=None):
 
 def mostrar_abertura(log=None):
     """Pop-up de abertura: exatamente uma vez por instalacao."""
+    if vip_ativo():
+        if log:
+            log('[SmartAds] VIP ativo: sem pop-up de abertura')
+        return False
     if abertura_ja_mostrada():
         if log:
             log('[SmartAds] abertura ja exibida nesta instalacao')
@@ -270,11 +302,26 @@ class MonitorPreRoll(_BasePlayer):
     o gancho e o proprio xbmc.Player, nao a rota do addon.
     """
 
-    def __init__(self, log=None, intervalo=PREROLL_INTERVALO):
+    def __init__(self, log=None, intervalo=None):
         if _BasePlayer is not object:
             _BasePlayer.__init__(self)
         self.log = log
         self.intervalo = intervalo
+        self.ultimo_caminho = None
+
+    def _troca_de_conteudo(self):
+        """True só quando o stream mudou (canal novo, outro filme/série)."""
+        try:
+            caminho = xbmc.Player().getPlayingFile()
+        except Exception:
+            caminho = None
+        anterior = self.ultimo_caminho
+        self.ultimo_caminho = caminho
+        if caminho and anterior and caminho == anterior:
+            if self.log:
+                self.log('[SmartAds] mesmo conteudo, sem anuncio (%s)' % caminho)
+            return False
+        return True
 
     def onPlay(self, **kwargs):  # Kodi chama no inicio do stream (buffer incluso)
         self._talvez_mostrar()
@@ -287,6 +334,8 @@ class MonitorPreRoll(_BasePlayer):
         try:
             if not _e_video(self):
                 return
+            if not self._troca_de_conteudo():
+                return
             mostrar_preroll(self.log, self.intervalo)
         except Exception as erro:  # nunca derrubar o servico por causa do anuncio
             if self.log:
@@ -296,15 +345,17 @@ class MonitorPreRoll(_BasePlayer):
 _monitor = None
 
 
-def iniciar_monitor(log=None, intervalo=PREROLL_INTERVALO):
+def iniciar_monitor(log=None, intervalo=None):
     """Liga o gancho de reproducao uma vez por sessao."""
     global _monitor
     if _monitor is not None or not android():
         return _monitor
+    if intervalo is None:
+        intervalo = intervalo_configurado()
     try:
         _monitor = MonitorPreRoll(log, intervalo)
         if log:
-            log('[SmartAds] gancho de pre-roll ligado (%s, minimo %d s entre anuncios)'
+            log('[SmartAds] gancho de intersticial ligado (%s, minimo %d s entre anuncios)'
                 % (MARKER, intervalo))
     except Exception as erro:
         if log:

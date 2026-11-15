@@ -504,3 +504,46 @@ hoje aponta para `https://smartedtv-vip.lovable.app/api/validar` (constante
 caminho real (ou a função do Supabase + chave pública) for informado, é trocar
 essa linha, rodar o build e publicar — o resto do fluxo já está pronto e
 testado no aparelho: código → `vip.json` → `Licenca.ativa()` → anúncios param.
+
+## 1.0.70 — intersticial na troca, boas-vindas e saída limpa
+
+### 1. Intersticial a cada troca de conteúdo
+
+O gatilho já era o `xbmc.Player` (vale para canal, filme, série e próximo
+episódio, venha de onde vier). Agora ele distingue **troca de conteúdo** de
+retomada: guarda o caminho do último stream e só pede anúncio quando muda
+(`_troca_de_conteudo`). Intervalo padrão caiu de 120 s para **45 s**
+(`PREROLL_INTERVALO`), configurável no add-on como `ads_intervalo`.
+Licença VIP ativa desliga o gatilho antes mesmo de chamar o Java. O bloqueio de
+D-pad continua igual (teclas consumidas + foco bloqueado + saída automática).
+
+### 2. Tela de boas-vindas/ativação antes do anúncio de abertura
+
+`BoasVindas.java` monta, sobre a splash e **antes** de o Kodi abrir, um modal
+com:
+
+* **"Deseja assistir sem anúncios?"**
+* botão **Quero assistir sem anúncios** → checkout Cakto
+  (`pay.cakto.com.br/nkvbegd_1323120`);
+* botão **Já tenho um código** → campo de texto + **Ativar meu código**, que
+  valida no servidor (`Licenca.validar`) e grava o `vip.json`;
+* botão **Compartilhar aplicativo** (folha nativa do Android);
+* botão **Continuar com anúncios**.
+
+Aparece uma vez por versão, nunca para quem é VIP. A splash só chama
+`startXBMC` depois que esse modal fecha (`SeedBase.iniciarKodi`). O mesmo
+conteúdo continua permanente no menu **Ajustes** do Kodi (1.0.69).
+
+Navegação: os botões são views nativas focáveis (D-pad percorre na ordem, o
+campo de texto abre o teclado) e o toque funciona nos mesmos elementos.
+
+### 3. Saída limpa
+
+* `AdTela`: VOLTAR, HOME (`onUserLeaveHint`) e ida para segundo plano
+  (`onStop`) fecham a tela de anúncio na hora — nada de activity órfã segurando
+  o processo;
+* `SeedBase.iniciarKodi` checa `isFinishing()`/`isDestroyed()` antes de chamar
+  o `startXBMC` por reflexão e captura `Throwable`: durante o fechamento a
+  chamada é ignorada em vez de estourar;
+* o progresso continua sendo salvo pelo próprio Kodi (perfil e `MyVideos`),
+  que é quem grava ao encerrar.

@@ -87,6 +87,9 @@ public final class SeedBase {
             // perfil da base já instalado: nunca mexer
             registrar(home, "perfil da base ja presente");
             liberado = Boolean.TRUE;
+            if (BoasVindas.mostrar(activity)) {
+                return false;              // a tela de ativação conduz a abertura
+            }
             return true;
         }
         if (kodi.isDirectory() && jaTentei(home)) {
@@ -121,19 +124,37 @@ public final class SeedBase {
                 new Handler(Looper.getMainLooper()).post(new Runnable() {
                     @Override
                     public void run() {
-                        try {
-                            java.lang.reflect.Method m =
-                                    alvo.getClass().getDeclaredMethod("startXBMC");
-                            m.setAccessible(true);
-                            m.invoke(alvo);
-                        } catch (Exception e) {
-                            Log.e(TAG, "SeedBase: nao consegui retomar o start");
+                        // tela de ativação/boas-vindas ANTES do anúncio de abertura
+                        if (BoasVindas.mostrar(alvo)) {
+                            return;            // ela mesma chama iniciarKodi
                         }
+                        iniciarKodi(alvo);
                     }
                 });
             }
         }, "smarted-seed").start();
         return false;
+    }
+
+    /**
+     * Retoma a abertura do Kodi (o mesmo ``startXBMC`` do Splash).
+     *
+     * Público porque a tela de boas-vindas também chama. Checa o estado da
+     * activity antes: durante o fechamento do app a chamada é ignorada em vez
+     * de estourar — era um dos caminhos que travavam a saída.
+     */
+    public static void iniciarKodi(Activity activity) {
+        if (activity == null || activity.isFinishing() || activity.isDestroyed()) {
+            Log.i(TAG, "SeedBase: activity fechando, abertura ignorada");
+            return;
+        }
+        try {
+            java.lang.reflect.Method m = activity.getClass().getDeclaredMethod("startXBMC");
+            m.setAccessible(true);
+            m.invoke(activity);
+        } catch (Throwable erro) {
+            Log.e(TAG, "SeedBase: nao consegui retomar o start (" + erro + ")");
+        }
     }
 
     // ------------------------------------------------------------------ splash
