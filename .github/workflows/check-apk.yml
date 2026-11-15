@@ -3,6 +3,9 @@ name: "Conferir o APK unificado (artifact, sem recompilar)"
 # Este workflow NÃO compila nada: ele pega o APK já gerado (artifact do build do
 # monólito) e roda a verificação completa. Serve para iterar a verificação em
 # ~1 minuto em vez de esperar 2 h de build a cada ajuste de checagem.
+#
+# 1.0.80: confere no APK publicado que o anúncio NÃO tem botão "Pular" nosso
+# (a saída é a do próprio anúncio) e que a tela de boas-vindas nova entrou.
 
 on:
   push:
