@@ -110,3 +110,5 @@ jobs:
           done
           [ "$enviado" = "1" ] || { echo "::error::upload falhou"; exit 1; }
           gh release view "$TAG_DESTINO" --json assets -q '.assets[] | "\(.name) \(.size) bytes"'
+
+# (re-registro do workflow: o GitHub só lista workflows do arquivo no topo do branch)
