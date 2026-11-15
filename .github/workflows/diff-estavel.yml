@@ -1,0 +1,144 @@
+name: "Diff: APK estável x APK unificado"
+
+# Compara o conteúdo do APK da linha clássica (1.0.63) com o APK unificado mais
+# recente: addons, skin.novatv, plugin.video.smarted, addon-manifest e o perfil
+# semeado. Serve para saber EXATAMENTE o que a versão estável tinha e a nova não
+# tem — sem adivinhar. Roda em ~3 min, sem compilar nada.
+
+on:
+  push:
+    branches: [arena/7dedf371-kode]
+    paths:
+      - .github/workflows/diff-estavel.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_TAG: v1.0.63-classica
+      BASE_ARQUIVO: SMARTED-TV-v1.0.63-arm64.apk
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Baixar o APK estável
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p base apk
+          gh release download "$BASE_TAG" -R "$GITHUB_REPOSITORY" \
+            --pattern "$BASE_ARQUIVO" --dir base --clobber
+          ls -l base
+
+      - name: 2. Baixar o artifact do build unificado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for RUN in $(gh api "/repos/${{ github.repository }}/actions/workflows/build-monolith.yml/runs?per_page=8" \
+                       --jq '.workflow_runs[] | "\(.id)"'); do
+            NOME=$(gh api "/repos/${{ github.repository }}/actions/runs/$RUN/artifacts" \
+                    --jq '.artifacts[] | select(.name|startswith("apk-unificado")) | .name' | head -1)
+            [ -n "$NOME" ] || continue
+            if gh run download "$RUN" -n "$NOME" -D apk 2>/dev/null; then
+              echo "artifact do run $RUN"
+              break
+            fi
+          done
+          find apk -name '*.apk' | head -3
+          test -n "$(find apk -name '*.apk' | head -1)"
+
+      - name: 3. Comparar
+        run: |
+          set -o pipefail
+          set +e
+          python3 - "base/$BASE_ARQUIVO" "$(find apk -name '*.apk' | head -1)" > "$RUNNER_TEMP/diff.txt" 2>&1 <<'PY'
+          import hashlib, sys, zipfile
+          from collections import Counter
+
+          def indice(apk):
+              with zipfile.ZipFile(apk) as z:
+                  return {n: hashlib.sha256(z.read(n)).hexdigest()
+                          for n in z.namelist() if not n.endswith("/")}
+
+          velho = indice(sys.argv[1])
+          novo = indice(sys.argv[2])
+          print("== tamanhos")
+          print(f"  estável: {len(velho)} entradas | unificado: {len(novo)} entradas")
+
+          def bloco(titulo, prefixo):
+              print(f"\n== {titulo} ({prefixo})")
+              a = {n: h for n, h in velho.items() if n.startswith(prefixo)}
+              b = {n: h for n, h in novo.items() if n.startswith(prefixo)}
+              faltando = sorted(set(a) - set(b))
+              sobrando = sorted(set(b) - set(a))
+              diferentes = sorted(n for n in set(a) & set(b) if a[n] != b[n])
+              print(f"  estável: {len(a)} | unificado: {len(b)}")
+              print(f"  só no estável ({len(faltando)}):")
+              for n in faltando[:40]:
+                  print("    -", n)
+              print(f"  só no unificado ({len(sobrando)}):")
+              for n in sobrando[:15]:
+                  print("    +", n)
+              print(f"  diferentes ({len(diferentes)}):")
+              for n in diferentes[:40]:
+                  print("    ≠", n)
+              return faltando, sobrando, diferentes
+
+          bloco("skin.novatv", "assets/addons/skin.novatv/")
+          bloco("plugin.video.smarted", "assets/addons/plugin.video.smarted/")
+          bloco("bootstrap", "assets/addons/service.smarted.bootstrap/")
+
+          print("\n== addons de sistema no APK estável (assets/addons/*/addon.xml)")
+          addons_velho = sorted({n.split("/")[2] for n in velho
+                                 if n.startswith("assets/addons/") and n.endswith("/addon.xml")})
+          addons_novo = sorted({n.split("/")[2] for n in novo
+                                if n.startswith("assets/addons/") and n.endswith("/addon.xml")})
+          print(f"  estável: {len(addons_velho)} | unificado: {len(addons_novo)}")
+          print("  só no estável:", ", ".join(sorted(set(addons_velho) - set(addons_novo))) or "(nada)")
+          print("  só no unificado:", ", ".join(sorted(set(addons_novo) - set(addons_velho))) or "(nada)")
+
+          print("\n== addons dentro do perfil semeado (assets/smarted/profile/addons/*)")
+          perfil = sorted({n.split("/")[4] for n in velho
+                           if n.startswith("assets/smarted/profile/addons/") and n.count("/") > 4})
+          print(f"  {len(perfil)}: " + ", ".join(perfil))
+
+          print("\n== tops por pasta no APK estável")
+          for pasta, quantos in Counter(n.split("/")[1] if n.count("/") > 1 else n
+                                        for n in velho).most_common(12):
+              print(f"  {pasta}: {quantos}")
+
+          print("\n== arquivos de configuração de skin/menus nos dois APKs")
+          for rotulo, trecho in (("skin.novatv settings", "addon_data/skin.novatv"),
+                                 ("skinshortcuts", "skinshortcuts"),
+                                 ("guisettings", "guisettings.xml")):
+              velhos = [n for n in velho if trecho in n]
+              novos = [n for n in novo if trecho in n]
+              print(f"  {rotulo}: estável={len(velhos)} unificado={len(novos)}")
+              for n in velhos[:6]:
+                  print("     estável:", n)
+          PY
+          RC=$?
+          set -e
+          cat "$RUNNER_TEMP/diff.txt"
+          {
+            echo "# Diff: APK estável (1.0.63) x APK unificado"
+            echo
+            echo "Run: $GITHUB_RUN_ID"
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/diff.txt"
+            echo '```'
+          } > docs/diff-estavel.txt
+          git config user.name "smarted-bot"
+          git config user.email "smarted-bot@users.noreply.github.com"
+          git add -f docs/diff-estavel.txt
+          git commit -m "ci: diff entre o APK estavel e o unificado (run $GITHUB_RUN_ID)" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" || true
+          exit $RC
