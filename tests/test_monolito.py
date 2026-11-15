@@ -368,3 +368,63 @@ class RestauracaoDaBaseEstavelTest(unittest.TestCase):
         self.assertIn('mSplash.mProgress.setVisibility(View.INVISIBLE)', self.script)
         # o patch remove as chamadas que escondem a barra
         self.assertIn('chamadas que escondiam a barra', self.script)
+
+
+class InjecaoDaBaseTest(unittest.TestCase):
+    """A injeção troca skin/plugin pelos do APK estável, mas NUNCA o smart_ads.
+
+    Regressão da 1.0.67: as entradas substituídas eram marcadas como
+    "existentes" e o injetor abortava com "colisão de entrada" nos 222 nomes
+    que a skin já tinha no APK novo.
+    """
+
+    def test_skin_e_plugin_do_estavel_e_admob_preservado(self):
+        import hashlib
+        import subprocess
+        import sys
+        import tempfile
+        import zipfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            base = tmp / "base.apk"
+            novo = tmp / "novo.apk"
+            saida = tmp / "saida.apk"
+            manifesto = b"perfil-de-teste\n"
+            sha = hashlib.sha256(manifesto).hexdigest()
+
+            with zipfile.ZipFile(base, "w") as z:
+                z.writestr("assets/smarted/profile-manifest.txt", manifesto)
+                z.writestr("assets/smarted/profile/userdata/guisettings.xml", b"<s/>")
+                z.writestr("assets/addons/skin.novatv/addon.xml", b"skin-estavel")
+                z.writestr("assets/addons/skin.novatv/media/a.png", b"img-estavel")
+                z.writestr("assets/addons/plugin.video.smarted/catalogue.py", b"cat-estavel")
+                z.writestr("assets/addons/service.smarted.bootstrap/smart_ads.py", b"ads-estavel")
+
+            with zipfile.ZipFile(novo, "w") as z:
+                z.writestr("assets/addons/skin.novatv/addon.xml", b"skin-nosso")
+                z.writestr("assets/addons/plugin.video.smarted/catalogue.py", b"cat-nosso")
+                z.writestr("assets/addons/service.smarted.bootstrap/smart_ads.py", b"ads-nosso")
+                z.writestr("classes.dex", b"dex")
+                z.writestr("META-INF/CERT.SF", b"assinatura-antiga")
+
+            proc = subprocess.run(
+                [sys.executable, "smartedtv/tools/inject-base-estavel.py",
+                 "--apk", str(novo), "--base", str(base),
+                 "--saida", str(saida), "--manifesto-sha", sha],
+                capture_output=True, text=True)
+            self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+
+            with zipfile.ZipFile(saida) as z:
+                nomes = set(z.namelist())
+                self.assertEqual(z.read("assets/addons/skin.novatv/addon.xml"), b"skin-estavel")
+                self.assertEqual(z.read("assets/addons/skin.novatv/media/a.png"), b"img-estavel")
+                self.assertEqual(z.read("assets/addons/plugin.video.smarted/catalogue.py"),
+                                 b"cat-estavel")
+                self.assertEqual(
+                    z.read("assets/addons/service.smarted.bootstrap/smart_ads.py"),
+                    b"ads-nosso")           # AdMob é nosso, não da base
+                self.assertIn("classes.dex", nomes)
+                self.assertNotIn("META-INF/CERT.SF", nomes)
+                self.assertIn("assets/smarted/profile/userdata/guisettings.xml", nomes)
+            self.assertNotIn("colisão", proc.stdout or "")   # o bug da 1.0.67

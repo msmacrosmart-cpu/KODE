@@ -88,10 +88,9 @@ def escrever(apk: Path, saida: Path, extras: dict[str, bytes]) -> tuple[int, int
     with zipfile.ZipFile(apk) as origem, zipfile.ZipFile(
         saida, "w", zipfile.ZIP_DEFLATED
     ) as destino:
-        existentes = set()
+        escritas = set()  # só o que realmente foi para o APK novo
         for info in origem.infolist():
             nome = info.filename
-            existentes.add(nome)
             if nome.startswith(PREFIXO):
                 raise SystemExit(f"o APK novo já tem {nome} — não vou duplicar")
             if nome.startswith(SUBSTITUIR):
@@ -106,9 +105,12 @@ def escrever(apk: Path, saida: Path, extras: dict[str, bytes]) -> tuple[int, int
             novo.internal_attr = info.internal_attr
             novo.create_system = info.create_system
             destino.writestr(novo, origem.read(nome))
+            escritas.add(nome)
             total += 1
         for nome, dados in sorted(extras.items()):
-            if nome in existentes:
+            # os nomes da skin/plugin que vieram da base FORAM descartados do
+            # nosso APK de propósito — não são colisão.
+            if nome in escritas:
                 raise SystemExit(f"colisão de entrada: {nome}")
             destino.writestr(nome, dados, compress_type=zipfile.ZIP_DEFLATED)
             adicionadas += 1

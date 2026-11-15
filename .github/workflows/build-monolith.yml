@@ -248,6 +248,7 @@ jobs:
           git config user.email "smarted-bot@users.noreply.github.com"
           git add -f "$LOG"
           git commit -m "ci: fotografia das dependencias (run $GITHUB_RUN_ID)" || true
+          git pull --rebase -q origin "$GITHUB_REF_NAME" || true
           git push origin "HEAD:${GITHUB_REF_NAME}" || true
           echo '--- resumo ---'
           sed -n '1,40p' "$LOG"
@@ -279,9 +280,11 @@ jobs:
           echo "APK compilado: $APK"
 
           # 1) a base estavel (perfil semeado) entra dentro do APK
+          # a saida da injecao vai para um log que sobrevive ao fracasso
           python3 smartedtv/tools/inject-base-estavel.py \
             --apk "$APK" --base "$BASE_APK" --saida "$OUT/bruto.apk" \
-            --manifesto-sha "$BASE_MANIFESTO_SHA256"
+            --manifesto-sha "$BASE_MANIFESTO_SHA256" \
+            2>&1 | tee "$GITHUB_WORKSPACE/smartedtv/log-passo9.txt"
 
           # 2) a injecao mexe no ZIP: realinhar e assinar de novo
           TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)
@@ -370,6 +373,10 @@ jobs:
             echo '## fim do log das dependências (passos 7b0/7b)'
             echo '```'
             tail -n 150 "$RUNNER_TEMP/deps.log" 2>/dev/null || echo '(sem log)'
+            echo '```'
+            echo '## log do empacotamento (passo 9)'
+            echo '```'
+            tail -n 80 smartedtv/log-passo9.txt 2>/dev/null || echo '(sem log)'
             echo '```'
             echo '## APKs encontrados no build'
             echo '```'
