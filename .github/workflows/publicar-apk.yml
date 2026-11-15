@@ -16,9 +16,8 @@ on:
         required: true
         default: '2103061'
       tag:
-        description: 'Tag da release (vazio = v<versao>-unificado)'
+        description: 'Tag da release (opcional; padrao v<versao>-unificado)'
         required: false
-        default: ''
 
 permissions:
   contents: write
