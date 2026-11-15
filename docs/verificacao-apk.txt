@@ -1,15 +1,15 @@
-# Verificação do APK único — 1.0.76 (run 43726413799)
+# Verificação do APK único — 1.0.78 (run 43731560987)
 
-APK: `SMARTEDTV-1.0.76-unificado-arm64-v8a.apk`
+APK: `SMARTEDTV-1.0.78-unificado-arm64-v8a.apk`
 
 ```
-== arquivo: smartedtv/out-apk/SMARTEDTV-1.0.76-unificado-arm64-v8a.apk  (238.2 MB)
+== arquivo: smartedtv/out-apk/SMARTEDTV-1.0.78-unificado-arm64-v8a.apk  (238.2 MB)
 
 == identidade do pacote (aapt2 badging)
-  package: name='smartedtv.full' versionCode='2103062' versionName='1.0.76' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
+  package: name='smartedtv.full' versionCode='2103064' versionName='1.0.78' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
   OK    pacote                             smartedtv.full
-  OK    versionName                        1.0.76
-  OK    versionCode                        2103062
+  OK    versionName                        1.0.78
+  OK    versionCode                        2103064
 
 == manifesto (aapt2 xmltree)
   OK    activity de abertura               .AppOpenActivity
