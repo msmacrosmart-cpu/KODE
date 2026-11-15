@@ -1,4 +1,4 @@
-# Verificação do APK único — 1.0.73
+# Verificação do APK único — 1.0.74
 
 artifact do run 43711117524 (conferência sem recompilar)
 
@@ -13,13 +13,16 @@ tamanho: 249711734 bytes
 == identidade do pacote (aapt2 badging)
   package: name='smartedtv.full' versionCode='2103058' versionName='1.0.72' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
   OK    pacote                             smartedtv.full
-  FALHA versionName                        1.0.73
-  FALHA versionCode                        2103059
+  FALHA versionName                        1.0.74
+  FALHA versionCode                        2103060
 
 == manifesto (aapt2 xmltree)
   OK    activity de abertura               .AppOpenActivity
   OK    activity de pre-roll               .PreRollActivity
   OK    APPLICATION_ID do AdMob            ca-app-pub-2066014755407744~5076693043
+  FALHA provedor do APK de atualização     .OtaProvider
+  FALHA permissão de instalar atualização  REQUEST_INSTALL_PACKAGES
+  FALHA tela de procurar atualização       .AtualizaActivity
   OK    permissão AD_ID                    com.google.android.gms.permission.AD_ID
   OK    telas de anúncio em paisagem       4 linha(s)
 
@@ -105,6 +108,9 @@ tamanho: 249711734 bytes
   FALHA ponte com o Supabase               Supabase
   FALHA botao pular anuncio                Pular an
   FALHA QR do checkout mensal              qrcode-cakto
+  FALHA atualização OTA                    atualizacao.json
+  FALHA entrega do APK por content://      .ota
+  FALHA instalador nativo                  application/vnd.android.package-archive
   OK    APPLICATION_ID no dex              presente (redundante com o manifesto)
 
 == ponte do serviço de bootstrap
@@ -119,13 +125,19 @@ tamanho: 249711734 bytes
   OK    texto de status                    escondido (gone)
 
 == resumo
-  obrigatórias com falha: 7
+  obrigatórias com falha: 13
   avisos: 0
-  - versionName: 1.0.73
-  - versionCode: 2103059
+  - versionName: 1.0.74
+  - versionCode: 2103060
+  - provedor do APK de atualização: .OtaProvider
+  - permissão de instalar atualização: REQUEST_INSTALL_PACKAGES
+  - tela de procurar atualização: .AtualizaActivity
   - QR do checkout (Cakto) no pacote: assets/addons/script.smartedtv.ajustes/resources/qrcode-cakto.png
   - escolha Celular/TV: Plataforma
   - ponte com o Supabase: Supabase
   - botao pular anuncio: Pular an
   - QR do checkout mensal: qrcode-cakto
+  - atualização OTA: atualizacao.json
+  - entrega do APK por content://: .ota
+  - instalador nativo: application/vnd.android.package-archive
 ```
