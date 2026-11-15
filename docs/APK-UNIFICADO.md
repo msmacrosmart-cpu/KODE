@@ -859,3 +859,24 @@ override → rotas do site (`/api/validar`, `/api/validate`, `/api/ativar`,
 Supabase → tabela `codigos` do painel (PostgREST). A primeira resposta JSON
 decide; resposta de recusa (código inválido/expirado) mostra a mensagem do
 servidor e não continua tentando.
+
+## 1.0.76 — a abertura não pode parar na splash (correção urgente)
+
+Relato: depois da 1.0.75 o app ficava parado na tela de abertura. Os pontos que
+podiam deixar a splash presa foram todos fechados:
+
+* **tela de ativação** — se ela não entrar na árvore de views, `mostrar` devolve
+  `false` e o Kodi abre (antes, um layout que falhasse deixava a splash na
+  frente para sempre);
+* **cão de guarda** — 2 min sem concluir, a própria tela abre o conteúdo
+  (`SeedBase.iniciarKodi`), então nem TV sem controle na mão fica presa;
+* **escolha Celular/TV** — agora com rolagem (tela pequena/fonte grande não
+  esconde mais os botões) e com o atalho "Abrir o SMARTEDTV agora";
+* **cópia da base** — tem teto de 3 min; passou disso, o Kodi abre com o perfil
+  que estiver lá em vez de continuar na splash;
+* **OTA** — saiu da linha do boot: a checagem de versão roda 15 s depois, fora
+  do caminho do primeiro frame;
+* **ativação** — prazo total de 15 s (antes a soma dos timeouts passava de
+  80 s e o botão ficava "Validando..." para sempre), com mensagem clara;
+* **serviço Python** — `main()` protegido: falha do bootstrap vai para o log e o
+  Kodi continua funcionando.

@@ -191,8 +191,15 @@ public final class Licenca {
         boolean aceito = false;
         String resposta = "";
         String usada = "";
+        // teto de tempo: antes a soma dos timeouts passava de 80 s e a tela
+        // ficava "Validando..." (parecia travada). Passou do prazo, para.
+        final long prazo = System.currentTimeMillis() + 15000L;
 
         for (String rota : rotas(contexto)) {
+            if (System.currentTimeMillis() > prazo) {
+                Log.w(TAG, "Licenca: prazo de validacao esgotado nas rotas do site");
+                break;
+            }
             try {
                 resposta = post(rota, corpo, "");
             } catch (Exception erro) {
@@ -223,6 +230,10 @@ public final class Licenca {
                 String base = projeto[0];
                 String chave = projeto[1];
                 for (int i = 0; i < SUPABASE_FUNCOES.length; i++) {
+                    if (System.currentTimeMillis() > prazo) {
+                        Log.w(TAG, "Licenca: prazo esgotado nas funcoes do Supabase");
+                        break;
+                    }
                     String rota = base + SUPABASE_FUNCOES[i];
                     try {
                         String bruta = post(rota, corpo, chave);
@@ -241,7 +252,7 @@ public final class Licenca {
                                 + erro.getClass().getSimpleName() + ")");
                     }
                 }
-                if (!aceito) {
+                if (!aceito && System.currentTimeMillis() < prazo) {
                     // tabela do painel: REST com filtro pelo código
                     String rota = base + "/rest/v1/codigos?codigo=eq."
                             + java.net.URLEncoder.encode(limpo) + "&select=*";
@@ -262,6 +273,9 @@ public final class Licenca {
 
         if (!achouJson) {
             Log.w(TAG, "Licenca: nenhuma rota de validação respondeu JSON");
+            if (System.currentTimeMillis() >= prazo) {
+                return "O servidor demorou para responder. Confira a internet e toque em Ativar de novo.";
+            }
             return "Não consegui falar com o servidor de ativação. Tente de novo em instantes.";
         }
         if (!aceito) {
@@ -479,7 +493,7 @@ public final class Licenca {
     private static String post(String url, String corpo, String chave) throws Exception {
         java.net.HttpURLConnection conexao =
                 (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
-        conexao.setConnectTimeout(8000);
+        conexao.setConnectTimeout(4000);
         conexao.setReadTimeout(12000);
         conexao.setRequestMethod("POST");
         conexao.setDoOutput(true);
@@ -516,7 +530,7 @@ public final class Licenca {
     private static String get(String url, String chave) throws Exception {
         java.net.HttpURLConnection conexao =
                 (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
-        conexao.setConnectTimeout(8000);
+        conexao.setConnectTimeout(4000);
         conexao.setReadTimeout(12000);
         conexao.setRequestMethod("GET");
         conexao.setRequestProperty("Accept", "application/json");

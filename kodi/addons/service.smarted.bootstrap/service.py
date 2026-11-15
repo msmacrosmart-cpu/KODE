@@ -387,4 +387,12 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    # nenhuma falha do bootstrap pode deixar o Kodi sem serviço nem trava-lo:
+    # tudo fica no log e o app segue funcionando
+    try:
+        log('startup: servico iniciado (versao %s)' % ADDON.getAddonInfo('version'))
+        main()
+    except Exception as erro:  # noqa: BLE001
+        import traceback
+        log('startup: FALHOU (%s)' % erro, xbmc.LOGERROR)
+        log(traceback.format_exc(), xbmc.LOGERROR)

@@ -9,6 +9,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.InputType;
 import android.util.Log;
 import android.util.TypedValue;
@@ -56,6 +58,8 @@ public final class BoasVindas {
             "addons/script.smartedtv.ajustes/resources/qrcode-cakto.png";
 
     private static volatile boolean aberta;
+    /** Sem interação nenhuma, a tela se resolve sozinha (nunca trava o boot). */
+    private static final long TEMPO_MAXIMO_TELA = 120000L;
 
     private BoasVindas() {
     }
@@ -76,11 +80,57 @@ public final class BoasVindas {
         try {
             aberta = true;
             montar(splash);
+            if (!montada(splash)) {
+                // nada foi desenhado: melhor abrir o Kodi do que ficar na splash
+                aberta = false;
+                Log.w(TAG, "BoasVindas: tela nao ficou na arvore de views, abrindo o Kodi");
+                return false;
+            }
+            vigiar(splash);
             return true;
         } catch (Throwable erro) {
             aberta = false;
             Log.w(TAG, "BoasVindas: nao consegui montar (" + erro + ")");
             return false;
+        }
+    }
+
+    /** A tela realmente entrou na árvore de views? (sem view = splash travada) */
+    private static boolean montada(Activity splash) {
+        try {
+            ViewGroup conteudo = squash(splash);
+            return conteudo != null && conteudo.getChildCount() > 0;
+        } catch (Throwable erro) {
+            return false;
+        }
+    }
+
+    private static ViewGroup squash(Activity splash) {
+        View raiz = splash.findViewById(android.R.id.content);
+        return raiz instanceof ViewGroup ? (ViewGroup) raiz : null;
+    }
+
+    /**
+     * Cão de guarda do boot: se em 2 minutos a tela ainda estiver na frente e o
+     * Kodi não tiver aberto (view travada, televisão sem controle na mão, toque
+     * que não chegou), o app segue sozinho para o conteúdo. Antes disso, qualquer
+     * travamento de layout deixava a splash na tela para sempre.
+     */
+    private static void vigiar(final Activity splash) {
+        try {
+            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (!aberta) {
+                        return;
+                    }
+                    Log.w(TAG, "BoasVindas: 2 min sem concluir, abrindo o conteudo");
+                    aberta = false;
+                    SeedBase.iniciarKodi(splash);
+                }
+            }, TEMPO_MAXIMO_TELA);
+        } catch (Throwable erro) {
+            Log.w(TAG, "BoasVindas: sem cao de guarda (" + erro + ")");
         }
     }
 
@@ -171,7 +221,16 @@ public final class BoasVindas {
             }
         });
 
-        fundo.addView(raiz, new FrameLayout.LayoutParams(
+        // tela pequena (celular em pé, fonte grande): sem rolagem os botões
+        // ficavam abaixo da dobra e o app parecia travado na splash
+        ScrollView rolagem = new ScrollView(splash);
+        rolagem.setFillViewport(true);
+        rolagem.setVerticalScrollBarEnabled(false);
+        rolagem.setHorizontalScrollBarEnabled(false);
+        rolagem.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        rolagem.addView(raiz, new ScrollView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        fundo.addView(rolagem, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         splash.setContentView(fundo);
         if (Plataforma.TV.equals(sugestao)) {
@@ -179,6 +238,19 @@ public final class BoasVindas {
         } else {
             celular.requestFocus();
         }
+        Button abrirAgora = botao(splash, "Abrir o SMARTEDTV agora", false);
+        abrirAgora.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                aberta = false;
+                fundo.setVisibility(View.GONE);
+                SeedBase.iniciarKodi(splash);
+            }
+        });
+        LinearLayout.LayoutParams medidaAbrir = new LinearLayout.LayoutParams(
+                dp(splash, 300), dp(splash, 52));
+        medidaAbrir.topMargin = dp(splash, 22);
+        raiz.addView(abrirAgora, medidaAbrir);
         Log.i(TAG, "BoasVindas: escolha de plataforma (sugestao=" + sugestao + ")");
     }
 

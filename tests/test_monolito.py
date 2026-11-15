@@ -39,10 +39,10 @@ class IntegracaoNoFonteTest(unittest.TestCase):
 
     def test_pacote_unico_e_versao(self):
         self.assertIn(f'APP_PACKAGE = "{PACOTE}"', self.script)
-        self.assertIn('VERSAO_NOME = "1.0.75"', self.script)
-        self.assertIn('VERSAO_CODIGO = 2103061', self.script)
+        self.assertIn('VERSAO_NOME = "1.0.76"', self.script)
+        self.assertIn('VERSAO_CODIGO = 2103062', self.script)
         # tem que ser maior que a 1.0.63 (2103049) para nao regredir instalacao
-        self.assertGreater(2103061, 2103053)
+        self.assertGreater(2103062, 2103053)
 
     def test_gradle_ganha_o_admob_e_a_versao(self):
         self.assertIn("com.google.android.gms:play-services-ads:23.2.0", self.script)
@@ -281,7 +281,7 @@ class VerificadorDoApkTest(unittest.TestCase):
         caminho = Path(tmp) / "aapt2"
         caminho.write_text("""#!/bin/sh
 if [ "$2" = badging ]; then
-  echo "package: name='smartedtv.full' versionCode='2103061' versionName='1.0.75'"
+  echo "package: name='smartedtv.full' versionCode='2103062' versionName='1.0.76'"
 elif [ "$2" = resources ]; then
   echo "drawable/progresswhite type=drawable"
 elif [ "$2" = xmltree ] && [ "$4" = "res/layout/activity_splash.xml" ]; then
@@ -950,3 +950,44 @@ class OtaJsonTest(unittest.TestCase):
         self.assertIn('apk-unificado-$VERSAO', publicar)
         self.assertIn('ota_json.py', publicar)
         self.assertIn('--clobber', publicar)
+
+
+class BootNaoTravaTest(unittest.TestCase):
+    """1.0.76: a abertura não pode parar na splash por causa da tela de ativação."""
+
+    def setUp(self):
+        self.tela = Path('smartedtv/tools/ads-java/BoasVindas.java.in').read_text(encoding='utf-8')
+        self.seed = Path('smartedtv/tools/ads-java/SeedBase.java.in').read_text(encoding='utf-8')
+        self.lic = Path('smartedtv/tools/ads-java/Licenca.java.in').read_text(encoding='utf-8')
+
+    def test_tela_sempre_deixa_o_kodi_abrir(self):
+        self.assertIn('TEMPO_MAXIMO_TELA', self.tela)
+        self.assertIn('private static void vigiar(final Activity splash)', self.tela)
+        self.assertIn('SeedBase.iniciarKodi(splash);', self.tela)
+        self.assertIn('montada(splash)', self.tela)
+        # sem view na árvore, devolve false e o Kodi abre
+        self.assertIn('BoasVindas: tela nao ficou na arvore de views', self.tela)
+
+    def test_escolha_de_plataforma_tem_rolagem_e_saida(self):
+        trecho = self.tela[self.tela.index('private static void escolherPlataforma'):
+                           self.tela.index('private static void addOpcao')]
+        self.assertIn('ScrollView', trecho)
+        self.assertIn('Abrir o SMARTEDTV agora', trecho)
+        self.assertIn('SeedBase.iniciarKodi(splash)', trecho)
+
+    def test_instalacao_da_base_tem_teto_de_tempo(self):
+        self.assertIn('LIMITE_INSTALACAO', self.seed)
+        self.assertIn('instalacao demorou demais', self.seed)
+        # OTA fica fora da linha do boot
+        self.assertIn('ESPERA_OTA', self.seed)
+        self.assertNotIn('''            try {
+                Atualizacao.automatico(activity);''', self.seed)
+
+    def test_ativacao_nao_fica_em_validando_para_sempre(self):
+        self.assertIn('final long prazo = System.currentTimeMillis() + 15000L', self.lic)
+        self.assertIn('O servidor demorou para responder', self.lic)
+
+    def test_servico_python_nao_derruba_o_boot(self):
+        servico = Path('kodi/addons/service.smarted.bootstrap/service.py').read_text(encoding='utf-8')
+        self.assertIn('startup: servico iniciado', servico)
+        self.assertIn('startup: FALHOU', servico)

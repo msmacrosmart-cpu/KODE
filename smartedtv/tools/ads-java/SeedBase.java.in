@@ -63,6 +63,12 @@ public final class SeedBase {
 
     /** null = ainda não decidido; TRUE = pode abrir; FALSE = instalando. */
     private static volatile Boolean liberado;
+    /** Quando a cópia da base começou (para nunca prender a splash). */
+    private static volatile long inicioInstalacao;
+    /** Teto da cópia: passou disso, o Kodi abre do jeito que estiver. */
+    private static final long LIMITE_INSTALACAO = 180000L;
+    /** OTA só depois da abertura: nada de rede competindo com o primeiro frame. */
+    private static final long ESPERA_OTA = 15000L;
 
     private SeedBase() {
     }
@@ -75,13 +81,7 @@ public final class SeedBase {
      */
     public static boolean pronto(final Activity activity) {
         if (activity != null) {
-            // OTA: consulta o link fixo de versões em segundo plano (nunca
-            // bloqueia a abertura; se houver versão nova, aparece o aviso)
-            try {
-                Atualizacao.automatico(activity);
-            } catch (Throwable erro) {
-                Log.w(TAG, "SeedBase: checagem de atualizacao ignorada (" + erro + ")");
-            }
+            agendarAtualizacao(activity);
         }
         if (Boolean.TRUE.equals(liberado)) {
             return true;
@@ -111,9 +111,21 @@ public final class SeedBase {
             return true;
         }
         if (Boolean.FALSE.equals(liberado)) {
-            return false;
+            if (inicioInstalacao > 0
+                    && System.currentTimeMillis() - inicioInstalacao < LIMITE_INSTALACAO) {
+                return false;          // cópia em andamento, splash na tela
+            }
+            // instalador morreu/travou: libera o Kodi em vez de ficar na splash
+            Log.w(TAG, "SeedBase: instalacao sem fim, liberando o Kodi");
+            registrar(home, "instalacao demorou demais: abrindo o Kodi");
+            liberado = Boolean.TRUE;
+            if (BoasVindas.mostrar(activity)) {
+                return false;
+            }
+            return true;
         }
         liberado = Boolean.FALSE;
+        inicioInstalacao = System.currentTimeMillis();
         registrar(home, kodi.isDirectory()
                 ? "instalando a base sobre um .kodi que nao e da base"
                 : "instalando a base (primeira abertura)");
@@ -166,6 +178,24 @@ public final class SeedBase {
             m.invoke(activity);
         } catch (Throwable erro) {
             Log.e(TAG, "SeedBase: nao consegui retomar o start (" + erro + ")");
+        }
+    }
+
+    /** Checagem de versão em segundo plano, fora do caminho crítico do boot. */
+    private static void agendarAtualizacao(final Activity activity) {
+        try {
+            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Atualizacao.automatico(activity);
+                    } catch (Throwable erro) {
+                        Log.w(TAG, "SeedBase: checagem de atualizacao ignorada (" + erro + ")");
+                    }
+                }
+            }, ESPERA_OTA);
+        } catch (Throwable erro) {
+            Log.w(TAG, "SeedBase: sem agendamento de OTA (" + erro + ")");
         }
     }
 
