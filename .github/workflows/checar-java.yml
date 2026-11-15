@@ -1,0 +1,86 @@
+name: Checar Java do app (javac rápido, sem compilar o Kodi)
+
+# Compila só as classes Java que entram no APK (smartedtv/tools/ads-java/*.java.in)
+# contra android.jar + play-services-ads. Serve para ver o erro REAL do javac em
+# poucos minutos, sem esperar os ~25 min do build completo — e grava o resultado
+# em docs/java-erros.txt (o log do Actions não é acessível por aqui).
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'smartedtv/tools/ads-java/**'
+      - '.github/workflows/checar-java.yml'
+
+jobs:
+  javac:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: android.jar (compileSdk 34)
+        run: |
+          set +e
+          SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "SDK=$SDK"
+          if [ ! -f "$SDK/platforms/android-34/android.jar" ]; then
+            yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" "platforms;android-34" >/dev/null 2>&1
+          fi
+          ls -la "$SDK/platforms/android-34/android.jar"
+
+      - name: play-services-ads (AdMob)
+        run: |
+          set +e
+          mkdir -p /tmp/j/ads
+          curl -sSL -o /tmp/j/ads.aar \
+            https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-ads/23.2.0/play-services-ads-23.2.0.aar
+          cd /tmp/j/ads && unzip -o -q /tmp/j/ads.aar classes.jar && ls -la classes.jar
+
+      - name: javac das classes do app
+        run: |
+          set +e
+          SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          AJAR="$SDK/platforms/android-34/android.jar"
+          rm -rf /tmp/j/src /tmp/j/out
+          mkdir -p /tmp/j/src/smartedtv/full /tmp/j/out
+          for f in smartedtv/tools/ads-java/*.java.in; do
+            n=$(basename "$f" .java.in)
+            sed 's/@APP_PACKAGE@/smartedtv.full/g' "$f" > "/tmp/j/src/smartedtv/full/$n.java"
+          done
+          find /tmp/j/src -name '*.java' | sort > /tmp/j/files.txt
+          wc -l /tmp/j/files.txt
+          javac -nowarn -source 8 -target 8 \
+            -bootclasspath "$AJAR" \
+            -cp "/tmp/j/ads/classes.jar" \
+            -d /tmp/j/out @/tmp/j/files.txt > /tmp/j/javac.txt 2>&1
+          echo "javac exit=$?"
+          {
+            echo "# javac das classes do app — $(date -u +%Y-%m-%dT%H:%MZ)"
+            echo
+            echo "run: $GITHUB_RUN_ID  commit: $(git rev-parse --short HEAD)"
+            echo
+            echo '```'
+            grep -v '^warning:' /tmp/j/javac.txt | head -200
+            echo '```'
+          } > docs/java-erros.txt
+          head -60 docs/java-erros.txt
+
+      - name: Guardar o resultado no repositório
+        run: |
+          set +e
+          git config user.name "smarted-bot"
+          git config user.email "smarted-bot@users.noreply.github.com"
+          git add -f docs/java-erros.txt
+          git commit -m "ci: javac das classes do app (run $GITHUB_RUN_ID)" || true
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep 5
+          done
