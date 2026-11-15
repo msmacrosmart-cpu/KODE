@@ -181,6 +181,18 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
             arquivos = [n for n in nomes if n.startswith("assets/smarted/profile/")
                         and not n.endswith("/")]
             rel.exige(len(arquivos) > 50, "arquivos do perfil", f"{len(arquivos)} entradas")
+
+            # diagnóstico: formato real das linhas do manifesto e dos caminhos
+            linhas = [l for l in dados.decode("utf-8", "replace").splitlines() if l.strip()]
+            rel.texto(f"manifesto: {len(linhas)} linhas; 3 primeiras:")
+            for linha in linhas[:3]:
+                rel.texto("   " + linha.replace("\t", " | ")[:110])
+            prefixos = sorted({l.split("\t")[2].split("/")[0] for l in linhas
+                               if len(l.split("\t")) == 3})
+            rel.texto("primeiro componente dos caminhos: " + ", ".join(prefixos[:8]))
+            rel.texto("amostra de arquivos no APK:")
+            for nome in arquivos[:6]:
+                rel.texto("   " + nome)
             rel.exige(BRAZUCA in presentes, "Brazuca Play no perfil", BRAZUCA)
         else:
             rel.falha("base estável", f"{MANIFESTO_BASE} ausente no APK")
