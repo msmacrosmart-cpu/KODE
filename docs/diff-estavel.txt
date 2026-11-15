@@ -1,0 +1,103 @@
+# Diff: APK estável (1.0.63) x APK unificado
+
+Run: 43658833163
+
+```
+== tamanhos
+  estável: 7774 entradas | unificado: 7162 entradas
+
+== skin.novatv (assets/addons/skin.novatv/)
+  estável: 934 | unificado: 222
+  só no estável (712):
+    - assets/addons/skin.novatv/media/DefaultActor.png
+    - assets/addons/skin.novatv/media/DefaultActorSolid.png
+    - assets/addons/skin.novatv/media/DefaultAddSource.png
+    - assets/addons/skin.novatv/media/DefaultAddon.png
+    - assets/addons/skin.novatv/media/DefaultAddonAlbumInfo.png
+    - assets/addons/skin.novatv/media/DefaultAddonArtistInfo.png
+    - assets/addons/skin.novatv/media/DefaultAddonAudioDSP.png
+    - assets/addons/skin.novatv/media/DefaultAddonAudioDecoder.png
+    - assets/addons/skin.novatv/media/DefaultAddonAudioEncoder.png
+    - assets/addons/skin.novatv/media/DefaultAddonContextItem.png
+    - assets/addons/skin.novatv/media/DefaultAddonFont.png
+    - assets/addons/skin.novatv/media/DefaultAddonGame.png
+    - assets/addons/skin.novatv/media/DefaultAddonHelper.png
+    - assets/addons/skin.novatv/media/DefaultAddonImageDecoder.png
+    - assets/addons/skin.novatv/media/DefaultAddonImages.png
+    - assets/addons/skin.novatv/media/DefaultAddonInfoLibrary.png
+    - assets/addons/skin.novatv/media/DefaultAddonInfoProvider.png
+    - assets/addons/skin.novatv/media/DefaultAddonInputstream.png
+    - assets/addons/skin.novatv/media/DefaultAddonLanguage.png
+    - assets/addons/skin.novatv/media/DefaultAddonLibrary.png
+    - assets/addons/skin.novatv/media/DefaultAddonLookAndFeel.png
+    - assets/addons/skin.novatv/media/DefaultAddonLyrics.png
+    - assets/addons/skin.novatv/media/DefaultAddonMovieInfo.png
+    - assets/addons/skin.novatv/media/DefaultAddonMusic.png
+    - assets/addons/skin.novatv/media/DefaultAddonMusicVideoInfo.png
+    - assets/addons/skin.novatv/media/DefaultAddonNone.png
+    - assets/addons/skin.novatv/media/DefaultAddonPVRClient.png
+    - assets/addons/skin.novatv/media/DefaultAddonPeripheral.png
+    - assets/addons/skin.novatv/media/DefaultAddonPicture.png
+    - assets/addons/skin.novatv/media/DefaultAddonProgram.png
+    - assets/addons/skin.novatv/media/DefaultAddonRepository.png
+    - assets/addons/skin.novatv/media/DefaultAddonScreensaver.png
+    - assets/addons/skin.novatv/media/DefaultAddonService.png
+    - assets/addons/skin.novatv/media/DefaultAddonSkin.png
+    - assets/addons/skin.novatv/media/DefaultAddonSubtitles.png
+    - assets/addons/skin.novatv/media/DefaultAddonTvInfo.png
+    - assets/addons/skin.novatv/media/DefaultAddonUISounds.png
+    - assets/addons/skin.novatv/media/DefaultAddonVfs.png
+    - assets/addons/skin.novatv/media/DefaultAddonVideo.png
+    - assets/addons/skin.novatv/media/DefaultAddonVisualization.png
+  só no unificado (0):
+  diferentes (1):
+    ≠ assets/addons/skin.novatv/addon.xml
+
+== plugin.video.smarted (assets/addons/plugin.video.smarted/)
+  estável: 16 | unificado: 16
+  só no estável (0):
+  só no unificado (0):
+  diferentes (7):
+    ≠ assets/addons/plugin.video.smarted/addon.xml
+    ≠ assets/addons/plugin.video.smarted/catalogue.py
+    ≠ assets/addons/plugin.video.smarted/channel_search.py
+    ≠ assets/addons/plugin.video.smarted/default.py
+    ≠ assets/addons/plugin.video.smarted/favorites.py
+    ≠ assets/addons/plugin.video.smarted/navigation.py
+    ≠ assets/addons/plugin.video.smarted/search.py
+
+== bootstrap (assets/addons/service.smarted.bootstrap/)
+  estável: 11 | unificado: 11
+  só no estável (0):
+  só no unificado (0):
+  diferentes (1):
+    ≠ assets/addons/service.smarted.bootstrap/smart_ads.py
+
+== addons de sistema no APK estável (assets/addons/*/addon.xml)
+  estável: 59 | unificado: 60
+  só no estável: peripheral.joystick
+  só no unificado: resource.language.pt_br, skin.smartedtv.classic
+
+== addons dentro do perfil semeado (assets/smarted/profile/addons/*)
+  38: One.repo, addon.dns, hunter.fm, inputstream.adaptive, metadata.album.universal, metadata.artists.universal, metadata.common.fanart.tv, metadata.generic.albums, metadata.generic.artists, metadata.themoviedb.org.python, metadata.tvshows.themoviedb.org.python, packages, plugin.audio.mp3streams, plugin.program.openwizard, plugin.video.BrazucaPlay.Matrix, plugin.video.youtube, repository.elementumorg, repository.redwizard, repository.resolveurl, repository.streamxtv.matrix, resource.language.pt_br, script.module.beautifulsoup4, script.module.certifi, script.module.chardet, script.module.future, script.module.idna, script.module.kodi-six, script.module.mutagen, script.module.requests, script.module.simplejson, script.module.six, script.module.soupsieve, script.module.urllib3, service.subtitles.legendei, service.xbmc.versioncheck, temp, vfs.rar, vkkodi.repo
+
+== tops por pasta no APK estável
+  addons: 3095
+  smarted: 2732
+  python3.11: 1605
+  system: 219
+  arm64-v8a: 46
+  media: 15
+  layout: 11
+  drawable: 9
+  drawable-xhdpi: 8
+  drawable-mdpi: 7
+  drawable-hdpi: 7
+  drawable-xxxhdpi: 3
+
+== arquivos de configuração de skin/menus nos dois APKs
+  skin.novatv settings: estável=0 unificado=0
+  skinshortcuts: estável=0 unificado=0
+  guisettings: estável=1 unificado=1
+     estável: assets/smarted/profile/userdata/guisettings.xml
+```
