@@ -671,3 +671,26 @@ inexistente). Correções:
   "Continuar assistindo" não apareceria no menu;
 * o verificador e o `integrate-monolith.py` passaram a exigir `vipmenu.py`, a
   extensão `pluginsource` no `addon.xml` dos ajustes e as URLs acima.
+
+### Resultado 1.0.72
+
+Release: <https://github.com/msmacrosmart-cpu/KODE/releases/tag/v1.0.72-unificado> — run
+[43711117524](https://github.com/msmacrosmart-cpu/KODE/actions/runs/43711117524), build verde
+(29 min), release publicada pelo próprio workflow.
+
+| item | valor |
+|---|---|
+| APK | `SMARTEDTV-1.0.72-unificado-arm64-v8a.apk` |
+| tamanho | 249.711.734 bytes (238,1 MB) |
+| pacote / versão | `smartedtv.full` / 1.0.72 (2103058) |
+| QR no pacote | `script.smartedtv.ajustes/resources/qrcode.png` (PNG, 2.672 bytes) — **OK** |
+| menu VIP do atalho | `vipmenu.py` + `xbmc.python.pluginsource` — **OK** |
+| atalhos da Home | `ensure_shortcuts` → `plugin://script.smartedtv.ajustes/` — **OK** |
+| ponto de retomada | `retomar.py` no pacote — **OK** |
+| tela de ativação | `BoasVindas` no dex — **OK** |
+| conferência | **0 falhas, 0 avisos** |
+
+Dois builds anteriores a este falharam no passo bloqueante de conferência
+(1.0.71 e o primeiro 1.0.72): a falha era `atalho VIP no plugin`, exatamente a
+substituição da pasta `plugin.video.smarted` pelo APK estável descrita acima.
+Nenhum APK desses chegou a ser publicado.
