@@ -381,6 +381,10 @@ jobs:
             echo '```'
             tail -n 120 smartedtv/log-passo9.txt 2>/dev/null || echo '(sem log)'
             echo '```'
+            echo '## log da publicação (passo 12)'
+            echo '```'
+            tail -n 60 smartedtv/log-passo12.txt 2>/dev/null || echo '(sem log)'
+            echo '```'
             echo '## APKs encontrados no build'
             echo '```'
             find "$RUNNER_TEMP" -name '*.apk' 2>/dev/null | head -10
@@ -401,6 +405,7 @@ jobs:
       - name: 12. Publicar a release
         run: |
           set -euo pipefail
+          exec > >(tee -a "$GITHUB_WORKSPACE/smartedtv/log-passo12.txt") 2>&1
           OUT=smartedtv/out-apk
           NOTAS="$RUNNER_TEMP/notas.md"
           {
@@ -434,37 +439,39 @@ jobs:
             echo
             echo "Assinado com o certificado \`$CERT_SHA256\`."
           } > "$NOTAS"
-          if gh release view "$TAG_DESTINO" >/dev/null 2>&1; then
-            gh release edit "$TAG_DESTINO" --title "SMARTEDTV $VERSAO (APK unico, arm64)" --notes-file "$NOTAS"
-          else
-            gh release create "$TAG_DESTINO" --title "SMARTEDTV $VERSAO (APK unico, arm64)" \
-              --notes-file "$NOTAS" --target "$GITHUB_SHA"
-          fi
+          publicado=0
+          for tentativa in 1 2 3 4 5; do
+            if gh release view "$TAG_DESTINO" >/dev/null 2>&1; then
+              gh release edit "$TAG_DESTINO" --title "SMARTEDTV $VERSAO (APK unico, arm64)" \
+                --notes-file "$NOTAS" && publicado=1 && break
+            else
+              gh release create "$TAG_DESTINO" --title "SMARTEDTV $VERSAO (APK unico, arm64)" \
+                --notes-file "$NOTAS" --target "$GITHUB_SHA" && publicado=1 && break
+            fi
+            echo "release falhou (tentativa $tentativa), tentando de novo em 20 s"
+            sleep 20
+          done
+          [ "$publicado" = "1" ] || { echo "::error::nao consegui criar/atualizar a release $TAG_DESTINO"; exit 1; }
           # --- OTA: nome fixo + JSON fixo (é o que o app consulta) -----------
           # O app baixa sempre .../releases/latest/download/atualizacao.json e
-          # .../SMARTEDTV-atual.apk: nada para editar à mão a cada versão.
+          # .../SMARTEDTV-atual.apk: o script mantém o nome e o formato.
           cp "$OUT/$ARQUIVO_DESTINO" "$OUT/SMARTEDTV-atual.apk"
-          python3 - "$OUT/atualizacao.json" <<'PYJSON'
-          import hashlib, json, os, sys
-          destino = sys.argv[1]
-          apk = "SMARTEDTV-atual.apk"
-          sha = hashlib.sha256(open(os.path.join(os.path.dirname(destino), apk), "rb").read()).hexdigest()
-          dados = {
-              "versao": os.environ["VERSAO"],
-              "codigo": int(os.environ["CODIGO"]),
-              "apk": os.environ.get("OTA_APK_URL")
-                     or "https://github.com/%s/releases/latest/download/%s" % (os.environ["GITHUB_REPOSITORY"], apk),
-              "json": "https://github.com/%s/releases/latest/download/atualizacao.json" % os.environ["GITHUB_REPOSITORY"],
-              "sha256": sha,
-              "notas": "Atualização do SMARTEDTV %s. Instala por cima: perfil e licença continuam." % os.environ["VERSAO"],
-              "obrigatorio": False,
-          }
-          open(destino, "w", encoding="utf-8").write(json.dumps(dados, ensure_ascii=False, indent=2) + "\n")
-          print(open(destino, encoding="utf-8").read())
-          PYJSON
-          gh release upload "$TAG_DESTINO" \
-            "$OUT/$ARQUIVO_DESTINO" "$OUT/$ARQUIVO_DESTINO.sha256" \
-            "$OUT/SMARTEDTV-atual.apk" "$OUT/atualizacao.json" --clobber
+          python3 smartedtv/tools/ota_json.py \
+            --versao "$VERSAO" --codigo "$CODIGO" \
+            --apk "$OUT/SMARTEDTV-atual.apk" \
+            --saida "$OUT/atualizacao.json"
+          # upload em rede instável: até 5 tentativas com --clobber
+          enviado=0
+          for tentativa in 1 2 3 4 5; do
+            if gh release upload "$TAG_DESTINO" \
+                 "$OUT/$ARQUIVO_DESTINO" "$OUT/$ARQUIVO_DESTINO.sha256" \
+                 "$OUT/SMARTEDTV-atual.apk" "$OUT/atualizacao.json" --clobber; then
+              enviado=1; echo "assets enviados (tentativa $tentativa)"; break
+            fi
+            echo "upload falhou (tentativa $tentativa), tentando de novo em 20 s"
+            sleep 20
+          done
+          [ "$enviado" = "1" ] || { echo "::error::nao consegui enviar os arquivos da release"; exit 1; }
           gh release view "$TAG_DESTINO" --json assets -q '.assets[] | "\(.name) \(.size) bytes"'
         env:
           GH_TOKEN: ${{ github.token }}

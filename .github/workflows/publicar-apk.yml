@@ -1,0 +1,112 @@
+name: Publicar APK já compilado (sem recompilar)
+
+# Rede de segurança: se o passo de publicação falhar depois de um build que deu
+# certo, este workflow pega o artifact do build e publica a release (APK +
+# sha256 + SMARTEDTV-atual.apk + atualizacao.json) sem gastar ~30 min de compilação.
+
+on:
+  workflow_dispatch:
+    inputs:
+      versao:
+        description: 'Versão (ex.: 1.0.75)'
+        required: true
+        default: '1.0.75'
+      codigo:
+        description: 'versionCode (ex.: 2103061)'
+        required: true
+        default: '2103061'
+      tag:
+        description: 'Tag da release (vazio = v<versao>-unificado)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSAO: ${{ inputs.versao }}
+      CODIGO: ${{ inputs.codigo }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Achar o artifact do build desta versão
+        run: |
+          set -uo pipefail
+          TAG="${{ inputs.tag }}"
+          [ -n "$TAG" ] || TAG="v$VERSAO-unificado"
+          echo "TAG_DESTINO=$TAG" >> "$GITHUB_ENV"
+          mkdir -p apk
+          ACHOU=""
+          for RUN in $(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/build-monolith.yml/runs?per_page=15" \
+                       --jq '.workflow_runs[].id' 2>/dev/null); do
+            echo "-- run $RUN"
+            NOME=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/$RUN/artifacts" \
+                    --jq '.artifacts[].name' 2>/dev/null | grep -x "apk-unificado-$VERSAO" | head -1)
+            [ -n "$NOME" ] || continue
+            if gh run download "$RUN" -n "$NOME" -D apk 2>/dev/null; then
+              ACHOU="$RUN"; echo "artifact de $VERSAO baixado do run $ACHOU"; break
+            fi
+          done
+          [ -n "$ACHOU" ] || { echo "::error::nenhum artifact apk-unificado-$VERSAO"; exit 1; }
+          APK=$(find apk -name '*.apk' | head -1)
+          [ -n "$APK" ] || { echo "::error::artifact sem APK"; exit 1; }
+          echo "APK_BAIXADO=$APK" >> "$GITHUB_ENV"
+          ls -la apk
+
+      - name: 2. Nome fixo do APK + atualizacao.json
+        run: |
+          set -euo pipefail
+          mkdir -p entrega
+          cp "$APK_BAIXADO" entrega/SMARTEDTV-atual.apk
+          cp "$APK_BAIXADO" "entrega/SMARTEDTV-$VERSAO-unificado-arm64-v8a.apk"
+          ( cd entrega && sha256sum "SMARTEDTV-$VERSAO-unificado-arm64-v8a.apk" \
+              > "SMARTEDTV-$VERSAO-unificado-arm64-v8a.apk.sha256" )
+          python3 smartedtv/tools/ota_json.py --versao "$VERSAO" --codigo "$CODIGO" \
+            --apk entrega/SMARTEDTV-atual.apk --saida entrega/atualizacao.json
+          ls -la entrega
+
+      - name: 3. Criar/atualizar a release e enviar os arquivos
+        run: |
+          set -uo pipefail
+          NOTAS="$RUNNER_TEMP/notas.md"
+          {
+            echo "# SMARTEDTV $VERSAO — APK ÚNICO (arm64-v8a)"
+            echo
+            echo "Pacote \`smartedtv.full\`: player completo com AdMob dentro, skin"
+            echo "\`skin.novatv\`, catálogo do plugin e ponte de anúncios."
+            echo
+            echo "O arquivo \`SMARTEDTV-atual.apk\` é o mesmo APK com nome fixo — é o"
+            echo "que o app baixa sozinho na atualização automática (OTA), junto com"
+            echo "\`atualizacao.json\`."
+          } > "$NOTAS"
+          publicado=0
+          for i in 1 2 3 4 5; do
+            if gh release view "$TAG_DESTINO" >/dev/null 2>&1; then
+              gh release edit "$TAG_DESTINO" --title "SMARTEDTV $VERSAO (APK unico, arm64)" \
+                --notes-file "$NOTAS" && publicado=1 && break
+            else
+              gh release create "$TAG_DESTINO" --title "SMARTEDTV $VERSAO (APK unico, arm64)" \
+                --notes-file "$NOTAS" --target "$GITHUB_SHA" && publicado=1 && break
+            fi
+            sleep 20
+          done
+          [ "$publicado" = "1" ] || { echo "::error::release $TAG_DESTINO nao criada"; exit 1; }
+          enviado=0
+          for i in 1 2 3 4 5; do
+            if gh release upload "$TAG_DESTINO" \
+                 "entrega/SMARTEDTV-$VERSAO-unificado-arm64-v8a.apk" \
+                 "entrega/SMARTEDTV-$VERSAO-unificado-arm64-v8a.apk.sha256" \
+                 "entrega/SMARTEDTV-atual.apk" "entrega/atualizacao.json" --clobber; then
+              enviado=1; break
+            fi
+            echo "upload falhou (tentativa $i), de novo em 20 s"
+            sleep 20
+          done
+          [ "$enviado" = "1" ] || { echo "::error::upload falhou"; exit 1; }
+          gh release view "$TAG_DESTINO" --json assets -q '.assets[] | "\(.name) \(.size) bytes"'

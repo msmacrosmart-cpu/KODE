@@ -824,7 +824,7 @@ class AtualizacaoOtaTest(unittest.TestCase):
         workflow = Path('.github/workflows/build-monolith.yml').read_text(encoding='utf-8')
         self.assertIn('SMARTEDTV-atual.apk', workflow)
         self.assertIn('atualizacao.json', workflow)
-        self.assertIn('"versao": os.environ["VERSAO"]', workflow)
+        self.assertIn('ota_json.py', workflow)
         self.assertIn('releases/latest/download', workflow)
 
     def test_checagem_automatica_no_arranque(self):
@@ -894,3 +894,59 @@ class JavacDasClassesTest(unittest.TestCase):
         self.assertNotIn('params(splash', tela)
         self.assertIn('private static int dp(Context contexto, int valor)', tela)
         self.assertIn('private static Button botao(Context contexto, String texto, boolean destaque)', tela)
+
+
+class OtaJsonTest(unittest.TestCase):
+    """O JSON do OTA é gerado por script (testável) e usado por dois workflows."""
+
+    def setUp(self):
+        sys.path.insert(0, str(Path('smartedtv/tools').resolve()))
+        import ota_json  # noqa: E402
+        self.mod = ota_json
+
+    def test_nomes_fixos_e_links_de_ultima_release(self):
+        dados = self.mod.montar('1.0.75', 2103061)
+        base = 'https://github.com/msmacrosmart-cpu/KODE/releases/latest/download'
+        self.assertEqual(dados['apk'], base + '/SMARTEDTV-atual.apk')
+        self.assertEqual(dados['json'], base + '/atualizacao.json')
+        self.assertEqual(dados['versao'], '1.0.75')
+        self.assertEqual(dados['codigo'], 2103061)
+        self.assertFalse(dados['obrigatorio'])
+        self.assertIn('1.0.75', dados['notas'])
+
+    def test_sha256_do_arquivo(self):
+        import hashlib
+        import tempfile
+        with tempfile.NamedTemporaryFile(delete=False) as handle:
+            handle.write(b'smartedtv' * 1000)
+            caminho = handle.name
+        try:
+            esperado = hashlib.sha256(open(caminho, 'rb').read()).hexdigest()
+            self.assertEqual(self.mod.sha256_arquivo(caminho, bloco=4096), esperado)
+        finally:
+            Path(caminho).unlink()
+
+    def test_script_grava_o_json(self):
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as pasta:
+            apk = Path(pasta) / 'SMARTEDTV-atual.apk'
+            apk.write_bytes(b'\x00' * 2048)
+            saida = Path(pasta) / 'atualizacao.json'
+            codigo = self.mod.principal(['--versao', '1.0.75', '--codigo', '2103061',
+                                         '--apk', str(apk), '--saida', str(saida)])
+            self.assertEqual(codigo, 0)
+            dados = json.loads(saida.read_text(encoding='utf-8'))
+            self.assertEqual(len(dados['sha256']), 64)
+            self.assertTrue(dados['apk'].endswith('SMARTEDTV-atual.apk'))
+
+    def test_workflows_publicam_nome_fixo(self):
+        build = Path('.github/workflows/build-monolith.yml').read_text(encoding='utf-8')
+        self.assertIn('smartedtv/tools/ota_json.py', build)
+        self.assertIn('SMARTEDTV-atual.apk', build)
+        self.assertIn('log-passo12.txt', build)
+        publicar = Path('.github/workflows/publicar-apk.yml').read_text(encoding='utf-8')
+        self.assertIn('workflow_dispatch', publicar)
+        self.assertIn('apk-unificado-$VERSAO', publicar)
+        self.assertIn('ota_json.py', publicar)
+        self.assertIn('--clobber', publicar)
