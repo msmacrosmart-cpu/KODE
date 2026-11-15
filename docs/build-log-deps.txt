@@ -1,40 +1,39 @@
-# Dependências do monolito — run 43702328501
+# Dependências do monolito — run 43705702272
 
 ## cache: true
 
 ## disco
 ```
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/root       146G   59G   87G  41% /
-tmpfs           7.9G  172K  7.9G   1% /dev/shm
-tmpfs           3.2G  1.1M  3.2G   1% /run
-tmpfs           5.0M     0  5.0M   0% /run/lock
-efivarfs        128M   34K  128M   1% /sys/firmware/efi/efivars
-/dev/sda15      105M  6.1M   99M   6% /boot/efi
-tmpfs           1.6G   12K  1.6G   1% /run/user/1001
+Filesystem       Size  Used Avail Use% Mounted on
+/dev/root        146G   59G   87G  41% /
+tmpfs            7.9G  172K  7.9G   1% /dev/shm
+tmpfs            3.2G  1.0M  3.2G   1% /run
+tmpfs            5.0M     0  5.0M   0% /run/lock
+/dev/nvme0n1p15  105M  6.1M   99M   6% /boot/efi
+tmpfs            1.6G   12K  1.6G   1% /run/user/1001
 ```
 ## RUNNER_TEMP
 ```
 total 92
-drwxr-xr-x 11 runner runner  4096 Nov 15 10:07 .
-drwxr-xr-x  6 runner runner  4096 Nov 15 10:05 ..
--rw-r--r--  1 runner runner   814 Nov 15 10:05 060e7891-0483-4e39-adf9-91cc8a0c9cf0.sh
--rw-r--r--  1 runner runner  1090 Nov 15 10:05 2d3c131a-550c-4a14-a197-eb78e47c2a59.sh
--rw-r--r--  1 runner runner   426 Nov 15 10:07 5463542c-ab2c-455a-a150-aa59293b2f4d.sh
--rw-r--r--  1 runner runner  1067 Nov 15 10:06 69e4b297-0dd6-4b34-bc8f-65010c9e20c9.sh
-drwxr-xr-x  2 runner runner  4096 Nov 15 10:07 8a86a80d-a807-4526-a5f4-1a895a94c212
--rw-r--r--  1 runner runner   226 Nov 15 10:06 9f8fc2c7-65d3-4dbe-b9f2-fbe49bffcb8e.sh
-drwxr-xr-x  2 runner runner  4096 Nov 15 10:05 _github_workflow
-drwxr-xr-x  2 runner runner 12288 Nov 15 10:07 _runner_file_commands
-drwxr-xr-x  2 runner runner  4096 Nov 15 10:05 base
--rw-r--r--  1 runner runner   313 Nov 15 10:05 c0a3d1a5-5289-4ecf-8ada-d2af0427390c.sh
--rw-r--r--  1 runner runner   117 Nov 15 10:06 c6e751d8-bb86-46d7-93fd-873d45300e8d.sh
--rw-r--r--  1 runner runner  6718 Nov 15 10:07 deps.log
--rw-r--r--  1 runner runner  1939 Nov 15 10:07 ed57b69f-e73d-427f-961b-e3a002dcf0b2.sh
-drwxr-xr-x 15 runner runner  4096 Nov 15 10:06 kodi
-drwxr-xr-x  3 runner runner  4096 Nov 15 10:07 lang
-drwxr-xr-x 83 runner runner  4096 Nov 15 10:07 res
-drwxr-xr-x  2 runner runner  4096 Nov 15 10:07 tarballs
+drwxr-xr-x 11 runner runner  4096 Nov 15 10:48 .
+drwxr-xr-x  6 runner runner  4096 Nov 15 10:46 ..
+-rw-r--r--  1 runner runner  1067 Nov 15 10:48 158de866-c364-48aa-8f7e-c9f29cf76e4d.sh
+-rw-r--r--  1 runner runner   117 Nov 15 10:48 1ff8c04a-0115-4821-8fa5-81f95f6ac829.sh
+drwxr-xr-x  2 runner runner  4096 Nov 15 10:48 228bb9c2-037d-48c9-b164-d28f1a24bf47
+-rw-r--r--  1 runner runner   426 Nov 15 10:48 4f2b4ac8-98ee-4e8b-ad95-8200fd469402.sh
+-rw-r--r--  1 runner runner  1090 Nov 15 10:46 5129185f-83a5-494a-b228-feb48671eb3a.sh
+-rw-r--r--  1 runner runner   313 Nov 15 10:46 555d172f-b04b-42f6-b06c-2ebba2542339.sh
+drwxr-xr-x  2 runner runner  4096 Nov 15 10:46 _github_workflow
+drwxr-xr-x  2 runner runner 12288 Nov 15 10:48 _runner_file_commands
+drwxr-xr-x  2 runner runner  4096 Nov 15 10:46 base
+-rw-r--r--  1 runner runner  6718 Nov 15 10:48 deps.log
+-rw-r--r--  1 runner runner  1939 Nov 15 10:48 dfb12003-31a7-4197-8a8e-d627579ef248.sh
+-rw-r--r--  1 runner runner   814 Nov 15 10:47 e2d52a7e-d2ec-4813-95e5-80cc01d0e6f7.sh
+-rw-r--r--  1 runner runner   226 Nov 15 10:47 ff8184e8-1eb8-4368-9e7e-27baa8818646.sh
+drwxr-xr-x 15 runner runner  4096 Nov 15 10:48 kodi
+drwxr-xr-x  3 runner runner  4096 Nov 15 10:48 lang
+drwxr-xr-x 83 runner runner  4096 Nov 15 10:48 res
+drwxr-xr-x  2 runner runner  4096 Nov 15 10:48 tarballs
 drwxr-xr-x  4 runner runner  4096 Nov 14 21:36 xbmc-depends
 ```
 ## onde estão as bibliotecas (.a) por diretório
