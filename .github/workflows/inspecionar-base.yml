@@ -71,28 +71,42 @@ jobs:
           mkdir -p "$RUNNER_TEMP/jadx"
           curl -sSL --retry 3 -o "$RUNNER_TEMP/jadx.zip" \
             https://github.com/skylot/jadx/releases/download/v1.5.0/jadx-1.5.0.zip
-          ls -l "$RUNNER_TEMP/jadx.zip"
           unzip -o -q "$RUNNER_TEMP/jadx.zip" -d "$RUNNER_TEMP/jadx" || echo "unzip falhou"
-          find "$RUNNER_TEMP/jadx" -maxdepth 2 | head -20
-          chmod +x "$RUNNER_TEMP/jadx/bin/jadx"
-          timeout 900 "$RUNNER_TEMP/jadx/bin/jadx" \
-            --include-classes 'org.smartedtv.bootstrap.*' \
-            -d "$RUNNER_TEMP/jadx-out" "$BASE_APK" 2>&1 | tail -30 || true
-          echo "---java encontrados---"
-          find "$RUNNER_TEMP/jadx-out" -name '*.java' 2>/dev/null | head -20
+          chmod +x "$RUNNER_TEMP/jadx/bin/jadx" 2>/dev/null || true
+          timeout 1200 "$RUNNER_TEMP/jadx/bin/jadx" --no-res --threads-count 4 \
+            -d "$RUNNER_TEMP/jadx-out" "$BASE_APK" 2>&1 | tail -15 || true
+          echo "--- arvore ---"
+          find "$RUNNER_TEMP/jadx-out" -path '*smartedtv*' -name '*.java' | head -20
           {
             echo "# Bootstrap original do APK de referência (decompilado)"
             echo
-            echo 'Fontes: `org.smartedtv.bootstrap.*` do dex do APK do Dropbox'
+            echo 'Origem: classes `org.smartedtv.bootstrap.*` do dex do APK do Dropbox.'
             echo
-            find "$RUNNER_TEMP/jadx-out" -name '*.java' | sort | while read -r arquivo; do
-              echo "## \`$(basename "$arquivo")\`"
-              echo
-              echo '```java'
-              cat "$arquivo"
-              echo '```'
-              echo
-            done
+            PASTA="$RUNNER_TEMP/jadx-out/sources/org/smartedtv/bootstrap"
+            if [ -d "$PASTA" ]; then
+              for arquivo in "$PASTA"/*.java; do
+                echo "## \`$(basename "$arquivo")\`"
+                echo
+                echo '```java'
+                cat "$arquivo"
+                echo '```'
+                echo
+              done
+            else
+              echo 'jadx nao extraiu (fallback abaixo)'
+            fi
+            echo '## Fallback: dexdump'
+            echo
+            echo '```'
+            DEXDUMP=$(ls /usr/local/lib/android/sdk/build-tools/*/dexdump 2>/dev/null | sort -V | tail -1)
+            if [ -n "${DEXDUMP:-}" ]; then
+              mkdir -p "$RUNNER_TEMP/dex" && cd "$RUNNER_TEMP/dex"
+              unzip -o -q "$BASE_APK" 'classes*.dex' || true
+              for d in classes*.dex; do
+                "$DEXDUMP" -d "$d" 2>/dev/null | awk '/Class descriptor.*smartedtv\/bootstrap/{p=1} p'
+              done | head -4000
+            fi
+            echo '```'
           } > docs/bootstrap-referencia.txt
           wc -l docs/bootstrap-referencia.txt
 
@@ -101,7 +115,7 @@ jobs:
           set -euo pipefail
           git config user.name "smarted-bot"
           git config user.email "smarted-bot@users.noreply.github.com"
-          git add -f docs/base-dropbox.txt docs/bootstrap-referencia.txt
+          git add -A docs || true
           git commit -m "ci: inspecao do APK de referencia do Dropbox (run $GITHUB_RUN_ID)" || echo "sem mudancas"
           git pull --rebase -q origin "$GITHUB_REF_NAME" || true
           git push origin "HEAD:${GITHUB_REF_NAME}" || echo "push falhou"
