@@ -1,15 +1,20 @@
-# Verificação do APK único — 1.0.72 (run 43711117524)
+# Verificação do APK único — 1.0.73
 
-APK: `SMARTEDTV-1.0.72-unificado-arm64-v8a.apk`
+artifact do run 43711117524 (conferência sem recompilar)
 
 ```
-== arquivo: smartedtv/out-apk/SMARTEDTV-1.0.72-unificado-arm64-v8a.apk  (238.1 MB)
+sha256: b48e012da28e1f12295321f1a3cb81d797ad3070072d4351877055b27c0e35cf
+tamanho: 249711734 bytes
+```
+
+```
+== arquivo: apk/SMARTEDTV-1.0.72-unificado-arm64-v8a.apk  (238.1 MB)
 
 == identidade do pacote (aapt2 badging)
   package: name='smartedtv.full' versionCode='2103058' versionName='1.0.72' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
   OK    pacote                             smartedtv.full
-  OK    versionName                        1.0.72
-  OK    versionCode                        2103058
+  FALHA versionName                        1.0.73
+  FALHA versionCode                        2103059
 
 == manifesto (aapt2 xmltree)
   OK    activity de abertura               .AppOpenActivity
@@ -30,6 +35,7 @@ APK: `SMARTEDTV-1.0.72-unificado-arm64-v8a.apk`
   OK    plugin.video.smarted completo      16 arquivos
   OK    catálogo do plugin (abas)          plugin.video.smarted/catalogue.py
   OK    QR Code no pacote                  assets/addons/script.smartedtv.ajustes/resources/qrcode.png
+  FALHA QR do checkout (Cakto) no pacote   assets/addons/script.smartedtv.ajustes/resources/qrcode-cakto.png
   OK    QR é PNG                           2672 bytes
   OK    ponto de retomada                  assets/addons/service.smarted.bootstrap/retomar.py
   OK    atalhos VIP/Compartilhar na Home   ensure_shortcuts
@@ -95,6 +101,10 @@ APK: `SMARTEDTV-1.0.72-unificado-arm64-v8a.apk`
   OK    compartilhar aplicativo            CompartilharActivity
   OK    tela de boas-vindas/VIP            BoasVindas
   OK    abertura limpa do Kodi             iniciarKodi
+  FALHA escolha Celular/TV                 Plataforma
+  FALHA ponte com o Supabase               Supabase
+  FALHA botao pular anuncio                Pular an
+  FALHA QR do checkout mensal              qrcode-cakto
   OK    APPLICATION_ID no dex              presente (redundante com o manifesto)
 
 == ponte do serviço de bootstrap
@@ -109,6 +119,13 @@ APK: `SMARTEDTV-1.0.72-unificado-arm64-v8a.apk`
   OK    texto de status                    escondido (gone)
 
 == resumo
-  obrigatórias com falha: 0
+  obrigatórias com falha: 7
   avisos: 0
+  - versionName: 1.0.73
+  - versionCode: 2103059
+  - QR do checkout (Cakto) no pacote: assets/addons/script.smartedtv.ajustes/resources/qrcode-cakto.png
+  - escolha Celular/TV: Plataforma
+  - ponte com o Supabase: Supabase
+  - botao pular anuncio: Pular an
+  - QR do checkout mensal: qrcode-cakto
 ```
