@@ -1,4 +1,4 @@
-# Verificação do APK único — 1.0.66
+# Verificação do APK único — 1.0.67
 
 artifact do run 43654698507 (conferência sem recompilar)
 
@@ -13,8 +13,8 @@ tamanho: 248023338 bytes
 == identidade do pacote (aapt2 badging)
   package: name='smartedtv.full' versionCode='2103052' versionName='1.0.66' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
   OK    pacote                             smartedtv.full
-  OK    versionName                        1.0.66
-  OK    versionCode                        2103052
+  FALHA versionName                        1.0.67
+  FALHA versionCode                        2103053
 
 == manifesto (aapt2 xmltree)
   OK    activity de abertura               .AppOpenActivity
@@ -29,6 +29,11 @@ tamanho: 248023338 bytes
   OK    addon plugin.video.smarted         assets/addons/plugin.video.smarted/addon.xml
   OK    addon service.smarted.bootstrap    assets/addons/service.smarted.bootstrap/addon.xml
   OK    addon resource.uisounds.silencio   assets/addons/resource.uisounds.silencio/addon.xml
+  FALHA skin.novatv completa               222 arquivos (a estavel tinha 934)
+  FALHA imagens da skin (media/)           0 imagens
+  FALHA imagem-sentinela da skin           media/DefaultAddon.png
+  OK    plugin.video.smarted completo      16 arquivos
+  OK    catálogo do plugin (abas)          plugin.video.smarted/catalogue.py
   OK    skin.novatv no addon-manifest      padrão na primeira execução
   OK    splash da GUI                      assets/media/splash.jpg
   OK    splash do Android                  assets/media/applaunch_screen.png
@@ -83,6 +88,11 @@ tamanho: 248023338 bytes
   OK    texto de status                    escondido (gone)
 
 == resumo
-  obrigatórias com falha: 0
+  obrigatórias com falha: 5
   avisos: 0
+  - versionName: 1.0.67
+  - versionCode: 2103053
+  - skin.novatv completa: 222 arquivos (a estavel tinha 934)
+  - imagens da skin (media/): 0 imagens
+  - imagem-sentinela da skin: media/DefaultAddon.png
 ```
