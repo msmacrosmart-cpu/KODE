@@ -41,6 +41,7 @@ jobs:
 
       - name: 1. Achar o artifact do build desta versão
         run: |
+          set +e
           set -uo pipefail
           mkdir -p apk
           if [ -z "${VERSAO:-}" ]; then
@@ -83,6 +84,7 @@ jobs:
 
       - name: 2. Nome fixo do APK + atualizacao.json
         run: |
+          set +e
           set -uo pipefail
           if [ -z "${CODIGO:-}" ]; then
             SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
@@ -93,7 +95,6 @@ jobs:
             echo "CODIGO=$CODIGO" >> "$GITHUB_ENV"
           fi
           [ -n "$CODIGO" ] || { echo "::error::sem versionCode"; exit 1; }
-          set -e
           mkdir -p entrega
           cp "$APK_BAIXADO" entrega/SMARTEDTV-atual.apk
           cp "$APK_BAIXADO" "entrega/SMARTEDTV-$VERSAO-unificado-arm64-v8a.apk"
@@ -105,6 +106,7 @@ jobs:
 
       - name: 3. Criar/atualizar a release e enviar os arquivos
         run: |
+          set +e
           set -uo pipefail
           NOTAS="$RUNNER_TEMP/notas.md"
           {
