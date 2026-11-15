@@ -547,3 +547,25 @@ campo de texto abre o teclado) e o toque funciona nos mesmos elementos.
   chamada é ignorada em vez de estourar;
 * o progresso continua sendo salvo pelo próprio Kodi (perfil e `MyVideos`),
   que é quem grava ao encerrar.
+
+### Resultado 1.0.70
+
+Release: <https://github.com/msmacrosmart-cpu/KODE/releases/tag/v1.0.70-unificado> — run
+[43705702272](https://github.com/msmacrosmart-cpu/KODE/actions/runs/43705702272), build verde,
+release publicada pelo próprio workflow.
+
+| item | valor |
+|---|---|
+| APK | `SMARTEDTV-1.0.70-unificado-arm64-v8a.apk` |
+| tamanho | 249.699.150 bytes (238,1 MB) |
+| pacote / versão | `smartedtv.full` / 1.0.70 (2103056) |
+| boas-vindas no dex | `BoasVindas` — **OK** |
+| abertura limpa | `iniciarKodi` — **OK** |
+| conferência | **0 falhas, 0 avisos** |
+
+Continua valendo a pendência do endpoint de validação do código: hoje a
+constante é `https://smartedtv-vip.lovable.app/api/validar`, usada tanto pelo
+Java (`Licenca.VALIDAR_URL`) quanto pelo Python (`vip.VALIDAR`). Trocada a URL,
+o campo de código da tela de boas-vindas e o do menu Ajustes passam a ativar de
+verdade — o restante do fluxo (`vip.json` → `Licenca.ativa` → anúncios param)
+já está pronto.
