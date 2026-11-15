@@ -5,6 +5,11 @@ name: Publicar APK já compilado (sem recompilar)
 # sha256 + SMARTEDTV-atual.apk + atualizacao.json) sem gastar ~30 min de compilação.
 
 on:
+  # o push neste próprio arquivo só serve para o GitHub registrar o workflow
+  # (workflow só com workflow_dispatch num branch que não é o default não aparece)
+  push:
+    paths:
+      - .github/workflows/publicar-apk.yml
   workflow_dispatch:
     inputs:
       versao:
