@@ -61,6 +61,10 @@ jobs:
             -cp "/tmp/j/ads/classes.jar" \
             -d /tmp/j/out @/tmp/j/files.txt > /tmp/j/javac.txt 2>&1
           echo "javac exit=$?"
+          # canal 1: anotações da checagem (o log do Actions não abre por aqui)
+          grep -E 'error:|erro:' /tmp/j/javac.txt | head -12 | while read -r linha; do
+            echo "::error title=javac::${linha//[\r\n]/ }"
+          done
           {
             echo "# javac das classes do app — $(date -u +%Y-%m-%dT%H:%MZ)"
             echo
@@ -70,7 +74,9 @@ jobs:
             grep -v '^warning:' /tmp/j/javac.txt | head -200
             echo '```'
           } > docs/java-erros.txt
-          head -60 docs/java-erros.txt
+          echo "arquivo com $(grep -c . docs/java-erros.txt) linha(s)"
+          # canal 2: resumo do job
+          head -40 docs/java-erros.txt >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Guardar o resultado no repositório
         run: |
@@ -79,8 +85,12 @@ jobs:
           git config user.email "smarted-bot@users.noreply.github.com"
           git add -f docs/java-erros.txt
           git commit -m "ci: javac das classes do app (run $GITHUB_RUN_ID)" || true
-          for i in 1 2 3; do
+          git log --oneline -1 || true
+          for i in 1 2 3 4 5; do
+            git fetch origin "${GITHUB_REF_NAME}" || true
             git pull --rebase origin "${GITHUB_REF_NAME}" || true
-            git push origin "HEAD:${GITHUB_REF_NAME}" && break
-            sleep 5
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then echo "push ok"; break; fi
+            git reset --hard "origin/${GITHUB_REF_NAME}" || true
+            git commit --allow-empty -m "ci: javac das classes do app (run $GITHUB_RUN_ID) tentativa $i" || true
+            sleep 10
           done
