@@ -90,11 +90,16 @@ jobs:
             SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
             AAPT2=$(ls -d "$SDK"/build-tools/*/ 2>/dev/null | sort -V | tail -1)aapt2
             CODIGO=$("$AAPT2" dump badging "$APK_BAIXADO" 2>/dev/null \
-                     | sed -n "s/.*versionCode='\''\([0-9]*\)'\''.*/\1/p" | head -1)
-            echo "CODIGO lido do APK: $CODIGO"
+                     | grep -o "versionCode='[0-9]*'" | head -1 | tr -dc '0-9')
+            if [ -z "$CODIGO" ]; then
+              CODIGO=$(grep -o 'VERSAO_CODIGO = [0-9]*' smartedtv/tools/integrate-monolith.py \
+                       | head -1 | tr -dc '0-9')
+            fi
+            echo "CODIGO: ${CODIGO:-vazio}"
             echo "CODIGO=$CODIGO" >> "$GITHUB_ENV"
           fi
           [ -n "$CODIGO" ] || { echo "::error::sem versionCode"; exit 1; }
+          [ -n "$VERSAO" ] || { echo "::error::sem versao"; exit 1; }
           mkdir -p entrega
           cp "$APK_BAIXADO" entrega/SMARTEDTV-atual.apk
           cp "$APK_BAIXADO" "entrega/SMARTEDTV-$VERSAO-unificado-arm64-v8a.apk"
