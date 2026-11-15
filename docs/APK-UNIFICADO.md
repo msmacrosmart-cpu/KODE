@@ -247,3 +247,33 @@ removidas: a barra não desaparece mais no meio do carregamento.
 A verificação bloqueante passou a exigir: manifesto do perfil com o hash
 esperado, presença do Brazuca no perfil, `drawable/progresswhite` nos recursos,
 `assents`/texto escondido no layout e a classe `SeedBase` no dex.
+
+## Resultado 1.0.66
+
+Release: <https://github.com/msmacrosmart-cpu/KODE/releases/tag/v1.0.66-unificado>
+
+| Item | Valor |
+| --- | --- |
+| APK | `SMARTEDTV-1.0.66-unificado-arm64-v8a.apk` |
+| tamanho | 248.023.338 bytes (236,5 MB — 85 MB do Kodi + ~160 MB da base estável) |
+| sha256 | `d97f97d2c978c2d11219c09f720b1956e7e23c2e901c803904c5f9b5ac413318` |
+| adicionais | `.sha256` ao lado |
+
+Conferência automática sobre o próprio APK publicado: **0 falhas, 0 avisos** —
+pacote/versão, activities e APPLICATION_ID do AdMob, permissão AD_ID, skin +
+60 addons, splash, `libkodi.so`, classes do AdMob no dex, ponte interna,
+perfil semeado (2731 arquivos, manifesto `1447de81…`, Brazuca presente) e
+barra branca com o texto escondido.
+
+### Notas de processo (para não repetir)
+
+* O GitHub Actions roda `run:` com `bash -e`: um passo que chama um script que
+  retorna != 0 morre **antes** de gravar o relatório. Os passos de conferência
+  usam `set +e` em volta do Python e só decidem o resultado no fim.
+* `aapt2` imprime `visibility` pela enum do aapt (`visible=0, invisible=1,
+  gone=2`) — não pelos valores do `View` (`GONE=8`).
+* A release do 1.0.66 foi publicada pelo `check-apk.yml` a partir do artifact
+  do build, porque o build morreu no passo de conferência por causa desses dois
+  detalhes — o APK em si já estava correto e assinado. O fluxo normal
+  (`build-monolith.yml` → passo 12) volta a publicar sozinho agora que a
+  conferência está certa.
