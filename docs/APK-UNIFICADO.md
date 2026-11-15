@@ -387,3 +387,25 @@ ficava Estuary puro — sem skin, sem menus, sem Brazuca. Nunca mais semeava.
 * Tudo é registrado em `Android/data/smartedtv.full/files/smarted-seed.log`
   (`perfil da base ja presente`, `instalando a base…`, `instalado: N arquivos`,
   `falhou: …`) — é o arquivo que fecha qualquer dúvida em campo.
+
+### Resultado 1.0.68
+
+Release: <https://github.com/msmacrosmart-cpu/KODE/releases/tag/v1.0.68-unificado> — run
+[43699254709](https://github.com/msmacrosmart-cpu/KODE/actions/runs/43699254709), build verde
+(nenhum passo pulado por falha; o passo 1b baixou a base do Dropbox).
+
+| item | valor |
+|---|---|
+| APK | `SMARTEDTV-1.0.68-unificado-arm64-v8a.apk` |
+| tamanho | 249.682.485 bytes (238,1 MB) |
+| pacote / versão | `smartedtv.full` / 1.0.68 (2103054) |
+| base usada | APK do Dropbox (242.222.254 bytes, `org.xbmc.kodi` 1.0.63) |
+| manifesto do perfil | `1447de81…` (igual ao da base → mesmo perfil) |
+| skin.novatv | 934 arquivos, 712 imagens |
+| conferência | **0 falhas, 0 avisos** |
+
+Na primeira abertura desta versão o app guarda o `.kodi` vazio que sobrou das
+tentativas anteriores como `Android/data/smartedtv.full/files/.kodi.antigo-<data>`
+e instala a base. A cópia tem ~240 MB: a tela fica na splash com a barra branca
+até terminar (1 a 3 minutos). O que aconteceu fica em
+`Android/data/smartedtv.full/files/smarted-seed.log`.
