@@ -42,11 +42,11 @@ env:
   KODI_TAG: 21.3-Omega
   KODI_COMMIT: a3a448d26b8d560a65655dab2cd122994dc4e146
   NDK_VERSION: 21.4.7075529
-  VERSAO: "1.0.76"
-  CODIGO: "2103062"
+  VERSAO: "1.0.77"
+  CODIGO: "2103063"
   PACOTE: smartedtv.full
-  TAG_DESTINO: v1.0.76-unificado
-  ARQUIVO_DESTINO: SMARTEDTV-1.0.76-unificado-arm64-v8a.apk
+  TAG_DESTINO: v1.0.77-unificado
+  ARQUIVO_DESTINO: SMARTEDTV-1.0.77-unificado-arm64-v8a.apk
   CERT_SHA256: 855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a
   # Base estavel da linha classica: de onde sai o perfil semeado (skin, menus,
   # fontes do catalogo e o Brazuca Play ja configurado).

@@ -159,52 +159,37 @@ public final class BoasVindas {
 
     /** Primeira abertura: CELULAR ou TV, com a sugestão do sistema marcada. */
     private static void escolherPlataforma(final Activity splash) {
-        boolean deitado = largo(splash);
-        String sugestao = Plataforma.detectar(splash);
+        final boolean deitado = largo(splash);
+        final String sugestao = Plataforma.detectar(splash);
 
         FrameLayout fundo = new FrameLayout(splash);
         fundo.setBackgroundColor(Color.rgb(8, 8, 10));
 
-        LinearLayout raiz = new LinearLayout(splash);
-        raiz.setOrientation(LinearLayout.VERTICAL);
-        raiz.setGravity(Gravity.CENTER);
-        raiz.setPadding(dp(splash, 48), dp(splash, 32), dp(splash, 48), dp(splash, 32));
+        LinearLayout raiz = coluna(splash);
+        raiz.setPadding(dp(splash, 24), dp(splash, 24), dp(splash, 24), dp(splash, 24));
 
-        TextView marca = new TextView(splash);
-        marca.setText("SMARTEDTV");
-        marca.setTextColor(Color.rgb(235, 235, 240));
-        marca.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
-        marca.setLetterSpacing(0.30f);
-        marca.setGravity(Gravity.CENTER);
-        raiz.addView(marca);
-
-        TextView pergunta = new TextView(splash);
-        pergunta.setText("Onde você está usando o app?");
-        pergunta.setTextColor(Color.WHITE);
-        pergunta.setTypeface(Typeface.DEFAULT_BOLD);
-        pergunta.setTextSize(TypedValue.COMPLEX_UNIT_SP, 34);
-        pergunta.setGravity(Gravity.CENTER);
-        pergunta.setPadding(0, dp(splash, 18), 0, dp(splash, 8));
-        raiz.addView(pergunta);
-
-        TextView dica = new TextView(splash);
-        dica.setText("A TV mostra os QR codes para compartilhar e comprar;"
-                + " o celular compartilha pelo WhatsApp e abre o pagamento direto.");
-        dica.setTextColor(Color.rgb(170, 170, 182));
-        dica.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
-        dica.setGravity(Gravity.CENTER);
-        dica.setPadding(0, 0, 0, dp(splash, 26));
-        raiz.addView(dica);
+        raiz.addView(marca(splash));
+        raiz.addView(titulo(splash, "Onde você está usando o app?", 30, true));
+        raiz.addView(legenda(splash,
+                "A TV mostra o QR code na tela; o celular compartilha pelo WhatsApp"
+                        + " e abre o pagamento direto."));
 
         LinearLayout opcoes = new LinearLayout(splash);
         opcoes.setOrientation(deitado ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
         opcoes.setGravity(Gravity.CENTER);
+        opcoes.setBaselineAligned(false);
 
         final Button celular = botao(splash, "Celular", false);
-        final Button tv = botao(splash, "TV / Box / Projetor", true);
-        addOpcao(splash, opcoes, celular, Plataforma.CELULAR.equals(sugestao), deitado);
-        addOpcao(splash, opcoes, tv, Plataforma.TV.equals(sugestao), deitado);
-        raiz.addView(opcoes);
+        final Button tv = botao(splash, "TV / Box / Projetor", false);
+        opcoes.addView(opcao(splash, celular, Plataforma.CELULAR.equals(sugestao), deitado));
+        opcoes.addView(opcao(splash, tv, Plataforma.TV.equals(sugestao), deitado));
+        raiz.addView(opcoes, bloco(splash, deitado, 1f));
+
+        final Button abrirAgora = botao(splash, "Abrir o SMARTEDTV agora", false);
+        raiz.addView(abrirAgora, medir(splash, 320, 50, 20));
+
+        rolar(splash, fundo, raiz);
+        splash.setContentView(fundo);
 
         celular.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -220,25 +205,6 @@ public final class BoasVindas {
                 desenhar(splash);
             }
         });
-
-        // tela pequena (celular em pé, fonte grande): sem rolagem os botões
-        // ficavam abaixo da dobra e o app parecia travado na splash
-        ScrollView rolagem = new ScrollView(splash);
-        rolagem.setFillViewport(true);
-        rolagem.setVerticalScrollBarEnabled(false);
-        rolagem.setHorizontalScrollBarEnabled(false);
-        rolagem.setOverScrollMode(View.OVER_SCROLL_NEVER);
-        rolagem.addView(raiz, new ScrollView.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        fundo.addView(rolagem, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        splash.setContentView(fundo);
-        if (Plataforma.TV.equals(sugestao)) {
-            tv.requestFocus();
-        } else {
-            celular.requestFocus();
-        }
-        Button abrirAgora = botao(splash, "Abrir o SMARTEDTV agora", false);
         abrirAgora.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -247,37 +213,37 @@ public final class BoasVindas {
                 SeedBase.iniciarKodi(splash);
             }
         });
-        LinearLayout.LayoutParams medidaAbrir = new LinearLayout.LayoutParams(
-                dp(splash, 300), dp(splash, 52));
-        medidaAbrir.topMargin = dp(splash, 22);
-        raiz.addView(abrirAgora, medidaAbrir);
+
+        if (Plataforma.TV.equals(sugestao)) {
+            tv.requestFocus();
+        } else {
+            celular.requestFocus();
+        }
         Log.i(TAG, "BoasVindas: escolha de plataforma (sugestao=" + sugestao + ")");
     }
 
-    private static void addOpcao(Activity splash, LinearLayout opcoes, Button botao,
-                                 boolean sugerido, boolean deitado) {
-        LinearLayout caixa = new LinearLayout(splash);
-        caixa.setOrientation(LinearLayout.VERTICAL);
-        caixa.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams medida = new LinearLayout.LayoutParams(
-                dp(splash, deitado ? 320 : 380), dp(splash, 78));
-        caixa.addView(botao, medida);
+    /** Botão de plataforma + selo "recomendado" (um bloco, sem sobreposição). */
+    private static LinearLayout opcao(Activity splash, Button acao, boolean sugerido,
+                                      boolean deitado) {
+        LinearLayout bloco = new LinearLayout(splash);
+        bloco.setOrientation(LinearLayout.VERTICAL);
+        bloco.setGravity(Gravity.CENTER);
+        bloco.addView(acao, medir(splash, deitado ? 300 : 320, 62, 0));
         if (sugerido) {
-            TextView recomendado = new TextView(splash);
-            recomendado.setText("recomendado para este aparelho");
-            recomendado.setTextColor(Color.rgb(120, 200, 255));
-            recomendado.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
-            recomendado.setGravity(Gravity.CENTER);
-            caixa.addView(recomendado);
+            TextView selo = legenda(splash, "recomendado para este aparelho");
+            selo.setTextColor(Color.rgb(120, 200, 255));
+            selo.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            bloco.addView(selo);
         }
         LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        p.rightMargin = dp(splash, deitado ? 20 : 0);
-        p.bottomMargin = dp(splash, deitado ? 0 : 6);
-        opcoes.addView(caixa, p);
+        p.rightMargin = dp(splash, deitado ? 24 : 0);
+        p.bottomMargin = dp(splash, deitado ? 0 : 10);
+        bloco.setLayoutParams(p);
+        return bloco;
     }
 
-    /** Tela principal (escolha já feita): layout muda por plataforma. */
+    /** Tela principal: informação de um lado, ações do outro (ou empilhado). */
     private static void desenhar(final Activity splash) {
         final boolean vip = Licenca.ativa(splash);
         final boolean deitado = largo(splash);
@@ -285,259 +251,184 @@ public final class BoasVindas {
 
         FrameLayout fundo = new FrameLayout(splash);
         fundo.setBackgroundColor(Color.rgb(8, 8, 10));
-        fundo.setFocusable(false);
-
-        ScrollView rolagem = new ScrollView(splash);
-        rolagem.setFillViewport(true);
-        rolagem.setVerticalScrollBarEnabled(false);     // sem barra de rolagem
-        rolagem.setHorizontalScrollBarEnabled(false);
-        rolagem.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
         LinearLayout raiz = new LinearLayout(splash);
         raiz.setOrientation(deitado ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
         raiz.setGravity(Gravity.CENTER);
-        int margem = dp(splash, deitado ? 48 : 24);
+        raiz.setBaselineAligned(false);
+        int margem = dp(splash, deitado ? 40 : 22);
         raiz.setPadding(margem, dp(splash, 20), margem, dp(splash, 20));
-        raiz.setFocusable(false);
 
-        raiz.addView(tv ? colunaTv(splash, vip, deitado)
-                        : colunaTexto(splash, vip, deitado),
-                peso(raiz, deitado, tv));
-        raiz.addView(colunaAcoes(splash, fundo, vip, deitado, tv),
-                peso(raiz, deitado, tv));
+        // ---- coluna da esquerda: marca, chamada e (na TV) UM QR code ---------
+        LinearLayout esquerda = coluna(splash);
+        esquerda.addView(marca(splash));
+        esquerda.addView(titulo(splash, vip ? "Seu VIP está ativo" : "Deseja assistir sem anúncios?",
+                28, true));
+        esquerda.addView(legenda(splash, vip
+                ? "Nenhum anúncio vai aparecer. Renove quando quiser, aqui do mesmo jeito."
+                : (tv ? "Escaneie o código com o celular para compartilhar o app ou"
+                        + " comprar o acesso mensal."
+                      : "Toque em comprar para abrir o pagamento no celular.")));
+        if (tv) {
+            esquerda.addView(cartaoQr(splash, deitado));
+        }
 
-        rolagem.addView(raiz, new ScrollView.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        fundo.addView(rolagem, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        // ---- coluna da direita: código e botões ------------------------------
+        LinearLayout direita = acoes(splash, fundo, vip, tv, deitado);
 
+        raiz.addView(esquerda, bloco(splash, deitado, 1f));
+        raiz.addView(direita, bloco(splash, deitado, 1.1f));
+
+        rolar(splash, fundo, raiz);
         splash.setContentView(fundo);
         Log.i(TAG, "BoasVindas: tela exibida (" + (deitado ? "deitada" : "em pe")
                 + ", " + (tv ? "tv" : "celular") + ", vip=" + vip + ")");
     }
 
-    private static LinearLayout.LayoutParams peso(LinearLayout raiz, boolean deitado,
-                                                  boolean tv) {
-        if (!deitado) {
-            LinearLayout.LayoutParams vertical = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            vertical.bottomMargin = dp(raiz.getContext(), 12);
-            return vertical;
-        }
-        LinearLayout.LayoutParams horizontal = new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.WRAP_CONTENT, tv ? 1.25f : 1f);
-        horizontal.rightMargin = dp(raiz.getContext(), 24);
-        return horizontal;
-    }
+    /**
+     * UM QR code por vez (na TV). Duas abas trocam o mesmo quadro: compartilhar
+     * o app ou comprar o acesso mensal. Antes os dois QRs ficavam lado a lado e
+     * não cabiam na tela.
+     */
+    private static LinearLayout cartaoQr(final Activity splash, boolean deitado) {
+        LinearLayout cartao = coluna(splash);
+        cartao.setBackground(placa(Color.rgb(17, 17, 21), Color.rgb(38, 38, 46)));
+        cartao.setPadding(dp(splash, 14), dp(splash, 12), dp(splash, 14), dp(splash, 12));
 
-    // ------------------------------------------------------------ lado esquerdo
+        final ImageView qr = new ImageView(splash);
+        final TextView dica = legenda(splash, "");
+        final Button abaCompartilhar = botao(splash, "Escaneie e Compartilhe", false);
+        final Button abaComprar = botao(splash, "Escaneie e compre o acesso mensal", true);
+        abaCompartilhar.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        abaComprar.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
 
-    private static LinearLayout colunaTexto(Context contexto, boolean vip, boolean deitado) {
-        LinearLayout coluna = new LinearLayout(contexto);
-        coluna.setOrientation(LinearLayout.VERTICAL);
-        coluna.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
-        coluna.setFocusable(false);
+        LinearLayout abas = new LinearLayout(splash);
+        abas.setOrientation(deitado ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
+        abas.setGravity(Gravity.CENTER);
+        abas.setBaselineAligned(false);
+        abas.addView(abaCompartilhar, medir(splash, 236, 44, 4));
+        abas.addView(abaComprar, medir(splash, 236, 44, 0));
+        cartao.addView(abas);
 
-        TextView marca = new TextView(contexto);
-        marca.setText("SMARTEDTV");
-        marca.setTextColor(Color.rgb(235, 235, 240));
-        marca.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
-        marca.setLetterSpacing(0.30f);
-        coluna.addView(marca);
+        int lado = dp(splash, deitado ? 176 : 208);
+        qr.setAdjustViewBounds(true);
+        qr.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        qr.setContentDescription("QR code");
+        LinearLayout.LayoutParams medidaQr = new LinearLayout.LayoutParams(lado, lado);
+        medidaQr.topMargin = dp(splash, 10);
+        medidaQr.bottomMargin = dp(splash, 8);
+        cartao.addView(qr, medidaQr);
 
-        TextView pergunta = new TextView(contexto);
-        pergunta.setText("Deseja assistir\nsem anúncios?");
-        pergunta.setTextColor(Color.WHITE);
-        pergunta.setTypeface(Typeface.DEFAULT_BOLD);
-        pergunta.setTextSize(TypedValue.COMPLEX_UNIT_SP, deitado ? 40 : 32);
-        pergunta.setLineSpacing(0f, 0.95f);
-        pergunta.setPadding(0, dp(contexto, 14), 0, dp(contexto, 14));
-        coluna.addView(pergunta);
+        dica.setGravity(Gravity.CENTER);
+        dica.setMaxWidth(lado + dp(splash, 40));
+        cartao.addView(dica);
 
-        TextView detalhe = new TextView(contexto);
-        detalhe.setText(vip
-                ? "Seu VIP está ativo. Bom filme!"
-                : "Plano VIP por R$ 24,90/mês\n"
-                        + "• zero anúncios\n"
-                        + "• até 3 aparelhos\n"
-                        + "• ativação na hora, por código");
-        detalhe.setTextColor(Color.rgb(190, 190, 200));
-        detalhe.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-        detalhe.setLineSpacing(0f, 1.2f);
-        coluna.addView(detalhe);
+        final Runnable mostrarApp = new Runnable() {
+            @Override
+            public void run() {
+                mostrarQr(splash, qr, QR_APP);
+                dica.setText("Aponte a câmera para baixar e compartilhar o app.");
+            }
+        };
+        final Runnable mostrarCompra = new Runnable() {
+            @Override
+            public void run() {
+                mostrarQr(splash, qr, QR_CAKTO);
+                dica.setText("Aponte a câmera para comprar o acesso mensal (R$ 24,90).");
+            }
+        };
 
-        // QR pequeno também no celular: quem quiser instalar em outro aparelho
-        // aponta a câmera (o compartilhamento por Intent está no botão).
-        LinearLayout qr = new LinearLayout(contexto);
-        qr.setOrientation(LinearLayout.HORIZONTAL);
-        qr.setGravity(Gravity.CENTER_VERTICAL);
-        qr.setFocusable(false);
-        qr.setPadding(0, dp(contexto, 16), 0, 0);
-        ImageView imagem = new ImageView(contexto);
-        Bitmap mapa = imagemDoPacote(contexto, QR_APP);
-        if (mapa != null) {
-            imagem.setImageBitmap(mapa);
-            imagem.setAdjustViewBounds(true);
-            imagem.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            int lado = dp(contexto, 108);
-            qr.addView(imagem, new LinearLayout.LayoutParams(lado, lado));
-            TextView legendaQr = new TextView(contexto);
-            legendaQr.setText("Aponte a câmera\npara baixar o app");
-            legendaQr.setTextColor(Color.rgb(160, 160, 172));
-            legendaQr.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
-            legendaQr.setPadding(dp(contexto, 12), 0, 0, 0);
-            qr.addView(legendaQr);
-            coluna.addView(qr);
-        }
-        return coluna;
-    }
+        abaCompartilhar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mostrarApp.run();
+            }
+        });
+        abaComprar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mostrarCompra.run();
+            }
+        });
 
-    /** TV/BOX/PROJETOR: dois QR codes grandes com título no topo. */
-    private static LinearLayout colunaTv(Context contexto, boolean vip, boolean deitado) {
-        LinearLayout coluna = new LinearLayout(contexto);
-        coluna.setOrientation(LinearLayout.VERTICAL);
-        coluna.setGravity(Gravity.CENTER_VERTICAL);
-        coluna.setFocusable(false);
-
-        TextView marca = new TextView(contexto);
-        marca.setText("SMARTEDTV  •  " + (vip ? "VIP ATIVO" : "GRÁTIS COM ANÚNCIOS"));
-        marca.setTextColor(Color.rgb(235, 235, 240));
-        marca.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
-        marca.setLetterSpacing(0.18f);
-        marca.setPadding(0, 0, 0, dp(contexto, 14));
-        coluna.addView(marca);
-
-        LinearLayout cartoes = new LinearLayout(contexto);
-        cartoes.setOrientation(LinearLayout.HORIZONTAL);
-        cartoes.setGravity(Gravity.CENTER_VERTICAL);
-        cartoes.setFocusable(false);
-        int lado = dp(contexto, deitado ? 190 : 160);
-        cartoes.addView(cartaoQr(contexto, "Escaneie e Compartilhe", QR_APP,
-                "indique o app para alguém", lado, 0));
-        cartoes.addView(cartaoQr(contexto, "Escaneie e compre o acesso mensal", QR_CAKTO,
-                "R$ 24,90/mês · Pix ou cartão", lado, dp(contexto, 18)));
-        coluna.addView(cartoes);
-        return coluna;
-    }
-
-    private static LinearLayout cartaoQr(Context contexto, String titulo, String asset,
-                                         String legenda, int lado, int espacoEsquerda) {
-        LinearLayout cartao = new LinearLayout(contexto);
-        cartao.setOrientation(LinearLayout.VERTICAL);
-        cartao.setGravity(Gravity.CENTER_HORIZONTAL);
-        cartao.setFocusable(false);
-        cartao.setBackground(placa(Color.rgb(18, 18, 22), Color.rgb(60, 60, 70)));
-        cartao.setPadding(dp(contexto, 12), dp(contexto, 12), dp(contexto, 12), dp(contexto, 12));
-
-        TextView tituloView = new TextView(contexto);
-        tituloView.setText(titulo);
-        tituloView.setTextColor(Color.WHITE);
-        tituloView.setTypeface(Typeface.DEFAULT_BOLD);
-        tituloView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
-        tituloView.setGravity(Gravity.CENTER);
-        tituloView.setMaxLines(2);
-        tituloView.setPadding(0, 0, 0, dp(contexto, 8));
-        cartao.addView(tituloView, new LinearLayout.LayoutParams(
-                lado, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-        ImageView imagem = new ImageView(contexto);
-        Bitmap mapa = imagemDoPacote(contexto, asset);
-        if (mapa != null) {
-            imagem.setImageBitmap(mapa);
-        }
-        imagem.setAdjustViewBounds(true);
-        imagem.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        imagem.setBackgroundColor(Color.WHITE);
-        cartao.addView(imagem, new LinearLayout.LayoutParams(lado, lado));
-
-        TextView legendaView = new TextView(contexto);
-        legendaView.setText(legenda);
-        legendaView.setTextColor(Color.rgb(160, 160, 172));
-        legendaView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
-        legendaView.setGravity(Gravity.CENTER);
-        legendaView.setPadding(0, dp(contexto, 6), 0, 0);
-        cartao.addView(legendaView, new LinearLayout.LayoutParams(
-                lado, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        p.leftMargin = espacoEsquerda;
-        cartao.setLayoutParams(p);
+        mostrarCompra.run();          // começa pelo QR da compra
+        abaComprar.requestFocus();
         return cartao;
     }
 
-    // ------------------------------------------------------------ lado direito
+    private static void mostrarQr(Activity splash, ImageView qr, String caminho) {
+        try {
+            Bitmap imagem = imagemDoPacote(splash, caminho);
+            if (imagem == null) {
+                qr.setImageDrawable(null);
+                Log.w(TAG, "BoasVindas: QR ausente no APK (" + caminho + ")");
+                return;
+            }
+            qr.setImageBitmap(imagem);
+        } catch (Throwable erro) {
+            Log.w(TAG, "BoasVindas: QR nao carregou (" + erro + ")");
+        }
+    }
 
-    private static LinearLayout colunaAcoes(final Activity splash, final View fundo,
-                                            final boolean vip, boolean deitado, boolean tv) {
-        LinearLayout coluna = new LinearLayout(splash);
-        coluna.setOrientation(LinearLayout.VERTICAL);
+    /** Código de ativação + botões. Larguras relativas: nada se sobrepõe. */
+    private static LinearLayout acoes(final Activity splash, final View fundo,
+                                      final boolean vip, final boolean tv, boolean deitado) {
+        LinearLayout coluna = coluna(splash);
         coluna.setGravity(Gravity.CENTER_HORIZONTAL);
-        coluna.setFocusable(false);
-
-        int larguraBotao = dp(splash, deitado ? 440 : 380);
-        int alturaBotao = dp(splash, deitado ? 66 : 62);
 
         final Button comprar = botao(splash, vip ? "Renovar meu plano VIP"
                 : "Quero assistir sem anúncios", true);
-        coluna.addView(comprar, paramsLargura(splash, larguraBotao, alturaBotao));
+        coluna.addView(comprar, medir(splash, 0, deitado ? 58 : 56, 10));
 
-        TextView rotuloCodigo = new TextView(splash);
-        rotuloCodigo.setText("Já tenho um código");
-        rotuloCodigo.setTextColor(Color.rgb(160, 160, 172));
-        rotuloCodigo.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-        rotuloCodigo.setGravity(Gravity.CENTER);
-        rotuloCodigo.setPadding(0, dp(splash, 14), 0, dp(splash, 8));
-        coluna.addView(rotuloCodigo);
+        final Button compartilhar = botao(splash, "Compartilhar aplicativo", false);
+        compartilhar.setVisibility(tv ? View.GONE : View.VISIBLE);
+        coluna.addView(compartilhar, medir(splash, 0, 52, 8));
 
-        // o campo já nasce visível: um clique/toque e o teclado abre
+        TextView rotulo = legenda(splash, "Já tenho um código");
+        rotulo.setPadding(0, dp(splash, 12), 0, dp(splash, 6));
+        coluna.addView(rotulo);
+
         final EditText campo = new EditText(splash);
         campo.setHint("Digite o código aqui");
         campo.setTextColor(Color.WHITE);
         campo.setHintTextColor(Color.rgb(150, 150, 160));
-        campo.setTextSize(TypedValue.COMPLEX_UNIT_SP, 19);
+        campo.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
         campo.setSingleLine(true);
         campo.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
         campo.setImeOptions(EditorInfo.IME_ACTION_DONE);
         campo.setGravity(Gravity.CENTER);
         campo.setBackground(caixa(splash, false));
-        campo.setPadding(dp(splash, 14), dp(splash, 12), dp(splash, 14), dp(splash, 12));
-        coluna.addView(campo, paramsLargura(splash, larguraBotao, 58));
+        campo.setPadding(dp(splash, 14), dp(splash, 10), dp(splash, 14), dp(splash, 10));
+        coluna.addView(campo, medir(splash, 0, 54, 6));
 
         final Button ativar = botao(splash, "Ativar agora", true);
-        coluna.addView(ativar, paramsLargura(splash, larguraBotao, alturaBotao));
+        coluna.addView(ativar, medir(splash, 0, 56, 10));
 
-        final TextView status = new TextView(splash);
-        status.setTextColor(Color.rgb(120, 220, 160));
-        status.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
-        status.setGravity(Gravity.CENTER);
-        status.setPadding(0, dp(splash, 10), 0, 0);
+        final TextView status = legenda(splash, "");
         status.setVisibility(View.GONE);
         coluna.addView(status);
 
-        // Celular: compartilha pelo Android. TV: o QR code já está no topo.
-        final Button compartilhar = botao(splash, tv ? "Enviar o link para o celular"
-                : "Compartilhar aplicativo", false);
-        if (tv) {
-            compartilhar.setVisibility(View.GONE);
-        }
-        coluna.addView(compartilhar, paramsLargura(splash, larguraBotao, alturaBotao));
-
         final Button continuar = botao(splash, vip ? "Entrar no SMARTEDTV"
                 : "Continuar com anúncios", false);
-        coluna.addView(continuar, paramsLargura(splash, larguraBotao, alturaBotao));
+        coluna.addView(continuar, medir(splash, 0, 54, 14));
 
         final Button trocarModo = botao(splash, tv ? "Estou no celular" : "Estou na TV", false);
-        coluna.addView(trocarModo, paramsLargura(splash, dp(splash, 240),
-                dp(splash, 46)));
+        trocarModo.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        coluna.addView(trocarModo, medir(splash, 240, 44, 10));
 
         abrirTecladoAoFocar(splash, campo);
 
-        // --- ações -----------------------------------------------------------
         comprar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 abrir(splash, CHECKOUT);
+            }
+        });
+
+        compartilhar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                BoasVindas.compartilhar(splash);
             }
         });
 
@@ -546,7 +437,6 @@ public final class BoasVindas {
             public void onClick(View v) {
                 final String texto = campo.getText() == null ? "" : campo.getText().toString();
                 if (texto.trim().length() < 4) {
-                    // um clique só: foca o campo e abre o teclado na mesma ação
                     campo.requestFocus();
                     teclado(splash, campo);
                     status.setVisibility(View.VISIBLE);
@@ -586,13 +476,6 @@ public final class BoasVindas {
             }
         });
 
-        compartilhar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                compartilhar(splash);
-            }
-        });
-
         continuar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -614,6 +497,87 @@ public final class BoasVindas {
 
         comprar.requestFocus();
         return coluna;
+    }
+
+    // ------------------------------------------------------------- peças de UI
+
+    private static LinearLayout coluna(Context contexto) {
+        LinearLayout coluna = new LinearLayout(contexto);
+        coluna.setOrientation(LinearLayout.VERTICAL);
+        coluna.setGravity(Gravity.CENTER_HORIZONTAL);
+        coluna.setFocusable(false);
+        return coluna;
+    }
+
+    private static TextView marca(Context contexto) {
+        TextView marca = new TextView(contexto);
+        marca.setText("SMARTEDTV");
+        marca.setTextColor(Color.rgb(235, 235, 240));
+        marca.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
+        marca.setLetterSpacing(0.30f);
+        marca.setGravity(Gravity.CENTER);
+        marca.setPadding(0, 0, 0, dp(contexto, 10));
+        return marca;
+    }
+
+    private static TextView titulo(Context contexto, String texto, int tamanho, boolean negrito) {
+        TextView titulo = new TextView(contexto);
+        titulo.setText(texto);
+        titulo.setTextColor(Color.WHITE);
+        titulo.setTextSize(TypedValue.COMPLEX_UNIT_SP, tamanho);
+        titulo.setGravity(Gravity.CENTER);
+        if (negrito) {
+            titulo.setTypeface(Typeface.DEFAULT_BOLD);
+        }
+        titulo.setPadding(0, 0, 0, dp(contexto, 8));
+        return titulo;
+    }
+
+    private static TextView legenda(Context contexto, String texto) {
+        TextView legenda = new TextView(contexto);
+        legenda.setText(texto);
+        legenda.setTextColor(Color.rgb(168, 168, 180));
+        legenda.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        legenda.setGravity(Gravity.CENTER);
+        legenda.setPadding(0, 0, 0, dp(contexto, 6));
+        return legenda;
+    }
+
+    /** Empilha (em pé) ou põe lado a lado (deitado) com peso — sem sobrepor. */
+    private static LinearLayout.LayoutParams bloco(Context contexto, boolean deitado,
+                                                   float peso) {
+        if (!deitado) {
+            LinearLayout.LayoutParams vertical = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            vertical.bottomMargin = dp(contexto, 10);
+            return vertical;
+        }
+        LinearLayout.LayoutParams horizontal = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, peso);
+        horizontal.rightMargin = dp(contexto, 24);
+        return horizontal;
+    }
+
+    /** Medida de um botão: 0 = ocupa a largura da coluna. */
+    private static LinearLayout.LayoutParams medir(Context contexto, int largura, int altura,
+                                                   int margemAcima) {
+        LinearLayout.LayoutParams medida = new LinearLayout.LayoutParams(
+                largura <= 0 ? ViewGroup.LayoutParams.MATCH_PARENT : dp(contexto, largura),
+                dp(contexto, altura));
+        medida.topMargin = dp(contexto, margemAcima);
+        return medida;
+    }
+
+    private static void rolar(Activity splash, View fundo, View conteudo) {
+        ScrollView rolagem = new ScrollView(splash);
+        rolagem.setFillViewport(true);
+        rolagem.setVerticalScrollBarEnabled(false);
+        rolagem.setHorizontalScrollBarEnabled(false);
+        rolagem.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        rolagem.addView(conteudo, new ScrollView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        ((ViewGroup) fundo).addView(rolagem, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     }
 
     // -------------------------------------------------------------- utilidades

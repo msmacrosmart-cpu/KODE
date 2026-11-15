@@ -880,3 +880,23 @@ podiam deixar a splash presa foram todos fechados:
   80 s e o botão ficava "Validando..." para sempre), com mensagem clara;
 * **serviço Python** — `main()` protegido: falha do bootstrap vai para o log e o
   Kodi continua funcionando.
+
+## 1.0.77 — tela de boas-vindas reorganizada (um QR por vez)
+
+A 1.0.76 amontoava os dois QR codes no mesmo bloco e usava larguras fixas em
+colunas com peso: os botões passavam por cima dos QRs e os textos cortavam.
+
+Layout novo, sem sobreposição:
+
+* **uma coluna empilhada em pé, duas colunas em deitado** — cada bloco com peso
+  (`bloco()`), nunca largura fixa dentro de coluna com peso;
+* **um QR code por vez**: o cartão da TV tem duas abas ("Escaneie e
+  Compartilhe" / "Escaneie e compre o acesso mensal") que trocam a imagem do
+  **mesmo** `ImageView` (176–208 dp), com a legenda mudando junto;
+* **celular**: sem QR — botão "Compartilhar aplicativo" (Intent nativo) e
+  "Quero assistir sem anúncios" (checkout Cakto);
+* **ações** sempre na coluna da direita (ou embaixo): comprar, campo do código,
+  "Ativar agora", status, "Continuar com anúncios" e "Estou na TV/celular";
+* tudo dentro de `ScrollView` sem barra visível, então nada fica fora da tela em
+  aparelho pequeno ou com fonte grande;
+* continuam valendo o cão de guarda de 2 min, a saída imediata e o VIP sem tela.

@@ -39,10 +39,10 @@ class IntegracaoNoFonteTest(unittest.TestCase):
 
     def test_pacote_unico_e_versao(self):
         self.assertIn(f'APP_PACKAGE = "{PACOTE}"', self.script)
-        self.assertIn('VERSAO_NOME = "1.0.76"', self.script)
-        self.assertIn('VERSAO_CODIGO = 2103062', self.script)
+        self.assertIn('VERSAO_NOME = "1.0.77"', self.script)
+        self.assertIn('VERSAO_CODIGO = 2103063', self.script)
         # tem que ser maior que a 1.0.63 (2103049) para nao regredir instalacao
-        self.assertGreater(2103062, 2103053)
+        self.assertGreater(2103063, 2103053)
 
     def test_gradle_ganha_o_admob_e_a_versao(self):
         self.assertIn("com.google.android.gms:play-services-ads:23.2.0", self.script)
@@ -281,7 +281,7 @@ class VerificadorDoApkTest(unittest.TestCase):
         caminho = Path(tmp) / "aapt2"
         caminho.write_text("""#!/bin/sh
 if [ "$2" = badging ]; then
-  echo "package: name='smartedtv.full' versionCode='2103062' versionName='1.0.76'"
+  echo "package: name='smartedtv.full' versionCode='2103063' versionName='1.0.77'"
 elif [ "$2" = resources ]; then
   echo "drawable/progresswhite type=drawable"
 elif [ "$2" = xmltree ] && [ "$4" = "res/layout/activity_splash.xml" ]; then
@@ -699,13 +699,19 @@ class PlataformaTvTest(unittest.TestCase):
         self.assertIn('Plataforma.salvar(splash', tela)
         self.assertIn('Estou na TV', tela)          # troca de modo sem reinstalar
 
-    def test_tv_mostra_os_dois_qr_com_titulo(self):
+    def test_tv_um_qr_por_vez_com_abas(self):
+        """Um QR só na tela (não cabem dois); duas abas trocam o mesmo quadro."""
         tela = self.texto['BoasVindas']
         self.assertIn('Escaneie e Compartilhe', tela)
         self.assertIn('Escaneie e compre o acesso mensal', tela)
         self.assertIn('qrcode.png', tela)                 # indicação do app
         self.assertIn('qrcode-cakto.png', tela)           # checkout mensal
-        self.assertIn('colunaTv', tela)
+        self.assertIn('private static LinearLayout cartaoQr', tela)
+        # o mesmo ImageView recebe as duas imagens (uma por vez)
+        self.assertEqual(tela.count('new ImageView(splash)'), 1)
+        self.assertIn('mostrarQr(splash, qr, QR_APP)', tela)
+        self.assertIn('mostrarQr(splash, qr, QR_CAKTO)', tela)
+        self.assertNotIn('colunaTv', tela)
         for nome in ('qrcode.png', 'qrcode-cakto.png'):
             arquivo = Path('kodi/addons/script.smartedtv.ajustes/resources') / nome
             self.assertTrue(arquivo.is_file(), nome)
@@ -716,8 +722,8 @@ class PlataformaTvTest(unittest.TestCase):
         self.assertIn('Intent.ACTION_SEND', tela)
         self.assertIn('Intent.createChooser', tela)
         self.assertIn('https://smartedtv-vip.lovable.app/', tela)
-        # celular: botão de compartilhar visível; TV: QR no topo
-        self.assertIn('compartilhar.setVisibility(View.GONE)', tela)
+        # celular: botão de compartilhar; TV: só o QR (o botão não ocupa espaço)
+        self.assertIn('compartilhar.setVisibility(tv ? View.GONE : View.VISIBLE)', tela)
 
     def test_sem_barra_de_rolagem(self):
         tela = self.texto['BoasVindas']
@@ -970,8 +976,8 @@ class BootNaoTravaTest(unittest.TestCase):
 
     def test_escolha_de_plataforma_tem_rolagem_e_saida(self):
         trecho = self.tela[self.tela.index('private static void escolherPlataforma'):
-                           self.tela.index('private static void addOpcao')]
-        self.assertIn('ScrollView', trecho)
+                           self.tela.index('private static LinearLayout opcao(')]
+        self.assertIn('rolar(splash, fundo, raiz)', trecho)   # rolagem sem barra visível
         self.assertIn('Abrir o SMARTEDTV agora', trecho)
         self.assertIn('SeedBase.iniciarKodi(splash)', trecho)
 
