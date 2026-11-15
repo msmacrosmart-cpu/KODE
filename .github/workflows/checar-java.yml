@@ -44,22 +44,19 @@ jobs:
           # vem como dependencia declarada no POM — descobrimos a versao lá
           curl -sSL -o /tmp/j/ads.aar "$BASE/play-services-ads/23.2.0/play-services-ads-23.2.0.aar"
           ( cd /tmp/j/ads && unzip -o -q /tmp/j/ads.aar classes.jar )
-          echo "::error title=diag::ADS $(unzip -l /tmp/j/ads/classes.jar | grep -c 'appopen\|interstitial')"
           API_VER=$(curl -s "$BASE/play-services-ads/23.2.0/play-services-ads-23.2.0.pom" \
                     | tr -d '\n' | sed 's/.*play-services-ads-api<\/artifactId>//' \
                     | sed 's/.*<version>\([^<]*\)<\/version>.*/\1/' | cut -c1-20)
-          echo "::error title=diag::APIVER $API_VER"
           for ver in "$API_VER" 23.2.0 25.5.0; do
             [ -n "$ver" ] || continue
             mkdir -p "/tmp/j/api-$ver"
             if curl -sfSL -o "/tmp/j/api-$ver.aar" "$BASE/play-services-ads-api/$ver/play-services-ads-api-$ver.aar"; then
               ( cd "/tmp/j/api-$ver" && unzip -o -q "/tmp/j/api-$ver.aar" classes.jar )
-              echo "::error title=diag::API baixado $ver $(unzip -l /tmp/j/api-$ver/classes.jar | grep -c 'appopen')"
-              echo "$ver" > /tmp/j/api-ver.txt
+                  echo "$ver" > /tmp/j/api-ver.txt
               break
             fi
           done
-          ls -la /tmp/j/api-*/classes.jar 2>&1 | tr '\n' '|'
+          ls -la /tmp/j/api-*/classes.jar 2>&1 | tr '\n' '|' || true
 
       - name: javac das classes do app
         run: |
@@ -74,7 +71,6 @@ jobs:
           done
           find /tmp/j/src -name '*.java' | sort > /tmp/j/files.txt
           wc -l /tmp/j/files.txt
-          echo "::error title=diag::API $(unzip -l /tmp/j/play-services-ads-api/classes.jar 2>&1 | head -6 | tr '\n' '|')"
           # JDK 17 não aceita mais -bootclasspath: android.jar vai no classpath
           javac -nowarn -source 8 -target 8 \
             -cp "$AJAR:$(ls /tmp/j/api-*/classes.jar 2>/dev/null | head -1):/tmp/j/ads/classes.jar" \
@@ -94,8 +90,22 @@ jobs:
             echo '```'
           } > docs/java-erros.txt
           echo "arquivo com $(grep -c . docs/java-erros.txt) linha(s)"
+          if grep -q 'error:' /tmp/j/javac.txt; then
+            echo "::error::javac falhou — veja as anotações acima"
+            exit_code=1
+          else
+            echo "javac sem erros"
+            exit_code=0
+          fi
           # canal 2: resumo do job
           head -40 docs/java-erros.txt >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Resultado do javac
+        if: always()
+        run: |
+          set +e
+          grep -q 'error:' docs/java-erros.txt && exit 1
+          exit 0
 
       - name: Guardar o resultado no repositório
         run: |

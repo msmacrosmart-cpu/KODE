@@ -187,7 +187,9 @@ public final class BoasVindas {
         LinearLayout caixa = new LinearLayout(splash);
         caixa.setOrientation(LinearLayout.VERTICAL);
         caixa.setGravity(Gravity.CENTER);
-        caixa.addView(botao, params(splash, deitado ? 320 : 380, 78));
+        LinearLayout.LayoutParams medida = new LinearLayout.LayoutParams(
+                dp(splash, deitado ? 320 : 380), dp(splash, 78));
+        caixa.addView(botao, medida);
         if (sugerido) {
             TextView recomendado = new TextView(splash);
             recomendado.setText("recomendado para este aparelho");

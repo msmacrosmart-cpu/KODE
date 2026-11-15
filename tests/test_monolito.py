@@ -867,3 +867,30 @@ class VipNaoVeATelaTest(unittest.TestCase):
         self.assertIn('Ativar agora', self.tela)
         self.assertIn('SeedBase.iniciarKodi(splash)', self.tela)
         self.assertIn('setContentView(fundo)', self.tela)
+
+
+class JavacDasClassesTest(unittest.TestCase):
+    """O javac rápido (workflow) pega erro de símbolo sem compilar o Kodi."""
+
+    def setUp(self):
+        self.texto = Path('.github/workflows/checar-java.yml').read_text(encoding='utf-8')
+
+    def test_compila_contra_android_e_admob(self):
+        self.assertIn('android-34/android.jar', self.texto)
+        self.assertIn('play-services-ads-api', self.texto)
+        self.assertIn('play-services-ads/23.2.0', self.texto)
+        self.assertIn('smartedtv/tools/ads-java/*.java.in', self.texto)
+
+    def test_publica_o_resultado_no_repositorio(self):
+        self.assertIn('docs/java-erros.txt', self.texto)
+        self.assertIn('::error', self.texto)
+
+    def test_falha_quando_o_javac_acha_erro(self):
+        self.assertIn("grep -q 'error:'", self.texto)
+
+    def test_boas_vindas_nao_chama_ajudante_inexistente(self):
+        # 1.0.73 quebrou o build com params(...) — o javac do workflow pegou.
+        tela = Path('smartedtv/tools/ads-java/BoasVindas.java.in').read_text(encoding='utf-8')
+        self.assertNotIn('params(splash', tela)
+        self.assertIn('private static int dp(Context contexto, int valor)', tela)
+        self.assertIn('private static Button botao(Context contexto, String texto, boolean destaque)', tela)

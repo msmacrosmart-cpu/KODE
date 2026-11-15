@@ -271,7 +271,10 @@ jobs:
           KODI_ANDROID_KEY_PASSWORD: android
         run: |
           set -euo pipefail
-          make -C "$RUNNER_TEMP/kodi-build" apk
+          # a saída do gradle/javac vai para um log que sobrevive ao fracasso
+          set -o pipefail
+          make -C "$RUNNER_TEMP/kodi-build" apk 2>&1 | tee "$GITHUB_WORKSPACE/smartedtv/log-passo9.txt"
+          set -e
           OUT="$GITHUB_WORKSPACE/smartedtv/out-apk"
           mkdir -p "$OUT"
           APK=$(find "$RUNNER_TEMP/kodi-build" "$RUNNER_TEMP/kodi" -type f -name '*.apk' \
@@ -376,7 +379,7 @@ jobs:
             echo '```'
             echo '## log do empacotamento (passo 9)'
             echo '```'
-            tail -n 80 smartedtv/log-passo9.txt 2>/dev/null || echo '(sem log)'
+            tail -n 120 smartedtv/log-passo9.txt 2>/dev/null || echo '(sem log)'
             echo '```'
             echo '## APKs encontrados no build'
             echo '```'
@@ -387,7 +390,12 @@ jobs:
           git config user.email "smarted-bot@users.noreply.github.com"
           git add -f "$LOG"
           git commit -m "ci: build do APK unificado falhou (run $GITHUB_RUN_ID)" || true
-          git push origin "HEAD:${GITHUB_REF_NAME}" || true
+          for i in 1 2 3 4 5; do
+            git fetch origin "${GITHUB_REF_NAME}" || true
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep 10
+          done
           tail -n 60 "$LOG" || true
 
       - name: 12. Publicar a release
