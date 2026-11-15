@@ -48,6 +48,12 @@ jobs:
                     --jq '.artifacts[] | select(.name|startswith("apk-unificado")) | .name' 2>/dev/null | head -1)
             [ -n "$NOME" ] || { echo "   sem artifact"; continue; }
             echo "   artifact: $NOME"
+            # só interessa o artifact DESTA versão: reconferir um APK antigo com
+            # o verificador novo gerava relatório falso (tudo "FALHA")
+            if [ "$NOME" != "apk-unificado-$VERSAO" ]; then
+              echo "   artifact de outra versão ($NOME), ignorado"
+              continue
+            fi
             if gh run download "$RUN" -n "$NOME" -D apk 2>/dev/null; then
               ACHOU="$RUN"; echo "RUN_ID=$RUN" >> "$GITHUB_ENV"
               break
