@@ -5,7 +5,7 @@ Roda no codigo-fonte do Kodi 21.3-Omega (clonado pelo workflow) e transforma o
 build em um monolito:
 
     applicationId  smartedtv.full      (era org.xbmc.kodi)
-    versao         1.0.73 / 2103059
+    versao         1.0.74 / 2103060
     anuncios       AppOpenActivity + PreRollActivity dentro do app (AdMob nativo)
     conteudo       skin.novatv + plugin.video.smarted + service.smarted.bootstrap
                    + resource.uisounds.silencio (o mesmo pacote da linha classica)
@@ -33,15 +33,15 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 
 APP_PACKAGE = "smartedtv.full"
-VERSAO_NOME = "1.0.73"
-VERSAO_CODIGO = 2103059
+VERSAO_NOME = "1.0.74"
+VERSAO_CODIGO = 2103060
 
 ADS_APP_ID = "ca-app-pub-2066014755407744~5076693043"
 PLAY_SERVICES_ADS = "com.google.android.gms:play-services-ads:23.2.0"
 
 JAVA_ADS = ["SmartAds", "AdTela", "AppOpenActivity", "PreRollActivity", "SeedBase",
             "Licenca", "CompartilharActivity", "AbrirUrlActivity", "BoasVindas",
-            "Plataforma", "Supabase"]
+            "Plataforma", "Supabase", "Atualizacao", "OtaProvider", "AtualizaActivity"]
 
 SKIN_ORIGEM = "kodi/skin.estilo.personalizado"
 SKIN_ID = "skin.novatv"
@@ -66,6 +66,7 @@ ATIVIDADES = [
 ATIVIDADES_APOIO = [
     ("AbrirUrlActivity", "abrir link (checkout/site)"),
     ("CompartilharActivity", "compartilhar aplicativo"),
+    ("AtualizaActivity", "procurar atualizacao (OTA)"),
 ]
 
 
@@ -246,6 +247,31 @@ def patch_manifest(src: Path) -> None:
             )
         trocar(caminho, marcador, "".join(apoio) + "\n" + marcador,
                "AndroidManifest.xml.in: AbrirUrlActivity + CompartilharActivity")
+
+    # OTA: permissao de instalar pacote + FileProvider proprio do APK baixado
+    texto = ler(caminho)
+    if "REQUEST_INSTALL_PACKAGES" not in texto:
+        marcador = '    <uses-permission android:name="android.permission.INTERNET" />'
+        if marcador in texto:
+            trocar(caminho, marcador,
+                   marcador + "\n\n"
+                   "    <!-- atualizacao do app pelo proprio instalador do Android -->\n"
+                   '    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />',
+                   "AndroidManifest.xml.in: permissao REQUEST_INSTALL_PACKAGES")
+
+    texto = ler(caminho)
+    if "OtaProvider" not in texto:
+        marcador = "    </application>"
+        provedor = (
+            "\n        <!-- OTA: entrega o APK baixado ao instalador por content:// -->\n"
+            '        <provider\n'
+            '            android:name=".OtaProvider"\n'
+            '            android:authorities="${applicationId}.ota"\n'
+            '            android:exported="false"\n'
+            '            android:grantUriPermissions="true" />\n\n'
+        )
+        trocar(caminho, marcador, provedor + marcador,
+               "AndroidManifest.xml.in: OtaProvider (content:// do APK)")
 
     # TV x celular: declarar que o app nao exige toque e que tambem roda em TV.
     # Sem isto a Play Store trata o app como "exige touchscreen" e esconde de
@@ -608,6 +634,9 @@ def main() -> int:
     assert f"APP_PACKAGE {APP_PACKAGE}" in version, "applicationId nao aplicado"
     manifest = ler(src / "tools/android/packaging/xbmc/AndroidManifest.xml.in")
     assert ADS_APP_ID in manifest and "PreRollActivity" in manifest
+    assert "OtaProvider" in manifest and "REQUEST_INSTALL_PACKAGES" in manifest, \
+        "OTA sem provider/permissao no manifesto"
+    assert "AtualizaActivity" in manifest, "tela de atualizacao fora do manifesto"
     gradle = ler(src / "tools/android/packaging/xbmc/build.gradle.in")
     assert PLAY_SERVICES_ADS in gradle, "dependencia do AdMob ausente"
     assert str(VERSAO_CODIGO) in gradle and VERSAO_NOME in gradle

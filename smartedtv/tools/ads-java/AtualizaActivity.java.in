@@ -1,0 +1,66 @@
+package @APP_PACKAGE@;
+
+import android.app.Activity;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.view.Gravity;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+/**
+ * "Procurar atualização" do menu de Ajustes do Kodi.
+ *
+ * O add-on abre esta tela com ``StartAndroidActivity`` (mesma ponte dos
+ * anúncios). Ela mostra um aviso discreto, dispara a checagem OTA e deixa o
+ * resultado em diálogo por cima — o usuário confirma a instalação e volta
+ * quando quiser (VOLTAR fecha esta tela).
+ */
+public class AtualizaActivity extends Activity {
+
+    @Override
+    protected void onCreate(Bundle estado) {
+        super.onCreate(estado);
+        SmartAds.init(getApplicationContext());
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        LinearLayout raiz = new LinearLayout(this);
+        raiz.setOrientation(LinearLayout.VERTICAL);
+        raiz.setGravity(Gravity.CENTER);
+        raiz.setBackgroundColor(Color.rgb(10, 10, 12));
+
+        TextView titulo = new TextView(this);
+        titulo.setText("Procurando atualização…");
+        titulo.setTextColor(Color.WHITE);
+        titulo.setTextSize(26f);
+        titulo.setGravity(Gravity.CENTER);
+        raiz.addView(titulo);
+
+        TextView detalhe = new TextView(this);
+        detalhe.setText("O SMARTEDTV consulta o link fixo de versões e, se houver"
+                + " novidade, baixa e abre o instalador do Android.");
+        detalhe.setTextColor(Color.rgb(170, 170, 182));
+        detalhe.setTextSize(15f);
+        detalhe.setGravity(Gravity.CENTER);
+        detalhe.setPadding(64, 18, 64, 28);
+        raiz.addView(detalhe);
+
+        Button fechar = new Button(this);
+        fechar.setText("Voltar ao SMARTEDTV");
+        fechar.setAllCaps(false);
+        fechar.setTextSize(18f);
+        fechar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
+        raiz.addView(fechar, new LinearLayout.LayoutParams(520, 76));
+
+        setContentView(raiz);
+        fechar.requestFocus();
+        Atualizacao.manual(this);
+    }
+}

@@ -1,0 +1,510 @@
+package @APP_PACKAGE@;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+import android.provider.Settings;
+import android.util.Log;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * Atualização do app por link fixo (OTA).
+ *
+ * O endereço é SEMPRE o mesmo — a release mais recente do repositório:
+ *
+ *   https://github.com/<org>/<repo>/releases/latest/download/atualizacao.json
+ *
+ * e o APK também tem nome fixo dentro da release
+ * (``SMARTEDTV-atual.apk``). Quem publica os dois é o próprio workflow de
+ * build, então não existe nada para editar à mão a cada versão.
+ *
+ * Formato do JSON:
+ *
+ *   {"versao": "1.0.74", "codigo": 2103060,
+ *    "apk": "https://…/releases/latest/download/SMARTEDTV-atual.apk",
+ *    "notas": "…", "obrigatorio": false}
+ *
+ * Fluxo: baixa o JSON em segundo plano, compara com a versão instalada e, se
+ * houver versão nova, mostra o aviso com "Atualizar agora". O download do APK
+ * roda em thread própria (com progresso) e, ao terminar, o instalador NATIVO do
+ * Android é aberto com um toque — o app é atualizado por cima, mantendo o
+ * perfil e a licença.
+ */
+public final class Atualizacao {
+
+    public static final String TAG = "SmartAds";
+
+    /** Link fixo: sempre a última release publicada. */
+    public static final String JSON_URL =
+            "https://github.com/msmacrosmart-cpu/KODE/releases/latest/download/atualizacao.json";
+    /** Nome fixo do APK dentro da release. */
+    public static final String APK_URL =
+            "https://github.com/msmacrosmart-cpu/KODE/releases/latest/download/SMARTEDTV-atual.apk";
+
+    private static final String ARQUIVO = "smartedtv-atual.apk";
+    private static final long INTERVALO_AUTOMATICO = 6L * 60L * 60L * 1000L;   // 6 h
+    private static final String MARCA = "ota-ultima-verificacao.txt";
+
+    private static volatile boolean verificando;
+    private static volatile long ultimaVerificacao;
+
+    private Atualizacao() {
+    }
+
+    // -------------------------------------------------------------- verificação
+
+    /** Checagem automática (no máximo uma vez a cada 6 h, em segundo plano). */
+    public static void automatico(final Activity activity) {
+        if (activity == null) {
+            return;
+        }
+        if (System.currentTimeMillis() - ultimaVerificacao < INTERVALO_AUTOMATICO
+                && lerMarca(activity) > 0) {
+            Log.i(TAG, "Atualizacao: checagem automática já feita há pouco");
+            return;
+        }
+        verificar(activity, false);
+    }
+
+    /** Checagem manual (botão "Procurar atualização"), com resposta na tela. */
+    public static void manual(Activity activity) {
+        verificar(activity, true);
+    }
+
+    public static void verificar(final Activity activity, final boolean manual) {
+        if (activity == null || verificando) {
+            return;
+        }
+        verificando = true;
+        ultimaVerificacao = System.currentTimeMillis();
+        gravarMarca(activity);
+        final Context app = activity.getApplicationContext();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String json = null;
+                try {
+                    json = baixarTexto(JSON_URL);
+                } catch (Exception erro) {
+                    Log.w(TAG, "Atualizacao: sem resposta do link fixo (" + erro + ")");
+                }
+                final Info info = Info.ler(json);
+                verificando = false;
+                final String instalada = versaoInstalada(app);
+                if (info == null) {
+                    if (manual) {
+                        aviso(activity, "Não consegui verificar agora",
+                                "Sem conexão com o servidor de atualização. Tente de novo em instantes.");
+                    }
+                    return;
+                }
+                if (!info.maisNovaQue(instalada)) {
+                    Log.i(TAG, "Atualizacao: já está na versão mais recente (" + instalada + ")");
+                    if (manual) {
+                        aviso(activity, "SMARTEDTV está atualizado",
+                                "Versão instalada: " + instalada + " (a mais recente).");
+                    }
+                    return;
+                }
+                Log.i(TAG, "Atualizacao: nova versão " + info.versao + " (instalada " + instalada + ")");
+                oferecer(activity, info, instalada);
+            }
+        }, "smarted-ota").start();
+    }
+
+    // ------------------------------------------------------------------- aviso
+
+    private static void oferecer(final Activity activity, final Info info, String instalada) {
+        try {
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    String mensagem = "Instalada: " + instalada + "\n"
+                            + "Disponível: " + info.versao + "\n\n"
+                            + (info.notas.length() > 0 ? info.notas + "\n\n" : "")
+                            + "O download roda em segundo plano e, no fim, o instalador"
+                            + " do Android abre — é só confirmar para atualizar por cima"
+                            + " (seu perfil e sua licença continuam).";
+                    AlertDialog.Builder caixa = new AlertDialog.Builder(activity);
+                    caixa.setTitle("Nova versão do SMARTEDTV");
+                    caixa.setMessage(mensagem);
+                    caixa.setCancelable(!info.obrigatorio);
+                    caixa.setPositiveButton("Atualizar agora",
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    baixarEInstalar(activity, info);
+                                }
+                            });
+                    if (!info.obrigatorio) {
+                        caixa.setNegativeButton("Depois", null);
+                    }
+                    caixa.show();
+                }
+            });
+        } catch (Throwable erro) {
+            Log.w(TAG, "Atualizacao: não consegui mostrar o aviso (" + erro + ")");
+        }
+    }
+
+    private static void aviso(final Activity activity, final String titulo, final String texto) {
+        try {
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        new AlertDialog.Builder(activity)
+                                .setTitle(titulo)
+                                .setMessage(texto)
+                                .setPositiveButton("OK", null)
+                                .show();
+                    } catch (Throwable erro) {
+                        Log.w(TAG, "Atualizacao: aviso falhou (" + erro + ")");
+                    }
+                }
+            });
+        } catch (Throwable ignorado) {
+            // sem interface agora
+        }
+    }
+
+    // ---------------------------------------------------------------- download
+
+    private static void baixarEInstalar(final Activity activity, final Info info) {
+        final Context app = activity.getApplicationContext();
+        final Handler tela = new Handler(Looper.getMainLooper());
+        final AlertDialog[] caixa = new AlertDialog[1];
+        tela.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    caixa[0] = new AlertDialog.Builder(activity)
+                            .setTitle("Baixando a atualização")
+                            .setMessage("0%")
+                            .setCancelable(false)
+                            .show();
+                } catch (Throwable erro) {
+                    Log.w(TAG, "Atualizacao: diálogo de progresso falhou (" + erro + ")");
+                }
+            }
+        });
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                File apk = new File(pasta(app), ARQUIVO);
+                try {
+                    apk = baixarApk(info.apk.length() > 0 ? info.apk : APK_URL, apk, new Progresso() {
+                        @Override
+                        public void atualizar(final int porcento) {
+                            tela.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (caixa[0] != null) {
+                                        caixa[0].setMessage(porcento + "%");
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    Log.i(TAG, "Atualizacao: APK baixado (" + apk.length() + " bytes)");
+                } catch (Exception erro) {
+                    Log.w(TAG, "Atualizacao: download falhou (" + erro + ")");
+                    tela.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (caixa[0] != null) {
+                                caixa[0].dismiss();
+                            }
+                        }
+                    });
+                    aviso(activity, "Não consegui baixar",
+                            "Verifique a conexão e tente de novo pelo menu Ajustes >"
+                                    + " Procurar atualização.");
+                    return;
+                }
+                final File pronto = apk;
+                tela.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (caixa[0] != null) {
+                            caixa[0].dismiss();
+                        }
+                        instalar(activity, pronto);
+                    }
+                });
+            }
+        }, "smarted-ota-baixar").start();
+    }
+
+    /** Abre o instalador nativo do Android com o APK baixado. */
+    public static void instalar(Activity activity, File apk) {
+        try {
+            if (!apk.isFile() || apk.length() < 1024 * 1024) {
+                aviso(activity, "Atualização incompleta",
+                        "O arquivo baixado não parece completo. Tente de novo.");
+                return;
+            }
+            if (Build.VERSION.SDK_INT >= 26 && !activity.getPackageManager()
+                    .canRequestPackageInstalls()) {
+                aviso(activity, "Permita a instalação",
+                        "Toque em 'Permitir desta fonte' para o SMARTEDTV instalar a"
+                                + " atualização e depois repita pelo menu Ajustes.");
+                try {
+                    Intent permissao = new Intent(
+                            Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                            Uri.parse("package:" + activity.getPackageName()));
+                    permissao.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    activity.startActivity(permissao);
+                } catch (Throwable erro) {
+                    Log.w(TAG, "Atualizacao: sem tela de permissão (" + erro + ")");
+                }
+                return;
+            }
+            Uri uri = Uri.parse("content://" + OtaProvider.AUTORIDADE + "/" + ARQUIVO);
+            Intent instalar = new Intent(Intent.ACTION_VIEW);
+            instalar.setDataAndType(uri, "application/vnd.android.package-archive");
+            instalar.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            instalar.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            activity.startActivity(instalar);
+            Log.i(TAG, "Atualizacao: instalador aberto (" + uri + ")");
+        } catch (Throwable erro) {
+            Log.w(TAG, "Atualizacao: não consegui abrir o instalador (" + erro + ")");
+            aviso(activity, "Não consegui abrir o instalador",
+                    "Baixe a versão nova manualmente em smartedtv-vip.lovable.app.");
+        }
+    }
+
+    // -------------------------------------------------------------- utilitários
+
+    private interface Progresso {
+        void atualizar(int porcento);
+    }
+
+    static File pasta(Context contexto) {
+        File base = contexto.getExternalFilesDir("ota");
+        if (base == null) {
+            base = contexto.getCacheDir();
+        }
+        if (base != null && !base.isDirectory()) {
+            base.mkdirs();
+        }
+        return base;
+    }
+
+    private static File baixarApk(String endereco, File destino, Progresso progresso)
+            throws Exception {
+        HttpURLConnection conexao = (HttpURLConnection) new URL(endereco).openConnection();
+        conexao.setConnectTimeout(15000);
+        conexao.setReadTimeout(30000);
+        conexao.setInstanceFollowRedirects(true);
+        conexao.setRequestProperty("User-Agent", "SMARTEDTV/1.0");
+        int tamanho = conexao.getContentLength();
+        InputStream entrada = conexao.getInputStream();
+        OutputStream saida = new FileOutputStream(destino);
+        try {
+            byte[] buffer = new byte[64 * 1024];
+            long total = 0;
+            int lidos;
+            int ultimo = -1;
+            while ((lidos = entrada.read(buffer)) > 0) {
+                saida.write(buffer, 0, lidos);
+                total += lidos;
+                if (tamanho > 0) {
+                    int porcento = (int) (total * 100 / tamanho);
+                    if (porcento != ultimo && porcento % 5 == 0) {
+                        ultimo = porcento;
+                        progresso.atualizar(porcento);
+                    }
+                }
+            }
+            saida.flush();
+        } finally {
+            try {
+                saida.close();
+            } catch (Exception ignorado) {
+                // nada a fazer
+            }
+            entrada.close();
+        }
+        return destino;
+    }
+
+    private static String baixarTexto(String endereco) throws Exception {
+        HttpURLConnection conexao = (HttpURLConnection) new URL(endereco).openConnection();
+        conexao.setConnectTimeout(10000);
+        conexao.setReadTimeout(15000);
+        conexao.setInstanceFollowRedirects(true);
+        conexao.setRequestProperty("User-Agent", "SMARTEDTV/1.0");
+        conexao.setRequestProperty("Accept", "application/json");
+        InputStream entrada = conexao.getResponseCode() >= 400
+                ? conexao.getErrorStream() : conexao.getInputStream();
+        if (entrada == null) {
+            throw new IllegalArgumentException("HTTP " + conexao.getResponseCode());
+        }
+        java.io.ByteArrayOutputStream saida = new java.io.ByteArrayOutputStream();
+        byte[] buffer = new byte[8192];
+        int lidos;
+        while ((lidos = entrada.read(buffer)) > 0) {
+            saida.write(buffer, 0, lidos);
+            if (saida.size() > 64 * 1024) {
+                break;
+            }
+        }
+        entrada.close();
+        return new String(saida.toByteArray(), "UTF-8");
+    }
+
+    public static String versaoInstalada(Context contexto) {
+        try {
+            PackageInfo info = contexto.getPackageManager()
+                    .getPackageInfo(contexto.getPackageName(), 0);
+            return info.versionName == null ? "" : info.versionName;
+        } catch (Throwable erro) {
+            return "";
+        }
+    }
+
+    private static File marca(Context contexto) {
+        File base = contexto.getFilesDir();
+        return base == null ? null : new File(base, MARCA);
+    }
+
+    private static long lerMarca(Context contexto) {
+        File arquivo = marca(contexto);
+        if (arquivo == null || !arquivo.isFile()) {
+            return 0;
+        }
+        try {
+            java.io.BufferedReader leitor = new java.io.BufferedReader(
+                    new java.io.FileReader(arquivo));
+            try {
+                String linha = leitor.readLine();
+                return linha == null ? 0 : Long.parseLong(linha.trim());
+            } finally {
+                leitor.close();
+            }
+        } catch (Exception erro) {
+            return 0;
+        }
+    }
+
+    private static void gravarMarca(Context contexto) {
+        File arquivo = marca(contexto);
+        if (arquivo == null) {
+            return;
+        }
+        try {
+            java.io.FileWriter escritor = new java.io.FileWriter(arquivo);
+            try {
+                escritor.write(Long.toString(System.currentTimeMillis()));
+            } finally {
+                escritor.close();
+            }
+        } catch (Exception ignorado) {
+            // conveniência
+        }
+    }
+
+    /** JSON da atualização. */
+    static final class Info {
+        final String versao;
+        final int codigo;
+        final String apk;
+        final String notas;
+        final boolean obrigatorio;
+
+        private Info(String versao, int codigo, String apk, String notas, boolean obrigatorio) {
+            this.versao = versao;
+            this.codigo = codigo;
+            this.apk = apk;
+            this.notas = notas;
+            this.obrigatorio = obrigatorio;
+        }
+
+        static Info ler(String json) {
+            if (json == null || !json.trim().startsWith("{")) {
+                return null;
+            }
+            String versao = texto(json, "versao");
+            if (versao.length() == 0) {
+                versao = texto(json, "version");
+            }
+            if (versao.length() == 0) {
+                return null;
+            }
+            String apk = texto(json, "apk");
+            if (apk.length() == 0) {
+                apk = texto(json, "url");
+            }
+            String notas = texto(json, "notas");
+            if (notas.length() == 0) {
+                notas = texto(json, "notas_da_versao");
+            }
+            int codigo = 0;
+            Matcher m = Pattern.compile("\"(?:codigo|versionCode|code)\"\\s*:\\s*([0-9]+)")
+                    .matcher(json);
+            if (m.find()) {
+                try {
+                    codigo = Integer.parseInt(m.group(1));
+                } catch (NumberFormatException ignorado) {
+                    codigo = 0;
+                }
+            }
+            boolean obrigatorio = json.matches("(?s).*\"obrigatorio\"\\s*:\\s*true.*");
+            return new Info(versao, codigo, apk, notas.replace("\\n", "\n"), obrigatorio);
+        }
+
+        private static String texto(String json, String chave) {
+            Matcher m = Pattern.compile("\"" + chave + "\"\\s*:\\s*\"([^\"]*)\"").matcher(json);
+            return m.find() ? m.group(1) : "";
+        }
+
+        boolean maisNovaQue(String instalada) {
+            int[] nova = numeros(versao);
+            int[] atual = numeros(instalada);
+            for (int i = 0; i < 3; i++) {
+                int a = i < nova.length ? nova[i] : 0;
+                int b = i < atual.length ? atual[i] : 0;
+                if (a != b) {
+                    return a > b;
+                }
+            }
+            return false;
+        }
+
+        private static int[] numeros(String versao) {
+            String limpo = versao == null ? "" : versao.trim().toLowerCase(Locale.ROOT);
+            String[] partes = limpo.split("[^0-9]+");
+            int[] saida = new int[3];
+            int posicao = 0;
+            for (int i = 0; i < partes.length && posicao < 3; i++) {
+                if (partes[i].length() == 0) {
+                    continue;
+                }
+                try {
+                    saida[posicao++] = Integer.parseInt(partes[i]);
+                } catch (NumberFormatException ignorado) {
+                    // parte estranha: ignora
+                }
+            }
+            return saida;
+        }
+    }
+}

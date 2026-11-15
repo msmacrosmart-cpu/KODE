@@ -20,8 +20,8 @@ import zipfile
 from pathlib import Path
 
 PACOTE = "smartedtv.full"
-VERSAO = "1.0.73"
-CODIGO = 2103059
+VERSAO = "1.0.74"
+CODIGO = 2103060
 
 BLOCO_ABERTURA = "ca-app-pub-2066014755407744/4214378379"
 BLOCO_PREROLL = "ca-app-pub-2066014755407744/3572039686"
@@ -104,6 +104,10 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
     rel.exige("AppOpenActivity" in arvore, "activity de abertura", ".AppOpenActivity")
     rel.exige("PreRollActivity" in arvore, "activity de pre-roll", ".PreRollActivity")
     rel.exige(ADS_APP_ID in arvore, "APPLICATION_ID do AdMob", ADS_APP_ID)
+    rel.exige("OtaProvider" in arvore, "provedor do APK de atualização", ".OtaProvider")
+    rel.exige("REQUEST_INSTALL_PACKAGES" in arvore,
+              "permissão de instalar atualização", "REQUEST_INSTALL_PACKAGES")
+    rel.exige("AtualizaActivity" in arvore, "tela de procurar atualização", ".AtualizaActivity")
     rel.exige("com.google.android.gms.permission.AD_ID" in arvore,
               "permissão AD_ID", "com.google.android.gms.permission.AD_ID")
 
@@ -346,6 +350,9 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
         ("ponte com o Supabase", b"Supabase"),
         ("botao pular anuncio", b"Pular an"),
         ("QR do checkout mensal", b"qrcode-cakto"),
+        ("atualização OTA", b"atualizacao.json"),
+        ("entrega do APK por content://", b".ota"),
+        ("instalador nativo", b"application/vnd.android.package-archive"),
     ):
         rel.exige(agulha in dex, rotulo, agulha.decode()[:44])
 

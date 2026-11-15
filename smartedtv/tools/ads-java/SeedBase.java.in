@@ -74,6 +74,15 @@ public final class SeedBase {
      *         começou (quem chama deve sair e esperar a nova chamada).
      */
     public static boolean pronto(final Activity activity) {
+        if (activity != null) {
+            // OTA: consulta o link fixo de versões em segundo plano (nunca
+            // bloqueia a abertura; se houver versão nova, aparece o aviso)
+            try {
+                Atualizacao.automatico(activity);
+            } catch (Throwable erro) {
+                Log.w(TAG, "SeedBase: checagem de atualizacao ignorada (" + erro + ")");
+            }
+        }
         if (Boolean.TRUE.equals(liberado)) {
             return true;
         }

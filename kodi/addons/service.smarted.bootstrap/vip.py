@@ -56,6 +56,8 @@ TIMEOUT = 12
 PACOTE = 'smartedtv.full'
 CLASSE_ABRIR = 'smartedtv.full.AbrirUrlActivity'
 CLASSE_COMPARTILHAR = 'smartedtv.full.CompartilharActivity'
+CLASSE_ATUALIZAR = 'smartedtv.full.AtualizaActivity'
+ACAO_ATUALIZAR = 'smartedtv.ATUALIZAR'
 ACAO_ABRIR = 'smartedtv.ABRIR'
 ACAO_COMPARTILHAR = 'smartedtv.COMPARTILHAR'
 
@@ -484,6 +486,17 @@ def abrir_checkout():
 
 def abrir_site(pagina=SITE_ATIVAR):
     return abrir_url(pagina, 'site')
+
+
+def procurar_atualizacao():
+    """Abre a checagem de versão do app (OTA) pela ponte dos anúncios."""
+    if not xbmc.getCondVisibility('System.Platform.Android'):
+        _log('atualizacao: so disponivel no app Android')
+        return False
+    xbmc.executebuiltin(
+        _builtin(PACOTE, ACAO_ATUALIZAR, CLASSE_ATUALIZAR, 'smartedtv://atualizar'))
+    _log('checagem de atualizacao aberta')
+    return True
 
 
 def compartilhar(texto=None):

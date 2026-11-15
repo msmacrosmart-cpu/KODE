@@ -69,6 +69,8 @@ def acoes(vip, retomar):
          'Envie o convite pelo WhatsApp, Telegram ou e-mail'),
         ('Mostrar QR Code', 'qrcode',
          'Aponte a câmera do celular para baixar o app'),
+        ('Procurar atualização', 'atualizar',
+         'Verifica se existe uma versão nova do aplicativo'),
     ]
     if retomar is not None:
         ponto = retomar.ultimo()
@@ -119,6 +121,11 @@ def executar(acao):
             vip.compartilhar()
     elif acao == 'qrcode':
         mostrar_qr()
+    elif acao == 'atualizar':
+        if vip is not None:
+            vip.procurar_atualizacao()
+        else:
+            xbmcgui.Dialog().ok('SMARTEDTV', 'Atualização indisponível neste aparelho.')
     elif acao == 'continuar':
         if retomar is None or not retomar.continuar():
             xbmcgui.Dialog().ok('SMARTEDTV', 'Nenhum ponto salvo para retomar.')

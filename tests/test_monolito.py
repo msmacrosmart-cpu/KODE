@@ -10,6 +10,7 @@ O usuário pediu o fim do modelo de dois aplicativos: um só APK, pacote
     reiniciaria o próprio Kodi);
   * o workflow que compila e confere o APK antes de publicar.
 """
+import json
 import re
 import subprocess
 import sys
@@ -38,10 +39,10 @@ class IntegracaoNoFonteTest(unittest.TestCase):
 
     def test_pacote_unico_e_versao(self):
         self.assertIn(f'APP_PACKAGE = "{PACOTE}"', self.script)
-        self.assertIn('VERSAO_NOME = "1.0.73"', self.script)
-        self.assertIn('VERSAO_CODIGO = 2103059', self.script)
+        self.assertIn('VERSAO_NOME = "1.0.74"', self.script)
+        self.assertIn('VERSAO_CODIGO = 2103060', self.script)
         # tem que ser maior que a 1.0.63 (2103049) para nao regredir instalacao
-        self.assertGreater(2103059, 2103053)
+        self.assertGreater(2103060, 2103053)
 
     def test_gradle_ganha_o_admob_e_a_versao(self):
         self.assertIn("com.google.android.gms:play-services-ads:23.2.0", self.script)
@@ -239,6 +240,8 @@ class VerificadorDoApkTest(unittest.TestCase):
                        b"Licenca adsPermitidos AbrirUrlActivity CompartilharActivity "
                        b"BoasVindas iniciarKodi Plataforma Supabase "
                        b"Pular an\xc3\xbancio qrcode-cakto "
+                       b"Atualizacao OtaProvider AtualizaActivity atualizacao.json "
+                       b".ota application/vnd.android.package-archive "
                                        b"com/google/android/gms/ads"))
             z.writestr("assets/addons/script.smartedtv.ajustes/vipmenu.py",
                        "BASE = 'plugin://script.smartedtv.ajustes/'\n")
@@ -278,7 +281,7 @@ class VerificadorDoApkTest(unittest.TestCase):
         caminho = Path(tmp) / "aapt2"
         caminho.write_text("""#!/bin/sh
 if [ "$2" = badging ]; then
-  echo "package: name='smartedtv.full' versionCode='2103059' versionName='1.0.73'"
+  echo "package: name='smartedtv.full' versionCode='2103060' versionName='1.0.74'"
 elif [ "$2" = resources ]; then
   echo "drawable/progresswhite type=drawable"
 elif [ "$2" = xmltree ] && [ "$4" = "res/layout/activity_splash.xml" ]; then
@@ -291,6 +294,9 @@ else
   echo '    A: android:screenOrientation(0x0101001e)=0x6'
   echo '    A: android:value(0x01010024)="ca-app-pub-2066014755407744~5076693043"'
   echo '    A: android:name(0x01010003)="com.google.android.gms.permission.AD_ID"'
+  echo '    A: android:name(0x01010003)=".OtaProvider"'
+  echo '    A: android:name(0x01010003)="android.permission.REQUEST_INSTALL_PACKAGES"'
+  echo '    A: android:name(0x01010003)=".AtualizaActivity"'
   echo '    A: android:name(0x01010003)="android.hardware.touchscreen"'
   echo '    A: android:name(0x01010003)="android.software.leanback"'
   echo '    A: android:name(0x01010003)="android.intent.category.LEANBACK_LAUNCHER"'
@@ -762,3 +768,102 @@ class PlataformaTvTest(unittest.TestCase):
         verificador = Path('smartedtv/tools/verify-monolito-apk.py').read_text(encoding='utf-8')
         self.assertIn('qrcode-cakto.png', verificador)
         self.assertIn('Plataforma', verificador)
+
+
+class AtualizacaoOtaTest(unittest.TestCase):
+    """1.0.74: OTA por link fixo e VIP sem tela de ativação."""
+
+    def setUp(self):
+        self.ads = Path('smartedtv/tools/ads-java')
+        self.texto = {p.stem.replace('.java', ''): p.read_text(encoding='utf-8')
+                      for p in self.ads.glob('*.java.in')}
+
+    def test_link_fixo_e_nome_fixo(self):
+        ota = self.texto['Atualizacao']
+        self.assertIn('releases/latest/download/atualizacao.json', ota)
+        self.assertIn('releases/latest/download/SMARTEDTV-atual.apk', ota)
+        self.assertIn('JSON_URL', ota)
+        self.assertIn('APK_URL', ota)
+
+    def test_compara_versao_e_avisa(self):
+        ota = self.texto['Atualizacao']
+        self.assertIn('boolean maisNovaQue(String instalada)', ota)
+        self.assertIn('versaoInstalada', ota)
+        self.assertIn('Nova versão do SMARTEDTV', ota)
+        self.assertIn('Atualizar agora', ota)
+        self.assertIn('void automatico(final Activity activity)', ota)
+        self.assertIn('void manual(Activity activity)', ota)
+
+    def test_baixa_e_abre_o_instalador_nativo(self):
+        ota = self.texto['Atualizacao']
+        self.assertIn('application/vnd.android.package-archive', ota)
+        self.assertIn('Intent.ACTION_VIEW', ota)
+        self.assertIn('FLAG_GRANT_READ_URI_PERMISSION', ota)
+        self.assertIn('OtaProvider.AUTORIDADE', ota)
+        self.assertIn('canRequestPackageInstalls', ota)
+        self.assertIn('ACTION_MANAGE_UNKNOWN_APP_SOURCES', ota)
+        provider = self.texto['OtaProvider']
+        self.assertIn('extends ContentProvider', provider)
+        self.assertIn('openFile', provider)
+        self.assertIn('MODE_READ_ONLY', provider)
+        self.assertIn('OpenableColumns.SIZE', provider)
+        # nada de androidx: o build do Kodi não leva a biblioteca de suporte
+        for arquivo in self.ads.glob('*.java.in'):
+            self.assertNotIn('androidx.', arquivo.read_text(encoding='utf-8'), arquivo.name)
+
+    def test_manifesto_do_build_ganha_provider_e_permissao(self):
+        script = Path('smartedtv/tools/integrate-monolith.py').read_text(encoding='utf-8')
+        self.assertIn('REQUEST_INSTALL_PACKAGES', script)
+        self.assertIn('OtaProvider', script)
+        self.assertIn('${applicationId}.ota', script)
+        self.assertIn('AtualizaActivity', script)
+        for classe in ('Atualizacao', 'OtaProvider', 'AtualizaActivity'):
+            self.assertIn('"%s"' % classe, script)
+
+    def test_release_publica_nome_fixo_e_json(self):
+        workflow = Path('.github/workflows/build-monolith.yml').read_text(encoding='utf-8')
+        self.assertIn('SMARTEDTV-atual.apk', workflow)
+        self.assertIn('atualizacao.json', workflow)
+        self.assertIn('"versao": os.environ["VERSAO"]', workflow)
+        self.assertIn('releases/latest/download', workflow)
+
+    def test_checagem_automatica_no_arranque(self):
+        self.assertIn('Atualizacao.automatico(activity)', self.texto['SeedBase'])
+        self.assertIn('public static void verificar', self.texto['Atualizacao'])
+
+    def test_botao_no_menu_de_ajustes(self):
+        vip = Path('kodi/addons/service.smarted.bootstrap/vip.py').read_text(encoding='utf-8')
+        self.assertIn('def procurar_atualizacao', vip)
+        self.assertIn('AtualizaActivity', vip)
+        vipmenu = Path('kodi/addons/script.smartedtv.ajustes/vipmenu.py').read_text(encoding='utf-8')
+        self.assertIn("'atualizar'", vipmenu)
+        ajustes = Path('kodi/addons/script.smartedtv.ajustes/default.py').read_text(encoding='utf-8')
+        self.assertIn('Procurar atualização do aplicativo', ajustes)
+
+    def test_referencia_do_json(self):
+        exemplo = json.loads(Path('docs/ota/atualizacao.json').read_text(encoding='utf-8'))
+        for chave in ('versao', 'codigo', 'apk', 'notas'):
+            self.assertIn(chave, exemplo)
+        self.assertTrue(exemplo['apk'].endswith('SMARTEDTV-atual.apk'))
+
+
+class VipNaoVeATelaTest(unittest.TestCase):
+    """VIP ativo (10 min ou 30 dias) abre direto no conteúdo, sem tela."""
+
+    def setUp(self):
+        self.tela = Path('smartedtv/tools/ads-java/BoasVindas.java.in').read_text(encoding='utf-8')
+
+    def test_vip_nunca_ve_a_tela(self):
+        inicio = self.tela.index('public static boolean mostrar(final Activity splash)')
+        trecho = self.tela[inicio:inicio + 900]
+        self.assertIn('if (Licenca.ativa(splash))', trecho)
+        self.assertIn('return false;', trecho)
+        self.assertIn('indo direto para o conteúdo', trecho)
+
+    def test_quem_nao_tem_codigo_continua_bloqueado(self):
+        # a tela ocupa a splash inteira: só sai ativando o código ou escolhendo
+        # continuar com anúncios (que mantém o app monetizado)
+        self.assertIn('Continuar com anúncios', self.tela)
+        self.assertIn('Ativar agora', self.tela)
+        self.assertIn('SeedBase.iniciarKodi(splash)', self.tela)
+        self.assertIn('setContentView(fundo)', self.tela)

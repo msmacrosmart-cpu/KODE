@@ -1,0 +1,107 @@
+package @APP_PACKAGE@;
+
+import android.content.ContentProvider;
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.MatrixCursor;
+import android.net.Uri;
+import android.os.ParcelFileDescriptor;
+import android.provider.OpenableColumns;
+import android.util.Log;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+
+/**
+ * Entrega o APK baixado para o instalador do Android por ``content://``.
+ *
+ * Desde o Android 7 o instalador não aceita mais ``file://`` (FileUriExposed),
+ * e o FileProvider da biblioteca de suporte não entra no build do Kodi — por
+ * isso este provedor mínimo, sem dependência nenhuma:
+ *
+ *     content://<pacote>.ota/smartedtv-atual.apk
+ *
+ * Só existe o arquivo do OTA (nada do perfil é exposto) e o acesso é concedido
+ * por intent (``FLAG_GRANT_READ_URI_PERMISSION``); o provedor não é exportado.
+ */
+public class OtaProvider extends ContentProvider {
+
+    public static final String AUTORIDADE = "@APP_PACKAGE@.ota";
+
+    private static final String TAG = "SmartAds";
+    private static final String MIME = "application/vnd.android.package-archive";
+
+    @Override
+    public boolean onCreate() {
+        return true;
+    }
+
+    private File arquivo(Uri uri) {
+        String nome = uri.getLastPathSegment();
+        if (nome == null || nome.length() == 0) {
+            nome = "smartedtv-atual.apk";
+        }
+        nome = new File(nome).getName();          // sem caminho, sem ../../
+        if (!nome.endsWith(".apk")) {
+            nome = nome + ".apk";
+        }
+        if (getContext() == null) {
+            return null;
+        }
+        File pasta = Atualizacao.pasta(getContext());
+        return pasta == null ? null : new File(pasta, nome);
+    }
+
+    @Override
+    public ParcelFileDescriptor openFile(Uri uri, String modo) throws FileNotFoundException {
+        File alvo = arquivo(uri);
+        if (alvo == null || !alvo.isFile()) {
+            throw new FileNotFoundException(String.valueOf(uri));
+        }
+        Log.i(TAG, "OtaProvider: entregando " + alvo.getName() + " (" + alvo.length() + " bytes)");
+        return ParcelFileDescriptor.open(alvo, ParcelFileDescriptor.MODE_READ_ONLY);
+    }
+
+    @Override
+    public String getType(Uri uri) {
+        return MIME;
+    }
+
+    @Override
+    public Cursor query(Uri uri, String[] projecao, String selecao, String[] argumentos,
+                        String ordem) {
+        File alvo = arquivo(uri);
+        if (alvo == null || !alvo.isFile()) {
+            return null;
+        }
+        String[] colunas = projecao != null && projecao.length > 0
+                ? projecao
+                : new String[]{OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE};
+        MatrixCursor cursor = new MatrixCursor(colunas, 1);
+        Object[] linha = new Object[colunas.length];
+        for (int i = 0; i < colunas.length; i++) {
+            if (OpenableColumns.SIZE.equals(colunas[i])) {
+                linha[i] = alvo.length();
+            } else {
+                linha[i] = alvo.getName();
+            }
+        }
+        cursor.addRow(linha);
+        return cursor;
+    }
+
+    @Override
+    public Uri insert(Uri uri, ContentValues valores) {
+        return null;
+    }
+
+    @Override
+    public int delete(Uri uri, String selecao, String[] argumentos) {
+        return 0;
+    }
+
+    @Override
+    public int update(Uri uri, ContentValues valores, String selecao, String[] argumentos) {
+        return 0;
+    }
+}

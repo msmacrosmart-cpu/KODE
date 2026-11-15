@@ -42,11 +42,11 @@ env:
   KODI_TAG: 21.3-Omega
   KODI_COMMIT: a3a448d26b8d560a65655dab2cd122994dc4e146
   NDK_VERSION: 21.4.7075529
-  VERSAO: "1.0.73"
-  CODIGO: "2103059"
+  VERSAO: "1.0.74"
+  CODIGO: "2103060"
   PACOTE: smartedtv.full
-  TAG_DESTINO: v1.0.73-unificado
-  ARQUIVO_DESTINO: SMARTEDTV-1.0.73-unificado-arm64-v8a.apk
+  TAG_DESTINO: v1.0.74-unificado
+  ARQUIVO_DESTINO: SMARTEDTV-1.0.74-unificado-arm64-v8a.apk
   CERT_SHA256: 855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a
   # Base estavel da linha classica: de onde sai o perfil semeado (skin, menus,
   # fontes do catalogo e o Brazuca Play ja configurado).
@@ -432,8 +432,31 @@ jobs:
             gh release create "$TAG_DESTINO" --title "SMARTEDTV $VERSAO (APK unico, arm64)" \
               --notes-file "$NOTAS" --target "$GITHUB_SHA"
           fi
+          # --- OTA: nome fixo + JSON fixo (é o que o app consulta) -----------
+          # O app baixa sempre .../releases/latest/download/atualizacao.json e
+          # .../SMARTEDTV-atual.apk: nada para editar à mão a cada versão.
+          cp "$OUT/$ARQUIVO_DESTINO" "$OUT/SMARTEDTV-atual.apk"
+          python3 - "$OUT/atualizacao.json" <<'PYJSON'
+          import hashlib, json, os, sys
+          destino = sys.argv[1]
+          apk = "SMARTEDTV-atual.apk"
+          sha = hashlib.sha256(open(os.path.join(os.path.dirname(destino), apk), "rb").read()).hexdigest()
+          dados = {
+              "versao": os.environ["VERSAO"],
+              "codigo": int(os.environ["CODIGO"]),
+              "apk": os.environ.get("OTA_APK_URL")
+                     or "https://github.com/%s/releases/latest/download/%s" % (os.environ["GITHUB_REPOSITORY"], apk),
+              "json": "https://github.com/%s/releases/latest/download/atualizacao.json" % os.environ["GITHUB_REPOSITORY"],
+              "sha256": sha,
+              "notas": "Atualização do SMARTEDTV %s. Instala por cima: perfil e licença continuam." % os.environ["VERSAO"],
+              "obrigatorio": False,
+          }
+          open(destino, "w", encoding="utf-8").write(json.dumps(dados, ensure_ascii=False, indent=2) + "\n")
+          print(open(destino, encoding="utf-8").read())
+          PYJSON
           gh release upload "$TAG_DESTINO" \
-            "$OUT/$ARQUIVO_DESTINO" "$OUT/$ARQUIVO_DESTINO.sha256" --clobber
+            "$OUT/$ARQUIVO_DESTINO" "$OUT/$ARQUIVO_DESTINO.sha256" \
+            "$OUT/SMARTEDTV-atual.apk" "$OUT/atualizacao.json" --clobber
           gh release view "$TAG_DESTINO" --json assets -q '.assets[] | "\(.name) \(.size) bytes"'
         env:
           GH_TOKEN: ${{ github.token }}

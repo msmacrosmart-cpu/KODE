@@ -65,6 +65,14 @@ public final class BoasVindas {
         if (splash == null || aberta) {
             return false;
         }
+        // VIP ATIVO (vip.json válido, do código de teste de 10 min ou do mensal
+        // de 30 dias): a tela de ativação NUNCA aparece — o app abre direto no
+        // conteúdo, limpo e sem anúncios.
+        if (Licenca.ativa(splash)) {
+            Log.i(TAG, "BoasVindas: VIP ativo, indo direto para o conteúdo");
+            aberta = false;
+            return false;
+        }
         try {
             aberta = true;
             montar(splash);

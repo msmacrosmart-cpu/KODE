@@ -781,3 +781,55 @@ ações) e uma em pé, com `setVerticalScrollBarEnabled(false)` e
 `OVER_SCROLL_NEVER` — a rolagem por toque existe só como rede de segurança em
 aparelhos muito pequenos, sem barra visível. D-pad percorre os botões na ordem
 e o toque age nos mesmos elementos.
+
+## 1.0.74 — atualização automática (OTA) e VIP sem tela de ativação
+
+### 1. Atualização por link fixo
+
+O app consulta **sempre o mesmo endereço**, apontado para a última release:
+
+```
+https://github.com/msmacrosmart-cpu/KODE/releases/latest/download/atualizacao.json
+https://github.com/msmacrosmart-cpu/KODE/releases/latest/download/SMARTEDTV-atual.apk
+```
+
+O workflow de build gera os dois a cada versão (o APK com **nome fixo**
+`SMARTEDTV-atual.apk` e o JSON com `versao`, `codigo`, `apk`, `sha256`, `notas`
+e `obrigatorio`), então não existe nada para editar à mão — o link nunca muda.
+Há uma cópia de referência do formato em `docs/ota/atualizacao.json`.
+
+Fluxo no aparelho (`Atualizacao.java`, novo):
+
+* **automático** — checagem no arranque (no máximo uma vez a cada 6 h, em
+  thread própria; nunca atrasa a abertura), disparada por
+  `SeedBase.pronto` → `Atualizacao.automatico`;
+* **manual** — item **"Procurar atualização"** no menu VIP/HOME
+  (`plugin://script.smartedtv.ajustes/?acao=atualizar`) e no menu de **Ajustes**
+  do Kodi, que abre a `AtualizaActivity` pela ponte `StartAndroidActivity`;
+* versão nova → diálogo com instalada/disponível/notas e **"Atualizar agora"**;
+* download em segundo plano **com progresso** (`%` no diálogo) para
+  `files/ota/smartedtv-atual.apk`;
+* no fim, o **instalador nativo do Android** abre com um toque
+  (`ACTION_VIEW` + `application/vnd.android.package-archive`) e o app é
+  atualizado **por cima** — perfil, skin e `vip.json` continuam.
+
+Detalhes que fizeram funcionar de primeira: desde o Android 7 o instalador não
+aceita `file://`, e a biblioteca de suporte (FileProvider) não está no build do
+Kodi — por isso o APK é entregue por um `ContentProvider` próprio
+(`OtaProvider`, autoridade `<pacote>.ota`, não exportado, só o arquivo do OTA).
+O manifesto ganhou `REQUEST_INSTALL_PACKAGES` e, no Android 8+, o app abre a
+tela "instalar de fontes desconhecidas" quando a permissão ainda não foi dada.
+
+### 2. VIP nunca vê a tela de ativação
+
+`BoasVindas.mostrar` começa checando `Licenca.ativa(splash)` — a mesma leitura
+do `vip.json` que o Java usa para desligar os anúncios, com prazo por data/hora
+(código de **teste de 10 minutos**) ou data (mensal de **30 dias**):
+
+* **VIP ativo** → a tela **nunca** aparece; a splash chama `startXBMC` e o app
+  abre direto no conteúdo, sem anúncio de abertura e sem intersticial;
+* **sem código, código inválido ou prazo vencido** → a tela aparece em cima da
+  splash e **bloqueia a navegação** até o usuário ativar um código válido ou
+  escolher explicitamente "Continuar com anúncios" (mantém a versão
+  monetizada). O prazo vencido volta a bloquear já na abertura seguinte,
+  porque `Licenca.ativa` compara o instante atual, não só o dia.

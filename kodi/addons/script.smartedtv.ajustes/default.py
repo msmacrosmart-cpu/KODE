@@ -7,7 +7,8 @@ Abre o diálogo "Deseja assistir sem anúncios?" com:
   2. Já tenho um código           -> teclado do Kodi -> valida no site
   3. Compartilhar aplicativo      -> folha de compartilhamento do Android
   4. Mostrar QR Code              -> QR do site para o celular apontar
-  5. Configurações do Kodi        -> janela normal de ajustes
+  5. Procurar atualização         -> OTA: link fixo com a versão mais nova
+  6. Configurações do Kodi        -> janela normal de ajustes
 
 Funciona igual em TV (controle remoto) e em celular/tablet (toque): tudo é
 diálogo nativo do Kodi, então o D-pad navega e o toque seleciona.
@@ -48,6 +49,7 @@ def _dialogo():
         'Já tenho um código de ativação',
         'Compartilhar aplicativo',
         'Mostrar QR Code para baixar o app',
+        'Procurar atualização do aplicativo',
         'Configurações do Kodi',
     ]
     if vip is not None and vip.ativa():
@@ -109,6 +111,11 @@ def main():
             vip.compartilhar()
     elif escolha == 3:
         _mostrar_qr()
+    elif escolha == 4:
+        if vip is not None:
+            vip.procurar_atualizacao()
+        else:
+            xbmcgui.Dialog().ok('SMARTEDTV', 'Atualização indisponível neste aparelho.')
     else:
         xbmc.executebuiltin('ActivateWindow(Settings)')
 
