@@ -1,4 +1,4 @@
-# Verificação do APK único — 1.0.74
+# Verificação do APK único — 1.0.75
 
 artifact do run 43711117524 (conferência sem recompilar)
 
@@ -13,8 +13,8 @@ tamanho: 249711734 bytes
 == identidade do pacote (aapt2 badging)
   package: name='smartedtv.full' versionCode='2103058' versionName='1.0.72' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
   OK    pacote                             smartedtv.full
-  FALHA versionName                        1.0.74
-  FALHA versionCode                        2103060
+  FALHA versionName                        1.0.75
+  FALHA versionCode                        2103061
 
 == manifesto (aapt2 xmltree)
   OK    activity de abertura               .AppOpenActivity
@@ -127,8 +127,8 @@ tamanho: 249711734 bytes
 == resumo
   obrigatórias com falha: 13
   avisos: 0
-  - versionName: 1.0.74
-  - versionCode: 2103060
+  - versionName: 1.0.75
+  - versionCode: 2103061
   - provedor do APK de atualização: .OtaProvider
   - permissão de instalar atualização: REQUEST_INSTALL_PACKAGES
   - tela de procurar atualização: .AtualizaActivity
