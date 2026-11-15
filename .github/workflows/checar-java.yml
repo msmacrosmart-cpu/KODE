@@ -63,8 +63,10 @@ jobs:
           done
           find /tmp/j/src -name '*.java' | sort > /tmp/j/files.txt
           wc -l /tmp/j/files.txt
-          ls -la "$AJAR" /tmp/j/play-services-ads-api/classes.jar || true
-          unzip -l /tmp/j/play-services-ads-api/classes.jar 2>/dev/null | grep -c 'appopen\|interstitial' || true
+          echo "::error title=diag::AJAR $(ls -la "$AJAR" 2>&1 | head -1 | tr '\n' ' ')"
+          echo "::error title=diag::AAR $(ls -l /tmp/j/*.aar 2>&1 | tr '\n' '|')"
+          echo "::error title=diag::API $(unzip -l /tmp/j/play-services-ads-api/classes.jar 2>&1 | head -6 | tr '\n' '|')"
+          echo "::error title=diag::HTTP $(curl -s -o /dev/null -w '%{http_code}' https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-ads-api/23.2.0/play-services-ads-api-23.2.0.aar)"
           # JDK 17 não aceita mais -bootclasspath: android.jar vai no classpath
           javac -nowarn -source 8 -target 8 \
             -cp "$AJAR:/tmp/j/play-services-ads-api/classes.jar:/tmp/j/play-services-ads/classes.jar" \
