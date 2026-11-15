@@ -38,10 +38,10 @@ class IntegracaoNoFonteTest(unittest.TestCase):
 
     def test_pacote_unico_e_versao(self):
         self.assertIn(f'APP_PACKAGE = "{PACOTE}"', self.script)
-        self.assertIn('VERSAO_NOME = "1.0.66"', self.script)
-        self.assertIn('VERSAO_CODIGO = 2103052', self.script)
+        self.assertIn('VERSAO_NOME = "1.0.67"', self.script)
+        self.assertIn('VERSAO_CODIGO = 2103053', self.script)
         # tem que ser maior que a 1.0.63 (2103049) para nao regredir instalacao
-        self.assertGreater(2103052, 2103051)
+        self.assertGreater(2103053, 2103052)
 
     def test_gradle_ganha_o_admob_e_a_versao(self):
         self.assertIn("com.google.android.gms:play-services-ads:23.2.0", self.script)
@@ -214,6 +214,14 @@ class VerificadorDoApkTest(unittest.TestCase):
         with zipfile.ZipFile(apk, "w") as z:
             for addon in addons:
                 z.writestr(f"assets/addons/{addon}/addon.xml", "<addon/>")
+            # a skin precisa vir completa (>=800 arquivos, media/ com as imagens)
+            for i in range(900):
+                z.writestr(f"assets/addons/skin.novatv/media/img{i}.png", b"p")
+            z.writestr("assets/addons/skin.novatv/media/DefaultAddon.png", b"p")
+            for nome in ("catalogue.py", "default.py", "navigation.py", "search.py"):
+                z.writestr(f"assets/addons/plugin.video.smarted/{nome}", b"#")
+            for i in range(12):
+                z.writestr(f"assets/addons/plugin.video.smarted/mod{i}.py", b"#")
             z.writestr("assets/system/addon-manifest.xml",
                        "<addons><addon>skin.novatv</addon></addons>")
             z.writestr("assets/media/splash.jpg", b"x")
@@ -243,7 +251,7 @@ class VerificadorDoApkTest(unittest.TestCase):
         caminho = Path(tmp) / "aapt2"
         caminho.write_text("""#!/bin/sh
 if [ "$2" = badging ]; then
-  echo "package: name='smartedtv.full' versionCode='2103052' versionName='1.0.66'"
+  echo "package: name='smartedtv.full' versionCode='2103053' versionName='1.0.67'"
 elif [ "$2" = resources ]; then
   echo "drawable/progresswhite type=drawable"
 elif [ "$2" = xmltree ] && [ "$4" = "res/layout/activity_splash.xml" ]; then

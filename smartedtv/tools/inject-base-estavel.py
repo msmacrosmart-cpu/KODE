@@ -31,6 +31,15 @@ import zipfile
 from pathlib import Path
 
 MANIFESTO = "assets/smarted/profile-manifest.txt"
+
+# Pastas que sao SUBSTITUIDAS pelo conteudo do APK estavel (o resto e nosso).
+# Motivo (diff real 1.0.63 x 1.0.65): a skin.novatv do nosso build ia com 222
+# arquivos e a estavel tinha 934 (faltavam as 712 imagens de media/) — a Home
+# abria sem icones/abas. E o plugin.video.smarted tinha 7 arquivos diferentes.
+SUBSTITUIR = (
+    "assets/addons/skin.novatv/",
+    "assets/addons/plugin.video.smarted/",
+)
 PREFIXO = "assets/smarted/"
 SHA_ESPERADO = "1447de816a44ecc11c42c2c315cf20e61c9baa037e914a13293711cf152d1ede"
 ASSINATURAS = (".SF", ".RSA", ".DSA", ".MF")
@@ -59,12 +68,23 @@ def ler_base(base: Path, esperado: str) -> tuple[dict[str, bytes], int, str]:
             )
         for nome in nomes:
             itens[nome] = z.read(nome)
+
+        # skin e plugin: vêm inteiros do APK estável
+        substituidas = 0
+        for info in z.infolist():
+            nome = info.filename
+            if nome.endswith("/") or not nome.startswith(SUBSTITUIR):
+                continue
+            if nome not in itens:
+                itens[nome] = z.read(nome)
+                substituidas += 1
+    print(f"  {substituidas} arquivos de skin/plugin substituídos pelos do APK estável")
     return itens, len(itens), digest
 
 
 def escrever(apk: Path, saida: Path, extras: dict[str, bytes]) -> tuple[int, int, int]:
     """Reescreve o APK preservando todas as entradas e acrescentando os extras."""
-    total, removidas, adicionadas = 0, 0, 0
+    total, removidas, adicionadas, substituidos = 0, 0, 0, 0
     with zipfile.ZipFile(apk) as origem, zipfile.ZipFile(
         saida, "w", zipfile.ZIP_DEFLATED
     ) as destino:
@@ -74,6 +94,9 @@ def escrever(apk: Path, saida: Path, extras: dict[str, bytes]) -> tuple[int, int
             existentes.add(nome)
             if nome.startswith(PREFIXO):
                 raise SystemExit(f"o APK novo já tem {nome} — não vou duplicar")
+            if nome.startswith(SUBSTITUIR):
+                substituidos += 1
+                continue
             if nome.startswith("META-INF/") and nome.upper().endswith(ASSINATURAS):
                 removidas += 1
                 continue
@@ -89,7 +112,7 @@ def escrever(apk: Path, saida: Path, extras: dict[str, bytes]) -> tuple[int, int
                 raise SystemExit(f"colisão de entrada: {nome}")
             destino.writestr(nome, dados, compress_type=zipfile.ZIP_DEFLATED)
             adicionadas += 1
-    return total, removidas, adicionadas
+    return total, removidas, adicionadas, substituidos
 
 
 def main() -> int:
@@ -110,13 +133,14 @@ def main() -> int:
     with tempfile.NamedTemporaryFile(suffix=".apk", delete=False) as tmp:
         temporario = Path(tmp.name)
     try:
-        total, removidas, adicionadas = escrever(args.apk, temporario, extras)
+        total, removidas, adicionadas, substituidos = escrever(args.apk, temporario, extras)
         shutil.move(str(temporario), args.saida)
     finally:
         if temporario.exists():
             temporario.unlink()
     print(f"  {total} entradas preservadas, {removidas} assinaturas antigas removidas, "
-          f"{adicionadas} entradas da base acrescentadas")
+          f"{adicionadas} entradas da base acrescentadas, "
+          f"{substituidos} entradas nossas trocadas pelas do APK estável")
     print(f"APK com base estável: {args.saida} "
           f"({args.saida.stat().st_size / 1048576.0:.1f} MB)")
     print("assinatura removida de propósito: zipalign + apksigner vêm depois")

@@ -277,3 +277,44 @@ barra branca com o texto escondido.
   detalhes — o APK em si já estava correto e assinado. O fluxo normal
   (`build-monolith.yml` → passo 12) volta a publicar sozinho agora que a
   conferência está certa.
+
+## 1.0.67 — skin e catálogo vindos do APK estável
+
+### O que o diff provou (`docs/diff-estavel.txt`)
+
+Comparação entre `v1.0.63-classica` (7774 entradas) e o APK unificado (7162):
+
+| pasta | estável | unificado | leitura |
+|---|---|---|---|
+| `assets/addons/skin.novatv/` | **934** | 222 | faltavam 712 arquivos, quase todos `media/*.png` |
+| `assets/addons/plugin.video.smarted/` | 16 | 16 | 7 arquivos com conteúdo **diferente** |
+| `assets/addons/service.smarted.bootstrap/` | 11 | 11 | só `smart_ads.py` diferente (nosso, por causa do AdMob) |
+
+O perfil não era o problema: sem as imagens da skin e com o catálogo trocado,
+a Home abria com as abas/categorias vazias — exatamente o que aparecia na tela.
+Os backups internos (`BACKUP+SMARTED.zip`, `SaveData.zip`) também não têm
+skin/menus, então não havia de onde recuperar isso do perfil.
+
+### Correção
+
+`inject-base-estavel.py` agora tem a lista `SUBSTITUIR`:
+
+```python
+SUBSTITUIR = ("assets/addons/skin.novatv/",
+              "assets/addons/plugin.video.smarted/")
+```
+
+Ao injetar o perfil da base, as entradas dessas duas pastas são **descartadas
+do nosso APK e substituídas, byte a byte, pelas do APK estável** — 712 imagens
+da skin + o `plugin.video.smarted` original. O resto do APK continua sendo o
+nosso, em especial `service.smarted.bootstrap/smart_ads.py` (ponte do AdMob,
+ids `ca-app-pub-2066014755407744/…`), que é justamente o único arquivo que
+difere no bootstrap.
+
+### Conferência nova (verificador)
+
+* `skin.novatv` com **≥ 800 arquivos** e **≥ 600 imagens em `media/`**;
+* `media/DefaultAddon.png` presente (imagem-sentinela);
+* `plugin.video.smarted` com **≥ 16 arquivos** e `catalogue.py` presente.
+
+Se qualquer uma falhar, o APK não é publicado.

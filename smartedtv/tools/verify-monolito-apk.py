@@ -20,8 +20,8 @@ import zipfile
 from pathlib import Path
 
 PACOTE = "smartedtv.full"
-VERSAO = "1.0.66"
-CODIGO = 2103052
+VERSAO = "1.0.67"
+CODIGO = 2103053
 
 BLOCO_ABERTURA = "ca-app-pub-2066014755407744/4214378379"
 BLOCO_PREROLL = "ca-app-pub-2066014755407744/3572039686"
@@ -126,6 +126,24 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
         for addon in ADDONS:
             alvo = f"assets/addons/{addon}/addon.xml"
             rel.exige(alvo in presentes, f"addon {addon}", alvo)
+
+        # A skin precisa estar COMPLETA: o build de 1.0.65/1.0.67 levava 222
+        # arquivos enquanto a estavel tinha 934 (faltavam as imagens de media/,
+        # por isso as abas/categorias apareciam vazias).
+        skin = [n for n in nomes if n.startswith("assets/addons/skin.novatv/")]
+        midia = [n for n in skin if "/media/" in n]
+        rel.exige(len(skin) >= 800, "skin.novatv completa",
+                  f"{len(skin)} arquivos (a estavel tinha 934)")
+        rel.exige(len(midia) >= 600, "imagens da skin (media/)",
+                  f"{len(midia)} imagens")
+        rel.exige("assets/addons/skin.novatv/media/DefaultAddon.png" in presentes,
+                  "imagem-sentinela da skin", "media/DefaultAddon.png")
+
+        plugin = [n for n in nomes if n.startswith("assets/addons/plugin.video.smarted/")]
+        rel.exige(len(plugin) >= 16, "plugin.video.smarted completo",
+                  f"{len(plugin)} arquivos")
+        rel.exige("assets/addons/plugin.video.smarted/catalogue.py" in presentes,
+                  "catálogo do plugin (abas)", "plugin.video.smarted/catalogue.py")
 
         if "assets/system/addon-manifest.xml" in presentes:
             manifesto = z.read("assets/system/addon-manifest.xml").decode("utf-8", "replace")
