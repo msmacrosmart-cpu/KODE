@@ -1,9 +1,14 @@
-# Verificação do APK único — 1.0.80 (run 43763669478)
+# Verificação do APK único — 1.0.80
 
-APK: `SMARTEDTV-1.0.80-unificado-arm64-v8a.apk`
+artifact do run 43763669478 (conferência sem recompilar)
 
 ```
-== arquivo: smartedtv/out-apk/SMARTEDTV-1.0.80-unificado-arm64-v8a.apk  (238.2 MB)
+sha256: 70050ad8c371572d6f3382d6d741b8f8fa99c5685295e9a8f78d7bcf89c0f3c1
+tamanho: 249744613 bytes
+```
+
+```
+== arquivo: apk/SMARTEDTV-1.0.80-unificado-arm64-v8a.apk  (238.2 MB)
 
 == identidade do pacote (aapt2 badging)
   package: name='smartedtv.full' versionCode='2103066' versionName='1.0.80' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
