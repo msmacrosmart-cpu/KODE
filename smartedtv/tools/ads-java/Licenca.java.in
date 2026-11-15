@@ -111,6 +111,68 @@ public final class Licenca {
 
     private static String ultimaRotaBoa;
 
+    /** Última rota que respondeu JSON de verdade (memória entre aberturas). */
+    private static final String ROTA_BOA = "vip-endpoint-ok.txt";
+
+    /** Pasta do add-on dentro do perfil do Kodi (o add-on lê os mesmos arquivos). */
+    public static File pastaAddon(Context contexto) {
+        File home = contexto.getExternalFilesDir("");
+        if (home == null) {
+            home = contexto.getFilesDir();
+        }
+        if (home == null) {
+            return null;
+        }
+        File pasta = new File(new File(new File(new File(home, ".kodi"), "userdata"),
+                "addon_data"), PASTA);
+        if (!pasta.isDirectory()) {
+            pasta.mkdirs();
+        }
+        return pasta;
+    }
+
+    /**
+     * Guarda a rota que funcionou: a próxima ativação já começa por ela (e o
+     * add-on do Kodi aproveita o mesmo arquivo, sem redescobrir o backend).
+     */
+    private static void lembrarRota(Context contexto, String rota) {
+        if (rota == null || !rota.startsWith("http")) {
+            return;
+        }
+        ultimaRotaBoa = rota;
+        File[] destinos = new File[]{rotaBoa(contexto),
+                pastaAddon(contexto) == null ? null : new File(pastaAddon(contexto), ROTA_BOA)};
+        for (int i = 0; i < destinos.length; i++) {
+            if (destinos[i] == null) {
+                continue;
+            }
+            java.io.FileWriter escritor = null;
+            try {
+                escritor = new java.io.FileWriter(destinos[i]);
+                escritor.write(rota + "\n");
+                escritor.flush();
+            } catch (Exception erro) {
+                Log.w(TAG, "Licenca: não consegui lembrar a rota (" + erro + ")");
+            } finally {
+                if (escritor != null) {
+                    try {
+                        escritor.close();
+                    } catch (Exception ignorado) {
+                        // nada a fazer
+                    }
+                }
+            }
+        }
+    }
+
+    private static File rotaBoa(Context contexto) {
+        File base = contexto.getFilesDir();
+        if (base == null) {
+            base = contexto.getExternalFilesDir("");
+        }
+        return base == null ? null : new File(base, ROTA_BOA);
+    }
+
     /**
      * Valida um codigo no site e, dando certo, grava a licenca.
      *
@@ -215,7 +277,7 @@ public final class Licenca {
             }
             return mensagem.length() > 0 ? mensagem : "Código não reconhecido.";
         }
-        ultimaRotaBoa = usada;
+        lembrarRota(contexto, usada);
         String expira = expiraDe(resposta);
         if (!gravar(contexto, limpo, expira)) {
             return "Licença validada, mas não consegui gravar no aparelho.";
@@ -383,7 +445,27 @@ public final class Licenca {
         } catch (Exception erro) {
             Log.w(TAG, "Licenca: sem vip-endpoint.txt (" + erro.getClass().getSimpleName() + ")");
         }
-        if (ultimaRotaBoa != null) {
+        // rota que já funcionou antes (Java e add-on gravam o mesmo arquivo)
+        File pasta = pastaAddon(contexto);
+        File[] conhecidas = new File[]{rotaBoa(contexto),
+                pasta == null ? null : new File(pasta, ROTA_BOA)};
+        for (int i = 0; i < conhecidas.length; i++) {
+            if (conhecidas[i] == null || !conhecidas[i].isFile()
+                    || conhecidas[i].length() > 4096) {
+                continue;
+            }
+            try {
+                String texto = ler(conhecidas[i]).trim();
+                if (texto.startsWith("http") && !lista.contains(texto)) {
+                    lista.add(texto);
+                    ultimaRotaBoa = texto;
+                    Log.i(TAG, "Licenca: rota que já funcionou " + texto);
+                }
+            } catch (Exception erro) {
+                Log.w(TAG, "Licenca: sem " + ROTA_BOA + " (" + erro.getClass().getSimpleName() + ")");
+            }
+        }
+        if (ultimaRotaBoa != null && !lista.contains(ultimaRotaBoa)) {
             lista.add(ultimaRotaBoa);
         }
         for (int i = 0; i < VALIDAR_URIS.length; i++) {

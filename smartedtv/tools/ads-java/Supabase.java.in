@@ -45,6 +45,9 @@ public final class Supabase {
     public static final String SITE = "https://smartedtv-vip.lovable.app/";
 
     private static final String CACHE = "supabase.txt";
+    /** Nome do cache usado pelo add-on (mesma pasta do perfil do Kodi). */
+    private static final String CACHE_KODI = "supabase-cache.txt";
+    private static final String PASTA = "service.smarted.bootstrap";
     private static final Pattern PROJETO =
             Pattern.compile("(https://[a-z0-9]{6,}\\.supabase\\.co)");
     private static final Pattern CHAVE =
@@ -91,6 +94,23 @@ public final class Supabase {
         return arquivo.exists() ? arquivo : null;
     }
 
+    /** Pasta do add-on no perfil do Kodi (compartilhada com o Python). */
+    public static File pastaAddon(Context contexto) {
+        File home = contexto.getExternalFilesDir("");
+        if (home == null) {
+            home = contexto.getFilesDir();
+        }
+        if (home == null) {
+            return null;
+        }
+        File pasta = new File(new File(new File(new File(home, ".kodi"), "userdata"),
+                "addon_data"), PASTA);
+        if (!pasta.isDirectory()) {
+            pasta.mkdirs();
+        }
+        return pasta;
+    }
+
     private static String[] manual(Context contexto) {
         String url = lerArquivo(arquivo(contexto, "supabase-url.txt"));
         String chave = lerArquivo(arquivo(contexto, "supabase-chave.txt"));
@@ -98,13 +118,15 @@ public final class Supabase {
             Log.i(TAG, "Supabase: configuração manual (" + url + ")");
             return new String[]{semBarra(url), chave == null ? "" : chave.trim()};
         }
-        File perfil = arquivo(contexto, null);
-        if (perfil != null) {
-            File addon = new File(perfil, ".kodi/userdata/addon_data/service.smarted.bootstrap/supabase.txt");
-            String[] par = paraPar(lerArquivo(addon));
-            if (par != null) {
-                Log.i(TAG, "Supabase: configuração do add-on (" + par[0] + ")");
-                return par;
+        File pasta = pastaAddon(contexto);
+        if (pasta != null) {
+            for (int i = 0; i < 2; i++) {
+                File addon = new File(pasta, i == 0 ? CACHE_KODI : CACHE);
+                String[] par = paraPar(lerArquivo(addon));
+                if (par != null) {
+                    Log.i(TAG, "Supabase: configuração do add-on (" + par[0] + ")");
+                    return par;
+                }
             }
         }
         return null;
@@ -112,6 +134,12 @@ public final class Supabase {
 
     private static String[] cache(Context contexto) {
         String[] par = paraPar(lerArquivo(arquivo(contexto, CACHE)));
+        if (par == null) {
+            File pasta = pastaAddon(contexto);
+            if (pasta != null) {
+                par = paraPar(lerArquivo(new File(pasta, CACHE_KODI)));
+            }
+        }
         if (par != null) {
             Log.i(TAG, "Supabase: cache do aparelho (" + par[0] + ")");
         }
@@ -139,30 +167,37 @@ public final class Supabase {
     }
 
     private static void gravarCache(Context contexto, String url, String chave) {
+        byte[] conteudo = (url + "\n" + chave + "\n").getBytes(Charset.forName("UTF-8"));
         File base = contexto.getFilesDir();
         if (base == null) {
             base = contexto.getExternalFilesDir("");
         }
-        if (base == null) {
-            return;
-        }
-        OutputStream saida = null;
-        try {
-            saida = new FileOutputStream(new File(base, CACHE));
-            saida.write((url + "\n" + chave + "\n").getBytes(Charset.forName("UTF-8")));
-            saida.flush();
-            Log.i(TAG, "Supabase: descoberto e memorizado (" + url + ")");
-        } catch (Exception erro) {
-            Log.w(TAG, "Supabase: não consegui gravar o cache (" + erro + ")");
-        } finally {
-            if (saida != null) {
-                try {
-                    saida.close();
-                } catch (Exception ignorado) {
-                    // nada a fazer
+        File pasta = pastaAddon(contexto);
+        File[] destinos = new File[]{
+                base == null ? null : new File(base, CACHE),
+                pasta == null ? null : new File(pasta, CACHE_KODI)};
+        for (int i = 0; i < destinos.length; i++) {
+            if (destinos[i] == null) {
+                continue;
+            }
+            OutputStream saida = null;
+            try {
+                saida = new FileOutputStream(destinos[i]);
+                saida.write(conteudo);
+                saida.flush();
+            } catch (Exception erro) {
+                Log.w(TAG, "Supabase: não consegui gravar o cache (" + erro + ")");
+            } finally {
+                if (saida != null) {
+                    try {
+                        saida.close();
+                    } catch (Exception ignorado) {
+                        // nada a fazer
+                    }
                 }
             }
         }
+        Log.i(TAG, "Supabase: descoberto e memorizado (" + url + ")");
     }
 
     /** Baixa o site e procura a URL do projeto + a chave anon no JavaScript. */

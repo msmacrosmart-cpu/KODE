@@ -39,10 +39,10 @@ class IntegracaoNoFonteTest(unittest.TestCase):
 
     def test_pacote_unico_e_versao(self):
         self.assertIn(f'APP_PACKAGE = "{PACOTE}"', self.script)
-        self.assertIn('VERSAO_NOME = "1.0.74"', self.script)
-        self.assertIn('VERSAO_CODIGO = 2103060', self.script)
+        self.assertIn('VERSAO_NOME = "1.0.75"', self.script)
+        self.assertIn('VERSAO_CODIGO = 2103061', self.script)
         # tem que ser maior que a 1.0.63 (2103049) para nao regredir instalacao
-        self.assertGreater(2103060, 2103053)
+        self.assertGreater(2103061, 2103053)
 
     def test_gradle_ganha_o_admob_e_a_versao(self):
         self.assertIn("com.google.android.gms:play-services-ads:23.2.0", self.script)
@@ -281,7 +281,7 @@ class VerificadorDoApkTest(unittest.TestCase):
         caminho = Path(tmp) / "aapt2"
         caminho.write_text("""#!/bin/sh
 if [ "$2" = badging ]; then
-  echo "package: name='smartedtv.full' versionCode='2103060' versionName='1.0.74'"
+  echo "package: name='smartedtv.full' versionCode='2103061' versionName='1.0.75'"
 elif [ "$2" = resources ]; then
   echo "drawable/progresswhite type=drawable"
 elif [ "$2" = xmltree ] && [ "$4" = "res/layout/activity_splash.xml" ]; then

@@ -833,3 +833,29 @@ do `vip.json` que o Java usa para desligar os anúncios, com prazo por data/hora
   escolher explicitamente "Continuar com anúncios" (mantém a versão
   monetizada). O prazo vencido volta a bloquear já na abertura seguinte,
   porque `Licenca.ativa` compara o instante atual, não só o dia.
+
+## 1.0.75 — endpoint de ativação memorizado (site + Supabase já migrado)
+
+O backend do site (`https://smartedtv-vip.lovable.app/`, Supabase + painel) já
+está no ar e migrado; o que faltava era o app **não redescobrir** o caminho a
+cada ativação. Agora:
+
+* a rota que respondeu JSON de verdade fica gravada em
+  `vip-endpoint-ok.txt` — na pasta do app **e** em
+  `.kodi/userdata/addon_data/service.smarted.bootstrap/`;
+* o app Java (`Licenca.rotas`) e o add-on (`vip.rotas`) leem **o mesmo arquivo**;
+  a próxima ativação começa por ela (resposta em ~1 s) e só cai para as rotas
+  candidatas/site/Supabase se ela parar de responder;
+* o projeto Supabase descoberto no bundle do site (`https://<projeto>.supabase.co`
+  + chave anon) é gravado em `supabase.txt` **e** em `supabase-cache.txt` na
+  pasta do add-on, então o Python não baixa o site de novo para descobrir o
+  backend;
+* overrides manuais continuam valendo, sem recompilar:
+  `<app>/supabase-url.txt`, `<app>/supabase-chave.txt`, `<app>/vip-endpoint.txt`.
+
+Ordem de validação (as duas linguagens seguem a mesma): rota memorizada →
+override → rotas do site (`/api/validar`, `/api/validate`, `/api/ativar`,
+`/api/codigos/validar`, `/functions/v1/validar-codigo`) → Edge Functions do
+Supabase → tabela `codigos` do painel (PostgREST). A primeira resposta JSON
+decide; resposta de recusa (código inválido/expirado) mostra a mensagem do
+servidor e não continua tentando.

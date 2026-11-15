@@ -46,7 +46,7 @@ def carregar_vip(respostas, tabela=None, supabase=('https://projeto.supabase.co'
 
     class Addon(object):
         def getAddonInfo(self, chave):
-            return 'service.smarted.bootstrap' if chave == 'id' else '1.0.74'
+            return 'service.smarted.bootstrap' if chave == 'id' else '1.0.75'
 
     fake_addon.Addon = Addon
 
@@ -188,3 +188,41 @@ class ArquivosDaPonteTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class RotaLembradaTest(unittest.TestCase):
+    """A rota que funcionou é memorizada e compartilhada com o app Java."""
+
+    def setUp(self):
+        self.vip = Path('kodi/addons/service.smarted.bootstrap/vip.py').read_text(encoding='utf-8')
+        self.jav = Path('smartedtv/tools/ads-java/Licenca.java.in').read_text(encoding='utf-8')
+        self.sup = Path('smartedtv/tools/ads-java/Supabase.java.in').read_text(encoding='utf-8')
+
+    def test_mesmo_nome_de_arquivo_dos_dois_lados(self):
+        self.assertIn("ROTA_BOA = 'vip-endpoint-ok.txt'", self.vip)
+        self.assertIn('ROTA_BOA = "vip-endpoint-ok.txt"', self.jav)
+        self.assertIn('supabase-cache.txt', self.vip)
+        self.assertIn('CACHE_KODI = "supabase-cache.txt"', self.sup)
+
+    def test_python_lembra_a_rota_que_deu_certo(self):
+        self.assertIn('def lembrar_rota(rota):', self.vip)
+        self.assertIn('def _rota_lembrada():', self.vip)
+        trecho = self.vip[self.vip.index('def rotas():'):]
+        trecho = trecho[:trecho.index('def validar(')]
+        self.assertIn('lembrada = _rota_lembrada()', trecho)
+        self.assertIn('lista.append(lembrada)', trecho)
+        self.assertIn('lembrar_rota(origem)', self.vip)
+
+    def test_java_lembra_e_reaproveita(self):
+        self.assertIn('private static void lembrarRota(Context contexto, String rota)', self.jav)
+        self.assertIn('lembrarRota(contexto, usada);', self.jav)
+        self.assertIn('rota que já funcionou', self.jav)
+
+    def test_supabase_compartilhado_com_o_addon(self):
+        self.assertIn('public static File pastaAddon(Context contexto)', self.sup)
+        self.assertIn('addon_data', self.sup)
+        self.assertIn('service.smarted.bootstrap', self.sup)
+
+    def test_licenca_usa_a_mesma_pasta_do_addon(self):
+        self.assertIn('public static File pastaAddon(Context contexto)', self.jav)
+        self.assertIn('addon_data', self.jav)

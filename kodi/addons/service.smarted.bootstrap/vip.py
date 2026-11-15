@@ -51,6 +51,10 @@ VALIDAR_URIS = (
     'https://smartedtv-vip.lovable.app/functions/v1/validar-codigo',
 )
 TIMEOUT = 12
+# Rota que já respondeu JSON de verdade. O app (Java) e o add-on gravam o
+# mesmo arquivo, então a próxima ativação começa por ela — ativação instantânea
+# e sem depender da descoberta do backend.
+ROTA_BOA = 'vip-endpoint-ok.txt'
 
 # --- ponte Android (abrir link / compartilhar) ------------------------------
 PACOTE = 'smartedtv.full'
@@ -355,9 +359,40 @@ def em_instantes(segundos):
     return time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(time.time() + segundos))
 
 
+def _rota_lembrada():
+    """Última rota que funcionou (gravada pelo app ou por este add-on)."""
+    for candidato in (os.path.join(pasta(), ROTA_BOA),
+                      os.path.join(perfil(), ROTA_BOA)):
+        try:
+            if os.path.isfile(candidato):
+                with open(candidato, 'r', encoding='utf-8') as handle:
+                    texto = handle.read().strip().splitlines()
+                if texto and texto[0].strip().startswith('http'):
+                    return texto[0].strip()
+        except Exception:  # noqa: BLE001
+            continue
+    return ''
+
+
+def lembrar_rota(rota):
+    """Grava a rota que deu certo (o app Java lê o mesmo nome de arquivo)."""
+    if not rota or not rota.startswith('http'):
+        return
+    for destino in (os.path.join(pasta(), ROTA_BOA),):
+        try:
+            with open(destino, 'w', encoding='utf-8') as handle:
+                handle.write(rota + '\n')
+            _log('rota memorizada: %s' % rota)
+        except Exception as erro:  # noqa: BLE001
+            _log('nao consegui memorizar a rota: %s' % erro, xbmc.LOGDEBUG)
+
+
 def rotas():
-    """Candidatas de rota, com o override do aparelho na frente."""
+    """Candidatas de rota: lembrada, override do aparelho e as de produção."""
     lista = []
+    lembrada = _rota_lembrada()
+    if lembrada:
+        lista.append(lembrada)
     for candidato in (os.path.join(pasta(), 'vip-endpoint.txt'),
                       os.path.join(perfil(), 'vip-endpoint.txt')):
         try:
@@ -391,6 +426,7 @@ def validar(codigo):
         if not salvar(codigo, expira, origem='app' if 'supabase' in origem else 'site',
                       extra={'resposta': resposta, 'rota': origem}):
             return False, 'Licença validada, mas não consegui gravar no aparelho.'
+        lembrar_rota(origem)
         _log('licenca ativa por %s ate %s' % (origem, expira))
         return True, mensagem or ('VIP ativo até %s' % expira if expira else 'VIP ativado!')
 

@@ -1,6 +1,6 @@
 {
-  "versao": "1.0.74",
-  "codigo": 2103060,
+  "versao": "1.0.75",
+  "codigo": 2103061,
   "apk": "https://github.com/msmacrosmart-cpu/KODE/releases/latest/download/SMARTEDTV-atual.apk",
   "json": "https://github.com/msmacrosmart-cpu/KODE/releases/latest/download/atualizacao.json",
   "notas": "Esta é a cópia de referência do link fixo. O arquivo publicado pelo build é gerado automaticamente (mesmo formato) e sempre aponta para a última release.",
