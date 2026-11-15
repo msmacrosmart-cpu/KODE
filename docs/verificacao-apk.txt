@@ -1,15 +1,20 @@
-# Verificação do APK único — 1.0.67 (run 43661280978)
+# Verificação do APK único — 1.0.68
 
-APK: `SMARTEDTV-1.0.67-unificado-arm64-v8a.apk`
+artifact do run 43661280978 (conferência sem recompilar)
 
 ```
-== arquivo: smartedtv/out-apk/SMARTEDTV-1.0.67-unificado-arm64-v8a.apk  (238.1 MB)
+sha256: 8b2244050bb841d1bbb01199a323f6291b520a955127b66f1b90bfa12ad7f9ec
+tamanho: 249678389 bytes
+```
+
+```
+== arquivo: apk/SMARTEDTV-1.0.67-unificado-arm64-v8a.apk  (238.1 MB)
 
 == identidade do pacote (aapt2 badging)
   package: name='smartedtv.full' versionCode='2103053' versionName='1.0.67' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
   OK    pacote                             smartedtv.full
-  OK    versionName                        1.0.67
-  OK    versionCode                        2103053
+  FALHA versionName                        1.0.68
+  FALHA versionCode                        2103054
 
 == manifesto (aapt2 xmltree)
   OK    activity de abertura               .AppOpenActivity
@@ -69,6 +74,9 @@ APK: `SMARTEDTV-1.0.67-unificado-arm64-v8a.apk`
   OK    activity PreRollActivity           PreRollActivity
   OK    SDK do AdMob                       com/google/android/gms/ads
   OK    classe SmartAds                    SmartAds
+  FALHA perfil da base reconhecido         perfilSmarted
+  FALHA perfil antigo guardado, nao apagado .kodi.antigo-
+  FALHA log do seed                        smarted-seed.log
   OK    APPLICATION_ID no dex              presente (redundante com o manifesto)
 
 == ponte do serviço de bootstrap
@@ -83,6 +91,11 @@ APK: `SMARTEDTV-1.0.67-unificado-arm64-v8a.apk`
   OK    texto de status                    escondido (gone)
 
 == resumo
-  obrigatórias com falha: 0
+  obrigatórias com falha: 5
   avisos: 0
+  - versionName: 1.0.68
+  - versionCode: 2103054
+  - perfil da base reconhecido: perfilSmarted
+  - perfil antigo guardado, nao apagado: .kodi.antigo-
+  - log do seed: smarted-seed.log
 ```
