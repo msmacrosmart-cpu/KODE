@@ -481,3 +481,26 @@ O manifesto agora declara `android.hardware.touchscreen`,
 `android.intent.category.LEANBACK_LAUNCHER` — o mesmo APK aparece no launcher
 de celular, de Android TV, TV Box e Fire Stick. Toda a interface nova é diálogo
 nativo do Kodi, então responde igual ao toque e ao controle.
+
+### Resultado 1.0.69
+
+Release: <https://github.com/msmacrosmart-cpu/KODE/releases/tag/v1.0.69-unificado> — run
+[43702328501](https://github.com/msmacrosmart-cpu/KODE/actions/runs/43702328501), build verde, publicado sozinho.
+
+| item | valor |
+|---|---|
+| APK | `SMARTEDTV-1.0.69-unificado-arm64-v8a.apk` |
+| tamanho | 249.690.958 bytes (238,1 MB) |
+| pacote / versão | `smartedtv.full` / 1.0.69 (2103055) |
+| Android TV | `touchscreen`/`leanback` opcionais + `LEANBACK_LAUNCHER` — **OK** |
+| menu SMARTEDTV | `RunAddon(script.smartedtv.ajustes)` na Home — **OK** |
+| conferência | **0 falhas, 0 avisos** |
+
+### Pendência única: endpoint que valida o código
+
+O site `smartedtv-vip.lovable.app` não expõe documentação de API: a validação
+hoje aponta para `https://smartedtv-vip.lovable.app/api/validar` (constante
+`VALIDAR` em `kodi/addons/service.smarted.bootstrap/vip.py`). Assim que o
+caminho real (ou a função do Supabase + chave pública) for informado, é trocar
+essa linha, rodar o build e publicar — o resto do fluxo já está pronto e
+testado no aparelho: código → `vip.json` → `Licenca.ativa()` → anúncios param.
