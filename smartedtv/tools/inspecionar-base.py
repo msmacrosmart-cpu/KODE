@@ -49,6 +49,38 @@ def badging(aapt2: str | None, apk: Path) -> str:
     return "\n".join(saida)
 
 
+def elementos_manifesto(texto: str) -> list[str]:
+    """Extrai (elemento, nome) de activity/service/receiver/provider do xmltree."""
+    achados: list[str] = []
+    atual = ""
+    for linha in texto.splitlines():
+        linha = linha.strip()
+        if linha.startswith("E: "):
+            atual = linha[3:].split(" ")[0]
+        elif linha.startswith("A: http://schemas.android.com/apk/res/android:name"):
+            valor = linha.split('"')
+            if len(valor) > 1 and atual in ("activity", "service", "receiver", "provider",
+                                             "application", "activity-alias", "uses-permission"):
+                achados.append(f"{atual}: {valor[1]}")
+    return achados
+
+
+def classes_do_dex(z: zipfile.ZipFile, nomes: list[str]) -> list[str]:
+    import re
+    vistas: set[str] = set()
+    for nome in nomes:
+        if not nome.endswith(".dex"):
+            continue
+        dados = z.read(nome)
+        for bruto in re.findall(rb"L[a-zA-Z0-9_/$]{3,140};", dados):
+            try:
+                classe = bruto.decode("ascii")
+            except UnicodeDecodeError:
+                continue
+            vistas.add(classe)
+    return sorted(vistas)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--apk", required=True, type=Path)
@@ -155,6 +187,74 @@ def main() -> int:
             achados = [m.decode() for m in marcas if m in dados]
             if achados:
                 add(f"* `{info.filename}`: {', '.join(achados)}")
+        add("")
+
+        # manifesto: activities/services do APK de referencia
+        if args.aapt2:
+            proc = subprocess.run([args.aapt2, "dump", "xmltree", "--file",
+                                   "AndroidManifest.xml", str(apk)],
+                                  capture_output=True, text=True)
+            itens = elementos_manifesto(proc.stdout or "")
+            add(f"## Manifesto ({len(itens)} itens)\n")
+            for item in itens:
+                add(f"* {item}")
+            add("")
+
+        # classes do dex
+        classes = classes_do_dex(z, nomes)
+        interessantes = [c for c in classes
+                         if any(p in c.lower() for p in ("splash", "seed", "smart", "ads", "rotina"))]
+        add(f"## Classes no dex ({len(classes)} no total)\n")
+        add("interessantes: " + (", ".join(interessantes[:60]) or "(nenhuma)"))
+        add("")
+        pacotes = sorted({c[1:].rsplit("/", 1)[0].replace("/", ".") for c in classes
+                          if c.startswith(("Lsmarted", "Lorg/xbmc/kodi"))})
+        add("pacotes: " + ", ".join(pacotes[:40]))
+        add("")
+
+        # addons completos
+        add(f"## Lista completa de addons ({len(plugins)})\n")
+        for addon in plugins:
+            add(f"* {addon}")
+        add("")
+
+        # userdata do perfil embutido
+        userdata = [n for n in nomes if n.startswith("assets/smarted/profile/userdata/")]
+        add(f"## Perfil: userdata ({len(userdata)} arquivos)\n")
+        for nome in sorted(userdata):
+            add(f"* {nome}")
+        add("")
+
+        # skin: xml
+        xmls = [n for n in skin if "/xml/" in n or n.endswith("settings.xml")]
+        add(f"## Skin: xml e settings ({len(xmls)})")
+        for nome in sorted(xmls)[:40]:
+            add(f"* {nome}")
+        add("")
+
+        # backups guardados dentro do perfil
+        import io
+        add("## Backups dentro do perfil (zip)\n")
+        for nome in nomes:
+            if not nome.lower().endswith(".zip") or "profile" not in nome:
+                continue
+            try:
+                with zipfile.ZipFile(io.BytesIO(z.read(nome))) as b:
+                    internos = b.namelist()
+                    skin = [n for n in internos if "skin.novatv" in n or "skinshortcuts" in n]
+                    menus = [n for n in internos if "menu" in n.lower() or "shortcut" in n.lower()]
+                    add(f"* `{nome}`: {len(internos)} entradas, {len(set(skin))} de skin, "
+                        f"{len(set(menus))} de menus")
+                    for item in sorted(set(skin))[:12]:
+                        add(f"    - {item}")
+                    for item in internos:
+                        if item.endswith("guisettings.xml"):
+                            texto = b.read(item).decode("utf-8", "replace")
+                            for linha in texto.splitlines():
+                                if "lookandfeel.skin\"" in linha:
+                                    add(f"    guisettings: {linha.strip()[:110]}")
+            except Exception as erro:  # noqa: BLE001
+                add(f"* `{nome}`: (erro ao abrir: {erro})")
         add("")
 
         # amostra do perfil (se houver)
