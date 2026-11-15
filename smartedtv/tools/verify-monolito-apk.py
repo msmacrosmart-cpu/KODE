@@ -20,8 +20,8 @@ import zipfile
 from pathlib import Path
 
 PACOTE = "smartedtv.full"
-VERSAO = "1.0.67"
-CODIGO = 2103053
+VERSAO = "1.0.68"
+CODIGO = 2103054
 
 BLOCO_ABERTURA = "ca-app-pub-2066014755407744/4214378379"
 BLOCO_PREROLL = "ca-app-pub-2066014755407744/3572039686"
@@ -127,7 +127,7 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
             alvo = f"assets/addons/{addon}/addon.xml"
             rel.exige(alvo in presentes, f"addon {addon}", alvo)
 
-        # A skin precisa estar COMPLETA: o build de 1.0.65/1.0.67 levava 222
+        # A skin precisa estar COMPLETA: o build de 1.0.65/1.0.68 levava 222
         # arquivos enquanto a estavel tinha 934 (faltavam as imagens de media/,
         # por isso as abas/categorias apareciam vazias).
         skin = [n for n in nomes if n.startswith("assets/addons/skin.novatv/")]
@@ -269,6 +269,9 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
         ("activity PreRollActivity", b"PreRollActivity"),
         ("SDK do AdMob", b"com/google/android/gms/ads"),
         ("classe SmartAds", b"SmartAds"),
+        ("perfil da base reconhecido", b"perfilSmarted"),
+        ("perfil antigo guardado, nao apagado", b".kodi.antigo-"),
+        ("log do seed", b"smarted-seed.log"),
     ):
         rel.exige(agulha in dex, rotulo, agulha.decode()[:44])
 

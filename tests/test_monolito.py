@@ -38,10 +38,10 @@ class IntegracaoNoFonteTest(unittest.TestCase):
 
     def test_pacote_unico_e_versao(self):
         self.assertIn(f'APP_PACKAGE = "{PACOTE}"', self.script)
-        self.assertIn('VERSAO_NOME = "1.0.67"', self.script)
-        self.assertIn('VERSAO_CODIGO = 2103053', self.script)
+        self.assertIn('VERSAO_NOME = "1.0.68"', self.script)
+        self.assertIn('VERSAO_CODIGO = 2103054', self.script)
         # tem que ser maior que a 1.0.63 (2103049) para nao regredir instalacao
-        self.assertGreater(2103053, 2103052)
+        self.assertGreater(2103054, 2103053)
 
     def test_gradle_ganha_o_admob_e_a_versao(self):
         self.assertIn("com.google.android.gms:play-services-ads:23.2.0", self.script)
@@ -231,6 +231,7 @@ class VerificadorDoApkTest(unittest.TestCase):
             z.writestr("classes.dex", (b"ca-app-pub-2066014755407744/4214378379 "
                                        b"ca-app-pub-2066014755407744/3572039686 "
                                        b"AppOpenActivity PreRollActivity SmartAds "
+                                       b"perfilSmarted .kodi.antigo- smarted-seed.log "
                                        b"com/google/android/gms/ads"))
             z.writestr("assets/addons/service.smarted.bootstrap/smart_ads.py",
                        "ATIVIDADE_PREROLL = 'smartedtv.full.PreRollActivity'\n"
@@ -251,7 +252,7 @@ class VerificadorDoApkTest(unittest.TestCase):
         caminho = Path(tmp) / "aapt2"
         caminho.write_text("""#!/bin/sh
 if [ "$2" = badging ]; then
-  echo "package: name='smartedtv.full' versionCode='2103053' versionName='1.0.67'"
+  echo "package: name='smartedtv.full' versionCode='2103054' versionName='1.0.68'"
 elif [ "$2" = resources ]; then
   echo "drawable/progresswhite type=drawable"
 elif [ "$2" = xmltree ] && [ "$4" = "res/layout/activity_splash.xml" ]; then
@@ -333,8 +334,14 @@ class RestauracaoDaBaseEstavelTest(unittest.TestCase):
             'smartedtv/tools/integrate-monolith.py').read_text(encoding='utf-8'))
 
     def test_seeder_so_age_sem_perfil_e_confere_hash(self):
-        # nunca mexer num perfil existente
-        self.assertIn('if (new File(home, ".kodi").isDirectory())', self.seeder)
+        # um perfil que JÁ é da base nunca é mexido (Brazuca + guisettings)
+        self.assertIn('perfilSmarted(kodi)', self.seeder)
+        self.assertIn('plugin.video.BrazucaPlay.Matrix/addon.xml', self.seeder)
+        # um .kodi que não é da base (Kodi recém-instalado / build antigo do app)
+        # é guardado, não apagado, e a base entra no lugar
+        self.assertIn('.kodi.antigo-" + System.currentTimeMillis()', self.seeder)
+        self.assertIn('jaTentei', self.seeder)          # sem laço de splash
+        self.assertIn('smarted-seed.log', self.seeder)  # rastro para diagnóstico
         # manifesto fixo da base estavel, igual ao launcher antigo
         self.assertIn('1447de816a44ecc11c42c2c315cf20e61c9baa037e914a13293711cf152d1ede',
                       self.seeder)
@@ -355,8 +362,9 @@ class RestauracaoDaBaseEstavelTest(unittest.TestCase):
         self.assertIn('apksigner" sign', self.fluxo)        # reassinar depois
 
     def test_fluxo_baixa_a_base_e_confere_o_manifesto(self):
-        self.assertIn('BASE_TAG: v1.0.63-classica', self.fluxo)
-        self.assertIn('BASE_ARQUIVO: SMARTED-TV-v1.0.63-arm64.apk', self.fluxo)
+        # a base é o APK de referência do dono do app (Dropbox), não uma cópia nossa
+        self.assertIn('BASE_URL: "https://www.dropbox.com/scl/fi/', self.fluxo)
+        self.assertIn('SMARTEDTV.apk', self.fluxo)
         self.assertIn('assets/smarted/profile-manifest.txt', self.fluxo)
         self.assertIn('--manifesto-base-sha', self.fluxo)
         self.assertIn('inject-base-estavel.py', self.fluxo)

@@ -343,3 +343,47 @@ Também: o passo 9 grava `smartedtv/log-passo9.txt` e o passo 11 publica esse
 log no branch quando falha (antes o log do erro se perdia) e faz
 `git pull --rebase` antes do push, para não perder o relatório quando o branch
 andou durante o build.
+
+## 1.0.68 — base do Dropbox + seed que não desiste
+
+### A base é a do usuário
+
+O build passou a baixar o APK de referência do dono do app
+(`https://www.dropbox.com/scl/fi/p5blo0t1rw86bwhcmkkns/SMARTEDTV.apk…`) e a usá-lo
+como base, em vez de uma cópia nossa publicada em release. Inspeção
+(`docs/base-dropbox.txt`): 242.222.254 bytes, `org.xbmc.kodi` 1.0.63 (2103049),
+7774 arquivos, `skin.novatv` com **934** arquivos e **712** imagens,
+`plugin.video.smarted` 0.3.3, perfil com 2735 arquivos (340 só em `userdata`,
+incluindo `Addons33.db`, `Textures13.db`, `ViewModes6.db` e os `addon_data` do
+Brazuca/YouTube). É o mesmo conteúdo que já entrávamos, agora com a fonte certa.
+
+### Por que a estrutura não aparecia (causa real)
+
+O seeder original do APK foi descompilado (`docs/bootstrap-referencia.txt`,
+`org.smartedtv.bootstrap.*`) e comparado com o nosso:
+
+| regra do original | nosso 1.0.66 |
+|---|---|
+| `ProfileDirectorySeed.install(profile, manifest, dataHome, filesDir, "1447de81…")` | igual |
+| confere `profile-manifest.txt` por SHA-256 | igual |
+| copia conferindo arquivo a arquivo, staging + rename | igual |
+| `setDefaultSkin`: troca `skin.estuary` por `skin.novatv` | igual |
+| **se `.kodi` existe, devolve `false` e nunca semeia** | igual |
+
+O problema é a última linha combinada com o histórico do app: a 1.0.65 abriu o
+Kodi com perfil vazio, o Kodi **criou** `Android/data/smartedtv.full/files/.kodi`
+e, a partir daí, toda abertura caía em "já existe perfil, não mexer". O perfil
+ficava Estuary puro — sem skin, sem menus, sem Brazuca. Nunca mais semeava.
+
+### Correção (sem inventar estrutura)
+
+* `perfilSmarted(.kodi)` = tem `addons/plugin.video.BrazucaPlay.Matrix/addon.xml`
+  **e** `userdata/guisettings.xml`. Só um perfil assim é preservado.
+* `.kodi` que não é da base (Kodi recém-instalado ou build antigo do app) é
+  **renomeado** para `.kodi.antigo-<timestamp>` e a base entra no lugar. Nada é
+  apagado.
+* `jaTentei()` evita laço de splash se a cópia falhar duas vezes.
+* `home()` passa a respeitar `xbmc.data`, como o launcher original.
+* Tudo é registrado em `Android/data/smartedtv.full/files/smarted-seed.log`
+  (`perfil da base ja presente`, `instalando a base…`, `instalado: N arquivos`,
+  `falhou: …`) — é o arquivo que fecha qualquer dúvida em campo.

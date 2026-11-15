@@ -26,8 +26,12 @@ import java.util.UUID;
  *
  * Mesmo contrato do launcher que fazia isso na linha clássica:
  *
- *  * só age quando NÃO existe perfil — um .kodi existente nunca é tocado,
- *    mesclado ou apagado;
+ *  * um .kodi que já é um perfil SMARTEDTV (tem o Brazuca e o guisettings da
+ *    base) nunca é tocado — é o caso de quem já tem o app funcionando;
+ *  * um .kodi que NÃO é um perfil SMARTEDTV (Kodi recém-instalado, perfil
+ *    vazio criado por uma versão anterior do app unificado) é guardado como
+ *    ``.kodi.antigo-<data>`` e a base entra no lugar. Nada é apagado: é o que
+ *    garante que a estrutura apareça mesmo em cima de uma instalação antiga;
  *  * o manifesto embarcado (assets/smarted/profile-manifest.txt) é conferido
  *    pelo SHA-256 fixo antes de qualquer cópia;
  *  * cada arquivo é conferido (hash + tamanho) enquanto é gravado num diretório
@@ -41,6 +45,8 @@ import java.util.UUID;
 public final class SeedBase {
 
     private static final String TAG = "SmartAds";
+    private static final String MARCA = "addons/plugin.video.BrazucaPlay.Matrix/addon.xml";
+    private static final String LOG = "smarted-seed.log";
     private static final String MANIFESTO = "smarted/profile-manifest.txt";
     private static final String RAIZ = "smarted/profile/";
     /** SHA-256 do manifesto da base estável (1.0.63 clássica). */
@@ -76,8 +82,16 @@ public final class SeedBase {
             liberado = Boolean.TRUE;
             return true;
         }
-        if (new File(home, ".kodi").isDirectory()) {
-            // já existe perfil: nunca mexer
+        File kodi = new File(home, ".kodi");
+        if (kodi.isDirectory() && perfilSmarted(kodi)) {
+            // perfil da base já instalado: nunca mexer
+            registrar(home, "perfil da base ja presente");
+            liberado = Boolean.TRUE;
+            return true;
+        }
+        if (kodi.isDirectory() && jaTentei(home)) {
+            // um .kodi antigo já foi guardado: não fica em laço de splash
+            registrar(home, "desisto: ja existe .kodi antigo guardado");
             liberado = Boolean.TRUE;
             return true;
         }
@@ -85,6 +99,9 @@ public final class SeedBase {
             return false;
         }
         liberado = Boolean.FALSE;
+        registrar(home, kodi.isDirectory()
+                ? "instalando a base sobre um .kodi que nao e da base"
+                : "instalando a base (primeira abertura)");
         mostrarSplash(activity);
         new Thread(new Runnable() {
             @Override
@@ -148,6 +165,13 @@ public final class SeedBase {
     // ----------------------------------------------------------------- instalar
 
     private static File home(Activity activity) {
+        String configurado = System.getProperty("xbmc.data", "");
+        if (configurado.length() > 0) {
+            File escolhido = new File(configurado);
+            if (escolhido.isDirectory()) {
+                return escolhido;
+            }
+        }
         File externo = activity.getExternalFilesDir("");
         if (externo != null && externo.isDirectory()) {
             return externo;
@@ -166,6 +190,7 @@ public final class SeedBase {
         byte[] manifesto = lerAsset(assets, MANIFESTO);
         if (!MANIFESTO_SHA256.equalsIgnoreCase(sha256(manifesto))) {
             Log.e(TAG, "SeedBase: manifesto da base nao confere com o esperado");
+            registrar(home, "falhou: manifesto nao confere");
             return false;
         }
 
@@ -189,8 +214,14 @@ public final class SeedBase {
             ajustarSkin(new File(preparo, "userdata/guisettings.xml"));
 
             File alvo = new File(home, ".kodi");
-            if (alvo.exists()) {
-                return false;              // alguém criou o perfil no meio do caminho
+            if (alvo.isDirectory() && perfilSmarted(alvo)) {
+                return false;              // alguém instalou a base no meio do caminho
+            }
+            if (alvo.exists() && !alvo.renameTo(new File(home,
+                    ".kodi.antigo-" + System.currentTimeMillis()))) {
+                Log.e(TAG, "SeedBase: nao consegui guardar o perfil antigo");
+                registrar(home, "falhou: nao consegui mover o .kodi antigo");
+                return false;
             }
             if (!alvo.mkdir()) {
                 return false;
@@ -200,6 +231,7 @@ public final class SeedBase {
                 return false;
             }
             Log.i(TAG, "SeedBase: base estavel instalada (" + linhas.size() + " arquivos)");
+            registrar(home, "instalado: " + linhas.size() + " arquivos");
             return true;
         } finally {
             apagar(preparo);
@@ -294,6 +326,52 @@ public final class SeedBase {
             saida.write(novo);
         } finally {
             saida.close();
+        }
+    }
+
+    /** Já existe um .kodi guardado por uma tentativa anterior? */
+    private static boolean jaTentei(File home) {
+        String[] filhos = home.list();
+        if (filhos == null) {
+            return false;
+        }
+        for (String filho : filhos) {
+            if (filho.startsWith(".kodi.antigo-")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Um perfil só é considerado "da base" se tem o catálogo e o guisettings. */
+    private static boolean perfilSmarted(File kodi) {
+        if (!kodi.isDirectory()) {
+            return false;
+        }
+        boolean temCatalogo = new File(kodi, MARCA).isFile();
+        boolean temAjustes = new File(kodi, "userdata/guisettings.xml").isFile();
+        return temCatalogo && temAjustes;
+    }
+
+    /** Deixa um rastro em texto no armazenamento do app (fora do .kodi). */
+    private static void registrar(File home, String linha) {
+        File arquivo = new File(home, LOG);
+        OutputStream saida = null;
+        try {
+            saida = new FileOutputStream(arquivo, true);
+            String quando = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.ROOT)
+                    .format(new java.util.Date());
+            saida.write((quando + " " + linha + "\n").getBytes(Charset.forName("UTF-8")));
+        } catch (Exception ignorado) {
+            // log é conveniência: nunca derruba a abertura do app
+        } finally {
+            if (saida != null) {
+                try {
+                    saida.close();
+                } catch (Exception ignorado) {
+                    // idem
+                }
+            }
         }
     }
 

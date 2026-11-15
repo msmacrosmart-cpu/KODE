@@ -42,16 +42,15 @@ env:
   KODI_TAG: 21.3-Omega
   KODI_COMMIT: a3a448d26b8d560a65655dab2cd122994dc4e146
   NDK_VERSION: 21.4.7075529
-  VERSAO: "1.0.67"
-  CODIGO: "2103053"
+  VERSAO: "1.0.68"
+  CODIGO: "2103054"
   PACOTE: smartedtv.full
-  TAG_DESTINO: v1.0.67-unificado
-  ARQUIVO_DESTINO: SMARTEDTV-1.0.67-unificado-arm64-v8a.apk
+  TAG_DESTINO: v1.0.68-unificado
+  ARQUIVO_DESTINO: SMARTEDTV-1.0.68-unificado-arm64-v8a.apk
   CERT_SHA256: 855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a
   # Base estavel da linha classica: de onde sai o perfil semeado (skin, menus,
   # fontes do catalogo e o Brazuca Play ja configurado).
-  BASE_TAG: v1.0.63-classica
-  BASE_ARQUIVO: SMARTED-TV-v1.0.63-arm64.apk
+  BASE_URL: "https://www.dropbox.com/scl/fi/p5blo0t1rw86bwhcmkkns/SMARTEDTV.apk?rlkey=aapugrey7gcidvb40e8ajxykg&st=obzovikj&dl=1"
   BASE_MANIFESTO_SHA256: 1447de816a44ecc11c42c2c315cf20e61c9baa037e914a13293711cf152d1ede
 
 jobs:
@@ -73,15 +72,16 @@ jobs:
           docker image prune -af 2>/dev/null || true
           echo "== depois =="; df -h /
 
-      - name: 1b. Base estável (perfil semeado da linha clássica)
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: 1b. Base estável (o APK de referência do usuário, no Dropbox)
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/base"
-          gh release download "$BASE_TAG" -R "$GITHUB_REPOSITORY" \
-            --pattern "$BASE_ARQUIVO" --dir "$RUNNER_TEMP/base" --clobber
-          BASE="$RUNNER_TEMP/base/$BASE_ARQUIVO"
+          # link oficial do dono do app: o build que funcionava (1.0.63 clássico)
+          curl -sSL --retry 3 -o "$RUNNER_TEMP/base/referencia.apk" "$BASE_URL"
+          TAM=$(stat -c%s "$RUNNER_TEMP/base/referencia.apk")
+          echo "base baixada: $TAM bytes"
+          sha256sum "$RUNNER_TEMP/base/referencia.apk"
+          BASE="$RUNNER_TEMP/base/referencia.apk"
           ls -l "$BASE"
           python3 - "$BASE" <<'PY'
           import hashlib, sys, zipfile
