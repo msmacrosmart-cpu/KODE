@@ -63,9 +63,11 @@ jobs:
           done
           find /tmp/j/src -name '*.java' | sort > /tmp/j/files.txt
           wc -l /tmp/j/files.txt
+          ls -la "$AJAR" /tmp/j/play-services-ads-api/classes.jar || true
+          unzip -l /tmp/j/play-services-ads-api/classes.jar 2>/dev/null | grep -c 'appopen\|interstitial' || true
+          # JDK 17 não aceita mais -bootclasspath: android.jar vai no classpath
           javac -nowarn -source 8 -target 8 \
-            -bootclasspath "$AJAR" \
-            -cp "/tmp/j/play-services-ads/classes.jar:/tmp/j/play-services-ads-api/classes.jar" \
+            -cp "$AJAR:/tmp/j/play-services-ads-api/classes.jar:/tmp/j/play-services-ads/classes.jar" \
             -d /tmp/j/out @/tmp/j/files.txt > /tmp/j/javac.txt 2>&1
           echo "javac exit=$?"
           # canal 1: anotações da checagem (o log do Actions não abre por aqui)
