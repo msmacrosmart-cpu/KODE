@@ -121,6 +121,526 @@ guisettings.xml encontrados: ['assets/smarted/profile/userdata/guisettings.xml']
 
 * `assets/addons/service.smarted.bootstrap/smart_ads.py`: ca-app-pub-, AppOpenActivity, PreRollActivity
 
+## Manifesto (19 itens)
+
+* uses-permission: android.permission.WRITE_EXTERNAL_STORAGE
+* uses-permission: android.permission.MANAGE_EXTERNAL_STORAGE
+* uses-permission: android.permission.INTERNET
+* uses-permission: android.permission.BLUETOOTH
+* uses-permission: android.permission.RECEIVE_BOOT_COMPLETED
+* uses-permission: android.permission.MODIFY_AUDIO_SETTINGS
+* uses-permission: android.permission.ACCESS_NETWORK_STATE
+* uses-permission: android.permission.RECORD_AUDIO
+* uses-permission: com.android.providers.tv.permission.WRITE_EPG_DATA
+* uses-permission: com.android.providers.tv.permission.READ_EPG_DATA
+* activity: org.xbmc.kodi.Splash
+* activity: org.xbmc.kodi.Main
+* receiver: org.xbmc.kodi.XBMCBroadcastReceiver
+* provider: org.xbmc.kodi.content.XBMCMediaContentProvider
+* provider: org.xbmc.kodi.content.XBMCFileContentProvider
+* provider: org.xbmc.kodi.content.XBMCYTDLContentProvider
+* activity: org.xbmc.kodi.XBMCSearchableActivity
+* service: org.xbmc.kodi.channels.SyncChannelJobService
+* service: org.xbmc.kodi.channels.SyncProgramsJobService
+
+## Classes no dex (1569 no total)
+
+interessantes: Lorg/smartedtv/bootstrap/ProfileBootstrap$1$1;, Lorg/smartedtv/bootstrap/ProfileBootstrap$1;, Lorg/smartedtv/bootstrap/ProfileBootstrap$2;, Lorg/smartedtv/bootstrap/ProfileBootstrap$3;, Lorg/smartedtv/bootstrap/ProfileBootstrap;, Lorg/smartedtv/bootstrap/ProfileDirectoryBootstrap$1$1;, Lorg/smartedtv/bootstrap/ProfileDirectoryBootstrap$1;, Lorg/smartedtv/bootstrap/ProfileDirectoryBootstrap$2;, Lorg/smartedtv/bootstrap/ProfileDirectoryBootstrap$3;, Lorg/smartedtv/bootstrap/ProfileDirectoryBootstrap;, Lorg/smartedtv/bootstrap/ProfileDirectorySeed;, Lorg/smartedtv/bootstrap/ProfileSeed;, Lorg/xbmc/kodi/Splash$1;, Lorg/xbmc/kodi/Splash$2;, Lorg/xbmc/kodi/Splash$FillCache$$ExternalSyntheticLambda0;, Lorg/xbmc/kodi/Splash$FillCache$$ExternalSyntheticLambda1;, Lorg/xbmc/kodi/Splash$FillCache$$ExternalSyntheticLambda2;, Lorg/xbmc/kodi/Splash$FillCache;, Lorg/xbmc/kodi/Splash$StateMachine$1;, Lorg/xbmc/kodi/Splash$StateMachine;, Lorg/xbmc/kodi/Splash;
+
+pacotes: org.xbmc.kodi, org.xbmc.kodi.channels, org.xbmc.kodi.channels.model, org.xbmc.kodi.channels.util, org.xbmc.kodi.content, org.xbmc.kodi.interfaces, org.xbmc.kodi.model
+
+## Lista completa de addons (59)
+
+* audioencoder.kodi.builtin.aac
+* audioencoder.kodi.builtin.wma
+* game.controller.default
+* game.controller.keyboard
+* game.controller.mouse
+* game.controller.snes
+* kodi.binary.global.audioengine
+* kodi.binary.global.filesystem
+* kodi.binary.global.general
+* kodi.binary.global.gui
+* kodi.binary.global.main
+* kodi.binary.global.network
+* kodi.binary.global.tools
+* kodi.binary.instance.audiodecoder
+* kodi.binary.instance.audioencoder
+* kodi.binary.instance.game
+* kodi.binary.instance.imagedecoder
+* kodi.binary.instance.inputstream
+* kodi.binary.instance.peripheral
+* kodi.binary.instance.pvr
+* kodi.binary.instance.screensaver
+* kodi.binary.instance.vfs
+* kodi.binary.instance.videocodec
+* kodi.binary.instance.visualization
+* kodi.resource
+* metadata.album.universal
+* metadata.artists.universal
+* metadata.common.allmusic.com
+* metadata.common.fanart.tv
+* metadata.common.musicbrainz.org
+* metadata.common.theaudiodb.com
+* metadata.generic.albums
+* metadata.generic.artists
+* metadata.local
+* metadata.themoviedb.org.python
+* metadata.tvshows.themoviedb.org.python
+* peripheral.joystick
+* plugin.video.smarted
+* repository.xbmc.org
+* resource.images.weathericons.default
+* resource.language.en_gb
+* resource.uisounds.kodi
+* resource.uisounds.silencio
+* screensaver.xbmc.builtin.black
+* screensaver.xbmc.builtin.dim
+* script.module.pil
+* script.module.pycryptodome
+* service.smarted.bootstrap
+* service.xbmc.versioncheck
+* skin.estuary
+* skin.novatv
+* webinterface.default
+* xbmc.addon
+* xbmc.core
+* xbmc.gui
+* xbmc.json
+* xbmc.metadata
+* xbmc.python
+* xbmc.webinterface
+
+## Perfil: userdata (340 arquivos)
+
+* assets/smarted/profile/userdata/Database/Addons33.db
+* assets/smarted/profile/userdata/Database/Epg16.db
+* assets/smarted/profile/userdata/Database/MyMusic83.db
+* assets/smarted/profile/userdata/Database/MyVideos131.db
+* assets/smarted/profile/userdata/Database/TV46.db
+* assets/smarted/profile/userdata/Database/Textures13.db
+* assets/smarted/profile/userdata/Database/ViewModes6.db
+* assets/smarted/profile/userdata/RssFeeds.xml
+* assets/smarted/profile/userdata/Thumbnails/0/012d63df.jpg
+* assets/smarted/profile/userdata/Thumbnails/0/020953a0.png
+* assets/smarted/profile/userdata/Thumbnails/0/0252d0dc.jpg
+* assets/smarted/profile/userdata/Thumbnails/0/038dc8d0.png
+* assets/smarted/profile/userdata/Thumbnails/0/041708ac.png
+* assets/smarted/profile/userdata/Thumbnails/0/052d54da.jpg
+* assets/smarted/profile/userdata/Thumbnails/0/05bc7ef4.jpg
+* assets/smarted/profile/userdata/Thumbnails/0/068d4996.png
+* assets/smarted/profile/userdata/Thumbnails/0/06bbdde3.jpg
+* assets/smarted/profile/userdata/Thumbnails/0/0788816a.jpg
+* assets/smarted/profile/userdata/Thumbnails/0/089d339e.jpg
+* assets/smarted/profile/userdata/Thumbnails/0/091719f1.jpg
+* assets/smarted/profile/userdata/Thumbnails/0/0a3b812f.png
+* assets/smarted/profile/userdata/Thumbnails/0/0bc9522b.jpg
+* assets/smarted/profile/userdata/Thumbnails/0/0d5c394a.png
+* assets/smarted/profile/userdata/Thumbnails/0/0ddb2560.jpg
+* assets/smarted/profile/userdata/Thumbnails/1/101d8fe5.jpg
+* assets/smarted/profile/userdata/Thumbnails/1/10d13fc2.jpg
+* assets/smarted/profile/userdata/Thumbnails/1/11276da1.png
+* assets/smarted/profile/userdata/Thumbnails/1/11425fd2.png
+* assets/smarted/profile/userdata/Thumbnails/1/12697628.jpg
+* assets/smarted/profile/userdata/Thumbnails/1/12ecceea.jpg
+* assets/smarted/profile/userdata/Thumbnails/1/1516a69b.jpg
+* assets/smarted/profile/userdata/Thumbnails/1/1671f6c1.png
+* assets/smarted/profile/userdata/Thumbnails/1/177cdb43.png
+* assets/smarted/profile/userdata/Thumbnails/1/17e971b1.png
+* assets/smarted/profile/userdata/Thumbnails/1/1819605f.png
+* assets/smarted/profile/userdata/Thumbnails/1/18ee9ad4.png
+* assets/smarted/profile/userdata/Thumbnails/1/19be09bd.png
+* assets/smarted/profile/userdata/Thumbnails/1/1aad56ce.jpg
+* assets/smarted/profile/userdata/Thumbnails/1/1ae57d6d.png
+* assets/smarted/profile/userdata/Thumbnails/1/1bdc7eda.jpg
+* assets/smarted/profile/userdata/Thumbnails/1/1d264e84.png
+* assets/smarted/profile/userdata/Thumbnails/1/1d4a87cb.png
+* assets/smarted/profile/userdata/Thumbnails/1/1d860d88.jpg
+* assets/smarted/profile/userdata/Thumbnails/1/1d972543.png
+* assets/smarted/profile/userdata/Thumbnails/1/1dbc5dec.png
+* assets/smarted/profile/userdata/Thumbnails/1/1dfbf6c7.png
+* assets/smarted/profile/userdata/Thumbnails/1/1dfe32d9.png
+* assets/smarted/profile/userdata/Thumbnails/2/211e7709.jpg
+* assets/smarted/profile/userdata/Thumbnails/2/21239d7c.jpg
+* assets/smarted/profile/userdata/Thumbnails/2/21ed2e0c.jpg
+* assets/smarted/profile/userdata/Thumbnails/2/24059a78.jpg
+* assets/smarted/profile/userdata/Thumbnails/2/2587c863.jpg
+* assets/smarted/profile/userdata/Thumbnails/2/259f37e3.jpg
+* assets/smarted/profile/userdata/Thumbnails/2/25a7dfa5.jpg
+* assets/smarted/profile/userdata/Thumbnails/2/26ffb577.jpg
+* assets/smarted/profile/userdata/Thumbnails/2/27b1f6b5.png
+* assets/smarted/profile/userdata/Thumbnails/2/28121cbe.jpg
+* assets/smarted/profile/userdata/Thumbnails/2/28a37a05.jpg
+* assets/smarted/profile/userdata/Thumbnails/2/299e25f7.jpg
+* assets/smarted/profile/userdata/Thumbnails/2/2a169664.png
+* assets/smarted/profile/userdata/Thumbnails/2/2a830c5b.jpg
+* assets/smarted/profile/userdata/Thumbnails/2/2a8ac90b.jpg
+* assets/smarted/profile/userdata/Thumbnails/2/2b9c2a14.png
+* assets/smarted/profile/userdata/Thumbnails/2/2c926f7b.png
+* assets/smarted/profile/userdata/Thumbnails/2/2c9e7e5b.jpg
+* assets/smarted/profile/userdata/Thumbnails/2/2d4de296.png
+* assets/smarted/profile/userdata/Thumbnails/2/2f8e5209.png
+* assets/smarted/profile/userdata/Thumbnails/2/2fd9263d.png
+* assets/smarted/profile/userdata/Thumbnails/3/307f3a4f.png
+* assets/smarted/profile/userdata/Thumbnails/3/31fb8913.png
+* assets/smarted/profile/userdata/Thumbnails/3/332d2770.jpg
+* assets/smarted/profile/userdata/Thumbnails/3/35559e53.png
+* assets/smarted/profile/userdata/Thumbnails/3/367f641e.jpg
+* assets/smarted/profile/userdata/Thumbnails/3/382cc2cd.png
+* assets/smarted/profile/userdata/Thumbnails/3/386b69cb.jpg
+* assets/smarted/profile/userdata/Thumbnails/3/389642bb.png
+* assets/smarted/profile/userdata/Thumbnails/3/38dfcf85.png
+* assets/smarted/profile/userdata/Thumbnails/3/395351c3.jpg
+* assets/smarted/profile/userdata/Thumbnails/3/3d52d634.png
+* assets/smarted/profile/userdata/Thumbnails/3/3dc5f546.png
+* assets/smarted/profile/userdata/Thumbnails/3/3eb28a42.jpg
+* assets/smarted/profile/userdata/Thumbnails/4/40486322.png
+* assets/smarted/profile/userdata/Thumbnails/4/4223ca5e.png
+* assets/smarted/profile/userdata/Thumbnails/4/4454cf73.jpg
+* assets/smarted/profile/userdata/Thumbnails/4/44f058f5.png
+* assets/smarted/profile/userdata/Thumbnails/4/457d6485.jpg
+* assets/smarted/profile/userdata/Thumbnails/4/47e1c9d1.png
+* assets/smarted/profile/userdata/Thumbnails/4/48409d2e.jpg
+* assets/smarted/profile/userdata/Thumbnails/4/4989131e.png
+* assets/smarted/profile/userdata/Thumbnails/4/49a41f5f.png
+* assets/smarted/profile/userdata/Thumbnails/4/4a675907.png
+* assets/smarted/profile/userdata/Thumbnails/4/4b6b2b6c.png
+* assets/smarted/profile/userdata/Thumbnails/4/4b784ee6.jpg
+* assets/smarted/profile/userdata/Thumbnails/4/4bfd5855.jpg
+* assets/smarted/profile/userdata/Thumbnails/4/4e0225fb.png
+* assets/smarted/profile/userdata/Thumbnails/4/4e98fe90.png
+* assets/smarted/profile/userdata/Thumbnails/4/4ea06daf.png
+* assets/smarted/profile/userdata/Thumbnails/4/4ec26d42.jpg
+* assets/smarted/profile/userdata/Thumbnails/4/4f806aba.jpg
+* assets/smarted/profile/userdata/Thumbnails/4/4fa1daa2.jpg
+* assets/smarted/profile/userdata/Thumbnails/5/53fa00ea.jpg
+* assets/smarted/profile/userdata/Thumbnails/5/543828c4.jpg
+* assets/smarted/profile/userdata/Thumbnails/5/548b6a05.jpg
+* assets/smarted/profile/userdata/Thumbnails/5/54befa2a.png
+* assets/smarted/profile/userdata/Thumbnails/5/5540ac16.jpg
+* assets/smarted/profile/userdata/Thumbnails/5/554c7830.jpg
+* assets/smarted/profile/userdata/Thumbnails/5/56261126.jpg
+* assets/smarted/profile/userdata/Thumbnails/5/56b36dfb.png
+* assets/smarted/profile/userdata/Thumbnails/5/57ad499a.png
+* assets/smarted/profile/userdata/Thumbnails/5/58586377.jpg
+* assets/smarted/profile/userdata/Thumbnails/5/5922f835.png
+* assets/smarted/profile/userdata/Thumbnails/5/59ac9a59.jpg
+* assets/smarted/profile/userdata/Thumbnails/5/5af74287.jpg
+* assets/smarted/profile/userdata/Thumbnails/5/5c23234b.png
+* assets/smarted/profile/userdata/Thumbnails/5/5ccd74cc.jpg
+* assets/smarted/profile/userdata/Thumbnails/5/5d2d6547.jpg
+* assets/smarted/profile/userdata/Thumbnails/5/5e40b89e.jpg
+* assets/smarted/profile/userdata/Thumbnails/5/5e97d566.jpg
+* assets/smarted/profile/userdata/Thumbnails/5/5f54115a.png
+* assets/smarted/profile/userdata/Thumbnails/5/5fbc55ad.jpg
+* assets/smarted/profile/userdata/Thumbnails/6/6119e98e.jpg
+* assets/smarted/profile/userdata/Thumbnails/6/614d242e.png
+* assets/smarted/profile/userdata/Thumbnails/6/616e76bd.jpg
+* assets/smarted/profile/userdata/Thumbnails/6/62e7a536.jpg
+* assets/smarted/profile/userdata/Thumbnails/6/62fa2056.png
+* assets/smarted/profile/userdata/Thumbnails/6/631c68b5.jpg
+* assets/smarted/profile/userdata/Thumbnails/6/63773aa7.jpg
+* assets/smarted/profile/userdata/Thumbnails/6/638166f1.jpg
+* assets/smarted/profile/userdata/Thumbnails/6/64828b5f.jpg
+* assets/smarted/profile/userdata/Thumbnails/6/65a1156e.png
+* assets/smarted/profile/userdata/Thumbnails/6/66f4b64d.jpg
+* assets/smarted/profile/userdata/Thumbnails/6/69e30660.png
+* assets/smarted/profile/userdata/Thumbnails/6/6a3a6b89.jpg
+* assets/smarted/profile/userdata/Thumbnails/6/6abdf856.jpg
+* assets/smarted/profile/userdata/Thumbnails/6/6ac3da3d.jpg
+* assets/smarted/profile/userdata/Thumbnails/6/6ae60fc3.jpg
+* assets/smarted/profile/userdata/Thumbnails/6/6b8542f3.jpg
+* assets/smarted/profile/userdata/Thumbnails/6/6bab7a6a.jpg
+* assets/smarted/profile/userdata/Thumbnails/6/6bd9a3ba.jpg
+* assets/smarted/profile/userdata/Thumbnails/6/6c293e5c.jpg
+* assets/smarted/profile/userdata/Thumbnails/6/6dd04e98.png
+* assets/smarted/profile/userdata/Thumbnails/6/6df3729e.png
+* assets/smarted/profile/userdata/Thumbnails/7/7058abf8.jpg
+* assets/smarted/profile/userdata/Thumbnails/7/72d216a1.png
+* assets/smarted/profile/userdata/Thumbnails/7/735458e7.png
+* assets/smarted/profile/userdata/Thumbnails/7/73e85ef1.png
+* assets/smarted/profile/userdata/Thumbnails/7/74651c63.png
+* assets/smarted/profile/userdata/Thumbnails/7/75d9790c.png
+* assets/smarted/profile/userdata/Thumbnails/7/75f4efeb.png
+* assets/smarted/profile/userdata/Thumbnails/7/767239cd.jpg
+* assets/smarted/profile/userdata/Thumbnails/7/781455a3.jpg
+* assets/smarted/profile/userdata/Thumbnails/7/787f5dc9.png
+* assets/smarted/profile/userdata/Thumbnails/7/796bdc8e.jpg
+* assets/smarted/profile/userdata/Thumbnails/7/79bbae57.jpg
+* assets/smarted/profile/userdata/Thumbnails/7/7a4bd9c4.png
+* assets/smarted/profile/userdata/Thumbnails/7/7aa02ebe.jpg
+* assets/smarted/profile/userdata/Thumbnails/7/7df2ea93.png
+* assets/smarted/profile/userdata/Thumbnails/7/7e1b10a9.jpg
+* assets/smarted/profile/userdata/Thumbnails/7/7ee9cd2e.png
+* assets/smarted/profile/userdata/Thumbnails/7/7ffd3d01.png
+* assets/smarted/profile/userdata/Thumbnails/8/8002731a.png
+* assets/smarted/profile/userdata/Thumbnails/8/80ba53a5.jpg
+* assets/smarted/profile/userdata/Thumbnails/8/80fb2bf3.jpg
+* assets/smarted/profile/userdata/Thumbnails/8/81875db2.png
+* assets/smarted/profile/userdata/Thumbnails/8/8319bdd9.png
+* assets/smarted/profile/userdata/Thumbnails/8/83bb263a.jpg
+* assets/smarted/profile/userdata/Thumbnails/8/8405f7a3.png
+* assets/smarted/profile/userdata/Thumbnails/8/85aafc3f.jpg
+* assets/smarted/profile/userdata/Thumbnails/8/86eb1736.jpg
+* assets/smarted/profile/userdata/Thumbnails/8/8736b19e.jpg
+* assets/smarted/profile/userdata/Thumbnails/8/873d2e6e.jpg
+* assets/smarted/profile/userdata/Thumbnails/8/875f982d.png
+* assets/smarted/profile/userdata/Thumbnails/8/87bc28ff.jpg
+* assets/smarted/profile/userdata/Thumbnails/8/88160979.jpg
+* assets/smarted/profile/userdata/Thumbnails/8/882cc454.jpg
+* assets/smarted/profile/userdata/Thumbnails/8/8943bb12.jpg
+* assets/smarted/profile/userdata/Thumbnails/8/8a0f5702.jpg
+* assets/smarted/profile/userdata/Thumbnails/8/8aee9b07.jpg
+* assets/smarted/profile/userdata/Thumbnails/8/8af8b773.jpg
+* assets/smarted/profile/userdata/Thumbnails/8/8b0af949.jpg
+* assets/smarted/profile/userdata/Thumbnails/8/8dcf12fc.jpg
+* assets/smarted/profile/userdata/Thumbnails/8/8ec8ca88.png
+* assets/smarted/profile/userdata/Thumbnails/8/8f9cc292.jpg
+* assets/smarted/profile/userdata/Thumbnails/8/8ff501a1.jpg
+* assets/smarted/profile/userdata/Thumbnails/9/91e3a3c2.jpg
+* assets/smarted/profile/userdata/Thumbnails/9/9219899f.jpg
+* assets/smarted/profile/userdata/Thumbnails/9/92ed9366.png
+* assets/smarted/profile/userdata/Thumbnails/9/93588867.jpg
+* assets/smarted/profile/userdata/Thumbnails/9/939dc64e.jpg
+* assets/smarted/profile/userdata/Thumbnails/9/93f04256.jpg
+* assets/smarted/profile/userdata/Thumbnails/9/949eb218.jpg
+* assets/smarted/profile/userdata/Thumbnails/9/952577a4.jpg
+* assets/smarted/profile/userdata/Thumbnails/9/95344854.jpg
+* assets/smarted/profile/userdata/Thumbnails/9/979dd8dc.jpg
+* assets/smarted/profile/userdata/Thumbnails/9/9822851b.jpg
+* assets/smarted/profile/userdata/Thumbnails/9/994dfc34.jpg
+* assets/smarted/profile/userdata/Thumbnails/9/9bf798bd.png
+* assets/smarted/profile/userdata/Thumbnails/9/9c61a271.jpg
+* assets/smarted/profile/userdata/Thumbnails/9/9d0e4c2d.png
+* assets/smarted/profile/userdata/Thumbnails/9/9d61aad9.png
+* assets/smarted/profile/userdata/Thumbnails/9/9d89c6f9.jpg
+* assets/smarted/profile/userdata/Thumbnails/9/9f364b57.png
+* assets/smarted/profile/userdata/Thumbnails/9/9f3ffff5.png
+* assets/smarted/profile/userdata/Thumbnails/a/a114bf7a.png
+* assets/smarted/profile/userdata/Thumbnails/a/a15649f8.jpg
+* assets/smarted/profile/userdata/Thumbnails/a/a158f659.png
+* assets/smarted/profile/userdata/Thumbnails/a/a1e55a2d.jpg
+* assets/smarted/profile/userdata/Thumbnails/a/a250a3ef.jpg
+* assets/smarted/profile/userdata/Thumbnails/a/a346e805.jpg
+* assets/smarted/profile/userdata/Thumbnails/a/a4a83cd9.png
+* assets/smarted/profile/userdata/Thumbnails/a/a5043ba4.jpg
+* assets/smarted/profile/userdata/Thumbnails/a/a578b9ef.png
+* assets/smarted/profile/userdata/Thumbnails/a/a6954789.jpg
+* assets/smarted/profile/userdata/Thumbnails/a/a6a1ca52.png
+* assets/smarted/profile/userdata/Thumbnails/a/a7d8b8e0.jpg
+* assets/smarted/profile/userdata/Thumbnails/a/a8790398.jpg
+* assets/smarted/profile/userdata/Thumbnails/a/a8c53363.jpg
+* assets/smarted/profile/userdata/Thumbnails/a/a8dae0af.jpg
+* assets/smarted/profile/userdata/Thumbnails/a/a911acd6.jpg
+* assets/smarted/profile/userdata/Thumbnails/a/aa400767.jpg
+* assets/smarted/profile/userdata/Thumbnails/a/aa61e34f.jpg
+* assets/smarted/profile/userdata/Thumbnails/b/b020e088.png
+* assets/smarted/profile/userdata/Thumbnails/b/b025122e.png
+* assets/smarted/profile/userdata/Thumbnails/b/b18ffdf3.jpg
+* assets/smarted/profile/userdata/Thumbnails/b/b1eba811.png
+* assets/smarted/profile/userdata/Thumbnails/b/b2832ce0.jpg
+* assets/smarted/profile/userdata/Thumbnails/b/b2d31b1f.jpg
+* assets/smarted/profile/userdata/Thumbnails/b/b3135bd9.png
+* assets/smarted/profile/userdata/Thumbnails/b/b321f5f8.png
+* assets/smarted/profile/userdata/Thumbnails/b/b3499345.jpg
+* assets/smarted/profile/userdata/Thumbnails/b/b3dbb4f2.png
+* assets/smarted/profile/userdata/Thumbnails/b/b4bb9a5d.jpg
+* assets/smarted/profile/userdata/Thumbnails/b/b577d516.png
+* assets/smarted/profile/userdata/Thumbnails/b/b5afddf3.png
+* assets/smarted/profile/userdata/Thumbnails/b/b5c06036.png
+* assets/smarted/profile/userdata/Thumbnails/b/b6dbd81e.png
+* assets/smarted/profile/userdata/Thumbnails/b/b70d6a38.jpg
+* assets/smarted/profile/userdata/Thumbnails/b/b87258e6.jpg
+* assets/smarted/profile/userdata/Thumbnails/b/b8a57340.jpg
+* assets/smarted/profile/userdata/Thumbnails/b/b9723b72.jpg
+* assets/smarted/profile/userdata/Thumbnails/b/b97ea6af.jpg
+* assets/smarted/profile/userdata/Thumbnails/b/bc3bea7d.jpg
+* assets/smarted/profile/userdata/Thumbnails/b/bd124430.png
+* assets/smarted/profile/userdata/Thumbnails/b/bd56674b.png
+* assets/smarted/profile/userdata/Thumbnails/b/bd95ea50.png
+* assets/smarted/profile/userdata/Thumbnails/b/bda39e08.png
+* assets/smarted/profile/userdata/Thumbnails/b/bdddda7f.jpg
+* assets/smarted/profile/userdata/Thumbnails/c/c05c2a6a.jpg
+* assets/smarted/profile/userdata/Thumbnails/c/c0bfe26a.jpg
+* assets/smarted/profile/userdata/Thumbnails/c/c0d5a838.png
+* assets/smarted/profile/userdata/Thumbnails/c/c1e65a9c.png
+* assets/smarted/profile/userdata/Thumbnails/c/c2689544.png
+* assets/smarted/profile/userdata/Thumbnails/c/c26ae822.png
+* assets/smarted/profile/userdata/Thumbnails/c/c27f0db6.jpg
+* assets/smarted/profile/userdata/Thumbnails/c/c2fe0e35.jpg
+* assets/smarted/profile/userdata/Thumbnails/c/c3da6848.png
+* assets/smarted/profile/userdata/Thumbnails/c/c3eac82c.png
+* assets/smarted/profile/userdata/Thumbnails/c/c4867e67.jpg
+* assets/smarted/profile/userdata/Thumbnails/c/c48911bd.png
+* assets/smarted/profile/userdata/Thumbnails/c/c5f7a3df.png
+* assets/smarted/profile/userdata/Thumbnails/c/c8240632.jpg
+* assets/smarted/profile/userdata/Thumbnails/c/c909b497.jpg
+* assets/smarted/profile/userdata/Thumbnails/c/ca23c3fd.jpg
+* assets/smarted/profile/userdata/Thumbnails/c/cb44ddb9.png
+* assets/smarted/profile/userdata/Thumbnails/c/cc995a89.jpg
+* assets/smarted/profile/userdata/Thumbnails/c/cdc1be77.jpg
+* assets/smarted/profile/userdata/Thumbnails/d/d0ff4727.jpg
+* assets/smarted/profile/userdata/Thumbnails/d/d27f26e7.png
+* assets/smarted/profile/userdata/Thumbnails/d/d29bc0db.png
+* assets/smarted/profile/userdata/Thumbnails/d/d48b75e5.png
+* assets/smarted/profile/userdata/Thumbnails/d/d4a1f58f.jpg
+* assets/smarted/profile/userdata/Thumbnails/d/d7e61359.png
+* assets/smarted/profile/userdata/Thumbnails/d/d85c6c68.png
+* assets/smarted/profile/userdata/Thumbnails/d/d87715e7.jpg
+* assets/smarted/profile/userdata/Thumbnails/d/d8b841dc.png
+* assets/smarted/profile/userdata/Thumbnails/d/d93a9eed.jpg
+* assets/smarted/profile/userdata/Thumbnails/d/d9603e82.jpg
+* assets/smarted/profile/userdata/Thumbnails/d/da08087c.jpg
+* assets/smarted/profile/userdata/Thumbnails/d/da40fedf.jpg
+* assets/smarted/profile/userdata/Thumbnails/d/daa53d0b.jpg
+* assets/smarted/profile/userdata/Thumbnails/d/dc2e51ce.png
+* assets/smarted/profile/userdata/Thumbnails/d/dc2fc23f.jpg
+* assets/smarted/profile/userdata/Thumbnails/d/df4b5963.png
+* assets/smarted/profile/userdata/Thumbnails/d/df5914c1.jpg
+* assets/smarted/profile/userdata/Thumbnails/d/df64f9a0.jpg
+* assets/smarted/profile/userdata/Thumbnails/e/e35b9403.png
+* assets/smarted/profile/userdata/Thumbnails/e/e3ff6025.png
+* assets/smarted/profile/userdata/Thumbnails/e/e6295e60.png
+* assets/smarted/profile/userdata/Thumbnails/e/e6f6120f.jpg
+* assets/smarted/profile/userdata/Thumbnails/e/eb5dc39b.jpg
+* assets/smarted/profile/userdata/Thumbnails/e/eb647b25.jpg
+* assets/smarted/profile/userdata/Thumbnails/e/ebf5b64d.png
+* assets/smarted/profile/userdata/Thumbnails/e/ec02cf2e.png
+* assets/smarted/profile/userdata/Thumbnails/e/ec39b5a7.png
+* assets/smarted/profile/userdata/Thumbnails/e/ee489f49.jpg
+* assets/smarted/profile/userdata/Thumbnails/e/ee53fa8f.png
+* assets/smarted/profile/userdata/Thumbnails/e/ee717547.jpg
+* assets/smarted/profile/userdata/Thumbnails/e/eee935cf.jpg
+* assets/smarted/profile/userdata/Thumbnails/e/ef9dc2d8.png
+* assets/smarted/profile/userdata/Thumbnails/e/efdff18c.jpg
+* assets/smarted/profile/userdata/Thumbnails/f/f2d4bc6e.png
+* assets/smarted/profile/userdata/Thumbnails/f/f435d59b.jpg
+* assets/smarted/profile/userdata/Thumbnails/f/f47b08bf.jpg
+* assets/smarted/profile/userdata/Thumbnails/f/f4fd245d.png
+* assets/smarted/profile/userdata/Thumbnails/f/f791e3b7.jpg
+* assets/smarted/profile/userdata/Thumbnails/f/f7a128a6.png
+* assets/smarted/profile/userdata/Thumbnails/f/f7f8fb2b.png
+* assets/smarted/profile/userdata/Thumbnails/f/f7fa80a0.jpg
+* assets/smarted/profile/userdata/Thumbnails/f/fab7509b.jpg
+* assets/smarted/profile/userdata/Thumbnails/f/fc50b8bb.jpg
+* assets/smarted/profile/userdata/Thumbnails/f/fd59e37d.jpg
+* assets/smarted/profile/userdata/Thumbnails/f/fe0fba71.jpg
+* assets/smarted/profile/userdata/addon_data/peripheral.joystick/resources/buttonmaps/xml/android/uinput-fpc_v0666_p0888_2b.xml
+* assets/smarted/profile/userdata/addon_data/plugin.audio.mp3streams/cookiejar.lwp
+* assets/smarted/profile/userdata/addon_data/plugin.audio.mp3streams/downloads.list
+* assets/smarted/profile/userdata/addon_data/plugin.audio.mp3streams/favourites_album.list
+* assets/smarted/profile/userdata/addon_data/plugin.audio.mp3streams/favourites_artist.list
+* assets/smarted/profile/userdata/addon_data/plugin.audio.mp3streams/favourites_songs.list
+* assets/smarted/profile/userdata/addon_data/plugin.audio.mp3streams/playlist_file.list
+* assets/smarted/profile/userdata/addon_data/plugin.audio.mp3streams/temp_dl/4742c4fbcace53b38c6568d152bd4069
+* assets/smarted/profile/userdata/addon_data/plugin.program.openwizard/settings.xml
+* assets/smarted/profile/userdata/addon_data/plugin.program.openwizard/wizard.log
+* assets/smarted/profile/userdata/addon_data/plugin.video.BrazucaPlay.Matrix/cache.db
+* assets/smarted/profile/userdata/addon_data/plugin.video.BrazucaPlay.Matrix/epg.db
+* assets/smarted/profile/userdata/addon_data/plugin.video.BrazucaPlay.Matrix/pass.txt
+* assets/smarted/profile/userdata/addon_data/plugin.video.BrazucaPlay.Matrix/settings.xml
+* assets/smarted/profile/userdata/addon_data/plugin.video.youtube/access_manager.json
+* assets/smarted/profile/userdata/addon_data/plugin.video.youtube/api_keys.json
+* assets/smarted/profile/userdata/addon_data/plugin.video.youtube/eb8733fad6d44c2d99154d1bb70894a8/cache.sqlite
+* assets/smarted/profile/userdata/addon_data/plugin.video.youtube/settings.xml
+* assets/smarted/profile/userdata/addon_data/repository.elementumorg/entries.json
+* assets/smarted/profile/userdata/addon_data/skin.estuary/settings.xml
+* assets/smarted/profile/userdata/advancedsettings.xml
+* assets/smarted/profile/userdata/decoderfilter.xml
+* assets/smarted/profile/userdata/favourites.xml
+* assets/smarted/profile/userdata/guisettings.xml
+* assets/smarted/profile/userdata/peripheral_data/application_Keyboard.xml
+* assets/smarted/profile/userdata/peripheral_data/application_Teclado.xml
+* assets/smarted/profile/userdata/profiles.xml
+* assets/smarted/profile/userdata/sources.xml
+
+## Skin: xml e settings (106)
+* assets/addons/skin.novatv/resources/settings.xml
+* assets/addons/skin.novatv/xml/AddonBrowser.xml
+* assets/addons/skin.novatv/xml/Custom_1100_AddonLauncher.xml
+* assets/addons/skin.novatv/xml/Custom_1101_SettingsList.xml
+* assets/addons/skin.novatv/xml/Custom_1102_TextViewer.xml
+* assets/addons/skin.novatv/xml/Custom_1103_VolumeSlider.xml
+* assets/addons/skin.novatv/xml/Custom_1104_Fanart.xml
+* assets/addons/skin.novatv/xml/Custom_1105_MusicOSDSettings.xml
+* assets/addons/skin.novatv/xml/Custom_1107_SearchDialog.xml
+* assets/addons/skin.novatv/xml/Custom_1109_TopBarOverlay.xml
+* assets/addons/skin.novatv/xml/Custom_1110_TempoControl.xml
+* assets/addons/skin.novatv/xml/Defaults.xml
+* assets/addons/skin.novatv/xml/DialogAddonInfo.xml
+* assets/addons/skin.novatv/xml/DialogAddonSettings.xml
+* assets/addons/skin.novatv/xml/DialogBusy.xml
+* assets/addons/skin.novatv/xml/DialogButtonMenu.xml
+* assets/addons/skin.novatv/xml/DialogColorPicker.xml
+* assets/addons/skin.novatv/xml/DialogConfirm.xml
+* assets/addons/skin.novatv/xml/DialogContextMenu.xml
+* assets/addons/skin.novatv/xml/DialogExtendedProgressBar.xml
+* assets/addons/skin.novatv/xml/DialogFullScreenInfo.xml
+* assets/addons/skin.novatv/xml/DialogGameControllers.xml
+* assets/addons/skin.novatv/xml/DialogKeyboard.xml
+* assets/addons/skin.novatv/xml/DialogMediaSource.xml
+* assets/addons/skin.novatv/xml/DialogMusicInfo.xml
+* assets/addons/skin.novatv/xml/DialogNotification.xml
+* assets/addons/skin.novatv/xml/DialogNumeric.xml
+* assets/addons/skin.novatv/xml/DialogPVRChannelGuide.xml
+* assets/addons/skin.novatv/xml/DialogPVRChannelManager.xml
+* assets/addons/skin.novatv/xml/DialogPVRChannelsOSD.xml
+* assets/addons/skin.novatv/xml/DialogPVRGroupManager.xml
+* assets/addons/skin.novatv/xml/DialogPVRGuideControls.xml
+* assets/addons/skin.novatv/xml/DialogPVRGuideSearch.xml
+* assets/addons/skin.novatv/xml/DialogPVRInfo.xml
+* assets/addons/skin.novatv/xml/DialogPVRRadioRDSInfo.xml
+* assets/addons/skin.novatv/xml/DialogPictureInfo.xml
+* assets/addons/skin.novatv/xml/DialogPlayerProcessInfo.xml
+* assets/addons/skin.novatv/xml/DialogSeekBar.xml
+* assets/addons/skin.novatv/xml/DialogSelect.xml
+* assets/addons/skin.novatv/xml/DialogSettings.xml
+
+## Backups dentro do perfil (zip)
+
+* `assets/smarted/profile/SaveData.zip`: 5 entradas, 0 de skin, 0 de menus
+    guisettings: <setting id="lookandfeel.skin" default="true">skin.estuary</setting>
+* `assets/smarted/profile/My_Builds/BACKUP%2BSMARTED_guisettings.zip`: 2 entradas, 0 de skin, 0 de menus
+    guisettings: <setting id="lookandfeel.skin" default="true">skin.estuary</setting>
+* `assets/smarted/profile/My_Builds/BACKUP+SMARTED.zip`: 2152 entradas, 0 de skin, 12 de menus
+    guisettings: <setting id="lookandfeel.skin" default="true">skin.estuary</setting>
+* `assets/smarted/profile/addons/packages/addon.dns-1.0.1.zip`: 7 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/hunter.fm-0.0.2.zip`: 21 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/inputstream.adaptive-21.5.25.zip`: 78 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/metadata.album.universal-3.1.20.zip`: 83 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/metadata.artists.universal-4.3.24.zip`: 83 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/metadata.common.fanart.tv-3.6.5.zip`: 3 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/metadata.generic.albums-1.0.20.zip`: 93 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/metadata.generic.artists-1.0.20.zip`: 93 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/metadata.themoviedb.org.python-3.2.2.zip`: 95 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/metadata.tvshows.themoviedb.org.python-1.7.13.zip`: 93 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/plugin.audio.mp3streams-2026.08.24.zip`: 273 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/plugin.program.aresvikings-2.10.zip`: 18 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/plugin.program.openwizard-2.0.7.zip`: 157 entradas, 0 de skin, 7 de menus
+* `assets/smarted/profile/addons/packages/plugin.video.BrazucaPlay.Matrix-2.1.4.zip`: 17 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/plugin.video.f4mTester-4.2.5.zip`: 7 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/plugin.video.tvstreamx-5.3.9.zip`: 173 entradas, 0 de skin, 1 de menus
+* `assets/smarted/profile/addons/packages/plugin.video.youtube-7.4.4rw unofficial.3.zip`: 329 entradas, 0 de skin, 1 de menus
+* `assets/smarted/profile/addons/packages/repository.elementumorg-0.0.7.zip`: 42 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/repository.resolveurl-1.0.0.zip`: 4 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/resource.language.pt_br-11.0.109.zip`: 4 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/script.module.beautifulsoup4-4.12.2.zip`: 13 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/script.module.certifi-2023.5.7.zip`: 7 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/script.module.chardet-5.1.0.zip`: 51 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/script.module.future-1.0.0 matrix.1.zip`: 214 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/script.module.idna-3.10.0.zip`: 11 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/script.module.kodi-six-0.1.3.1.zip`: 11 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/script.module.mutagen-1.47.0.zip`: 60 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/script.module.requests-2.31.0.zip`: 21 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/script.module.simplejson-3.19.1 matrix.1.zip`: 11 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/script.module.six-1.16.0 matrix.1.zip`: 4 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/script.module.soupsieve-2.4.1.zip`: 10 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/script.module.urllib3-2.2.3.zip`: 40 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/service.subtitles.legendei-0.1.0.zip`: 8 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/service.xbmc.versioncheck-0.5.30 matrix.1.zip`: 102 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/vfs.rar-21.0.2.zip`: 82 entradas, 0 de skin, 0 de menus
+* `assets/smarted/profile/addons/packages/vkkodi.repo-3.33.zip`: 4 entradas, 0 de skin, 0 de menus
+
 ## Amostra do perfil embutido (2735 arquivos)
 
 * assets/userdata/ModeLines_template.xml
