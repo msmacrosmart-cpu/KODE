@@ -694,3 +694,10 @@ Dois builds anteriores a este falharam no passo bloqueante de conferência
 (1.0.71 e o primeiro 1.0.72): a falha era `atalho VIP no plugin`, exatamente a
 substituição da pasta `plugin.video.smarted` pelo APK estável descrita acima.
 Nenhum APK desses chegou a ser publicado.
+
+### Como acompanhar os builds (fluxo combinado)
+
+Checagens de status em ciclos curtos, de **6 em 6 minutos** (`sleep 360` +
+`gh run list`), sem pausas longas do tipo 25–30 min: assim um ajuste de layout,
+QR ou validação é testado e corrigido no mesmo ciclo, e não se perde tempo
+esperando. Como cada build leva ~30–45 min, o ciclo médio são 5 a 8 checagens.
