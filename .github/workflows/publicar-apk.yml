@@ -66,7 +66,16 @@ jobs:
               ACHOU="$RUN"; echo "artifact de $VERSAO baixado do run $ACHOU"; break
             fi
           done
-          [ -n "$ACHOU" ] || { echo "::error::nenhum artifact apk-unificado-$VERSAO"; exit 1; }
+          if [ -z "$ACHOU" ]; then
+            RODADAS=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/build-monolith.yml/runs?per_page=15" \
+                      --jq '.workflow_runs[].id' 2>&1 | tr '\n' ' ' | head -c 300)
+            ARTS=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=10" --jq '.artifacts[].name' 2>&1 | tr '\n' ' ' | head -c 300)
+            echo "::error title=diag::versao=$VERSAO runs=$RODADAS"
+            echo "::error title=diag::artifacts=$ARTS"
+            ls -la apk || true
+            echo "::error::nenhum artifact apk-unificado-$VERSAO"
+            exit 1
+          fi
           APK=$(find apk -name '*.apk' | head -1)
           [ -n "$APK" ] || { echo "::error::artifact sem APK"; exit 1; }
           echo "APK_BAIXADO=$APK" >> "$GITHUB_ENV"
