@@ -7,6 +7,12 @@
     <extension point="xbmc.python.script" library="default.py">
         <provides>executable</provides>
     </extension>
+    <!-- Atalho permanente da Home: plugin://script.smartedtv.ajustes/?acao=...
+         (o plugin.video.smarted do APK vem do APK estável, então quem hospeda
+         o menu é este add-on, que é copiado do repositório) -->
+    <extension point="xbmc.python.pluginsource" library="vipmenu.py">
+        <provides>video</provides>
+    </extension>
     <extension point="xbmc.addon.metadata">
         <platform>all</platform>
         <summary lang="pt_BR">Ajustes da SMARTEDTV: sem anúncios (VIP) e compartilhar</summary>

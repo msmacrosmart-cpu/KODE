@@ -158,6 +158,9 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
             texto_skin = z.read(b_skin).decode("utf-8", "replace")
             rel.exige("def ensure_shortcuts" in texto_skin,
                       "atalhos VIP/Compartilhar na Home", "ensure_shortcuts")
+            rel.exige("plugin://script.smartedtv.ajustes/" in texto_skin,
+                      "atalhos apontam para o add-on de ajustes",
+                      "plugin://script.smartedtv.ajustes/")
         else:
             rel.falha("skin_setup do bootstrap", f"{b_skin} ausente")
         b_vip = "assets/addons/service.smarted.bootstrap/vip.py"
@@ -165,11 +168,19 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
             texto_vip = z.read(b_vip).decode("utf-8", "replace")
             rel.exige("VALIDAR_URIS" in texto_vip,
                       "ativação por código (rotas)", "VALIDAR_URIS")
-        plugin_src = "assets/addons/plugin.video.smarted/default.py"
-        if plugin_src in presentes:
-            texto_plugin = z.read(plugin_src).decode("utf-8", "replace")
-            rel.exige("route == 'vip'" in texto_plugin,
-                      "atalho VIP no plugin", "route == 'vip'")
+        # o menu dos atalhos da Home mora no add-on de ajustes: o
+        # plugin.video.smarted do APK é substituído pelo do APK estável
+        vipmenu = "assets/addons/script.smartedtv.ajustes/vipmenu.py"
+        rel.exige(vipmenu in presentes, "menu VIP do atalho da Home", vipmenu)
+        if vipmenu in presentes:
+            texto_vipmenu = z.read(vipmenu).decode("utf-8", "replace")
+            rel.exige("plugin://script.smartedtv.ajustes/" in texto_vipmenu,
+                      "rotas do menu VIP", "plugin://script.smartedtv.ajustes/")
+        ajustes_xml = "assets/addons/script.smartedtv.ajustes/addon.xml"
+        if ajustes_xml in presentes:
+            texto_ajustes = z.read(ajustes_xml).decode("utf-8", "replace")
+            rel.exige("xbmc.python.pluginsource" in texto_ajustes,
+                      "ajustes como fonte de plugin", "xbmc.python.pluginsource")
 
         # --- menu de ajustes / VIP -------------------------------------------
         alvo_ajustes = "assets/addons/script.smartedtv.ajustes/addon.xml"

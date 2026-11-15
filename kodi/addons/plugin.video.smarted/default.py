@@ -69,86 +69,24 @@ def main():
 
 
 # --------------------------------------------------------------------- VIP
-# Atalho permanente da Home: lista as opções de monetização/compartilhamento.
-# Tudo aqui chama o menu do add-on de ajustes ou um builtin do Kodi — não abre
-# conteúdo, então não interfere na navegação normal.
-ACOES_VIP = (
-    ('Assistir sem anúncios (VIP)', 'comprar',
-     'Plano de R$ 24,90/mês, pagamento pela Cakto'),
-    ('Já tenho um código', 'codigo',
-     'Insira o código de ativação e desligue os anúncios'),
-    ('Compartilhar aplicativo', 'compartilhar',
-     'Envie o convite pelo WhatsApp, Telegram ou e-mail'),
-    ('Mostrar QR Code', 'qrcode',
-     'Aponte a câmera do celular para baixar o app'),
-)
-
-
-def _servico():
-    """Deixa os módulos do serviço (vip, retomar) importáveis."""
-    try:
-        import xbmcvfs
-        base = os.path.join(xbmcvfs.translatePath('special://home'), 'addons',
-                            'service.smarted.bootstrap')
-        if base not in sys.path:
-            sys.path.append(base)
-        return base
-    except Exception:  # noqa: BLE001
-        return None
+# O menu VIP de verdade mora no add-on de ajustes (é ele que vai para o APK:
+# a pasta deste plugin é substituída pela do APK estável em
+# inject-base-estavel.py). Aqui só redirecionamos, para quem chamar a rota a
+# partir do repositório não ficar sem resposta.
+MENU_VIP = 'plugin://script.smartedtv.ajustes/'
 
 
 def menu_vip(handle):
-    xbmcplugin.setContent(handle, 'files')
-    acoes = list(ACOES_VIP)
-    _servico()
-    try:
-        import retomar
-        ponto = retomar.ultimo()
-    except Exception:  # noqa: BLE001
-        ponto = None
-    if ponto:
-        acoes.insert(0, ('Continuar assistindo: %s' % ponto['titulo'], 'continuar',
-                         'Volta do ponto onde você parou'))
-    for rotulo, acao, descricao in acoes:
-        item = xbmcgui.ListItem(label=rotulo, label2=descricao)
-        item.setInfo('video', {'title': rotulo, 'plot': descricao})
-        url = 'plugin://plugin.video.smarted/?route=vip-acao&acao=%s' % acao
-        xbmcplugin.addDirectoryItem(handle, url, item, isFolder=False)
-    xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+    import xbmc
+    xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
+    xbmc.executebuiltin('ActivateWindow(Videos,%s,return)' % MENU_VIP)
 
 
 def executar_acao(handle, params):
     import xbmc
-    import xbmcvfs
-
     acao = params.get('acao', [''])[0]
-    _servico()
-    try:
-        import vip
-    except Exception:  # noqa: BLE001
-        vip = None
-    try:
-        import retomar
-    except Exception:  # noqa: BLE001
-        retomar = None
-
-    if acao == 'continuar' and retomar is not None:
-        if not retomar.continuar():
-            xbmcgui.Dialog().ok('SMARTEDTV', 'Nenhum ponto salvo para retomar.')
-    elif acao == 'comprar' and vip is not None:
-        vip.abrir_checkout()
-    elif acao == 'codigo':
-        xbmc.executebuiltin('RunAddon(script.smartedtv.ajustes)')
-    elif acao == 'compartilhar' and vip is not None:
-        vip.compartilhar()
-    elif acao == 'qrcode':
-        qr = os.path.join(xbmcvfs.translatePath('special://home'), 'addons',
-                          'script.smartedtv.ajustes', 'resources', 'qrcode.png')
-        if xbmcvfs.exists(qr):
-            xbmc.executebuiltin('ShowPicture(%s)' % qr)
-        else:
-            xbmcgui.Dialog().ok('SMARTEDTV', 'QR Code indisponível neste aparelho.')
-    xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+    xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
+    xbmc.executebuiltin('ActivateWindow(Videos,%s?acao=%s,return)' % (MENU_VIP, acao))
 
 
 def search_series(handle):

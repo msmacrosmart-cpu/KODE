@@ -239,16 +239,23 @@ class VerificadorDoApkTest(unittest.TestCase):
                        b"Licenca adsPermitidos AbrirUrlActivity CompartilharActivity "
                        b"BoasVindas iniciarKodi "
                                        b"com/google/android/gms/ads"))
+            z.writestr("assets/addons/script.smartedtv.ajustes/vipmenu.py",
+                       "BASE = 'plugin://script.smartedtv.ajustes/'\n")
+            z.writestr("assets/addons/script.smartedtv.ajustes/addon.xml",
+                       '<addon id="script.smartedtv.ajustes"><extension '
+                       'point="xbmc.python.pluginsource" library="vipmenu.py"/></addon>')
             z.writestr("assets/addons/script.smartedtv.ajustes/resources/qrcode.png",
                        b"\x89PNG\r\n\x1a\n" + b"0" * 2000)
             z.writestr("assets/addons/service.smarted.bootstrap/retomar.py",
                        "def encerrar():\n    pass\n")
             z.writestr("assets/addons/service.smarted.bootstrap/skin_setup.py",
-                       "def ensure_shortcuts(log=None):\n    return []\n")
+                       "def ensure_shortcuts(log=None):\n    return []\n"
+                       "URL = 'plugin://script.smartedtv.ajustes/'\n")
             z.writestr("assets/addons/service.smarted.bootstrap/vip.py",
                        "VALIDAR_URIS = ('https://smartedtv-vip.lovable.app/api/validar',)\n")
             z.writestr("assets/addons/plugin.video.smarted/default.py",
-                       "# rota vip\nif route == 'vip':\n    pass\n")
+                       "# rota vip\nif route == 'vip':\n    pass\n"
+                       "MENU = 'plugin://script.smartedtv.ajustes/'\n")
             z.writestr("assets/addons/service.smarted.bootstrap/smart_ads.py",
                        "ATIVIDADE_PREROLL = 'smartedtv.full.PreRollActivity'\n"
                        "ATIVIDADE_ABERTURA = 'smartedtv.full.AppOpenActivity'\n"
@@ -604,11 +611,20 @@ class BoasVindasTest(unittest.TestCase):
         # a barra usa 1..8 (navigation.SLOTS) e limpa o resto: 9/10 sao nossos
         nav = Path('kodi/addons/plugin.video.smarted/navigation.py').read_text(encoding='utf-8')
         self.assertIn('SLOTS = 8', nav)
+        # o menu mora no add-on de ajustes: a pasta do plugin.video.smarted do
+        # APK é substituída pela do APK estável (inject-base-estavel.py)
+        self.assertIn('plugin://script.smartedtv.ajustes/', skin)
+        vipmenu = Path('kodi/addons/script.smartedtv.ajustes/vipmenu.py').read_text(encoding='utf-8')
+        for acao in ("'comprar'", "'codigo'", "'compartilhar'", "'qrcode'", "'continuar'"):
+            self.assertIn(acao, vipmenu)
+        self.assertIn('xbmcplugin.addDirectoryItem', vipmenu)
+        self.assertIn('ShowPicture(', vipmenu)
+        addon = Path('kodi/addons/script.smartedtv.ajustes/addon.xml').read_text(encoding='utf-8')
+        self.assertIn('xbmc.python.pluginsource', addon)
+        self.assertIn('library="vipmenu.py"', addon)
         plugin = Path('kodi/addons/plugin.video.smarted/default.py').read_text(encoding='utf-8')
-        self.assertIn("route == 'vip'", plugin)
-        self.assertIn("route == 'vip-acao'", plugin)
-        self.assertIn("'qrcode'", plugin)
-        self.assertIn('ShowPicture(', plugin)
+        self.assertIn("route == 'vip'", plugin)          # redireciona para o menu
+        self.assertIn('plugin://script.smartedtv.ajustes/', plugin)
 
     def test_qr_no_menu_de_ajustes(self):
         ajustes = Path('kodi/addons/script.smartedtv.ajustes/default.py').read_text(encoding='utf-8')

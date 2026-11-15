@@ -203,9 +203,8 @@ def ensure_home_nodes(home_xml_paths=None, favourites_path=None, log=None):
 # (navigation.SLOTS) e limpa o que sobra nesse intervalo; por isso usamos 9 e 10,
 # que a skin já desenha e ninguém mais escreve.
 ATALHOS = (
-    (9, 'VIP', 'plugin://plugin.video.smarted/?route=vip'),
-    (10, 'Compartilhar',
-     'plugin://plugin.video.smarted/?route=vip-acao&acao=compartilhar'),
+    (9, 'VIP', 'plugin://script.smartedtv.ajustes/'),
+    (10, 'Compartilhar', 'plugin://script.smartedtv.ajustes/?acao=compartilhar'),
 )
 
 

@@ -617,6 +617,8 @@ def main() -> int:
     assert qr.is_file() and qr.stat().st_size > 1000, "QR de compartilhamento ausente"
     assert (src / "addons/service.smarted.bootstrap/retomar.py").is_file(), \
         "modulo do ponto de retomada ausente"
+    assert (src / "addons/script.smartedtv.ajustes/vipmenu.py").is_file(), \
+        "menu VIP do atalho da Home ausente"
     for addon_id in [SKIN_ID, SKIN_CLASSICA_ID] + ADDONS:
         assert (src / "addons" / addon_id / "addon.xml").is_file(), f"addon {addon_id}"
         assert f"addons/{addon_id}/*" in ler(src / "cmake/installdata/common/addons.txt")

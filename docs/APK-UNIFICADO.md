@@ -649,11 +649,25 @@ continuar) e `?route=vip-acao&acao=…`.
 falha o build antes de compilar se o QR ou o `retomar.py` não existirem.
 `tests/test_monolito.py` cobre tudo isso (400 testes).
 
-### 1.0.72 — correção do ponto de retomada fora do serviço
+### 1.0.72 — correções que a conferência do APK pegou
 
-`retomar.py` passou a usar o id fixo `service.smarted.bootstrap` em vez de
-`xbmcaddon.Addon().getAddonInfo('id')`: o módulo também é importado pelo
-`plugin.video.smarted`, e nesse caso `Addon()` devolveria a pasta do plugin —
-o `retomar.json` gravado pelo serviço não seria encontrado e o item
-"Continuar assistindo" não apareceria no menu VIP. Sem outras mudanças de
-comportamento; 1.0.72 existe só para publicar o APK com essa correção.
+O build de 1.0.71 falhou no passo bloqueante com **1 falha**:
+`atalho VIP no plugin — route == 'vip'`. Causa: o APK final não leva o
+`plugin.video.smarted` do repositório — `inject-base-estavel.py` substitui a
+pasta inteira (`SUBSTITUIR`) pela versão do APK estável do usuário, então as
+rotas novas nunca chegariam ao aparelho (o atalho da Home abriria um endereço
+inexistente). Correções:
+
+* o menu dos atalhos passou a morar no **add-on de ajustes**, que é copiado do
+  repositório: `script.smartedtv.ajustes/vipmenu.py`, publicado como
+  `xbmc.python.pluginsource` no `addon.xml` → `plugin://script.smartedtv.ajustes/`;
+* `ensure_shortcuts` grava `plugin://script.smartedtv.ajustes/` (slot 9, VIP) e
+  `…/?acao=compartilhar` (slot 10);
+* `plugin.video.smarted` só redireciona (`ActivateWindow(Videos,plugin://script.smartedtv.ajustes/)`)
+  para quem chamar a rota a partir do repositório;
+* `retomar.py` usa o id fixo `service.smarted.bootstrap` em vez de
+  `xbmcaddon.Addon().getAddonInfo('id')`: o módulo também é importado pelo
+  plugin e, nesse caso, `Addon()` devolveria a pasta errada — o
+  "Continuar assistindo" não apareceria no menu;
+* o verificador e o `integrate-monolith.py` passaram a exigir `vipmenu.py`, a
+  extensão `pluginsource` no `addon.xml` dos ajustes e as URLs acima.
