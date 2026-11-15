@@ -66,7 +66,8 @@ jobs:
           echo "::error title=diag::AJAR $(ls -la "$AJAR" 2>&1 | head -1 | tr '\n' ' ')"
           echo "::error title=diag::AAR $(ls -l /tmp/j/*.aar 2>&1 | tr '\n' '|')"
           echo "::error title=diag::API $(unzip -l /tmp/j/play-services-ads-api/classes.jar 2>&1 | head -6 | tr '\n' '|')"
-          echo "::error title=diag::HTTP $(curl -s -o /dev/null -w '%{http_code}' https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-ads-api/23.2.0/play-services-ads-api-23.2.0.aar)"
+          echo "::error title=diag::META $(curl -s https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-ads-api/maven-metadata.xml | tr '\n' ' ' | tail -c 400)"
+          echo "::error title=diag::POM $(curl -s https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-ads/23.2.0/play-services-ads-23.2.0.pom | tr '\n' ' ' | head -c 900)"
           # JDK 17 não aceita mais -bootclasspath: android.jar vai no classpath
           javac -nowarn -source 8 -target 8 \
             -cp "$AJAR:/tmp/j/play-services-ads-api/classes.jar:/tmp/j/play-services-ads/classes.jar" \
