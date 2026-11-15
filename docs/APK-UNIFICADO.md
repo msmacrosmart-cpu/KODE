@@ -977,3 +977,31 @@ doc): player, catálogo, anúncios e o resto do app não mudaram.
   o cartão mostra o endereço do site;
 * validação no servidor, cão de guarda de 2 min, VIP sem tela e saída limpa
   para o Kodi seguem iguais.
+
+### Revisão 2 do HTML de boas-vindas (tela única, reconstruída)
+
+O `docs/boas-vindas-blueprint.html` foi **refeito do zero** para bater ponto a
+ponto com a composição aprovada (IMAGEM 1): cabeçalho com a marca +
+"Tela de entrada" + seletor Android TV | Celular, **três cartões na mesma
+linha** e a **barra VIP de largura total** logo abaixo.
+
+* **CSS Grid + Flexbox** — `.screen` (grid `auto 1fr auto`), `.cards`
+  (grid `1.08fr 1fr 1fr`), cartões e barra em Flexbox; sem posicionamento
+  absoluto nos componentes (só nos brilhos de fundo e no overlay);
+* **zero rolagem** — o quadro é 1600×900 (TV) ou 2000×900 (celular deitado) e
+  `fit()` escala por `min(largura, altura)`; `overflow: hidden` no palco;
+* **botão de atualização à esquerda** — dentro do cartão de boas-vindas,
+  "Atualizar app · SMARTEDTV-atual.apk · Dropbox" aponta para
+  <https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/SMARTEDTV-atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j&dl=1>
+  (link público do arquivo `/SMARTEDTV-atual.apk` no Dropbox, com `download`);
+* **QRs reais e quadrados** — `viewBox="0 0 37 37"` (29 módulos + 4 de margem)
+  em placa branca quadrada; conferidos por leitura na própria captura:
+  `https://pay.cakto.com.br/nkvbegd_1323120` e
+  `https://smartedtv-vip.lovable.app/`;
+* **sem dado inventado** — sem preço, sem código de teste, sem selo de
+  simulação; o valor (R$ 24,90 no cartão) fica no checkout;
+* **D-pad** — setas navegam por geometria, Enter aciona, Esc fecha o aviso;
+  na TV o foco começa em "Continuar com anúncios", no celular não há anel de foco.
+
+Capturas de referência: `docs/capturas/boas-vindas-tv.png` (1600×900) e
+`docs/capturas/boas-vindas-celular.png` (2000×900).

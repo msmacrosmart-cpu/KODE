@@ -783,6 +783,30 @@ class BlueprintBoasVindasTest(unittest.TestCase):
         self.assertNotIn('<link', self.html)                      # nada externo
         self.assertNotIn('cdn.', self.html)
 
+    def test_composicao_reconstruida(self):
+        """Revisão 2 do HTML: cabeçalho, três cartões na mesma linha e barra VIP de largura total."""
+        self.assertIn('class="brand"', self.html)
+        self.assertIn('data-dev-btn="tv"', self.html)
+        self.assertIn('data-dev-btn="phone"', self.html)
+        self.assertEqual(self.html.count('class="card card-'), 3)
+        self.assertIn('display:grid', self.html)      # CSS Grid na estrutura
+        self.assertIn('display:flex', self.html)      # Flexbox nos cartões
+        self.assertIn('class="cards"', self.html)     # os três cartões na mesma linha
+        self.assertIn('class="bar"', self.html)       # barra VIP abaixo dos cartões
+        self.assertIn('id="gratis-1"', self.html)     # continuar com anúncios (cartão 1)
+        self.assertIn('id="checkout"', self.html)     # abrir checkout (cartão 2)
+        self.assertIn('id="compartilhar"', self.html) # compartilhar link (cartão 3)
+        self.assertIn('id="codigo"', self.html)
+        self.assertIn('id="ativar"', self.html)
+        self.assertIn('id="gratis"', self.html)
+
+    def test_botao_de_atualizacao_no_dropbox(self):
+        """Botão à esquerda: baixa o SMARTEDTV-atual.apk publicado no Dropbox."""
+        self.assertIn('id="atualizar"', self.html)
+        self.assertIn('SMARTEDTV-atual.apk', self.html)
+        self.assertIn('dropbox.com', self.html)
+        self.assertIn('download', self.html)
+
     def test_qr_reais_e_tela_unica(self):
         self.assertIn('viewBox="0 0 37 37"', self.html)           # QR completo (29+8)
         self.assertIn('data-link="https://pay.cakto.com.br/nkvbegd_1323120"', self.html)

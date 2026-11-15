@@ -13,3 +13,6 @@ smartedtv/out-apk/
 
 # prévia local do blueprint (link público temporário)
 /preview/
+
+# artefatos locais de captura/verificação
+.cache/
