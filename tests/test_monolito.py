@@ -39,10 +39,10 @@ class IntegracaoNoFonteTest(unittest.TestCase):
 
     def test_pacote_unico_e_versao(self):
         self.assertIn(f'APP_PACKAGE = "{PACOTE}"', self.script)
-        self.assertIn('VERSAO_NOME = "1.0.79"', self.script)
-        self.assertIn('VERSAO_CODIGO = 2103065', self.script)
+        self.assertIn('VERSAO_NOME = "1.0.80"', self.script)
+        self.assertIn('VERSAO_CODIGO = 2103066', self.script)
         # tem que ser maior que a 1.0.63 (2103049) para nao regredir instalacao
-        self.assertGreater(2103065, 2103053)
+        self.assertGreater(2103066, 2103053)
 
     def test_gradle_ganha_o_admob_e_a_versao(self):
         self.assertIn("com.google.android.gms:play-services-ads:23.2.0", self.script)
@@ -239,7 +239,7 @@ class VerificadorDoApkTest(unittest.TestCase):
                                        b"perfilSmarted .kodi.antigo- smarted-seed.log "
                        b"Licenca adsPermitidos AbrirUrlActivity CompartilharActivity "
                        b"BoasVindas iniciarKodi Plataforma Supabase "
-                       b"Pular an\xc3\xbancio qrcode-cakto "
+                       b"qrcode-cakto "
                        b"Atualizacao OtaProvider AtualizaActivity atualizacao.json "
                        b".ota application/vnd.android.package-archive "
                                        b"com/google/android/gms/ads"))
@@ -281,7 +281,7 @@ class VerificadorDoApkTest(unittest.TestCase):
         caminho = Path(tmp) / "aapt2"
         caminho.write_text("""#!/bin/sh
 if [ "$2" = badging ]; then
-  echo "package: name='smartedtv.full' versionCode='2103065' versionName='1.0.79'"
+  echo "package: name='smartedtv.full' versionCode='2103066' versionName='1.0.80'"
 elif [ "$2" = resources ]; then
   echo "drawable/progresswhite type=drawable"
 elif [ "$2" = xmltree ] && [ "$4" = "res/layout/activity_splash.xml" ]; then
@@ -794,16 +794,20 @@ class PlataformaTvTest(unittest.TestCase):
         self.assertIn('int d(float valor)', tela)
         self.assertIn('float sp(float valor)', tela)
 
-    def test_tv_tem_botao_pular_com_foco(self):
+    def test_anuncio_so_sai_pelo_botao_do_proprio_anuncio(self):
+        """1.0.80: sem botão "Pular anúncio" nosso — só o do anúncio."""
         tela = self.texto['AdTela']
-        self.assertIn('Pular anúncio', tela)
-        self.assertIn('criarBotaoPular()', tela)
-        self.assertIn('pular.requestFocus()', tela)       # foco padrão no modelo TV
-        self.assertIn('Plataforma.eTV(this)', tela)
-        self.assertIn('if (pular != null && pular.hasFocus())', tela)
+        self.assertNotIn('Pular anúncio', tela.replace('botão "Pular/X"', ''))
+        self.assertNotIn('criarBotaoPular', tela)
+        # nada de controle próprio: restam o VOLTAR, o X do anúncio e o tempo
+        self.assertIn('public void onBackPressed()', tela)
+        self.assertIn('LIMITE_COM_ANUNCIO', tela)
+        self.assertIn('fecharPorTempo', tela)
         # D-pad continua sem entrar no anúncio
         self.assertIn('KEYCODE_DPAD_DOWN', tela)
         self.assertIn('FOCUS_BLOCK_DESCENDANTS', tela)
+        verify = Path('smartedtv/tools/verify-monolito-apk.py').read_text(encoding='utf-8')
+        self.assertNotIn(b"Pular an".decode(), verify)
 
     def test_ponte_supabase(self):
         supabase = self.texto['Supabase']

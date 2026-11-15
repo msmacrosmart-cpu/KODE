@@ -20,8 +20,8 @@ import zipfile
 from pathlib import Path
 
 PACOTE = "smartedtv.full"
-VERSAO = "1.0.79"
-CODIGO = 2103065
+VERSAO = "1.0.80"
+CODIGO = 2103066
 
 BLOCO_ABERTURA = "ca-app-pub-2066014755407744/4214378379"
 BLOCO_PREROLL = "ca-app-pub-2066014755407744/3572039686"
@@ -348,7 +348,6 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
         ("abertura limpa do Kodi", b"iniciarKodi"),
         ("escolha Celular/TV", b"Plataforma"),
         ("ponte com o Supabase", b"Supabase"),
-        ("botao pular anuncio", b"Pular an"),
         ("QR do checkout mensal", b"qrcode-cakto"),
         ("atualização OTA", b"atualizacao.json"),
         ("entrega do APK por content://", b".ota"),

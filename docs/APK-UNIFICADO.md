@@ -935,3 +935,16 @@ aparelho, sem `ScrollView`, sem rolagem e sem sobreposição.
   SMARTEDTV agora" no rodapé;
 * continuam valendo: VIP não vê a tela, validação no servidor com prazo de 15 s,
   cão de guarda de 2 min e saída limpa para o Kodi.
+
+## 1.0.80 — anúncio sem botão "Pular" nosso
+
+Saiu o botão **"Pular anúncio ▶"** que o app desenhava por cima da tela de
+anúncio (canto inferior direito). A partir da 1.0.80 quem manda é o anúncio:
+
+* **só a saída oficial** — o botão "Pular/X" do próprio anúncio (quando o
+  formato oferece), o **VOLTAR** do controle e o tempo limite de 45 s com o
+  anúncio na tela (proteção para TV sem toque);
+* `AdTela` perdeu o campo, o `criarBotaoPular()` e o atalho de OK no botão;
+  `semFoco()` só bloqueia o D-pad (nenhum clique acidental no anúncio), sem
+  exceção de view;
+* verificador do APK e testes deixaram de exigir a string "Pular anúncio".
