@@ -39,9 +39,16 @@ jobs:
         run: |
           set +e
           mkdir -p /tmp/j/ads
-          curl -sSL -o /tmp/j/ads.aar \
-            https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-ads/23.2.0/play-services-ads-23.2.0.aar
-          cd /tmp/j/ads && unzip -o -q /tmp/j/ads.aar classes.jar && ls -la classes.jar
+          # play-services-ads é só um "pom" que puxa a API: o código de verdade
+          # (appopen, interstitial, AdRequest…) está em play-services-ads-api.
+          for nome in play-services-ads play-services-ads-api; do
+            curl -sSL -o "/tmp/j/$nome.aar" \
+              "https://dl.google.com/dl/android/maven2/com/google/android/gms/$nome/23.2.0/$nome-23.2.0.aar"
+            mkdir -p "/tmp/j/$nome" && ( cd "/tmp/j/$nome" && unzip -o -q "/tmp/j/$nome.aar" classes.jar || true )
+            ls -la "/tmp/j/$nome/classes.jar" || true
+          done
+          cp -f /tmp/j/play-services-ads/classes.jar /tmp/j/ads/classes.jar || true
+          unzip -l /tmp/j/ads/classes.jar | grep -c 'appopen\|interstitial' || true
 
       - name: javac das classes do app
         run: |
@@ -58,12 +65,12 @@ jobs:
           wc -l /tmp/j/files.txt
           javac -nowarn -source 8 -target 8 \
             -bootclasspath "$AJAR" \
-            -cp "/tmp/j/ads/classes.jar" \
+            -cp "/tmp/j/play-services-ads/classes.jar:/tmp/j/play-services-ads-api/classes.jar" \
             -d /tmp/j/out @/tmp/j/files.txt > /tmp/j/javac.txt 2>&1
           echo "javac exit=$?"
           # canal 1: anotações da checagem (o log do Actions não abre por aqui)
-          grep -E 'error:|erro:' /tmp/j/javac.txt | head -12 | while read -r linha; do
-            echo "::error title=javac::${linha//[\r\n]/ }"
+          tr -d '\r' < /tmp/j/javac.txt | grep -E 'error:|erro:' | head -12 | while IFS= read -r linha; do
+            echo "::error title=javac::${linha//$'\n'/ }"
           done
           {
             echo "# javac das classes do app — $(date -u +%Y-%m-%dT%H:%MZ)"
