@@ -183,7 +183,7 @@ public final class BoasVindas {
         final Button tv = botao(splash, "TV / Box / Projetor", false);
         opcoes.addView(opcao(splash, celular, Plataforma.CELULAR.equals(sugestao), deitado));
         opcoes.addView(opcao(splash, tv, Plataforma.TV.equals(sugestao), deitado));
-        raiz.addView(opcoes, bloco(splash, deitado, 1f));
+        raiz.addView(opcoes, bloco(splash, false, 1f));
 
         final Button abrirAgora = botao(splash, "Abrir o SMARTEDTV agora", false);
         raiz.addView(abrirAgora, medir(splash, 320, 50, 20));

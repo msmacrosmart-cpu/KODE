@@ -39,10 +39,10 @@ class IntegracaoNoFonteTest(unittest.TestCase):
 
     def test_pacote_unico_e_versao(self):
         self.assertIn(f'APP_PACKAGE = "{PACOTE}"', self.script)
-        self.assertIn('VERSAO_NOME = "1.0.77"', self.script)
-        self.assertIn('VERSAO_CODIGO = 2103063', self.script)
+        self.assertIn('VERSAO_NOME = "1.0.78"', self.script)
+        self.assertIn('VERSAO_CODIGO = 2103064', self.script)
         # tem que ser maior que a 1.0.63 (2103049) para nao regredir instalacao
-        self.assertGreater(2103063, 2103053)
+        self.assertGreater(2103064, 2103053)
 
     def test_gradle_ganha_o_admob_e_a_versao(self):
         self.assertIn("com.google.android.gms:play-services-ads:23.2.0", self.script)
@@ -281,7 +281,7 @@ class VerificadorDoApkTest(unittest.TestCase):
         caminho = Path(tmp) / "aapt2"
         caminho.write_text("""#!/bin/sh
 if [ "$2" = badging ]; then
-  echo "package: name='smartedtv.full' versionCode='2103063' versionName='1.0.77'"
+  echo "package: name='smartedtv.full' versionCode='2103064' versionName='1.0.78'"
 elif [ "$2" = resources ]; then
   echo "drawable/progresswhite type=drawable"
 elif [ "$2" = xmltree ] && [ "$4" = "res/layout/activity_splash.xml" ]; then
@@ -997,3 +997,8 @@ class BootNaoTravaTest(unittest.TestCase):
         servico = Path('kodi/addons/service.smarted.bootstrap/service.py').read_text(encoding='utf-8')
         self.assertIn('startup: servico iniciado', servico)
         self.assertIn('startup: FALHOU', servico)
+
+    def test_opcoes_de_plataforma_nao_ficam_com_largura_zero(self):
+        """A lista de opções vive numa coluna vertical: peso horizontal = largura 0."""
+        tela = Path('smartedtv/tools/ads-java/BoasVindas.java.in').read_text(encoding='utf-8')
+        self.assertIn('raiz.addView(opcoes, bloco(splash, false, 1f));', tela)
