@@ -193,6 +193,25 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
             rel.texto("amostra de arquivos no APK:")
             for nome in arquivos[:6]:
                 rel.texto("   " + nome)
+
+            # o que faz o layout/menus aparecerem: skin ativa e ajustes da skin
+            gui = "assets/smarted/profile/userdata/guisettings.xml"
+            if gui in presentes:
+                texto = z.read(gui).decode("utf-8", "replace")
+                skin = [l.strip() for l in texto.splitlines() if "lookandfeel.skin" in l]
+                rel.texto("guisettings do perfil: " + (skin[0][:120] if skin else "(sem lookandfeel.skin)"))
+            else:
+                rel.falha("guisettings no perfil", "userdata/guisettings.xml ausente")
+
+            for rotulo, trecho in (
+                ("ajustes da skin.novatv", "userdata/addon_data/skin.novatv/"),
+                ("atalhos/menus (skinshortcuts)", "script-skinshortcuts"),
+                ("fontes do catálogo (sources.xml)", "userdata/sources.xml"),
+                ("favoritos", "userdata/favourites.xml"),
+            ):
+                quantos = [n for n in arquivos if trecho in n]
+                rel.texto(f"{rotulo}: {len(quantos)} arquivo(s)"
+                          + (f" — ex.: {quantos[0].split('/profile/')[-1]}" if quantos else ""))
             rel.exige(BRAZUCA in presentes, "Brazuca Play no perfil", BRAZUCA)
         else:
             rel.falha("base estável", f"{MANIFESTO_BASE} ausente no APK")
