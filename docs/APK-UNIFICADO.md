@@ -318,3 +318,28 @@ difere no bootstrap.
 * `plugin.video.smarted` com **≥ 16 arquivos** e `catalogue.py` presente.
 
 Se qualquer uma falhar, o APK não é publicado.
+
+### Resultado 1.0.67
+
+Release: <https://github.com/msmacrosmart-cpu/KODE/releases/tag/v1.0.67-unificado> — run [43661280978](https://github.com/msmacrosmart-cpu/KODE/actions/runs/43661280978), build verde do início ao fim (o `build-monolith.yml` publicou sozinho).
+
+| item | valor |
+|---|---|
+| APK | `SMARTEDTV-1.0.67-unificado-arm64-v8a.apk` |
+| tamanho | 249.678.389 bytes (238,1 MB) |
+| pacote / versão | `smartedtv.full` / 1.0.67 (2103053) |
+| skin.novatv | **934 arquivos**, **712 imagens** em `media/` |
+| plugin.video.smarted | 16 arquivos (mesmos da 1.0.63) |
+| conferência | **0 falhas, 0 avisos** |
+
+O build anterior (1.0.66, run 43659376318) falhou no passo 9 com uma
+**colisão falsa**: as 222 entradas de `skin.novatv` do APK novo entravam no
+conjunto `existentes` do injetor, e a checagem "não duplicar" abortava a
+injeção. A checagem agora usa só as entradas realmente escritas, e um teste
+ponta a ponta (`InjecaoDaBaseTest`) monta dois APKs de mentira e prova que
+skin/plugin vêm da base enquanto `smart_ads.py` continua o nosso (AdMob).
+
+Também: o passo 9 grava `smartedtv/log-passo9.txt` e o passo 11 publica esse
+log no branch quando falha (antes o log do erro se perdia) e faz
+`git pull --rebase` antes do push, para não perder o relatório quando o branch
+andou durante o build.
