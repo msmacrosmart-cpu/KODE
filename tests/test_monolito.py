@@ -39,10 +39,10 @@ class IntegracaoNoFonteTest(unittest.TestCase):
 
     def test_pacote_unico_e_versao(self):
         self.assertIn(f'APP_PACKAGE = "{PACOTE}"', self.script)
-        self.assertIn('VERSAO_NOME = "1.0.78"', self.script)
-        self.assertIn('VERSAO_CODIGO = 2103064', self.script)
+        self.assertIn('VERSAO_NOME = "1.0.79"', self.script)
+        self.assertIn('VERSAO_CODIGO = 2103065', self.script)
         # tem que ser maior que a 1.0.63 (2103049) para nao regredir instalacao
-        self.assertGreater(2103064, 2103053)
+        self.assertGreater(2103065, 2103053)
 
     def test_gradle_ganha_o_admob_e_a_versao(self):
         self.assertIn("com.google.android.gms:play-services-ads:23.2.0", self.script)
@@ -281,7 +281,7 @@ class VerificadorDoApkTest(unittest.TestCase):
         caminho = Path(tmp) / "aapt2"
         caminho.write_text("""#!/bin/sh
 if [ "$2" = badging ]; then
-  echo "package: name='smartedtv.full' versionCode='2103064' versionName='1.0.78'"
+  echo "package: name='smartedtv.full' versionCode='2103065' versionName='1.0.79'"
 elif [ "$2" = resources ]; then
   echo "drawable/progresswhite type=drawable"
 elif [ "$2" = xmltree ] && [ "$4" = "res/layout/activity_splash.xml" ]; then
@@ -567,11 +567,11 @@ class BoasVindasTest(unittest.TestCase):
 
     def test_tela_antes_do_anuncio_de_abertura(self):
         tela = self.texto['BoasVindas']
-        self.assertIn('Deseja assistir', tela)
-        self.assertIn('sem anúncios?', tela)
+        self.assertIn('Sem anúncios', tela)              # aba do plano mensal
+        self.assertIn('R$ 24,90', tela)
         self.assertIn('pay.cakto.com.br/nkvbegd_1323120', tela)
         self.assertIn('Já tenho um código', tela)
-        self.assertIn('Digite o código aqui', tela)      # campo sempre visivel
+        self.assertIn('Digite seu código', tela)         # campo sempre visivel
         self.assertIn('Compartilhar aplicativo', tela)
         self.assertIn('Licenca.validar(', tela)          # valida no servidor
         # a splash so abre o Kodi depois que essa tela fecha
@@ -591,10 +591,13 @@ class BoasVindasTest(unittest.TestCase):
         self.assertIn('setOnFocusChangeListener', tela)
         self.assertIn('showSoftInput', tela)              # 1a acao abre o teclado
         self.assertIn('requestFocus();', tela)
-        self.assertIn('Configuration.ORIENTATION_LANDSCAPE', tela)
-        self.assertIn('LinearLayout.HORIZONTAL', tela)    # 2 colunas deitado
-        self.assertIn('LinearLayout.VERTICAL', tela)      # 1 coluna em pe
-        self.assertIn('ScrollView', tela)                 # cabe em TV e celular
+        self.assertIn('SCREEN_ORIENTATION_SENSOR_LANDSCAPE', tela)   # sempre deitado
+        self.assertIn('LinearLayout.HORIZONTAL', tela)    # 2 colunas
+        self.assertIn('LinearLayout.VERTICAL', tela)      # pilhas internas
+        # tela única: nada de rolagem, o desenho é proporcional ao quadro 960x540
+        self.assertNotIn('ScrollView', tela)
+        self.assertIn('BASE_L = 960f', tela)
+        self.assertIn('BASE_A = 540f', tela)
 
     def test_qr_de_compartilhamento_no_app(self):
         import struct
@@ -676,6 +679,60 @@ class BoasVindasTest(unittest.TestCase):
 
 
 
+class TelaUnicaGlassTest(unittest.TestCase):
+    """1.0.79: Boas-Vindas em paisagem fixa, tela única e cartões de vidro."""
+
+    def setUp(self):
+        self.tela = Path('smartedtv/tools/ads-java/BoasVindas.java.in').read_text(encoding='utf-8')
+
+    def test_paisagem_fixa_para_tv_e_celular(self):
+        self.assertIn('private static void paisagem(Activity splash)', self.tela)
+        self.assertIn('SCREEN_ORIENTATION_SENSOR_LANDSCAPE', self.tela)
+        self.assertIn('paisagem(splash);', self.tela)      # antes de montar a tela
+
+    def test_duas_colunas_com_peso(self):
+        self.assertIn('colunas.addView(cartaoQr(m), peso(m, 1f, 0));', self.tela)
+        self.assertIn('peso(m, 1.06f, 16)', self.tela)
+        self.assertIn('private static LinearLayout.LayoutParams peso(Medidas m, float peso',
+                      self.tela)
+
+    def test_cartoes_de_vidro_com_brilhos_no_fundo(self):
+        self.assertIn('private static void fundo(Medidas m, FrameLayout raiz)', self.tela)
+        self.assertIn('private static View brilho(Medidas m, int cor, float raio', self.tela)
+        self.assertIn('RADIAL_GRADIENT', self.tela)
+        self.assertIn('GradientDrawable vidro(int cor, int borda, float raio)', self.tela)
+        self.assertIn('setStroke(Math.max(1, d(1.2f)), borda)', self.tela)
+
+    def test_seletor_tv_celular_no_cabecalho(self):
+        self.assertIn('private static Button segmento(Medidas m, String rotulo, boolean ativo)',
+                      self.tela)
+        self.assertIn('segmento(m, "TV", tv)', self.tela)
+        self.assertIn('segmento(m, "Celular", !tv)', self.tela)
+        self.assertIn('Plataforma.salvar(splash, querTv ? Plataforma.TV : Plataforma.CELULAR)',
+                      self.tela)
+
+    def test_confirmacao_antes_de_continuar_com_anuncios(self):
+        self.assertIn('private static void confirmarAnuncios', self.tela)
+        self.assertIn('Continuar com anúncios?', self.tela)
+        self.assertIn('botao(m, "Voltar", false, 14)', self.tela)
+        self.assertIn('botao(m, "Continuar com anúncios", true, 14)', self.tela)
+        self.assertIn('dimAmount = 0.65f', self.tela)
+        self.assertIn('seguirBotao.requestFocus()', self.tela)
+
+    def test_ativacao_com_teclado_e_status(self):
+        self.assertIn('botao(m, "Ativar Agora", true, 16)', self.tela)
+        self.assertIn('Licenca.validar(splash, codigo)', self.tela)
+        self.assertIn('teclado(splash, campo)', self.tela)
+        self.assertIn('VIP ativado! Nenhum anúncio nesta abertura.', self.tela)
+        self.assertIn('Digite o código que você recebeu.', self.tela)
+
+    def test_sem_sobra_de_codigo_morto(self):
+        for proibido in ('ScrollView', 'embrulhar(', 'cartaoEscolha(m, "Estou na TV"\n',
+                         'class Label'):
+            self.assertNotIn(proibido, self.tela)
+        self.assertEqual(self.tela.count('new Button(m.act)'), 3)   # aba, segmento, botao
+
+
 class PlataformaTvTest(unittest.TestCase):
     """1.0.73: escolha Celular/TV, QR do checkout e botão Pular no anúncio."""
 
@@ -695,22 +752,23 @@ class PlataformaTvTest(unittest.TestCase):
         tela = self.texto['BoasVindas']
         self.assertIn('Plataforma.escolhida(splash)', tela)
         self.assertIn('"Celular"', tela)
-        self.assertIn('"TV / Box / Projetor"', tela)
+        self.assertIn('"Estou na TV"', tela)
+        self.assertIn('"Estou no Celular"', tela)
         self.assertIn('Plataforma.salvar(splash', tela)
         self.assertIn('Estou na TV', tela)          # troca de modo sem reinstalar
 
     def test_tv_um_qr_por_vez_com_abas(self):
         """Um QR só na tela (não cabem dois); duas abas trocam o mesmo quadro."""
         tela = self.texto['BoasVindas']
-        self.assertIn('Escaneie e Compartilhe', tela)
-        self.assertIn('Escaneie e compre o acesso mensal', tela)
+        self.assertIn('aba(m, "Sem anúncios")', tela)
+        self.assertIn('aba(m, "Indicar o app")', tela)
         self.assertIn('qrcode.png', tela)                 # indicação do app
         self.assertIn('qrcode-cakto.png', tela)           # checkout mensal
-        self.assertIn('private static LinearLayout cartaoQr', tela)
+        self.assertIn('private static LinearLayout cartaoQr(final Medidas m)', tela)
         # o mesmo ImageView recebe as duas imagens (uma por vez)
-        self.assertEqual(tela.count('new ImageView(splash)'), 1)
-        self.assertIn('mostrarQr(splash, qr, QR_APP)', tela)
-        self.assertIn('mostrarQr(splash, qr, QR_CAKTO)', tela)
+        self.assertEqual(tela.count('new ImageView(m.act)'), 1)
+        self.assertIn('mostrarQr(m, qr, QR_APP)', tela)
+        self.assertIn('mostrarQr(m, qr, QR_CAKTO)', tela)
         self.assertNotIn('colunaTv', tela)
         for nome in ('qrcode.png', 'qrcode-cakto.png'):
             arquivo = Path('kodi/addons/script.smartedtv.ajustes/resources') / nome
@@ -723,13 +781,18 @@ class PlataformaTvTest(unittest.TestCase):
         self.assertIn('Intent.createChooser', tela)
         self.assertIn('https://smartedtv-vip.lovable.app/', tela)
         # celular: botão de compartilhar; TV: só o QR (o botão não ocupa espaço)
-        self.assertIn('compartilhar.setVisibility(tv ? View.GONE : View.VISIBLE)', tela)
+        self.assertIn('Plataforma.eTV(m.act) ? View.GONE : View.VISIBLE', tela)
+        self.assertIn('botao(m, "Compartilhar link", false, 12)', tela)
 
-    def test_sem_barra_de_rolagem(self):
+    def test_tela_unica_sem_rolagem(self):
+        """1.0.79: paisagem fixa, tudo desenhado num quadro 16:9 — zero rolagem."""
         tela = self.texto['BoasVindas']
-        self.assertIn('setVerticalScrollBarEnabled(false)', tela)
-        self.assertIn('setOverScrollMode(View.OVER_SCROLL_NEVER)', tela)
-        self.assertIn('ScrollView', tela)                 # rola por toque se faltar espaço
+        self.assertIn('SCREEN_ORIENTATION_SENSOR_LANDSCAPE', tela)
+        self.assertNotIn('ScrollView', tela)
+        self.assertIn('private static final class Medidas', tela)
+        self.assertIn('Math.min(1.2f, menor)', tela)       # escala limitada a 120%
+        self.assertIn('int d(float valor)', tela)
+        self.assertIn('float sp(float valor)', tela)
 
     def test_tv_tem_botao_pular_com_foco(self):
         tela = self.texto['AdTela']
@@ -870,9 +933,9 @@ class VipNaoVeATelaTest(unittest.TestCase):
         # a tela ocupa a splash inteira: só sai ativando o código ou escolhendo
         # continuar com anúncios (que mantém o app monetizado)
         self.assertIn('Continuar com anúncios', self.tela)
-        self.assertIn('Ativar agora', self.tela)
+        self.assertIn('Ativar Agora', self.tela)
         self.assertIn('SeedBase.iniciarKodi(splash)', self.tela)
-        self.assertIn('setContentView(fundo)', self.tela)
+        self.assertIn('splash.setContentView(raiz);', self.tela)
 
 
 class JavacDasClassesTest(unittest.TestCase):
@@ -898,8 +961,12 @@ class JavacDasClassesTest(unittest.TestCase):
         # 1.0.73 quebrou o build com params(...) — o javac do workflow pegou.
         tela = Path('smartedtv/tools/ads-java/BoasVindas.java.in').read_text(encoding='utf-8')
         self.assertNotIn('params(splash', tela)
-        self.assertIn('private static int dp(Context contexto, int valor)', tela)
-        self.assertIn('private static Button botao(Context contexto, String texto, boolean destaque)', tela)
+        # 1.0.79: medidas centralizadas na classe Medidas (dp/sp + formas)
+        self.assertIn('private static final class Medidas', tela)
+        self.assertIn('int d(float valor)', tela)
+        self.assertIn('private static Button botao(Medidas m, String rotulo, boolean destaque', tela)
+        # toda chamada de d()/sp() vem de uma instância de Medidas
+        self.assertIn('m.d(', tela)
 
 
 class OtaJsonTest(unittest.TestCase):
@@ -974,10 +1041,11 @@ class BootNaoTravaTest(unittest.TestCase):
         # sem view na árvore, devolve false e o Kodi abre
         self.assertIn('BoasVindas: tela nao ficou na arvore de views', self.tela)
 
-    def test_escolha_de_plataforma_tem_rolagem_e_saida(self):
+    def test_escolha_de_plataforma_cabe_na_tela(self):
         trecho = self.tela[self.tela.index('private static void escolherPlataforma'):
-                           self.tela.index('private static LinearLayout opcao(')]
-        self.assertIn('rolar(splash, fundo, raiz)', trecho)   # rolagem sem barra visível
+                           self.tela.index('private static void desenhar(')]
+        self.assertNotIn('rolar(', trecho)                    # tela única, sem rolagem
+        self.assertIn('tamanho(m, 300, 158, 0, 20)', trecho)  # cartões de tamanho fixo
         self.assertIn('Abrir o SMARTEDTV agora', trecho)
         self.assertIn('SeedBase.iniciarKodi(splash)', trecho)
 
@@ -999,6 +1067,8 @@ class BootNaoTravaTest(unittest.TestCase):
         self.assertIn('startup: FALHOU', servico)
 
     def test_opcoes_de_plataforma_nao_ficam_com_largura_zero(self):
-        """A lista de opções vive numa coluna vertical: peso horizontal = largura 0."""
+        """Os cartões têm largura fixa em dp: nenhum peso horizontal na vertical."""
         tela = Path('smartedtv/tools/ads-java/BoasVindas.java.in').read_text(encoding='utf-8')
-        self.assertIn('raiz.addView(opcoes, bloco(splash, false, 1f));', tela)
+        self.assertIn('opcoes.addView(cartaoTv, tamanho(m, 300, 158, 0, 20));', tela)
+        self.assertIn('opcoes.addView(cartaoCelular, tamanho(m, 300, 158, 0, 0));', tela)
+        self.assertNotIn('bloco(splash', tela)

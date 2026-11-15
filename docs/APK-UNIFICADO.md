@@ -900,3 +900,38 @@ Layout novo, sem sobreposição:
 * tudo dentro de `ScrollView` sem barra visível, então nada fica fora da tela em
   aparelho pequeno ou com fonte grande;
 * continuam valendo o cão de guarda de 2 min, a saída imediata e o VIP sem tela.
+
+## 1.0.79 — Boas-Vindas em paisagem fixa, tela única (glassmorphism)
+
+A 1.0.77/1.0.78 ainda rolava a tela e empilhava blocos: no celular deitado e na
+TV 16:9 o QR aparecia pequeno e os textos davam a volta. A 1.0.79 redesenha a
+tela inteira mirando o blueprint: **um quadro 960x540 dp escalado** para o
+aparelho, sem `ScrollView`, sem rolagem e sem sobreposição.
+
+* **paisagem obrigatória** — `SCREEN_ORIENTATION_SENSOR_LANDSCAPE` antes de
+  montar as views: TV, box, tablet e celular deitado desenham igual;
+* **escala proporcional** — `Medidas` converte tudo (`d()` para dp, `sp()` para
+  texto) a partir de `min(largura/960, altura/540)`, limitada a 120%: em tela
+  pequena tudo encolhe junto, nada corta e nada cobre o QR;
+* **fundo escuro com brilhos** — três `GradientDrawable` radiais (roxo, dourado
+  e ciano) sobre `#08080B`, dando o desfoque de vidro sem `RenderScript`;
+* **cartões de vidro** — `vidro(cor, borda, raio)`: preenchimento translúcido,
+  borda de 1 dp luminosa e cantos arredondados;
+* **cabeçalho** — marca SMARTEDTV à esquerda e seletor segmentado **TV |
+  Celular** à direita (troca o modo D-pad/toque na hora, via `Plataforma`);
+* **duas colunas com peso** (1 : 1.06):
+  * esquerda — abas **"Sem anúncios"** (R$ 24,90 no cartão, QR do checkout
+    Cakto) e **"Indicar o app"** (QR do app, passos 1-2-3, link e, no celular,
+    "Compartilhar link"). **Um QR por vez**: o mesmo `ImageView` (162 dp dentro
+    de moldura dourada de 190 dp) recebe a imagem da aba ativa;
+  * direita — **"Já tenho um código"**, campo centralizado com o teclado abrindo
+    no primeiro foco, botão dourado **"Ativar Agora"**, linha de status
+    (validando/erro/VIP ativado) e **"Continuar com anúncios"**;
+* **confirmação** — "Continuar com anúncios?" em diálogo translúcido (dim 0,65)
+  com **Voltar** e **Continuar com anúncios**; o foco já abre no segundo botão
+  para quem está no controle remoto;
+* **escolha inicial** — "Como você vai assistir?" com dois cartões de 300x158 dp
+  (ícone, título, detalhe), contorno dourado no foco, e o atalho "Abrir o
+  SMARTEDTV agora" no rodapé;
+* continuam valendo: VIP não vê a tela, validação no servidor com prazo de 15 s,
+  cão de guarda de 2 min e saída limpa para o Kodi.
