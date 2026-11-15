@@ -1,90 +1,95 @@
 # Build do APK unificado — falhou
 
-Run: 43651800166
+Run: 43708840486
 
 ## disco
 ```
-Filesystem       Size  Used Avail Use% Mounted on
-/dev/root        146G   65G   82G  45% /
-tmpfs            7.9G  172K  7.9G   1% /dev/shm
-tmpfs            3.2G  1.0M  3.2G   1% /run
-tmpfs            5.0M     0  5.0M   0% /run/lock
-efivarfs         128M   34K  128M   1% /sys/firmware/efi/efivars
-/dev/nvme0n1p15  105M  6.1M   99M   6% /boot/efi
-tmpfs            1.6G   12K  1.6G   1% /run/user/1001
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root       146G   65G   82G  45% /
+tmpfs           7.9G  172K  7.9G   1% /dev/shm
+tmpfs           3.2G 1020K  3.2G   1% /run
+tmpfs           5.0M     0  5.0M   0% /run/lock
+/dev/sda15      105M  6.1M   99M   6% /boot/efi
+tmpfs           1.6G   12K  1.6G   1% /run/user/1001
 ```
 ## fim do log do Kodi (passo 8)
 ```
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
+[ 93%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/AddonCallback.cpp.o
+[ 93%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/AddonClass.cpp.o
+[ 93%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Addon.cpp.o
+[ 93%] Building CXX object build/rendering/gles/CMakeFiles/rendering_gles.dir/ScreenshotSurfaceGLES.cpp.o
+[ 93%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/AddonUtils.cpp.o
+[ 94%] Building CXX object build/rendering/gles/CMakeFiles/rendering_gles.dir/GLESShader.cpp.o
+[ 94%] Linking CXX static library rendering_gles.a
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
-[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/AddonCallback.cpp.o
-[ 94%] Linking CXX static library videorenderers.a
-[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/AddonClass.cpp.o
-make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-[ 94%] Built target videorenderers
+[ 94%] Built target rendering_gles
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
 [ 94%] Building CXX object build/interfaces/legacy/wsgi/CMakeFiles/legacy_interface_wsgi.dir/WsgiErrorStream.cpp.o
-[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Addon.cpp.o
-[ 94%] Building CXX object build/interfaces/legacy/wsgi/CMakeFiles/legacy_interface_wsgi.dir/WsgiInputStream.cpp.o
-[ 94%] Building CXX object build/interfaces/legacy/wsgi/CMakeFiles/legacy_interface_wsgi.dir/WsgiResponseBody.cpp.o
-[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/AddonUtils.cpp.o
-[ 94%] Building CXX object build/interfaces/legacy/wsgi/CMakeFiles/legacy_interface_wsgi.dir/WsgiResponse.cpp.o
 [ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/CallbackFunction.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/CallbackHandler.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/wsgi/CMakeFiles/legacy_interface_wsgi.dir/WsgiInputStream.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Control.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/wsgi/CMakeFiles/legacy_interface_wsgi.dir/WsgiResponseBody.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/wsgi/CMakeFiles/legacy_interface_wsgi.dir/WsgiResponse.cpp.o
 [ 94%] Linking CXX static library legacy_interface_wsgi.a
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 [ 94%] Built target legacy_interface_wsgi
-[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/CallbackHandler.cpp.o
-[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Control.cpp.o
-[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Dialog.cpp.o
-[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/DrmCryptoSession.cpp.o
-[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/File.cpp.o
-[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/InfoTagGame.cpp.o
-[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/InfoTagMusic.cpp.o
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
 [ 94%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/AddonPythonInvoker.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Dialog.cpp.o
 [ 94%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/CallbackHandler.cpp.o
+[ 94%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/ContextItemAddonInvoker.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/DrmCryptoSession.cpp.o
+[ 94%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/LanguageHook.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/File.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/InfoTagGame.cpp.o
+[ 94%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/PythonInvoker.cpp.o
+[ 94%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/InfoTagMusic.cpp.o
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/InfoTagPicture.cpp.o
-[ 95%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/ContextItemAddonInvoker.cpp.o
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/InfoTagRadioRDS.cpp.o
-[ 95%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/LanguageHook.cpp.o
+[ 95%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/XBPython.cpp.o
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/InfoTagVideo.cpp.o
-[ 95%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/PythonInvoker.cpp.o
+[ 95%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/swig.cpp.o
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Keyboard.cpp.o
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/LanguageHook.cpp.o
-[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/ListItem.cpp.o
-[ 95%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/XBPython.cpp.o
-[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/ModuleXbmc.cpp.o
-[ 95%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/swig.cpp.o
 [ 95%] Building CXX object build/interfaces/python/CMakeFiles/python_interface.dir/PyContext.cpp.o
-[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/ModuleXbmcgui.cpp.o
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/ListItem.cpp.o
 [ 95%] Linking CXX static library python_interface.a
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 [ 95%] Built target python_interface
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
 [ 95%] Generating AddonModuleXbmcwsgi.i.cpp
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/ModuleXbmc.cpp.o
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/ModuleXbmcgui.cpp.o
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/ModuleXbmcplugin.cpp.o
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/ModuleXbmcvfs.cpp.o
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Monitor.cpp.o
-[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Player.cpp.o
 [ 95%] Generating AddonModuleXbmc.i.cpp
+[ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Player.cpp.o
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/PlayList.cpp.o
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Settings.cpp.o
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/String.cpp.o
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/Window.cpp.o
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/WindowDialog.cpp.o
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/WindowDialogMixin.cpp.o
+[ 95%] Generating AddonModuleXbmcaddon.i.cpp
 [ 95%] Building CXX object build/interfaces/legacy/CMakeFiles/legacy_interface.dir/WindowXML.cpp.o
 [ 96%] Linking CXX static library legacy_interface.a
-[ 96%] Generating AddonModuleXbmcaddon.i.cpp
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 [ 96%] Built target legacy_interface
+make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
+make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
+make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
+[ 96%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnP.cpp.o
 [ 96%] Generating AddonModuleXbmcdrm.i.cpp
+[ 96%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnPInternal.cpp.o
 [ 96%] Generating AddonModuleXbmcgui.i.cpp
+[ 96%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnPPlayer.cpp.o
 /home/runner/work/_temp/kodi/xbmc/interfaces/legacy/Dialog.h:27: Warning 302: Identifier 'INPUT_ALPHANUM' redefined (ignored),
 /home/runner/work/_temp/kodi/xbmc/interfaces/legacy/ModuleXbmcgui.h:134: Warning 302: previous definition of 'INPUT_ALPHANUM'.
 /home/runner/work/_temp/kodi/xbmc/interfaces/legacy/Dialog.h:28: Warning 302: Identifier 'INPUT_NUMERIC' redefined (ignored),
@@ -101,54 +106,48 @@ make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 /home/runner/work/_temp/kodi/xbmc/interfaces/legacy/ModuleXbmcgui.h:144: Warning 302: previous definition of 'PASSWORD_VERIFY'.
 /home/runner/work/_temp/kodi/xbmc/interfaces/legacy/Dialog.h:35: Warning 302: Identifier 'ALPHANUM_HIDE_INPUT' redefined (ignored),
 /home/runner/work/_temp/kodi/xbmc/interfaces/legacy/ModuleXbmcgui.h:145: Warning 302: previous definition of 'ALPHANUM_HIDE_INPUT'.
-[ 96%] Generating AddonModuleXbmcplugin.i.cpp
-[ 96%] Generating AddonModuleXbmcvfs.i.cpp
-make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
-make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
-[ 96%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnP.cpp.o
-make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
-[ 96%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcaddon.i.cpp.o
-[ 96%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcdrm.i.cpp.o
-[ 96%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnPInternal.cpp.o
-[ 96%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcgui.i.cpp.o
-[ 96%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnPPlayer.cpp.o
-[ 96%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmc.i.cpp.o
 [ 97%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnPRenderer.cpp.o
-[ 97%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcplugin.i.cpp.o
 [ 97%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnPServer.cpp.o
-[ 97%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcvfs.i.cpp.o
-[ 98%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcwsgi.i.cpp.o
-[ 98%] Linking CXX static library libpython_binding.a
+[ 97%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnPSettings.cpp.o
+[ 97%] Generating AddonModuleXbmcplugin.i.cpp
+[ 97%] Linking CXX static library network_upnp.a
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-[ 98%] Built target python_binding
+[ 97%] Built target network_upnp
+[ 97%] Generating AddonModuleXbmcvfs.i.cpp
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
-[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPFileHandler.cpp.o
-[ 98%] Building CXX object build/network/upnp/CMakeFiles/network_upnp.dir/UPnPSettings.cpp.o
-[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPImageHandler.cpp.o
-[100%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPImageTransformationHandler.cpp.o
-[100%] Linking CXX static library network_upnp.a
+[ 97%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPFileHandler.cpp.o
+[ 97%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPImageHandler.cpp.o
+[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPImageTransformationHandler.cpp.o
+[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPJsonRpcHandler.cpp.o
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-[100%] Built target network_upnp
-[100%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPJsonRpcHandler.cpp.o
-[100%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPRequestHandlerUtils.cpp.o
-[100%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPVfsHandler.cpp.o
+make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
+[ 98%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcaddon.i.cpp.o
+[ 98%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcdrm.i.cpp.o
+[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPRequestHandlerUtils.cpp.o
+[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPVfsHandler.cpp.o
+[ 98%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcgui.i.cpp.o
+[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPWebinterfaceAddonsHandler.cpp.o
+[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPWebinterfaceHandler.cpp.o
+[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/IHTTPRequestHandler.cpp.o
+[ 98%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPPythonHandler.cpp.o
+[ 98%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmc.i.cpp.o
+[ 98%] Linking CXX static library network_httprequesthandlers.a
+make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
+[ 98%] Built target network_httprequesthandlers
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-[100%] Built target kodi-libraries
-[100%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPWebinterfaceAddonsHandler.cpp.o
-[100%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPWebinterfaceHandler.cpp.o
+[ 98%] Built target kodi-libraries
+[ 98%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcplugin.i.cpp.o
+[ 98%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcvfs.i.cpp.o
+[100%] Building CXX object build/swig/CMakeFiles/python_binding.dir/AddonModuleXbmcwsgi.i.cpp.o
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 [100%] Built target generate-packaging
-[100%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/IHTTPRequestHandler.cpp.o
-[100%] Building CXX object build/network/httprequesthandler/CMakeFiles/network_httprequesthandlers.dir/HTTPPythonHandler.cpp.o
-[100%] Linking CXX static library network_httprequesthandlers.a
+[100%] Linking CXX static library libpython_binding.a
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
-[100%] Built target network_httprequesthandlers
+[100%] Built target python_binding
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
 make[2]: Leaving directory '/home/runner/work/_temp/kodi-build'
 make[2]: Entering directory '/home/runner/work/_temp/kodi-build'
@@ -262,9 +261,20 @@ ndk-api-level:	 21
 build-tools:	 /usr/local/lib/android/sdk/tools:/usr/local/lib/android/sdk/platform-tools:/usr/local/lib/android/sdk/build-tools/37.0.0
 tools/depends configurado (prefixtemp): 115 linhas
 ```
+## log do empacotamento (passo 9)
+```
+  Home da skin: 4 botão(ões) Ajustes -> menu SMARTEDTV
+  950 arquivos de skin/plugin substituídos pelos do APK estável
+base estável: referencia.apk
+  manifesto 1447de816a44ecc1… confere
+  3682 arquivos sob assets/smarted/ (190.3 MB)
+  4194 entradas preservadas, 3 assinaturas antigas removidas, 3682 entradas da base acrescentadas, 238 entradas nossas trocadas pelas do APK estável
+APK com base estável: /home/runner/work/KODE/KODE/smartedtv/out-apk/bruto.apk (237.5 MB)
+assinatura removida de propósito: zipalign + apksigner vêm depois
+```
 ## APKs encontrados no build
 ```
-/home/runner/work/_temp/base/SMARTED-TV-v1.0.63-arm64.apk
+/home/runner/work/_temp/base/referencia.apk
 /home/runner/work/_temp/kodi-build/tools/android/packaging/xbmc/build/outputs/apk/debug/xbmc-debug.apk
 /home/runner/work/_temp/kodi/kodiapp-arm64-v8a-debug.apk
 ```
