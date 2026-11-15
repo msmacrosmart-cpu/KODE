@@ -1,20 +1,15 @@
-# Verificação do APK único — 1.0.69
+# Verificação do APK único — 1.0.69 (run 43702328501)
 
-artifact do run 43699254709 (conferência sem recompilar)
-
-```
-sha256: c31d6aadd722a9dd143579b9034c3abda0b6198608c7c4570a2eb688a6fb4684
-tamanho: 249682485 bytes
-```
+APK: `SMARTEDTV-1.0.69-unificado-arm64-v8a.apk`
 
 ```
-== arquivo: apk/SMARTEDTV-1.0.68-unificado-arm64-v8a.apk  (238.1 MB)
+== arquivo: smartedtv/out-apk/SMARTEDTV-1.0.69-unificado-arm64-v8a.apk  (238.1 MB)
 
 == identidade do pacote (aapt2 badging)
-  package: name='smartedtv.full' versionCode='2103054' versionName='1.0.68' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
+  package: name='smartedtv.full' versionCode='2103055' versionName='1.0.69' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
   OK    pacote                             smartedtv.full
-  FALHA versionName                        1.0.69
-  FALHA versionCode                        2103055
+  OK    versionName                        1.0.69
+  OK    versionCode                        2103055
 
 == manifesto (aapt2 xmltree)
   OK    activity de abertura               .AppOpenActivity
@@ -34,15 +29,15 @@ tamanho: 249682485 bytes
   OK    imagem-sentinela da skin           media/DefaultAddon.png
   OK    plugin.video.smarted completo      16 arquivos
   OK    catálogo do plugin (abas)          plugin.video.smarted/catalogue.py
-  FALHA addon de ajustes (VIP)             assets/addons/script.smartedtv.ajustes/addon.xml
-  FALHA Home abre o menu SMARTEDTV         RunAddon(script.smartedtv.ajustes)
+  OK    addon de ajustes (VIP)             assets/addons/script.smartedtv.ajustes/addon.xml
+  OK    Home abre o menu SMARTEDTV         RunAddon(script.smartedtv.ajustes)
   OK    skin.novatv no addon-manifest      padrão na primeira execução
-  FALHA ajustes no addon-manifest          habilitado na primeira execução
+  OK    ajustes no addon-manifest          habilitado na primeira execução
   OK    splash da GUI                      assets/media/splash.jpg
   OK    splash do Android                  assets/media/applaunch_screen.png
   OK    ícones do launcher no APK          52 PNG em res/
   OK    motor nativo                       lib/arm64-v8a/libkodi.so
-  addons no APK (60): audioencoder.kodi.builtin.aac, audioencoder.kodi.builtin.wma, game.controller.default, game.controller.keyboard, game.controller.mouse, game.controller.snes, kodi.binary.global.audioengine, kodi.binary.global.filesystem, kodi.binary.global.general, kodi.binary.global.gui, kodi.binary.global.main, kodi.binary.global.network, kodi.binary.global.tools, kodi.binary.instance.audiodecoder
+  addons no APK (61): audioencoder.kodi.builtin.aac, audioencoder.kodi.builtin.wma, game.controller.default, game.controller.keyboard, game.controller.mouse, game.controller.snes, kodi.binary.global.audioengine, kodi.binary.global.filesystem, kodi.binary.global.general, kodi.binary.global.gui, kodi.binary.global.main, kodi.binary.global.network, kodi.binary.global.tools, kodi.binary.instance.audiodecoder
 
 == base estável (perfil semeado da linha clássica)
   OK    manifesto do perfil                1447de816a44ecc1… (esperado 1447de816a44ecc1…)
@@ -80,10 +75,10 @@ tamanho: 249682485 bytes
   OK    perfil da base reconhecido         perfilSmarted
   OK    perfil antigo guardado, nao apagado .kodi.antigo-
   OK    log do seed                        smarted-seed.log
-  FALHA leitor da licenca VIP              Licenca
-  FALHA checagem de VIP antes do anuncio   adsPermitidos
-  FALHA abrir link (checkout)              AbrirUrlActivity
-  FALHA compartilhar aplicativo            CompartilharActivity
+  OK    leitor da licenca VIP              Licenca
+  OK    checagem de VIP antes do anuncio   adsPermitidos
+  OK    abrir link (checkout)              AbrirUrlActivity
+  OK    compartilhar aplicativo            CompartilharActivity
   OK    APPLICATION_ID no dex              presente (redundante com o manifesto)
 
 == ponte do serviço de bootstrap
@@ -98,15 +93,6 @@ tamanho: 249682485 bytes
   OK    texto de status                    escondido (gone)
 
 == resumo
-  obrigatórias com falha: 9
+  obrigatórias com falha: 0
   avisos: 0
-  - versionName: 1.0.69
-  - versionCode: 2103055
-  - addon de ajustes (VIP): assets/addons/script.smartedtv.ajustes/addon.xml
-  - Home abre o menu SMARTEDTV: RunAddon(script.smartedtv.ajustes)
-  - ajustes no addon-manifest: habilitado na primeira execução
-  - leitor da licenca VIP: Licenca
-  - checagem de VIP antes do anuncio: adsPermitidos
-  - abrir link (checkout): AbrirUrlActivity
-  - compartilhar aplicativo: CompartilharActivity
 ```
