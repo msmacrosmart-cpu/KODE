@@ -1,15 +1,20 @@
-# Verificação do APK único — 1.0.70 (run 43705702272)
+# Verificação do APK único — 1.0.71
 
-APK: `SMARTEDTV-1.0.70-unificado-arm64-v8a.apk`
+artifact do run 43705702272 (conferência sem recompilar)
 
 ```
-== arquivo: smartedtv/out-apk/SMARTEDTV-1.0.70-unificado-arm64-v8a.apk  (238.1 MB)
+sha256: 07c8d75e78c9310319e0ed5c463fb7684eb833d7f776789fe463b295c2da983b
+tamanho: 249699150 bytes
+```
+
+```
+== arquivo: apk/SMARTEDTV-1.0.70-unificado-arm64-v8a.apk  (238.1 MB)
 
 == identidade do pacote (aapt2 badging)
   package: name='smartedtv.full' versionCode='2103056' versionName='1.0.70' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
   OK    pacote                             smartedtv.full
-  OK    versionName                        1.0.70
-  OK    versionCode                        2103056
+  FALHA versionName                        1.0.71
+  FALHA versionCode                        2103057
 
 == manifesto (aapt2 xmltree)
   OK    activity de abertura               .AppOpenActivity
@@ -29,6 +34,11 @@ APK: `SMARTEDTV-1.0.70-unificado-arm64-v8a.apk`
   OK    imagem-sentinela da skin           media/DefaultAddon.png
   OK    plugin.video.smarted completo      16 arquivos
   OK    catálogo do plugin (abas)          plugin.video.smarted/catalogue.py
+  FALHA QR Code no pacote                  assets/addons/script.smartedtv.ajustes/resources/qrcode.png
+  FALHA ponto de retomada                  assets/addons/service.smarted.bootstrap/retomar.py
+  FALHA atalhos VIP/Compartilhar na Home   ensure_shortcuts
+  FALHA ativação por código (rotas)        VALIDAR_URIS
+  FALHA atalho VIP no plugin               route == 'vip'
   OK    addon de ajustes (VIP)             assets/addons/script.smartedtv.ajustes/addon.xml
   OK    Home abre o menu SMARTEDTV         RunAddon(script.smartedtv.ajustes)
   OK    skin.novatv no addon-manifest      padrão na primeira execução
@@ -100,6 +110,13 @@ APK: `SMARTEDTV-1.0.70-unificado-arm64-v8a.apk`
   OK    texto de status                    escondido (gone)
 
 == resumo
-  obrigatórias com falha: 0
+  obrigatórias com falha: 7
   avisos: 0
+  - versionName: 1.0.71
+  - versionCode: 2103057
+  - QR Code no pacote: assets/addons/script.smartedtv.ajustes/resources/qrcode.png
+  - ponto de retomada: assets/addons/service.smarted.bootstrap/retomar.py
+  - atalhos VIP/Compartilhar na Home: ensure_shortcuts
+  - ativação por código (rotas): VALIDAR_URIS
+  - atalho VIP no plugin: route == 'vip'
 ```
