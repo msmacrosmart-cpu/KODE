@@ -52,6 +52,10 @@ tamanho: 248023338 bytes
      assets/smarted/profile/addons/One.repo/fanart.jpg
      assets/smarted/profile/addons/One.repo/icon.png
   guisettings do perfil: <setting id="lookandfeel.skin" default="true">skin.estuary</setting>
+  backup My_Builds/BACKUP+SMARTED.zip: 2152 entradas, 0 de skin/menus
+     guisettings do backup: <setting id="lookandfeel.skin" default="true">skin.estuary</setting>
+  backup SaveData.zip: 5 entradas, 0 de skin/menus
+     guisettings do backup: <setting id="lookandfeel.skin" default="true">skin.estuary</setting>
   ajustes da skin.novatv: 0 arquivo(s)
   atalhos/menus (skinshortcuts): 0 arquivo(s)
   fontes do catálogo (sources.xml): 1 arquivo(s) — ex.: userdata/sources.xml
