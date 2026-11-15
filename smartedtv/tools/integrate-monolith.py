@@ -5,7 +5,7 @@ Roda no codigo-fonte do Kodi 21.3-Omega (clonado pelo workflow) e transforma o
 build em um monolito:
 
     applicationId  smartedtv.full      (era org.xbmc.kodi)
-    versao         1.0.81 / 2103067
+    versao         1.0.82 / 2103068
     anuncios       AppOpenActivity + PreRollActivity dentro do app (AdMob nativo)
     conteudo       skin.novatv + plugin.video.smarted + service.smarted.bootstrap
                    + resource.uisounds.silencio (o mesmo pacote da linha classica)
@@ -33,8 +33,8 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 
 APP_PACKAGE = "smartedtv.full"
-VERSAO_NOME = "1.0.81"
-VERSAO_CODIGO = 2103067
+VERSAO_NOME = "1.0.82"
+VERSAO_CODIGO = 2103068
 
 ADS_APP_ID = "ca-app-pub-2066014755407744~5076693043"
 PLAY_SERVICES_ADS = "com.google.android.gms:play-services-ads:23.2.0"

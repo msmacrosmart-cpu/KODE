@@ -1005,3 +1005,33 @@ linha** e a **barra VIP de largura total** logo abaixo.
 
 Capturas de referência: `docs/capturas/boas-vindas-tv.png` (1600×900) e
 `docs/capturas/boas-vindas-celular.png` (2000×900).
+
+## 1.0.82 — Tela reconstruída no app (build)
+
+A tela HTML aprovada (`docs/boas-vindas-blueprint.html`, revisão 2) virou o
+`BoasVindas.java.in` e o APK foi refeito a partir dela. Medidas do HTML
+convertidas para dp (1 px do blueprint = 0,68 dp sobre o quadro de 960x540).
+
+* **cabeçalho** — logo do app + `SMARTEDTV` + "Sua TV, do seu jeito" à
+  esquerda, "• TELA DE ENTRADA" discreto no meio e o seletor
+  **Android TV | Celular** à direita;
+* **três cartões na mesma linha** — o primeiro com peso **1,08** (é mais largo,
+  como no HTML): boas-vindas com os três benefícios em duas linhas
+  ("Grátis com anúncios", "VIP sem anúncios", "TV e celular"), botão claro
+  **Continuar com anúncios** (foco inicial da TV) e, logo abaixo, o botão
+  **Atualizar app**;
+* **atualizar pelo Dropbox** — o botão abre
+  `APK_ATUALIZACAO` (`/SMARTEDTV-atual.apk` no Dropbox, `dl=1`) no navegador
+  do aparelho;
+* **sem anúncios / indique e ganhe** — etiqueta pequena em caixa alta, título,
+  **QR de 200 dp** em placa branca quadrada (canto 7 dp, margem 8 dp,
+  `FIT_CENTER`, sem corte) e o botão de ação; na TV o cartão de indicação
+  mostra o endereço do site em vez do compartilhamento (não existe intent de
+  envio na TV);
+* **barra VIP** — "Já é assinante? Ative seu VIP" + "Digite o código de
+  ativação que você recebeu." + campo, **Ativar** e **Continuar com anúncios**;
+  sem divisor; confirmação de anúncios (dim 0.66) continua igual;
+* **tipografia do blueprint** — título 22 sp, títulos de cartão 15,5 sp,
+  descrição 10,5 sp, etiquetas 9,5 sp, botões 10,5 sp e barra 12 sp;
+* telas de escolha TV/Celular, validação no servidor, cão de guarda de 2 min e
+  saída para o Kodi sem mudanças.

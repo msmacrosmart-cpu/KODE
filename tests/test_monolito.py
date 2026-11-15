@@ -39,10 +39,10 @@ class IntegracaoNoFonteTest(unittest.TestCase):
 
     def test_pacote_unico_e_versao(self):
         self.assertIn(f'APP_PACKAGE = "{PACOTE}"', self.script)
-        self.assertIn('VERSAO_NOME = "1.0.81"', self.script)
-        self.assertIn('VERSAO_CODIGO = 2103067', self.script)
+        self.assertIn('VERSAO_NOME = "1.0.82"', self.script)
+        self.assertIn('VERSAO_CODIGO = 2103068', self.script)
         # tem que ser maior que a 1.0.63 (2103049) para nao regredir instalacao
-        self.assertGreater(2103067, 2103053)
+        self.assertGreater(2103068, 2103053)
 
     def test_gradle_ganha_o_admob_e_a_versao(self):
         self.assertIn("com.google.android.gms:play-services-ads:23.2.0", self.script)
@@ -281,7 +281,7 @@ class VerificadorDoApkTest(unittest.TestCase):
         caminho = Path(tmp) / "aapt2"
         caminho.write_text("""#!/bin/sh
 if [ "$2" = badging ]; then
-  echo "package: name='smartedtv.full' versionCode='2103067' versionName='1.0.81'"
+  echo "package: name='smartedtv.full' versionCode='2103068' versionName='1.0.82'"
 elif [ "$2" = resources ]; then
   echo "drawable/progresswhite type=drawable"
 elif [ "$2" = xmltree ] && [ "$4" = "res/layout/activity_splash.xml" ]; then
@@ -706,9 +706,11 @@ class TelaMonocromaticaTest(unittest.TestCase):
         self.assertEqual(coloridas, [], 'cores fora do cinza: %s' % coloridas)
 
     def test_tres_colunas_com_peso(self):
-        self.assertIn('colunas.addView(cartaoBoasVindas(m), lp(m, 0, 0, 1f, 0, 0));', self.tela)
-        self.assertIn('colunas.addView(cartaoAssinatura(m), lp(m, 0, 0, 1f, 11, 0));', self.tela)
-        self.assertIn('colunas.addView(cartaoIndicacao(m, tv), lp(m, 0, 0, 1f, 11, 0));', self.tela)
+        """1.0.82: primeiro cartão mais largo (1,08) como no HTML reconstruído."""
+        self.assertIn('colunas.addView(cartaoBoasVindas(m, splash), lp(m, 0, 0, 1.08f, 0, 0));',
+                      self.tela)
+        self.assertIn('colunas.addView(cartaoAssinatura(m), lp(m, 0, 0, 1f, 14, 0));', self.tela)
+        self.assertIn('colunas.addView(cartaoIndicacao(m, tv), lp(m, 0, 0, 1f, 14, 0));', self.tela)
         self.assertIn('private static LinearLayout.LayoutParams lp(Medidas m, float largura',
                       self.tela)
 
@@ -724,7 +726,7 @@ class TelaMonocromaticaTest(unittest.TestCase):
         self.assertIn('cartao.addView(quadroQr(m, QR_CAKTO)', self.tela)
         self.assertIn('cartao.addView(quadroQr(m, QR_APP)', self.tela)
         self.assertIn('placa.setBackground(fundoPlaca)', self.tela)   # placa branca quadrada
-        self.assertIn('moldura.addView(placa, lp(m, 168, 168, 0, 0, 0));', self.tela)
+        self.assertIn('moldura.addView(placa, lp(m, 200, 200, 0, 0, 0));', self.tela)
         self.assertIn('ImageView.ScaleType.FIT_CENTER', self.tela)     # inteiro, sem máscara
         self.assertIn('addons/script.smartedtv.ajustes/resources/qrcode.png', self.tela)
         self.assertIn('addons/script.smartedtv.ajustes/resources/qrcode-cakto.png', self.tela)
@@ -733,7 +735,8 @@ class TelaMonocromaticaTest(unittest.TestCase):
         self.assertIn('getPackageManager().getApplicationIcon', self.tela)
         self.assertIn('private static ImageView logo(Medidas m, float tamanho)', self.tela)
         self.assertIn('"SMARTEDTV"', self.tela)
-        self.assertIn('Ativação e assinatura', self.tela)
+        self.assertIn('Sua TV, do seu jeito', self.tela)
+        self.assertIn('TELA DE ENTRADA', self.tela)
 
     def test_seletor_tv_celular_no_cabecalho(self):
         self.assertIn('private static Button segmento(Medidas m, String rotulo, boolean ativo)',
@@ -752,12 +755,30 @@ class TelaMonocromaticaTest(unittest.TestCase):
         self.assertIn('seguirBotao.requestFocus()', self.tela)
 
     def test_ativacao_com_campo_e_status(self):
-        self.assertIn('botao(m, "Ativar", true, 12.5f, false)', self.tela)
+        self.assertIn('botao(m, "Ativar", true, 10.5f, false)', self.tela)
         self.assertIn('Licenca.validar(splash, codigo)', self.tela)
         self.assertIn('teclado(splash, campo)', self.tela)
         self.assertIn('VIP ativado! Nenhum anúncio nesta abertura.', self.tela)
         self.assertIn('Digite o código que você recebeu.', self.tela)
         self.assertIn('private static void avisar(TextView status', self.tela)
+
+    def test_botao_de_atualizacao_do_apk_no_dropbox(self):
+        """1.0.82: cartão da esquerda baixa o SMARTEDTV-atual.apk publicado no Dropbox."""
+        self.assertIn('public static final String APK_ATUALIZACAO', self.tela)
+        self.assertIn('SMARTEDTV-atual.apk', self.tela)
+        self.assertIn('dropbox.com/scl/fi/', self.tela)
+        self.assertIn('private static LinearLayout atualizacao(Medidas m, Activity splash)',
+                      self.tela)
+        self.assertIn('abrirLink(splash, APK_ATUALIZACAO)', self.tela)
+        self.assertIn('"Atualizar app"', self.tela)
+
+    def test_cartao_1_com_os_tres_beneficios_e_acao(self):
+        """1.0.82: benefícios em duas linhas e botão claro no cartão de boas-vindas."""
+        self.assertIn('item(m, "Grátis com anúncios", "Entra direto, sem senha.")', self.tela)
+        self.assertIn('item(m, "VIP sem anúncios", "Ativação por código, na hora.")', self.tela)
+        self.assertIn('item(m, "TV e celular", "O mesmo visual nas duas telas.")', self.tela)
+        self.assertIn('botao(m, "Continuar com anúncios", true, 10.5f, false)', self.tela)
+        self.assertIn('focoInicial = gratis;', self.tela)
 
     def test_sem_sobra_de_codigo_morto(self):
         for proibido in ('ScrollView', 'embrulhar(', 'class Label', 'PRECO', 'cartaoQr('):
@@ -862,7 +883,7 @@ class PlataformaTvTest(unittest.TestCase):
         self.assertIn('https://smartedtv-vip.lovable.app/', tela)
         # celular: botão de compartilhar; TV: só o QR + o endereço do site
         self.assertIn('compartilhar.setVisibility(tv ? View.GONE : View.VISIBLE)', tela)
-        self.assertIn('botao(m, "Compartilhar link", false, 12, true)', tela)
+        self.assertIn('botao(m, "Compartilhar link", false, 10.5f, false)', tela)
 
     def test_tela_unica_sem_rolagem(self):
         """1.0.79: paisagem fixa, tudo desenhado num quadro 16:9 — zero rolagem."""

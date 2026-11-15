@@ -37,14 +37,16 @@ import android.widget.TextView;
  * Boas-vindas / ativação do SMARTEDTV — tela única, paisagem, monocromática.
  *
  * Espelha o blueprint aprovado (docs/boas-vindas-blueprint.html):
- *   cabeçalho ... logo do projeto + SMARTEDTV + seletor Android TV | Celular
- *   três colunas  boas-vindas | sem anúncios (QR) | indique e ganhe (QR)
+ *   cabeçalho ... logo do projeto + SMARTEDTV + "Tela de entrada" + Android TV | Celular
+ *   três cartões  boas-vindas | sem anúncios (QR) | indique e ganhe (QR)
  *   barra base .. "Já é assinante? Ative seu VIP" + campo + Ativar + Continuar
+ *   à esquerda ... "Atualizar app" (baixa o SMARTEDTV-atual.apk do Dropbox)
  *
  * Paleta: preto, branco e cinzas (nenhuma cor). Os dois QR ficam visíveis ao
  * mesmo tempo, cada um no seu cartão, em quadro branco quadrado e sem corte.
  * O desenho é proporcional a um quadro de 960x540 dp: cabe inteiro na tela,
- * sem rolagem, na TV 16:9 e no celular deitado.
+ * sem rolagem, na TV 16:9 e no celular deitado. As medidas acompanham o HTML
+ * (1 px do blueprint = 0,68 dp).
  */
 public final class BoasVindas {
 
@@ -52,6 +54,11 @@ public final class BoasVindas {
 
     public static final String CHECKOUT = "https://pay.cakto.com.br/nkvbegd_1323120";
     public static final String SITE = "https://smartedtv-vip.lovable.app/";
+
+    /** APK publicado no Dropbox — botão "Atualizar app" (cartão da esquerda). */
+    public static final String APK_ATUALIZACAO =
+            "https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/SMARTEDTV-atual.apk"
+                    + "?rlkey=yp1ijxk6fdtcqm93gzi24ig5j&dl=1";
 
     private static final String QR_APP = "addons/script.smartedtv.ajustes/resources/qrcode.png";
     private static final String QR_CAKTO =
@@ -73,6 +80,8 @@ public final class BoasVindas {
     private static final String AVISO_CODIGO = "Digite o código que você recebeu.";
 
     private static volatile boolean aberta;
+    /** Primeiro foco da TV: o botão claro "Continuar com anúncios" do cartão 1. */
+    private static View focoInicial;
     private static final long TEMPO_MAXIMO_TELA = 120000L;
 
     private BoasVindas() {
@@ -226,7 +235,7 @@ public final class BoasVindas {
 
         LinearLayout tela = new LinearLayout(splash);
         tela.setOrientation(LinearLayout.VERTICAL);
-        tela.setPadding(m.d(15), m.d(13), m.d(15), m.d(13));
+        tela.setPadding(m.d(21), m.d(18), m.d(21), m.d(18));
         raiz.addView(tela, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
@@ -241,20 +250,20 @@ public final class BoasVindas {
         LinearLayout colunas = new LinearLayout(splash);
         colunas.setOrientation(LinearLayout.HORIZONTAL);
         colunas.setBaselineAligned(false);
-        colunas.addView(cartaoBoasVindas(m), lp(m, 0, 0, 1f, 0, 0));
-        colunas.addView(cartaoAssinatura(m), lp(m, 0, 0, 1f, 11, 0));
-        colunas.addView(cartaoIndicacao(m, tv), lp(m, 0, 0, 1f, 11, 0));
-        tela.addView(colunas, lp(m, 0, 0, 1f, 0, 11));
+        colunas.addView(cartaoBoasVindas(m, splash), lp(m, 0, 0, 1.08f, 0, 0));
+        colunas.addView(cartaoAssinatura(m), lp(m, 0, 0, 1f, 14, 0));
+        colunas.addView(cartaoIndicacao(m, tv), lp(m, 0, 0, 1f, 14, 0));
+        tela.addView(colunas, lp(m, 0, 0, 1f, 0, 14));
 
-        tela.addView(barraAtivacao(m, splash, vip), lp(m, 0, 0, 0, 0, 11));
+        tela.addView(barraAtivacao(m, splash, vip), lp(m, 0, 0, 0, 0, 14));
 
         splash.setContentView(raiz);
         splash.getWindow().getDecorView().post(new Runnable() {
             @Override
             public void run() {
-                View ativar = splash.findViewById(ID_ATIVAR);
-                if (ativar != null) {
-                    ativar.requestFocus();
+                View alvo = tv ? focoInicial : splash.findViewById(ID_ATIVAR);
+                if (alvo != null) {
+                    alvo.requestFocus();
                 }
             }
         });
@@ -266,73 +275,140 @@ public final class BoasVindas {
 
     // ------------------------------------------------------------- cartões
 
-    private static LinearLayout cartaoBoasVindas(Medidas m) {
+    private static LinearLayout cartaoBoasVindas(Medidas m, Activity splash) {
         LinearLayout cartao = cartao(m);
+        cartao.addView(etiqueta(m, "Boas-vindas"));
 
-        LinearLayout linhaEyebrow = new LinearLayout(m.act);
-        linhaEyebrow.setOrientation(LinearLayout.HORIZONTAL);
-        linhaEyebrow.setGravity(Gravity.CENTER_VERTICAL);
-        View traco = new View(m.act);
-        traco.setBackground(m.traco());
-        linhaEyebrow.addView(traco, lp(m, 16, 2, 0, 0, 0));
-        TextView eyebrow = texto(m, "BEM-VINDO", 9.5f, APAGADO, true, Gravity.CENTER_VERTICAL);
-        eyebrow.setLetterSpacing(0.22f);
-        linhaEyebrow.addView(eyebrow, lp(m, -1, 0, 0, 7, 0));
-        cartao.addView(linhaEyebrow);
-
-        TextView titulo = texto(m, "Sua TV,\ndo seu jeito.", 27, Color.WHITE, true, Gravity.LEFT);
+        TextView titulo = texto(m, "Sua TV,\ndo seu jeito.", 22, Color.WHITE, true, Gravity.LEFT);
         titulo.setLineSpacing(m.d(1), 1f);
-        cartao.addView(titulo, pilhaParams(m, 7));
+        cartao.addView(titulo, pilhaParams(m, 5));
 
-        cartao.addView(texto(m, "Ative o VIP com um código ou continue gratuitamente"
-                + " com anúncios.", 12, TEXTO, false, Gravity.LEFT), pilhaParams(m, 6));
+        cartao.addView(texto(m, "Filmes, séries, canais e seus apps favoritos em um só lugar."
+                + " Escolha como assistir e comece agora — não precisa de cadastro.",
+                10.5f, TEXTO, false, Gravity.LEFT), pilhaParams(m, 5));
 
         LinearLayout lista = pilha(m);
         lista.setGravity(Gravity.LEFT);
-        lista.addView(item(m, "Canais ao vivo, sem travar"));
-        lista.addView(item(m, "Sem anúncios com o VIP ativo"), pilhaParams(m, 6));
-        lista.addView(item(m, "Ativação em poucos segundos"), pilhaParams(m, 6));
-        cartao.addView(lista, lp(m, 0, 0, 1f, 0, 8));
+        lista.addView(item(m, "Grátis com anúncios", "Entra direto, sem senha."));
+        lista.addView(item(m, "VIP sem anúncios", "Ativação por código, na hora."),
+                pilhaParams(m, 7));
+        lista.addView(item(m, "TV e celular", "O mesmo visual nas duas telas."),
+                pilhaParams(m, 7));
+        cartao.addView(lista, lp(m, 0, 0, 1f, 0, 6));
+
+        final Button gratis = botao(m, "Continuar com anúncios", true, 10.5f, false);
+        gratis.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (Licenca.ativa(splash)) {
+                    seguir(splash, null);
+                    return;
+                }
+                confirmarAnuncios(m, splash, new Runnable() {
+                    @Override
+                    public void run() {
+                        seguir(splash, null);
+                    }
+                });
+            }
+        });
+        cartao.addView(gratis, lp(m, 0, 34, 0, 0, 6));
+        focoInicial = gratis;
+
+        cartao.addView(atualizacao(m, splash), lp(m, 0, 40, 0, 0, 6));
         return cartao;
     }
 
-    private static LinearLayout item(Medidas m, String descricao) {
+    /** Botão de atualização: baixa o SMARTEDTV-atual.apk publicado no Dropbox. */
+    private static LinearLayout atualizacao(Medidas m, Activity splash) {
         LinearLayout linha = new LinearLayout(m.act);
         linha.setOrientation(LinearLayout.HORIZONTAL);
         linha.setGravity(Gravity.CENTER_VERTICAL);
-        TextView bolinha = texto(m, "✓", 9, Color.WHITE, true, Gravity.CENTER);
+        linha.setBackground(m.botaoSecundario(true, false));
+        linha.setPadding(m.d(9), m.d(5), m.d(9), m.d(5));
+        linha.setFocusable(true);
+        linha.setClickable(true);
+
+        TextView icone = texto(m, "\u2193", 13, TINTA, true, Gravity.CENTER);
+        icone.setBackground(m.bolinha());
+        linha.addView(icone, lp(m, 24, 24, 0, 0, 0));
+
+        LinearLayout copia = pilha(m);
+        copia.setGravity(Gravity.LEFT);
+        copia.addView(texto(m, "Atualizar app", 10.5f, TINTA, true, Gravity.LEFT));
+        copia.addView(texto(m, "SMARTEDTV-atual.apk · Dropbox", 9, APAGADO, false, Gravity.LEFT),
+                pilhaParams(m, 2));
+        linha.addView(copia, lp(m, 0, 0, 1f, 8, 0));
+
+        linha.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean temFoco) {
+                v.setBackground(m.botaoSecundario(true, temFoco));
+            }
+        });
+        linha.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                abrirLink(splash, APK_ATUALIZACAO);
+            }
+        });
+        return linha;
+    }
+
+    /** Etiqueta pequena acima do título do cartão (caixa alta, bem espaçada). */
+    private static TextView etiqueta(Medidas m, String conteudo) {
+        TextView etiqueta = texto(m, conteudo, 9.5f, APAGADO, true, Gravity.LEFT);
+        etiqueta.setAllCaps(true);
+        etiqueta.setLetterSpacing(0.16f);
+        return etiqueta;
+    }
+
+    /** Item de benefício: título curto em cima, explicação em cinza embaixo. */
+    private static LinearLayout item(Medidas m, String titulo, String detalhe) {
+        LinearLayout linha = new LinearLayout(m.act);
+        linha.setOrientation(LinearLayout.HORIZONTAL);
+        linha.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView bolinha = texto(m, "\u2713", 8.5f, Color.WHITE, true, Gravity.CENTER);
         bolinha.setBackground(m.bolinha());
-        linha.addView(bolinha, lp(m, 14, 14, 0, 0, 0));
-        linha.addView(texto(m, descricao, 11.5f, TEXTO, false, Gravity.CENTER_VERTICAL),
-                lp(m, -1, 0, 0, 7, 0));
+        linha.addView(bolinha, lp(m, 15, 15, 0, 0, 0));
+
+        LinearLayout copia = pilha(m);
+        copia.setGravity(Gravity.LEFT);
+        copia.addView(texto(m, titulo, 10.5f, TINTA, true, Gravity.LEFT));
+        copia.addView(texto(m, detalhe, 9.5f, APAGADO, false, Gravity.LEFT), pilhaParams(m, 2));
+        linha.addView(copia, lp(m, 0, 0, 1f, 8, 0));
         return linha;
     }
 
     private static LinearLayout cartaoAssinatura(Medidas m) {
         LinearLayout cartao = cartao(m);
-        cartao.addView(cabecalhoCartao(m, "Sem anúncios", "Plano mensal"));
-        cartao.addView(quadroQr(m, QR_CAKTO), lp(m, 0, 0, 1f, 0, 6));
-        cartao.addView(texto(m, "Aponte a câmera de outro celular.\n"
-                + "Valor e condições no checkout.", 10.5f, APAGADO, false, Gravity.CENTER),
+        cartao.addView(etiqueta(m, "Sem anúncios"));
+        cartao.addView(texto(m, "Assista sem interrupções", 15.5f, Color.WHITE, true, Gravity.LEFT),
                 pilhaParams(m, 4));
-        Button abrir = botao(m, "Abrir checkout", false, 12, true);
+        cartao.addView(quadroQr(m, QR_CAKTO), lp(m, 0, 0, 1f, 0, 4));
+        cartao.addView(texto(m, "Aponte a câmera do celular para o código e ative o VIP.",
+                9.5f, APAGADO, false, Gravity.CENTER), pilhaParams(m, 5));
+        Button abrir = botao(m, "Abrir checkout", false, 10.5f, false);
         abrir.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 abrirLink(m.act, CHECKOUT);
             }
         });
-        cartao.addView(abrir, lp(m, 0, 38, 0, 0, 6));
+        cartao.addView(abrir, lp(m, 0, 34, 0, 0, 6));
         return cartao;
     }
 
     private static LinearLayout cartaoIndicacao(Medidas m, boolean tv) {
         LinearLayout cartao = cartao(m);
-        cartao.addView(cabecalhoCartao(m, "Indique e ganhe", "Compartilhar"));
-        cartao.addView(quadroQr(m, QR_APP), lp(m, 0, 0, 1f, 0, 6));
-        cartao.addView(texto(m, "Aponte a câmera e envie o link\ndo app a quem quiser.",
-                10.5f, APAGADO, false, Gravity.CENTER), pilhaParams(m, 4));
-        Button compartilhar = botao(m, "Compartilhar link", false, 12, true);
+        cartao.addView(etiqueta(m, "Indique e ganhe"));
+        cartao.addView(texto(m, "Convide e ganhe", 15.5f, Color.WHITE, true, Gravity.LEFT),
+                pilhaParams(m, 4));
+        cartao.addView(quadroQr(m, QR_APP), lp(m, 0, 0, 1f, 0, 4));
+        cartao.addView(texto(m, "Mostre o código ou compartilhe o link com quem você convidar.",
+                9.5f, APAGADO, false, Gravity.CENTER), pilhaParams(m, 5));
+        Button compartilhar = botao(m, "Compartilhar link", false, 10.5f, false);
         compartilhar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -340,25 +416,12 @@ public final class BoasVindas {
             }
         });
         compartilhar.setVisibility(tv ? View.GONE : View.VISIBLE);
-        cartao.addView(compartilhar, lp(m, 0, 38, 0, 0, 6));
+        cartao.addView(compartilhar, lp(m, 0, 34, 0, 0, 6));
         if (tv) {
-            cartao.addView(texto(m, "smartedtv-vip.lovable.app", 10.5f, APAGADO, false,
-                    Gravity.CENTER), pilhaParams(m, 3));
+            cartao.addView(texto(m, "smartedtv-vip.lovable.app", 9.5f, APAGADO, false,
+                    Gravity.CENTER), pilhaParams(m, 4));
         }
         return cartao;
-    }
-
-    private static View cabecalhoCartao(Medidas m, String titulo, String selo) {
-        LinearLayout linha = new LinearLayout(m.act);
-        linha.setOrientation(LinearLayout.HORIZONTAL);
-        linha.setGravity(Gravity.CENTER_VERTICAL);
-        TextView nome = texto(m, titulo, 17, Color.WHITE, true, Gravity.CENTER_VERTICAL);
-        linha.addView(nome, lp(m, 0, 0, 1f, 0, 0));
-        TextView chip = texto(m, selo, 9.5f, TEXTO, false, Gravity.CENTER);
-        chip.setBackground(m.chip());
-        chip.setPadding(m.d(7), m.d(3), m.d(7), m.d(3));
-        linha.addView(chip);
-        return linha;
     }
 
     /** Quadro branco quadrado com o QR inteiro dentro (sem corte nem máscara). */
@@ -369,7 +432,7 @@ public final class BoasVindas {
         FrameLayout placa = new FrameLayout(m.act);
         GradientDrawable fundoPlaca = new GradientDrawable();
         fundoPlaca.setColor(Color.WHITE);
-        fundoPlaca.setCornerRadius(m.d(6));
+        fundoPlaca.setCornerRadius(m.d(7));
         placa.setBackground(fundoPlaca);
 
         ImageView qr = new ImageView(m.act);
@@ -380,13 +443,13 @@ public final class BoasVindas {
         } else {
             Log.w(TAG, "BoasVindas: QR ausente no APK (" + caminho + ")");
         }
-        int margem = m.d(6);
+        int margem = m.d(8);
         FrameLayout.LayoutParams dentro = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         dentro.setMargins(margem, margem, margem, margem);
         placa.addView(qr, dentro);
 
-        moldura.addView(placa, lp(m, 168, 168, 0, 0, 0));
+        moldura.addView(placa, lp(m, 200, 200, 0, 0, 0));
         return moldura;
     }
 
@@ -397,45 +460,37 @@ public final class BoasVindas {
         barra.setOrientation(LinearLayout.HORIZONTAL);
         barra.setGravity(Gravity.CENTER_VERTICAL);
         barra.setBackground(m.vidroForte());
-        barra.setPadding(m.d(12), m.d(10), m.d(12), m.d(10));
+        barra.setPadding(m.d(14), m.d(9), m.d(14), m.d(9));
 
         LinearLayout copia = pilha(m);
         copia.setGravity(Gravity.LEFT);
-        copia.addView(texto(m, "Já é assinante? Ative seu VIP", 15, Color.WHITE, true, Gravity.LEFT));
-        copia.addView(texto(m, "Digite o código que você recebeu.", 10.5f, APAGADO, false,
-                Gravity.LEFT), pilhaParams(m, 3));
+        copia.addView(texto(m, "Já é assinante? Ative seu VIP", 12, Color.WHITE, true, Gravity.LEFT));
+        copia.addView(texto(m, "Digite o código de ativação que você recebeu.", 9.5f, APAGADO,
+                false, Gravity.LEFT), pilhaParams(m, 3));
         barra.addView(copia);
 
         final EditText campo = campoCodigo(m);
-        final Button ativar = botao(m, "Ativar", true, 12.5f, false);
+        final Button ativar = botao(m, "Ativar", true, 10.5f, false);
         ativar.setId(ID_ATIVAR);
 
-        final TextView status = texto(m, "", 10.5f, APAGADO, false, Gravity.LEFT);
+        final TextView status = texto(m, "", 9.5f, APAGADO, false, Gravity.LEFT);
         status.setVisibility(View.GONE);
 
         LinearLayout linhaCampo = new LinearLayout(m.act);
         linhaCampo.setOrientation(LinearLayout.HORIZONTAL);
         linhaCampo.setGravity(Gravity.CENTER_VERTICAL);
-        linhaCampo.addView(campo, lp(m, 0, 38, 1f, 0, 0));
-        linhaCampo.addView(ativar, lp(m, 86, 38, 0, 8, 0));
+        linhaCampo.addView(campo, lp(m, 0, 34, 1f, 0, 0));
+        linhaCampo.addView(ativar, lp(m, 78, 34, 0, 7, 0));
 
         LinearLayout formulario = pilha(m);
         formulario.setGravity(Gravity.LEFT);
-        formulario.setPadding(m.d(16), 0, m.d(16), 0);
-        formulario.addView(linhaCampo, lp(m, 0, 38, 0, 0, 0));
+        formulario.setPadding(m.d(14), 0, m.d(14), 0);
+        formulario.addView(linhaCampo, lp(m, 0, 34, 0, 0, 0));
         formulario.addView(status, pilhaParams(m, 4));
         barra.addView(formulario, lp(m, 0, 0, 1f, 0, 0));
 
-        View divisor = new View(m.act);
-        divisor.setBackgroundColor(0x1FFFFFFF);
-        LinearLayout.LayoutParams pd = new LinearLayout.LayoutParams(m.d(1),
-                ViewGroup.LayoutParams.MATCH_PARENT);
-        pd.leftMargin = m.d(6);
-        pd.rightMargin = m.d(16);
-        barra.addView(divisor, pd);
-
         final Button gratis = botao(m, vip ? "Entrar no SMARTEDTV" : "Continuar com anúncios",
-                false, 12, true);
+                false, 10.5f, true);
         gratis.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -451,7 +506,7 @@ public final class BoasVindas {
                 });
             }
         });
-        barra.addView(gratis, lp(m, -1, 38, 0, 0, 0));
+        barra.addView(gratis, lp(m, -1, 34, 0, 0, 0));
 
         ativar.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -512,7 +567,9 @@ public final class BoasVindas {
     }
 
     private static void seguir(Activity splash, EditText campo) {
-        fecharTeclado(splash, campo);
+        if (campo != null) {
+            fecharTeclado(splash, campo);
+        }
         aberta = false;
         SeedBase.iniciarKodi(splash);
     }
@@ -592,24 +649,31 @@ public final class BoasVindas {
         LinearLayout esquerda = new LinearLayout(m.act);
         esquerda.setOrientation(LinearLayout.HORIZONTAL);
         esquerda.setGravity(Gravity.CENTER_VERTICAL);
-        esquerda.addView(logo(m, 32), lp(m, 32, 32, 0, 0, 0));
+        esquerda.addView(logo(m, 34), lp(m, 34, 34, 0, 0, 0));
 
         LinearLayout textos = pilha(m);
         textos.setGravity(Gravity.LEFT);
         LinearLayout.LayoutParams pt = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         pt.leftMargin = m.d(9);
-        TextView nome = texto(m, "SMARTEDTV", 17, Color.WHITE, true, Gravity.LEFT);
-        nome.setLetterSpacing(0.18f);
+        TextView nome = texto(m, "SMARTEDTV", 14.5f, Color.WHITE, true, Gravity.LEFT);
+        nome.setLetterSpacing(0.14f);
         textos.addView(nome);
-        textos.addView(texto(m, "Ativação e assinatura", 10, APAGADO, false, Gravity.LEFT),
+        textos.addView(texto(m, "Sua TV, do seu jeito", 9, APAGADO, false, Gravity.LEFT),
                 pilhaParams(m, 2));
         esquerda.addView(textos, pt);
-        linha.addView(esquerda, lp(m, 0, 0, 1f, 0, 0));
 
         if (modo == null) {
+            linha.addView(esquerda);
             return linha;
         }
+
+        // identificação discreta no meio do cabeçalho
+        TextView identificacao = texto(m, "\u2022 TELA DE ENTRADA", 9.5f, APAGADO, false,
+                Gravity.CENTER);
+        identificacao.setLetterSpacing(0.1f);
+        linha.addView(esquerda);
+        linha.addView(identificacao, lp(m, 0, 0, 1f, 0, 0));
 
         final boolean tv = Plataforma.eTV(m.act);
         final Button botaoTv = segmento(m, "Android TV", tv);
@@ -620,8 +684,8 @@ public final class BoasVindas {
         grupo.setGravity(Gravity.CENTER_VERTICAL);
         grupo.setBackground(m.pilula());
         grupo.setPadding(m.d(3), m.d(3), m.d(3), m.d(3));
-        grupo.addView(botaoTv, lp(m, -1, 26, 0, 0, 0));
-        grupo.addView(botaoCelular, lp(m, -1, 26, 0, 3, 0));
+        grupo.addView(botaoTv, lp(m, -1, 24, 0, 0, 0));
+        grupo.addView(botaoCelular, lp(m, -1, 24, 0, 3, 0));
         linha.addView(grupo);
 
         botaoTv.setOnClickListener(new View.OnClickListener() {
@@ -714,7 +778,7 @@ public final class BoasVindas {
         campo.setHint("Código de ativação");
         campo.setTextColor(TINTA);
         campo.setHintTextColor(0xFF8A8A8A);
-        campo.setTextSize(TypedValue.COMPLEX_UNIT_SP, m.sp(12.5f));
+        campo.setTextSize(TypedValue.COMPLEX_UNIT_SP, m.sp(10.5f));
         campo.setSingleLine(true);
         campo.setGravity(Gravity.CENTER_VERTICAL);
         campo.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
@@ -754,7 +818,7 @@ public final class BoasVindas {
         segmento.setText(rotulo);
         segmento.setAllCaps(false);
         segmento.setGravity(Gravity.CENTER);
-        segmento.setTextSize(TypedValue.COMPLEX_UNIT_SP, m.sp(11));
+        segmento.setTextSize(TypedValue.COMPLEX_UNIT_SP, m.sp(9.5f));
         segmento.setPadding(m.d(12), 0, m.d(12), 0);
         segmento.setTextColor(ativo ? 0xFF080808 : TEXTO);
         segmento.setBackground(m.segmento(ativo));
@@ -933,14 +997,6 @@ public final class BoasVindas {
             return forma;
         }
 
-        GradientDrawable chip() {
-            GradientDrawable forma = new GradientDrawable();
-            forma.setColor(0x0DFFFFFF);
-            forma.setCornerRadius(d(999));
-            forma.setStroke(Math.max(1, d(1f)), 0x24FFFFFF);
-            return forma;
-        }
-
         GradientDrawable pilula() {
             GradientDrawable forma = new GradientDrawable();
             forma.setColor(0x0BFFFFFF);
@@ -986,13 +1042,6 @@ public final class BoasVindas {
             forma.setColor(0x61000000);
             forma.setCornerRadius(d(8));
             forma.setStroke(Math.max(1, d(foco ? 2f : 1f)), foco ? 0x99FFFFFF : 0x26FFFFFF);
-            return forma;
-        }
-
-        GradientDrawable traco() {
-            GradientDrawable forma = new GradientDrawable();
-            forma.setColor(0x8CFFFFFF);
-            forma.setCornerRadius(d(999));
             return forma;
         }
 

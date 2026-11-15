@@ -20,8 +20,8 @@ import zipfile
 from pathlib import Path
 
 PACOTE = "smartedtv.full"
-VERSAO = "1.0.81"
-CODIGO = 2103067
+VERSAO = "1.0.82"
+CODIGO = 2103068
 
 BLOCO_ABERTURA = "ca-app-pub-2066014755407744/4214378379"
 BLOCO_PREROLL = "ca-app-pub-2066014755407744/3572039686"
