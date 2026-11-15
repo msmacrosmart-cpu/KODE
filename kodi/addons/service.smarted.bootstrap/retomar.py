@@ -27,13 +27,15 @@ import os
 import time
 
 import xbmc
-import xbmcaddon
 import xbmcgui
 
 INTERVALO = 20          # segundos entre uma gravação e outra
 VALIDADE = 7 * 24 * 3600  # ponto mais velho que isso é ignorado
 MINIMO = 20             # abaixo disso (segundos) não vale a pena retomar
 ARQUIVO = 'retomar.json'
+# id fixo: o módulo também roda de dentro do plugin, e `xbmcaddon.Addon()`
+# devolveria a pasta do plugin em vez da pasta do serviço
+ADDON_ID = 'service.smarted.bootstrap'
 
 
 def _log(mensagem, nivel=None):
@@ -54,7 +56,7 @@ def xbmcvfs_translate(caminho):
 
 
 def pasta():
-    destino = os.path.join(perfil(), 'addon_data', xbmcaddon.Addon().getAddonInfo('id'))
+    destino = os.path.join(perfil(), 'addon_data', ADDON_ID)
     try:
         if not os.path.isdir(destino):
             os.makedirs(destino)

@@ -648,3 +648,12 @@ continuar) e `?route=vip-acao&acao=…`.
 `VALIDAR_URIS` no `vip.py` e `route == 'vip'` no plugin. `integrate-monolith.py`
 falha o build antes de compilar se o QR ou o `retomar.py` não existirem.
 `tests/test_monolito.py` cobre tudo isso (400 testes).
+
+### 1.0.72 — correção do ponto de retomada fora do serviço
+
+`retomar.py` passou a usar o id fixo `service.smarted.bootstrap` em vez de
+`xbmcaddon.Addon().getAddonInfo('id')`: o módulo também é importado pelo
+`plugin.video.smarted`, e nesse caso `Addon()` devolveria a pasta do plugin —
+o `retomar.json` gravado pelo serviço não seria encontrado e o item
+"Continuar assistindo" não apareceria no menu VIP. Sem outras mudanças de
+comportamento; 1.0.72 existe só para publicar o APK com essa correção.
