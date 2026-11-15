@@ -60,7 +60,8 @@ def elementos_manifesto(texto: str) -> list[str]:
         elif linha.startswith("A: http://schemas.android.com/apk/res/android:name"):
             valor = linha.split('"')
             if len(valor) > 1 and atual in ("activity", "service", "receiver", "provider",
-                                             "application", "activity-alias", "uses-permission"):
+                                             "application", "activity-alias", "uses-permission",
+                                             "uses-feature", "category", "uses-library"):
                 achados.append(f"{atual}: {valor[1]}")
     return achados
 
@@ -199,6 +200,43 @@ def main() -> int:
             for item in itens:
                 add(f"* {item}")
             add("")
+
+        # TV x celular: features declaradas e categorias do launcher
+        if args.aapt2:
+            proc = subprocess.run([args.aapt2, "dump", "xmltree", "--file",
+                                   "AndroidManifest.xml", str(apk)],
+                                  capture_output=True, text=True)
+            cru = proc.stdout or ""
+            add("## TV x celular (linhas cruas do manifesto)\n")
+            add("```")
+            for linha in cru.splitlines():
+                texto = linha.strip()
+                if any(marca in texto for marca in (
+                        "uses-feature", "LEANBACK", "LAUNCHER", "banner", "touchscreen",
+                        "leanback", "appCategory", "resizeable", "supports-screens",
+                        "uses-sdk", "screenOrientation")):
+                    add(texto[:200])
+            add("```")
+            add("")
+
+        # XML da skin que interessa para menus/ajustes
+        pasta_skin = Path("docs/skin-base")
+        interessantes = [n for n in nomes if n.startswith("assets/addons/skin.novatv/xml/")
+                          and n.endswith(".xml")]
+        pasta_skin.mkdir(parents=True, exist_ok=True)
+        guardados = []
+        for nome in interessantes:
+            dados = z.read(nome)
+            texto = dados.decode("utf-8", "replace")
+            if ("Home.xml" in nome or "Includes" in nome or "Ajustes" in texto
+                    or "Configura" in texto or "Settings" in texto):
+                destino = pasta_skin / Path(nome).name
+                destino.write_bytes(dados)
+                guardados.append(f"{Path(nome).name} ({len(dados)} bytes)")
+        add(f"## XML da skin guardados em docs/skin-base ({len(guardados)})")
+        for item in sorted(guardados)[:60]:
+            add(f"* {item}")
+        add("")
 
         # classes do dex
         classes = classes_do_dex(z, nomes)

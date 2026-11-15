@@ -110,6 +110,14 @@ jobs:
           } > docs/bootstrap-referencia.txt
           wc -l docs/bootstrap-referencia.txt
 
+      - name: 4b. Diagnóstico estático dos add-ons (Brazuca)
+        run: |
+          set +e
+          python3 smartedtv/tools/diagnostico-addons.py --apk "$BASE_APK" \
+            --saida docs/brazuca-diagnostico.txt 2>&1 | tail -20
+          set -e
+          head -30 docs/brazuca-diagnostico.txt || true
+
       - name: 5. Guardar o relatorio
         run: |
           set -euo pipefail
