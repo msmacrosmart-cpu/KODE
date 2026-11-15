@@ -42,10 +42,19 @@ jobs:
       - name: 1. Achar o artifact do build desta versão
         run: |
           set -uo pipefail
+          mkdir -p apk
+          if [ -z "${VERSAO:-}" ]; then
+            # disparo por push não tem inputs: usa o artifact mais recente
+            VERSAO=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=30" \
+              --jq '.artifacts[].name' 2>/dev/null \
+              | grep -o '^apk-unificado-.*' | head -1 | sed 's/^apk-unificado-//')
+            echo "VERSAO descoberta pelo artifact: $VERSAO"
+            echo "VERSAO=$VERSAO" >> "$GITHUB_ENV"
+          fi
+          [ -n "$VERSAO" ] || { echo "::error::sem versao e sem artifact"; exit 1; }
           TAG="${{ inputs.tag }}"
           [ -n "$TAG" ] || TAG="v$VERSAO-unificado"
           echo "TAG_DESTINO=$TAG" >> "$GITHUB_ENV"
-          mkdir -p apk
           ACHOU=""
           for RUN in $(gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/build-monolith.yml/runs?per_page=15" \
                        --jq '.workflow_runs[].id' 2>/dev/null); do
@@ -65,7 +74,17 @@ jobs:
 
       - name: 2. Nome fixo do APK + atualizacao.json
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          if [ -z "${CODIGO:-}" ]; then
+            SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+            AAPT2=$(ls -d "$SDK"/build-tools/*/ 2>/dev/null | sort -V | tail -1)aapt2
+            CODIGO=$("$AAPT2" dump badging "$APK_BAIXADO" 2>/dev/null \
+                     | sed -n "s/.*versionCode='\''\([0-9]*\)'\''.*/\1/p" | head -1)
+            echo "CODIGO lido do APK: $CODIGO"
+            echo "CODIGO=$CODIGO" >> "$GITHUB_ENV"
+          fi
+          [ -n "$CODIGO" ] || { echo "::error::sem versionCode"; exit 1; }
+          set -e
           mkdir -p entrega
           cp "$APK_BAIXADO" entrega/SMARTEDTV-atual.apk
           cp "$APK_BAIXADO" "entrega/SMARTEDTV-$VERSAO-unificado-arm64-v8a.apk"
