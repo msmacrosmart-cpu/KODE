@@ -10,7 +10,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.TextView;
@@ -28,6 +30,12 @@ import android.widget.Toast;
 public abstract class AdTela extends Activity {
 
     protected static final long LIMITE_SEM_ANUNCIO = 20000L;
+    /**
+     * Com o anúncio na tela o D-pad fica bloqueado (anti-clique acidental em
+     * TV), então o fechamento por toque não serve nesses aparelhos: a tela sai
+     * sozinha depois deste tempo. O conteúdo continua carregando atrás.
+     */
+    protected static final long LIMITE_COM_ANUNCIO = 45000L;
     private static final long LIMITE_PAINEL_ERRO = 9000L;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -39,11 +47,22 @@ public abstract class AdTela extends Activity {
         fechar("timeout");
     };
 
+    private final Runnable fecharAnuncioLongo = () -> {
+        Log.i(SmartAds.TAG, nome() + ": tempo do anuncio esgotado (TV sem toque), fechando");
+        fechar("tempo do anuncio");
+    };
+
     @Override
     protected void onCreate(Bundle estado) {
         super.onCreate(estado);
         SmartAds.aplicarIntent(getIntent());
         SmartAds.init(getApplicationContext());
+        if (!SmartAds.adsPermitidos(this)) {
+            Log.i(SmartAds.TAG, nome() + ": licenca VIP ativa (ou ads desligados), sem anuncio");
+            finish();
+            overridePendingTransition(0, 0);
+            return;
+        }
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -60,6 +79,73 @@ public abstract class AdTela extends Activity {
 
         handler.postDelayed(fecharPorTempo, LIMITE_SEM_ANUNCIO);
         carregar();
+    }
+
+    /**
+     * D-pad e controles de TV NÃO navegam para o anúncio: as teclas de direção
+     * e de confirmação são consumidas aqui. Toque (celular/tablet) continua
+     * funcionando normalmente.
+     */
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent evento) {
+        switch (evento.getKeyCode()) {
+            case KeyEvent.KEYCODE_DPAD_UP:
+            case KeyEvent.KEYCODE_DPAD_DOWN:
+            case KeyEvent.KEYCODE_DPAD_LEFT:
+            case KeyEvent.KEYCODE_DPAD_RIGHT:
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+            case KeyEvent.KEYCODE_ENTER:
+            case KeyEvent.KEYCODE_NUMPAD_ENTER:
+            case KeyEvent.KEYCODE_BUTTON_A:
+            case KeyEvent.KEYCODE_BUTTON_B:
+            case KeyEvent.KEYCODE_BUTTON_X:
+            case KeyEvent.KEYCODE_BUTTON_Y:
+            case KeyEvent.KEYCODE_MENU:
+                log("tecla ignorada (controle remoto): "
+                        + KeyEvent.keyCodeToString(evento.getKeyCode()));
+                return true;              // consumida: o anúncio não recebe foco/clique
+            default:
+                return super.dispatchKeyEvent(evento);
+        }
+    }
+
+    /** Nenhuma view do anúncio aceita foco do controle. */
+    protected void semFoco(View raiz) {
+        if (raiz == null) {
+            return;
+        }
+        raiz.setFocusable(false);
+        raiz.setFocusableInTouchMode(false);
+        if (raiz instanceof ViewGroup) {
+            ViewGroup grupo = (ViewGroup) raiz;
+            grupo.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+            for (int i = 0; i < grupo.getChildCount(); i++) {
+                semFoco(grupo.getChildAt(i));
+            }
+        }
+    }
+
+    /**
+     * Chamado quando o SDK avisa que o anúncio está na tela: zera o foco e
+     * agenda o fechamento automático (a TV não tem toque para o "X").
+     */
+    protected void anuncioNaTela() {
+        handler.removeCallbacks(fecharPorTempo);
+        handler.postDelayed(fecharAnuncioLongo, LIMITE_COM_ANUNCIO);
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                semFoco(getWindow().getDecorView());
+            }
+        });
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean temFoco) {
+        super.onWindowFocusChanged(temFoco);
+        if (temFoco) {
+            semFoco(getWindow().getDecorView());
+        }
     }
 
     private String descreverIntent(Intent intent) {
@@ -89,6 +175,7 @@ public abstract class AdTela extends Activity {
         }
         fechando = true;
         handler.removeCallbacks(fecharPorTempo);
+        handler.removeCallbacks(fecharAnuncioLongo);
         log("fechando (" + motivo + ")");
         try {
             if (!isFinishing()) {
@@ -103,8 +190,10 @@ public abstract class AdTela extends Activity {
     /** Mostra o motivo da falha na tela (modo de teste) e fecha depois. */
     protected void mostrarDiagnostico(String titulo, String detalhe) {
         Log.w(SmartAds.TAG, nome() + ": " + titulo + " | " + detalhe);
-        Toast.makeText(this, "SMARTEDTV Ads: " + titulo + " | " + detalhe,
-                Toast.LENGTH_LONG).show();
+        if (SmartAds.testeAtivo()) {
+            Toast.makeText(this, "SMARTEDTV Ads: " + titulo + " | " + detalhe,
+                    Toast.LENGTH_LONG).show();
+        }
         if (!SmartAds.testeAtivo() || fundo == null) {
             fechar(titulo);
             return;
@@ -126,6 +215,7 @@ public abstract class AdTela extends Activity {
     @Override
     protected void onDestroy() {
         handler.removeCallbacks(fecharPorTempo);
+        handler.removeCallbacks(fecharAnuncioLongo);
         super.onDestroy();
     }
 

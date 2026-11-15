@@ -20,8 +20,8 @@ import zipfile
 from pathlib import Path
 
 PACOTE = "smartedtv.full"
-VERSAO = "1.0.68"
-CODIGO = 2103054
+VERSAO = "1.0.69"
+CODIGO = 2103055
 
 BLOCO_ABERTURA = "ca-app-pub-2066014755407744/4214378379"
 BLOCO_PREROLL = "ca-app-pub-2066014755407744/3572039686"
@@ -127,7 +127,7 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
             alvo = f"assets/addons/{addon}/addon.xml"
             rel.exige(alvo in presentes, f"addon {addon}", alvo)
 
-        # A skin precisa estar COMPLETA: o build de 1.0.65/1.0.68 levava 222
+        # A skin precisa estar COMPLETA: o build de 1.0.65/1.0.69 levava 222
         # arquivos enquanto a estavel tinha 934 (faltavam as imagens de media/,
         # por isso as abas/categorias apareciam vazias).
         skin = [n for n in nomes if n.startswith("assets/addons/skin.novatv/")]
@@ -145,10 +145,23 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
         rel.exige("assets/addons/plugin.video.smarted/catalogue.py" in presentes,
                   "catálogo do plugin (abas)", "plugin.video.smarted/catalogue.py")
 
+        # --- menu de ajustes / VIP -------------------------------------------
+        alvo_ajustes = "assets/addons/script.smartedtv.ajustes/addon.xml"
+        rel.exige(alvo_ajustes in presentes, "addon de ajustes (VIP)", alvo_ajustes)
+        home = "assets/addons/skin.novatv/xml/Home.xml"
+        if home in presentes:
+            texto_home = z.read(home).decode("utf-8", "replace")
+            rel.exige("RunAddon(script.smartedtv.ajustes)" in texto_home,
+                      "Home abre o menu SMARTEDTV", "RunAddon(script.smartedtv.ajustes)")
+        else:
+            rel.falha("Home da skin", f"{home} ausente")
+
         if "assets/system/addon-manifest.xml" in presentes:
             manifesto = z.read("assets/system/addon-manifest.xml").decode("utf-8", "replace")
             rel.exige("<addon>skin.novatv</addon>" in manifesto,
                       "skin.novatv no addon-manifest", "padrão na primeira execução")
+            rel.exige("<addon>script.smartedtv.ajustes</addon>" in manifesto,
+                      "ajustes no addon-manifest", "habilitado na primeira execução")
         else:
             rel.falha("addon-manifest.xml", "assets/system/addon-manifest.xml ausente")
 
@@ -272,6 +285,10 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
         ("perfil da base reconhecido", b"perfilSmarted"),
         ("perfil antigo guardado, nao apagado", b".kodi.antigo-"),
         ("log do seed", b"smarted-seed.log"),
+        ("leitor da licenca VIP", b"Licenca"),
+        ("checagem de VIP antes do anuncio", b"adsPermitidos"),
+        ("abrir link (checkout)", b"AbrirUrlActivity"),
+        ("compartilhar aplicativo", b"CompartilharActivity"),
     ):
         rel.exige(agulha in dex, rotulo, agulha.decode()[:44])
 

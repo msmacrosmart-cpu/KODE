@@ -5,7 +5,7 @@ Roda no codigo-fonte do Kodi 21.3-Omega (clonado pelo workflow) e transforma o
 build em um monolito:
 
     applicationId  smartedtv.full      (era org.xbmc.kodi)
-    versao         1.0.68 / 2103054
+    versao         1.0.69 / 2103055
     anuncios       AppOpenActivity + PreRollActivity dentro do app (AdMob nativo)
     conteudo       skin.novatv + plugin.video.smarted + service.smarted.bootstrap
                    + resource.uisounds.silencio (o mesmo pacote da linha classica)
@@ -33,13 +33,14 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 
 APP_PACKAGE = "smartedtv.full"
-VERSAO_NOME = "1.0.68"
-VERSAO_CODIGO = 2103054
+VERSAO_NOME = "1.0.69"
+VERSAO_CODIGO = 2103055
 
 ADS_APP_ID = "ca-app-pub-2066014755407744~5076693043"
 PLAY_SERVICES_ADS = "com.google.android.gms:play-services-ads:23.2.0"
 
-JAVA_ADS = ["SmartAds", "AdTela", "AppOpenActivity", "PreRollActivity", "SeedBase"]
+JAVA_ADS = ["SmartAds", "AdTela", "AppOpenActivity", "PreRollActivity", "SeedBase",
+            "Licenca", "CompartilharActivity", "AbrirUrlActivity"]
 
 SKIN_ORIGEM = "kodi/skin.estilo.personalizado"
 SKIN_ID = "skin.novatv"
@@ -50,11 +51,20 @@ SKIN_CLASSICA_ID = "skin.smartedtv.classic"
 SKIN_CLASSICA_NOME = "SMARTED Classica"
 SKIN_CLASSICA_VERSAO = "1.0.18"
 
-ADDONS = ["plugin.video.smarted", "service.smarted.bootstrap", "resource.uisounds.silencio"]
+ADDONS = ["plugin.video.smarted", "service.smarted.bootstrap", "resource.uisounds.silencio",
+          "script.smartedtv.ajustes"]
 
 ATIVIDADES = [
     ("AppOpenActivity", "abertura"),
     ("PreRollActivity", "video"),
+]
+
+# Telas de apoio (não são anúncio): abrir link externo e compartilhar o app.
+# Precisam existir no mesmo APK porque o Kodi chama as duas pelo builtin
+# StartAndroidActivity, que só aceita classes do próprio pacote aqui.
+ATIVIDADES_APOIO = [
+    ("AbrirUrlActivity", "abrir link (checkout/site)"),
+    ("CompartilharActivity", "compartilhar aplicativo"),
 ]
 
 
@@ -216,6 +226,53 @@ def patch_manifest(src: Path) -> None:
             )
         trocar(caminho, marcador, "".join(atividades) + "\n" + marcador,
                "AndroidManifest.xml.in: AppOpenActivity + PreRollActivity (sensorLandscape)")
+
+    texto = ler(caminho)
+    if "AbrirUrlActivity" not in texto:
+        marcador = "    </application>"
+        apoio = []
+        for classe, rotulo in ATIVIDADES_APOIO:
+            apoio.append(
+                f"\n        <!-- {rotulo}: chamada pelo add-on do Kodi -->\n"
+                f'        <activity\n'
+                f'            android:name=".{classe}"\n'
+                '            android:configChanges="orientation|screenSize|screenLayout|'
+                'keyboard|keyboardHidden|navigation|uiMode"\n'
+                '            android:excludeFromRecents="true"\n'
+                '            android:exported="true"\n'
+                '            android:noHistory="true"\n'
+                '            android:theme="@android:style/Theme.Translucent.NoTitleBar" />\n'
+            )
+        trocar(caminho, marcador, "".join(apoio) + "\n" + marcador,
+               "AndroidManifest.xml.in: AbrirUrlActivity + CompartilharActivity")
+
+    # TV x celular: declarar que o app nao exige toque e que tambem roda em TV.
+    # Sem isto a Play Store trata o app como "exige touchscreen" e esconde de
+    # Android TV / TV Box; com required=false ele aparece nos dois.
+    texto = ler(caminho)
+    if "android.hardware.touchscreen" not in texto:
+        marcador = '    <uses-permission android:name="android.permission.INTERNET" />'
+        if marcador in texto:
+            bloco = (marcador + "\n\n"
+                     "    <!-- TV e celular: o mesmo APK roda nos dois -->\n"
+                     '    <uses-feature android:name="android.hardware.touchscreen"'
+                     ' android:required="false" />\n'
+                     '    <uses-feature android:name="android.software.leanback"'
+                     ' android:required="false" />\n'
+                     '    <uses-feature android:name="android.hardware.gamepad"'
+                     ' android:required="false" />\n')
+            trocar(caminho, marcador, bloco, "AndroidManifest.xml.in: touchscreen/leanback opcionais")
+
+    texto = ler(caminho)
+    if "LEANBACK_LAUNCHER" not in texto:
+        marcador = '<category android:name="android.intent.category.LAUNCHER" />'
+        if marcador in texto:
+            trocar(caminho, marcador,
+                   marcador + '\n                '
+                   '<category android:name="android.intent.category.LEANBACK_LAUNCHER" />',
+                   "AndroidManifest.xml.in: launcher de Android TV")
+        else:
+            print("  --  AndroidManifest.xml.in: sem categoria LAUNCHER para duplicar")
 
     # sanidade: o manifest tem que continuar valido como XML com os @VARS@ trocados
     teste = (ler(caminho)

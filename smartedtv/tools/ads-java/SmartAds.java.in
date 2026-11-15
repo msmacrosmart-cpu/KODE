@@ -36,16 +36,45 @@ public final class SmartAds {
     public static final String UNIT_APP_OPEN_TESTE = "ca-app-pub-3940256099942544/9257395921";
     public static final String UNIT_PREROLL_TESTE = "ca-app-pub-3940256099942544/1033173712";
 
-    /** true = usa os blocos de teste do Google. Controlado pelo intent (teste=0/1). */
-    private static boolean teste = true;
+    /**
+     * PRODUÇÃO: usa os blocos REAIS do projeto. Em produção isto é sempre
+     * false — os blocos de teste do Google só existem para depurar no
+     * aparelho, e são ligados de propósito pelo intent
+     * ``smartedtv://ads?teste=1`` (nunca pelo build).
+     */
+    private static boolean teste = false;
 
     private static boolean inicializado;
+
+    /** true = anuncios ligados. Controlado pelo intent (ads=0 desliga). */
+    private static boolean ligado = true;
 
     private SmartAds() {
     }
 
     public static boolean testeAtivo() {
         return teste;
+    }
+
+    /**
+     * Porta unica: algum anuncio pode aparecer agora?
+     *
+     * Falso quando a licenca VIP esta ativa (o add-on do Kodi grava vip.json
+     * depois de validar o codigo do site) ou quando o proprio intent pediu
+     * ``ads=0``. Todas as telas de anuncio passam por aqui.
+     */
+    public static boolean adsPermitidos(Context contexto) {
+        if (!ligado) {
+            return false;
+        }
+        try {
+            if (Licenca.ativa(contexto)) {
+                return false;
+            }
+        } catch (Throwable erro) {
+            Log.w(TAG, "SmartAds: licenca ilegivel, seguindo com anuncios (" + erro + ")");
+        }
+        return true;
     }
 
     public static String unidadeAppOpen() {
@@ -65,6 +94,10 @@ public final class SmartAds {
             return;
         }
         String data = intent.getDataString();
+        if (data != null && data.contains("ads=")) {
+            ligado = !data.endsWith("ads=0");
+            Log.i(TAG, "anuncios " + (ligado ? "ligados" : "desligados") + " pelo intent (" + data + ")");
+        }
         if (data == null || !data.contains("teste=")) {
             return;
         }

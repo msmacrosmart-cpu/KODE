@@ -409,3 +409,75 @@ tentativas anteriores como `Android/data/smartedtv.full/files/.kodi.antigo-<data
 e instala a base. A cópia tem ~240 MB: a tela fica na splash com a barra branca
 até terminar (1 a 3 minutos). O que aconteceu fica em
 `Android/data/smartedtv.full/files/smarted-seed.log`.
+
+## 1.0.69 — produção: Brazuca, D-pad, anúncios reais e VIP (Cakto)
+
+### 1. Brazuca Play: dependência que não existia
+
+O diagnóstico estático do perfil (`docs/brazuca-diagnostico.txt`) mostrou a causa:
+o `addon.xml` do `plugin.video.BrazucaPlay.Matrix` 2.1.4 declara
+
+```xml
+<import addon="inputstream.ffmpegdirect" .../>
+<import addon="script.module.inputstreamhelper" .../>
+```
+
+e **nenhum dos dois existe** no APK nem nos 38 add-ons do perfil. O Kodi trata
+import ausente como "dependência não atendida" e desabilita o add-on inteiro —
+por isso a falha aparecia logo depois do carregamento inicial.
+
+Correção em `repair.py` (`desbloquear_dependencias`): as importações que não
+existem no aparelho ganham `optional="true"` no addon.xml do próprio add-on e
+o Kodi é chamado para habilitá-lo (`Addons.SetAddonEnabled`). Se o add-on já
+estiver são, nada é tocado; rodar de novo não muda nada.
+
+### 2. D-pad nunca alcança o anúncio
+
+`AdTela` passou a consumir as teclas de navegação e confirmação
+(`KEYCODE_DPAD_*`, `ENTER`, `BUTTON_A/B/X/Y`, `MENU`) e, quando o SDK avisa que
+o anúncio está na tela, bloqueia o foco de todas as views
+(`FOCUS_BLOCK_DESCENDANTS`). Toque continua funcionando em celular/tablet.
+
+Como na TV o "X" do anúncio é só por toque, a tela se fecha sozinha em 45 s
+(`LIMITE_COM_ANUNCIO`) — o vídeo continua carregando atrás. Ninguém fica preso
+nem clica sem querer.
+
+### 3. Anúncios reais
+
+`SmartAds` estava com `teste = true` (blocos de teste do Google). Agora é
+`false` no build: usa os blocos reais do projeto
+(`ca-app-pub-2066014755407744/4214378379` abertura e `…/3572039686` pre-roll).
+Os blocos de teste só aparecem se o intent pedir (`smartedtv://ads?teste=1`) e o
+painel de erro na tela também só existe nesse modo.
+
+### 4. Menu de ajustes + VIP da Cakto
+
+Novo addon `script.smartedtv.ajustes`, aberto pelo botão **Ajustes** da Home
+(o `Home.xml` da skin da base é ajustado na injeção: `ActivateWindow(Settings)`
+→ `RunAddon(script.smartedtv.ajustes)`). O diálogo pergunta
+**"Deseja assistir sem anúncios?"** e oferece:
+
+1. Assistir sem anúncios (VIP R$ 24,90) → `https://pay.cakto.com.br/nkvbegd_1323120`
+2. Já tenho um código de ativação → teclado do Kodi → valida no site
+3. Compartilhar aplicativo → folha de compartilhamento do Android
+4. Configurações do Kodi
+
+Quem abre o link/compartilhamento são duas activities novas no APK
+(`AbrirUrlActivity`, `CompartilharActivity`), chamadas pela ponte
+`StartAndroidActivity` — funciona em TV, box e celular.
+
+Licença: `vip.py` valida o código no servidor
+(`https://smartedtv-vip.lovable.app/`) e grava
+`.kodi/userdata/addon_data/service.smarted.bootstrap/vip.json`. O Java
+(`Licenca`) lê esse arquivo antes de cada anúncio: com VIP ativo, nenhuma tela
+de anúncio abre. Sem arquivo, com data vencida ou JSON ilegível, os anúncios
+continuam — a falha é sempre para o lado seguro.
+
+### 5. TV e celular no mesmo APK
+
+O manifesto agora declara `android.hardware.touchscreen`,
+`android.software.leanback` e `android.hardware.gamepad` como
+`required="false"`, e a activity principal ganhou
+`android.intent.category.LEANBACK_LAUNCHER` — o mesmo APK aparece no launcher
+de celular, de Android TV, TV Box e Fire Stick. Toda a interface nova é diálogo
+nativo do Kodi, então responde igual ao toque e ao controle.

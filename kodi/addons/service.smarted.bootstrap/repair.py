@@ -336,6 +336,80 @@ def parse_addon_xml_texto(bruto):
     return {'id': raiz.get('id'), 'version': raiz.get('version') or ''}
 
 
+def desbloquear_dependencias(addons_dir, addon_id, log):
+    """Marca como opcionais as dependências que NÃO existem no aparelho.
+
+    O Brazuca Play declara `inputstream.ffmpegdirect` e
+    `script.module.inputstreamhelper`, que não vêm no APK nem no perfil. O Kodi
+    trata import ausente como "dependência não atendida" e DESABILITA o add-on
+    inteiro — era a falha que aparecia logo depois do carregamento inicial:
+    o add-on existe, mas o Kodi o considera quebrado.
+
+    Aqui o próprio addon.xml é corrigido (`optional="true"` nas importações que
+    não existem). Entra no lugar do add-on, nunca remove arquivo, e é
+    idempotente: rodar de novo não muda nada.
+    """
+    caminho = os.path.join(addons_dir, addon_id, 'addon.xml')
+    if not os.path.isfile(caminho):
+        return []
+    try:
+        with open(caminho, 'r', encoding='utf-8') as handle:
+            bruto = handle.read()
+    except Exception as erro:  # noqa: BLE001
+        _log(log, 'ERRO ao ler addon.xml de %s: %s' % (addon_id, erro))
+        return []
+    if 'optional="true"' in bruto and 'ffmpegdirect' not in bruto:
+        return []
+
+    import re
+
+    ajustados = []
+    for alvo in ('inputstream.ffmpegdirect', 'script.module.inputstreamhelper',
+                 'script.module.pysocks'):
+        if addons_dir and os.path.isdir(os.path.join(addons_dir, alvo)):
+            continue                       # existe no aparelho: nada a fazer
+        padrao = re.compile(
+            r'<import\s+addon="%s"(?P<attrs>[^/>]*)/>' % re.escape(alvo))
+        achado = padrao.search(bruto)
+        if not achado:
+            continue
+        attrs = achado.group('attrs')
+        if 'optional' in attrs:
+            continue
+        novo = '<import addon="%s"%s optional="true"/>' % (alvo, attrs.rstrip())
+        bruto = bruto[:achado.start()] + novo + bruto[achado.end():]
+        ajustados.append(alvo)
+
+    if not ajustados:
+        return []
+    try:
+        with open(caminho, 'w', encoding='utf-8') as handle:
+            handle.write(bruto)
+        _log(log, 'DEPENDENCIAS opcionais em %s: %s' % (addon_id, ', '.join(ajustados)))
+    except Exception as erro:  # noqa: BLE001
+        _log(log, 'ERRO ao gravar addon.xml de %s: %s' % (addon_id, erro))
+        return []
+    return ajustados
+
+
+def habilitar(addon_id, log=None):
+    """Pede ao Kodi para habilitar o add-on (silencioso se já estiver)."""
+    try:
+        import json as _json
+        pedido = {
+            'jsonrpc': '2.0',
+            'id': 1,
+            'method': 'Addons.SetAddonEnabled',
+            'params': {'addonid': addon_id, 'enabled': True},
+        }
+        xbmc.executeJSONRPC(_json.dumps(pedido))
+        return True
+    except Exception as erro:  # noqa: BLE001
+        if log is not None:
+            _log(log, 'nao consegui habilitar %s: %s' % (addon_id, erro))
+        return False
+
+
 def repair_profile(home, payload_dir, log=None):
     """Executa o reparo completo. Devolve um relatório dict.
 
@@ -384,6 +458,11 @@ def repair_profile(home, payload_dir, log=None):
     if os.path.isdir(brazuca_path):
         install_cloudrequest(brazuca_path, os.path.join(payload_dir, 'cloudrequest-py3.zip'), log)
         ensure_addon_data(home, BRAZUCA_ID, addons_dir, log)
+        # dependências declaradas que não existem quebram o add-on inteiro
+        ajustados = desbloquear_dependencias(addons_dir, BRAZUCA_ID, log)
+        if ajustados:
+            report['dependencias_opcionais'] = ajustados
+            habilitar(BRAZUCA_ID, log)
 
     report['ok'] = not report['missing'] and addon_status(addons_dir, BRAZUCA_ID)[0]
     _log(log, 'RESULTADO: %s (restaurados=%d, faltando=%d)' % (

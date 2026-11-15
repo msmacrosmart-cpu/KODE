@@ -38,10 +38,10 @@ class IntegracaoNoFonteTest(unittest.TestCase):
 
     def test_pacote_unico_e_versao(self):
         self.assertIn(f'APP_PACKAGE = "{PACOTE}"', self.script)
-        self.assertIn('VERSAO_NOME = "1.0.68"', self.script)
-        self.assertIn('VERSAO_CODIGO = 2103054', self.script)
+        self.assertIn('VERSAO_NOME = "1.0.69"', self.script)
+        self.assertIn('VERSAO_CODIGO = 2103055', self.script)
         # tem que ser maior que a 1.0.63 (2103049) para nao regredir instalacao
-        self.assertGreater(2103054, 2103053)
+        self.assertGreater(2103055, 2103053)
 
     def test_gradle_ganha_o_admob_e_a_versao(self):
         self.assertIn("com.google.android.gms:play-services-ads:23.2.0", self.script)
@@ -212,8 +212,11 @@ class VerificadorDoApkTest(unittest.TestCase):
         addons = ["skin.novatv", "skin.smartedtv.classic", "plugin.video.smarted",
                   "service.smarted.bootstrap", "resource.uisounds.silencio"]
         with zipfile.ZipFile(apk, "w") as z:
-            for addon in addons:
+            for addon in addons + ["script.smartedtv.ajustes"]:
                 z.writestr(f"assets/addons/{addon}/addon.xml", "<addon/>")
+            z.writestr("assets/addons/skin.novatv/xml/Home.xml",
+                       "<control><label>Ajustes</label>"
+                       "<onclick>RunAddon(script.smartedtv.ajustes)</onclick></control>")
             # a skin precisa vir completa (>=800 arquivos, media/ com as imagens)
             for i in range(900):
                 z.writestr(f"assets/addons/skin.novatv/media/img{i}.png", b"p")
@@ -223,7 +226,8 @@ class VerificadorDoApkTest(unittest.TestCase):
             for i in range(12):
                 z.writestr(f"assets/addons/plugin.video.smarted/mod{i}.py", b"#")
             z.writestr("assets/system/addon-manifest.xml",
-                       "<addons><addon>skin.novatv</addon></addons>")
+                       "<addons><addon>skin.novatv</addon>"
+                       "<addon>script.smartedtv.ajustes</addon></addons>")
             z.writestr("assets/media/splash.jpg", b"x")
             z.writestr("assets/media/applaunch_screen.png", b"x")
             z.writestr("res/AB.png", b"x")
@@ -232,6 +236,7 @@ class VerificadorDoApkTest(unittest.TestCase):
                                        b"ca-app-pub-2066014755407744/3572039686 "
                                        b"AppOpenActivity PreRollActivity SmartAds "
                                        b"perfilSmarted .kodi.antigo- smarted-seed.log "
+                       b"Licenca adsPermitidos AbrirUrlActivity CompartilharActivity "
                                        b"com/google/android/gms/ads"))
             z.writestr("assets/addons/service.smarted.bootstrap/smart_ads.py",
                        "ATIVIDADE_PREROLL = 'smartedtv.full.PreRollActivity'\n"
@@ -252,7 +257,7 @@ class VerificadorDoApkTest(unittest.TestCase):
         caminho = Path(tmp) / "aapt2"
         caminho.write_text("""#!/bin/sh
 if [ "$2" = badging ]; then
-  echo "package: name='smartedtv.full' versionCode='2103054' versionName='1.0.68'"
+  echo "package: name='smartedtv.full' versionCode='2103055' versionName='1.0.69'"
 elif [ "$2" = resources ]; then
   echo "drawable/progresswhite type=drawable"
 elif [ "$2" = xmltree ] && [ "$4" = "res/layout/activity_splash.xml" ]; then
@@ -436,3 +441,87 @@ class InjecaoDaBaseTest(unittest.TestCase):
                 self.assertNotIn("META-INF/CERT.SF", nomes)
                 self.assertIn("assets/smarted/profile/userdata/guisettings.xml", nomes)
             self.assertNotIn("colisão", proc.stdout or "")   # o bug da 1.0.67
+
+
+class ProducaoTest(unittest.TestCase):
+    """Regras de produção: anúncio real, D-pad bloqueado, VIP pela Cakto."""
+
+    def setUp(self):
+        self.ads = Path('smartedtv/tools/ads-java')
+        self.texto = {p.stem.replace('.java', ''): p.read_text(encoding='utf-8')
+                      for p in self.ads.glob('*.java.in')}
+
+    def test_modo_de_teste_desligado_no_build(self):
+        smart = self.texto['SmartAds']
+        self.assertIn('private static boolean teste = false;', smart)
+        # os blocos de teste do Google continuam existindo, mas só por intent
+        self.assertIn('UNIT_APP_OPEN_TESTE', smart)
+        self.assertIn('smartedtv://ads?teste=0', smart)
+
+    def test_licenca_vip_desliga_os_anuncios(self):
+        tela = self.texto['AdTela']
+        self.assertIn('SmartAds.adsPermitidos(this)', tela)
+        self.assertIn('Licenca.ativa(', self.texto['SmartAds'])
+        licenca = self.texto['Licenca']
+        self.assertIn('vip.json', licenca)
+        self.assertIn('service.smarted.bootstrap', licenca)
+        self.assertIn('"ativo"', licenca)       # falha segura: sem arquivo = sem VIP
+
+    def test_dpad_nao_alcanca_o_anuncio(self):
+        tela = self.texto['AdTela']
+        for tecla in ('KEYCODE_DPAD_UP', 'KEYCODE_DPAD_DOWN', 'KEYCODE_DPAD_CENTER',
+                      'KEYCODE_ENTER', 'KEYCODE_BUTTON_A'):
+            self.assertIn(tecla, tela)
+        self.assertIn('FOCUS_BLOCK_DESCENDANTS', tela)
+        self.assertIn('setFocusable(false)', tela)
+        self.assertIn('LIMITE_COM_ANUNCIO', tela)   # TV não fica presa
+        # as duas telas de anúncio aplicam o bloqueio quando o anúncio aparece
+        for nome in ('AppOpenActivity', 'PreRollActivity'):
+            self.assertIn('anuncioNaTela()', self.texto[nome])
+
+    def test_compartilhar_e_abrir_link(self):
+        self.assertIn('ACTION_SEND', self.texto['CompartilharActivity'])
+        self.assertIn('ACTION_VIEW', self.texto['AbrirUrlActivity'])
+
+    def test_monolito_embarca_as_telas_novas_e_o_menu(self):
+        script = Path('smartedtv/tools/integrate-monolith.py').read_text(encoding='utf-8')
+        for classe in ('Licenca', 'CompartilharActivity', 'AbrirUrlActivity'):
+            self.assertIn(f'"{classe}"', script)
+        self.assertIn('script.smartedtv.ajustes', script)
+        self.assertIn('LEANBACK_LAUNCHER', script)
+        self.assertIn('android.hardware.touchscreen', script)
+
+    def test_menu_de_ajustes_do_app(self):
+        addon = Path('kodi/addons/script.smartedtv.ajustes/default.py').read_text(encoding='utf-8')
+        self.assertIn('Deseja assistir sem anúncios?', addon)
+        self.assertIn('Já tenho um código de ativação', addon)
+        self.assertIn('Compartilhar aplicativo', addon)
+        self.assertIn('Configurações do Kodi', addon)
+
+    def test_vip_aponta_para_cakto_e_site(self):
+        vip = Path('kodi/addons/service.smarted.bootstrap/vip.py').read_text(encoding='utf-8')
+        self.assertIn("CHECKOUT = 'https://pay.cakto.com.br/nkvbegd_1323120'", vip)
+        self.assertIn("SITE = 'https://smartedtv-vip.lovable.app/'", vip)
+        self.assertIn('smartedtv.full.AbrirUrlActivity', vip)
+        self.assertIn('smartedtv.full.CompartilharActivity', vip)
+
+    def test_brazuca_dependencias_ausentes_viram_opcionais(self):
+        repair = Path('kodi/addons/service.smarted.bootstrap/repair.py').read_text(encoding='utf-8')
+        self.assertIn('def desbloquear_dependencias', repair)
+        self.assertIn('inputstream.ffmpegdirect', repair)
+        self.assertIn('script.module.inputstreamhelper', repair)
+        self.assertIn("optional=\"true\"", repair)
+        self.assertIn('def habilitar', repair)
+
+    def test_home_patch_do_botao_ajustes(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "inj", Path('smartedtv/tools/inject-base-estavel.py'))
+        modulo = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(modulo)
+        exemplo = (b'<control type="button" id="9112"><width>320</width>'
+                   b'<label>Ajustes</label><onclick>ActivateWindow(Settings)</onclick></control>')
+        novo, quantos = modulo.AJUSTES.subn(modulo.AJUSTES_NOVO, exemplo)
+        self.assertEqual(quantos, 1)
+        self.assertIn(b"RunAddon(script.smartedtv.ajustes)", novo)
+        self.assertNotIn(b"ActivateWindow(Settings)", novo)

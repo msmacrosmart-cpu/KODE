@@ -1,0 +1,129 @@
+package @APP_PACKAGE@;
+
+import android.content.Context;
+import android.util.Log;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
+/**
+ * Licenca VIP do app (remove os anuncios).
+ *
+ * O arquivo e escrito pelo add-on ``service.smarted.bootstrap`` (Python) depois
+ * de validar o codigo comprado no site:
+ *
+ *     <perfil>/.kodi/userdata/addon_data/service.smarted.bootstrap/vip.json
+ *     {"ativo": true, "codigo": "XXXX-XXXX", "expira": "2027-01-31", "origem": "cakto"}
+ *
+ * Regras de leitura (o app nunca confia em nada alem do arquivo):
+ *  - sem arquivo, ou "ativo" falso => anuncios ligados;
+ *  - "expira" vazio => sem prazo; com data, precisa estar no futuro (UTC);
+ *  - qualquer erro de leitura => anuncios ligados (falha segura).
+ *
+ * O arquivo fica no armazenamento do app (nao no .kodi em si), entao apagar o
+ * perfil nao "ganha" a licenca de novo: o add-on regrava ao validar o codigo.
+ */
+public final class Licenca {
+
+    private static final String TAG = "SmartAds";
+    private static final String ARQUIVO = "vip.json";
+    private static final String PASTA = "service.smarted.bootstrap";
+
+    private Licenca() {
+    }
+
+    /** Caminho do arquivo de licenca dentro do perfil do Kodi. */
+    public static File arquivo(Context contexto) {
+        File home = contexto.getExternalFilesDir("");
+        if (home == null) {
+            home = contexto.getFilesDir();
+        }
+        if (home == null) {
+            return null;
+        }
+        return new File(new File(new File(new File(home, ".kodi"), "userdata"),
+                "addon_data"), PASTA + "/" + ARQUIVO);
+    }
+
+    /** true = VIP ativo e no prazo: nenhum anuncio deve ser exibido. */
+    public static boolean ativa(Context contexto) {
+        File arquivo = arquivo(contexto);
+        if (arquivo == null || !arquivo.isFile() || arquivo.length() > 65536L) {
+            return false;
+        }
+        String texto;
+        try {
+            texto = ler(arquivo);
+        } catch (Exception erro) {
+            Log.w(TAG, "Licenca: nao consegui ler " + ARQUIVO + " (" + erro.getClass().getSimpleName() + ")");
+            return false;
+        }
+        boolean ativo = texto.matches("(?s).*\"ativo\"\\s*:\\s*true.*");
+        if (!ativo) {
+            return false;
+        }
+        String expira = valor(texto, "expira");
+        if (expira.length() == 0) {
+            Log.i(TAG, "Licenca: VIP ativo (sem prazo)");
+            return true;
+        }
+        boolean vale = dentroDoPrazo(expira);
+        Log.i(TAG, "Licenca: VIP ativo, expira " + expira + " => " + (vale ? "ok" : "vencido"));
+        return vale;
+    }
+
+    /** Codigo guardado no arquivo (vazio se nao houver). */
+    public static String codigo(Context contexto) {
+        File arquivo = arquivo(contexto);
+        if (arquivo == null || !arquivo.isFile()) {
+            return "";
+        }
+        try {
+            return valor(ler(arquivo), "codigo");
+        } catch (Exception erro) {
+            return "";
+        }
+    }
+
+    private static String valor(String json, String chave) {
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("\"" + chave + "\"\\s*:\\s*\"([^\"]*)\"").matcher(json);
+        return m.find() ? m.group(1).trim() : "";
+    }
+
+    /** Compara a data (yyyy-MM-dd) com hoje em UTC. */
+    private static boolean dentroDoPrazo(String data) {
+        try {
+            SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT);
+            formato.setTimeZone(TimeZone.getTimeZone("UTC"));
+            formato.setLenient(false);
+            Date limite = formato.parse(data.trim());
+            Date hoje = new Date();
+            return limite != null && limite.getTime() + 86399000L >= hoje.getTime();
+        } catch (Exception erro) {
+            Log.w(TAG, "Licenca: data invalida (" + data + ")");
+            return false;
+        }
+    }
+
+    private static String ler(File arquivo) throws Exception {
+        InputStream entrada = new FileInputStream(arquivo);
+        try {
+            ByteArrayOutputStream saida = new ByteArrayOutputStream();
+            byte[] buffer = new byte[4096];
+            int lidos;
+            while ((lidos = entrada.read(buffer)) > 0) {
+                saida.write(buffer, 0, lidos);
+            }
+            return new String(saida.toByteArray(), "UTF-8");
+        } finally {
+            entrada.close();
+        }
+    }
+}

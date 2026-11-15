@@ -33,6 +33,7 @@ public class AppOpenActivity extends AdTela {
                             @Override
                             public void onAdShowedFullScreenContent() {
                                 log("onAdShowedFullScreenContent ABERTURA (anuncio na tela)");
+                                anuncioNaTela();   // sem foco de D-pad + saida automatica
                             }
 
                             @Override

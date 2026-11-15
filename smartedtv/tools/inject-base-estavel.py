@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import re
 import shutil
 import tempfile
 import zipfile
@@ -41,6 +42,15 @@ SUBSTITUIR = (
     "assets/addons/plugin.video.smarted/",
 )
 PREFIXO = "assets/smarted/"
+# Home da skin: o botão "Ajustes" passa a abrir o menu da SMARTEDTV
+# (sem anúncios / já tenho código / compartilhar / ajustes do Kodi).
+SKIN_HOME = "assets/addons/skin.novatv/xml/Home.xml"
+AJUSTES = re.compile(
+    rb"<label>Ajustes</label>((?:(?!</control>).){0,1200}?)"
+    rb"<onclick>ActivateWindow\(Settings\)</onclick>",
+    re.S,
+)
+AJUSTES_NOVO = rb"<label>Ajustes</label>\1<onclick>RunAddon(script.smartedtv.ajustes)</onclick>"
 SHA_ESPERADO = "1447de816a44ecc11c42c2c315cf20e61c9baa037e914a13293711cf152d1ede"
 ASSINATURAS = (".SF", ".RSA", ".DSA", ".MF")
 
@@ -78,6 +88,14 @@ def ler_base(base: Path, esperado: str) -> tuple[dict[str, bytes], int, str]:
             if nome not in itens:
                 itens[nome] = z.read(nome)
                 substituidas += 1
+    # menu de ajustes: dois botões "Ajustes" na Home viram a porta do VIP
+    if SKIN_HOME in itens:
+        novo, quantos = AJUSTES.subn(AJUSTES_NOVO, itens[SKIN_HOME])
+        if quantos:
+            itens[SKIN_HOME] = novo
+        print(f"  Home da skin: {quantos} botão(ões) Ajustes -> menu SMARTEDTV")
+    else:
+        print("  aviso: Home.xml não encontrado na skin da base")
     print(f"  {substituidas} arquivos de skin/plugin substituídos pelos do APK estável")
     return itens, len(itens), digest
 

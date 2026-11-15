@@ -23,8 +23,8 @@ concurrency:
 env:
   PACOTE: smartedtv.full
   BASE_MANIFESTO_SHA256: 1447de816a44ecc11c42c2c315cf20e61c9baa037e914a13293711cf152d1ede
-  VERSAO: "1.0.68"
-  CODIGO: "2103054"
+  VERSAO: "1.0.69"
+  CODIGO: "2103055"
 
 jobs:
   conferir:
