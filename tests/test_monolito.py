@@ -230,6 +230,9 @@ class VerificadorDoApkTest(unittest.TestCase):
                        "tentar_plano_b=False\n")
             registro = b"a" * 64 + b"\t10\tuserdata/guisettings.xml\n"
             z.writestr("assets/smarted/profile-manifest.txt", registro)
+            z.writestr("assets/smarted/profile/userdata/guisettings.xml",
+                       '<settings><setting id="lookandfeel.skin" default="true">skin.estuary</setting></settings>')
+            z.writestr("assets/smarted/profile/userdata/sources.xml", "<sources/>")
             for i in range(60):
                 z.writestr("assets/smarted/profile/addons/x%d.xml" % i, b"y")
             z.writestr("assets/smarted/profile/addons/plugin.video.BrazucaPlay.Matrix/addon.xml",

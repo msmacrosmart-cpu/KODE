@@ -203,6 +203,32 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
             else:
                 rel.falha("guisettings no perfil", "userdata/guisettings.xml ausente")
 
+            # o layout/menus podem estar dentro do backup do wizard
+            import io
+            for zip_nome in ("My_Builds/BACKUP+SMARTED.zip", "SaveData.zip"):
+                chave = "assets/smarted/profile/" + zip_nome
+                if chave not in presentes:
+                    rel.texto(f"backup {zip_nome}: ausente")
+                    continue
+                try:
+                    with zipfile.ZipFile(io.BytesIO(z.read(chave))) as interno:
+                        itens = interno.namelist()
+                        alvos = [n for n in itens
+                                 if "addon_data/skin.novatv" in n or "skinshortcuts" in n]
+                        rel.texto(f"backup {zip_nome}: {len(itens)} entradas, "
+                                  f"{len(alvos)} de skin/menus")
+                        for nome in alvos[:5]:
+                            rel.texto("   " + nome)
+                        gui = [n for n in itens if n.endswith("guisettings.xml")]
+                        if gui:
+                            texto = interno.read(gui[0]).decode("utf-8", "replace")
+                            skin = [l.strip() for l in texto.splitlines()
+                                    if "lookandfeel.skin" in l]
+                            rel.texto("   guisettings do backup: "
+                                      + (skin[0][:110] if skin else "(sem skin)"))
+                except Exception as erro:
+                    rel.texto(f"backup {zip_nome}: ilegível ({erro.__class__.__name__})")
+
             for rotulo, trecho in (
                 ("ajustes da skin.novatv", "userdata/addon_data/skin.novatv/"),
                 ("atalhos/menus (skinshortcuts)", "script-skinshortcuts"),
