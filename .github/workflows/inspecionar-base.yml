@@ -57,12 +57,39 @@ jobs:
           set -e
           head -40 docs/base-dropbox.txt || true
 
-      - name: 4. Guardar o relatorio
+      - name: 4. Descompilar o bootstrap original (jadx)
+        run: |
+          set -uo pipefail
+          mkdir -p "$RUNNER_TEMP/jadx"
+          curl -sSL --retry 3 -o "$RUNNER_TEMP/jadx.zip" \
+            https://github.com/skylot/jadx/releases/download/v1.5.0/jadx-1.5.0.zip
+          unzip -q "$RUNNER_TEMP/jadx.zip" -d "$RUNNER_TEMP/jadx"
+          chmod +x "$RUNNER_TEMP/jadx/bin/jadx"
+          timeout 900 "$RUNNER_TEMP/jadx/bin/jadx" \
+            --include-classes 'org.smartedtv.bootstrap.*' \
+            -d "$RUNNER_TEMP/jadx-out" "$BASE_APK" 2>&1 | tail -20 || true
+          {
+            echo "# Bootstrap original do APK de referência (decompilado)"
+            echo
+            echo 'Fontes: `org.smartedtv.bootstrap.*` do dex do APK do Dropbox'
+            echo
+            find "$RUNNER_TEMP/jadx-out" -name '*.java' | sort | while read -r arquivo; do
+              echo "## \`$(basename "$arquivo")\`"
+              echo
+              echo '```java'
+              cat "$arquivo"
+              echo '```'
+              echo
+            done
+          } > docs/bootstrap-referencia.txt
+          wc -l docs/bootstrap-referencia.txt
+
+      - name: 5. Guardar o relatorio
         run: |
           set -euo pipefail
           git config user.name "smarted-bot"
           git config user.email "smarted-bot@users.noreply.github.com"
-          git add -f docs/base-dropbox.txt
+          git add -f docs/base-dropbox.txt docs/bootstrap-referencia.txt
           git commit -m "ci: inspecao do APK de referencia do Dropbox (run $GITHUB_RUN_ID)" || echo "sem mudancas"
           git pull --rebase -q origin "$GITHUB_REF_NAME" || true
           git push origin "HEAD:${GITHUB_REF_NAME}" || echo "push falhou"
