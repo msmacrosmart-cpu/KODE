@@ -1,20 +1,15 @@
-# Verificação do APK único — 1.0.70
+# Verificação do APK único — 1.0.70 (run 43705702272)
 
-artifact do run 43702328501 (conferência sem recompilar)
-
-```
-sha256: 0e8e2d49482cecd8dc76fa77d86a6e5de8bf3dc56b3d1a25bf7c7b57b39114b7
-tamanho: 249690958 bytes
-```
+APK: `SMARTEDTV-1.0.70-unificado-arm64-v8a.apk`
 
 ```
-== arquivo: apk/SMARTEDTV-1.0.69-unificado-arm64-v8a.apk  (238.1 MB)
+== arquivo: smartedtv/out-apk/SMARTEDTV-1.0.70-unificado-arm64-v8a.apk  (238.1 MB)
 
 == identidade do pacote (aapt2 badging)
-  package: name='smartedtv.full' versionCode='2103055' versionName='1.0.69' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
+  package: name='smartedtv.full' versionCode='2103056' versionName='1.0.70' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
   OK    pacote                             smartedtv.full
-  FALHA versionName                        1.0.70
-  FALHA versionCode                        2103056
+  OK    versionName                        1.0.70
+  OK    versionCode                        2103056
 
 == manifesto (aapt2 xmltree)
   OK    activity de abertura               .AppOpenActivity
@@ -89,8 +84,8 @@ tamanho: 249690958 bytes
   OK    checagem de VIP antes do anuncio   adsPermitidos
   OK    abrir link (checkout)              AbrirUrlActivity
   OK    compartilhar aplicativo            CompartilharActivity
-  FALHA tela de boas-vindas/VIP            BoasVindas
-  FALHA abertura limpa do Kodi             iniciarKodi
+  OK    tela de boas-vindas/VIP            BoasVindas
+  OK    abertura limpa do Kodi             iniciarKodi
   OK    APPLICATION_ID no dex              presente (redundante com o manifesto)
 
 == ponte do serviço de bootstrap
@@ -105,10 +100,6 @@ tamanho: 249690958 bytes
   OK    texto de status                    escondido (gone)
 
 == resumo
-  obrigatórias com falha: 4
+  obrigatórias com falha: 0
   avisos: 0
-  - versionName: 1.0.70
-  - versionCode: 2103056
-  - tela de boas-vindas/VIP: BoasVindas
-  - abertura limpa do Kodi: iniciarKodi
 ```
