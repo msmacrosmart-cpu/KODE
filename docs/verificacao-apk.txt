@@ -1,9 +1,14 @@
-# Verificação do APK único — 1.0.69 (run 43702328501)
+# Verificação do APK único — 1.0.69
 
-APK: `SMARTEDTV-1.0.69-unificado-arm64-v8a.apk`
+artifact do run 43702328501 (conferência sem recompilar)
 
 ```
-== arquivo: smartedtv/out-apk/SMARTEDTV-1.0.69-unificado-arm64-v8a.apk  (238.1 MB)
+sha256: 0e8e2d49482cecd8dc76fa77d86a6e5de8bf3dc56b3d1a25bf7c7b57b39114b7
+tamanho: 249690958 bytes
+```
+
+```
+== arquivo: apk/SMARTEDTV-1.0.69-unificado-arm64-v8a.apk  (238.1 MB)
 
 == identidade do pacote (aapt2 badging)
   package: name='smartedtv.full' versionCode='2103055' versionName='1.0.69' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
@@ -64,6 +69,11 @@ APK: `SMARTEDTV-1.0.69-unificado-arm64-v8a.apk`
   fontes do catálogo (sources.xml): 1 arquivo(s) — ex.: userdata/sources.xml
   favoritos: 1 arquivo(s) — ex.: userdata/favourites.xml
   OK    Brazuca Play no perfil             assets/smarted/profile/addons/plugin.video.BrazucaPlay.Matrix/addon.xml
+
+== Android TV e celular no mesmo APK
+  OK    touchscreen opcional               android.hardware.touchscreen
+  OK    leanback opcional                  android.software.leanback
+  OK    launcher de TV                     LEANBACK_LAUNCHER
 
 == classes no dex (anúncios dentro do app)
   OK    bloco de abertura                  ca-app-pub-2066014755407744/4214378379
