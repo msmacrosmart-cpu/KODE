@@ -1,9 +1,9 @@
 # Verificação do APK único — 1.0.66
 
-artifact do run 43651800166 (conferência sem recompilar)
+artifact do run 43654698507 (conferência sem recompilar)
 
 ```
-sha256: d97f97d2c978c2d11219c09f720b1956e7e23c2e901c803904c5f9b5ac413318
+sha256: 1823f8db5c418c403b9f95c383cac782bfd5544908a6dd52cbcd52ea54cd3cb9
 tamanho: 248023338 bytes
 ```
 
@@ -39,6 +39,18 @@ tamanho: 248023338 bytes
 == base estável (perfil semeado da linha clássica)
   OK    manifesto do perfil                1447de816a44ecc1… (esperado 1447de816a44ecc1…)
   OK    arquivos do perfil                 2731 entradas
+  manifesto: 2731 linhas; 3 primeiras:
+     9ffd834332eacefc3857c260bae23cd381cb7751bf2c0301d83a1f5ee6ded395 | 5472 | My_Builds/BACKUP%2BSMARTED_guisettin
+     77583fb104126cb63d3a489fff8542c96e4426b87088db1efca622ccef04caff | 38637860 | My_Builds/BACKUP+SMARTED.zip
+     47c5c7f1ebc86a88c4e3bf3bb95aa0c0fd8ab840b343ad4a194931c8bdb719c3 | 6818 | SaveData.zip
+  primeiro componente dos caminhos: My_Builds, SaveData.zip, addons, temp, userdata
+  amostra de arquivos no APK:
+     assets/smarted/profile/My_Builds/BACKUP%2BSMARTED_guisettings.zip
+     assets/smarted/profile/My_Builds/BACKUP+SMARTED.zip
+     assets/smarted/profile/SaveData.zip
+     assets/smarted/profile/addons/One.repo/addon.xml
+     assets/smarted/profile/addons/One.repo/fanart.jpg
+     assets/smarted/profile/addons/One.repo/icon.png
   OK    Brazuca Play no perfil             assets/smarted/profile/addons/plugin.video.BrazucaPlay.Matrix/addon.xml
 
 == classes no dex (anúncios dentro do app)
