@@ -1,0 +1,220 @@
+# Add-ons do perfil — diagnóstico estático
+
+APK: `referencia.apk`
+addons do perfil: 38 | addons do APK: 59
+
+## Sintaxe (py_compile) e APIs suspeitas
+
+* `hunter.fm/default.py`: xbmc.translatePath (removido; usar xbmcvfs.translatePath) — `xbmc.translatePath`
+* `metadata.themoviedb.org.python/python/scraper_config.py`: basestring (Python 2) — `basestring`
+* `plugin.audio.mp3streams/t0mm0/common/addon.py`: xbmc.LOGNOTICE (removido no Kodi 20) — `xbmc.LOGNOTICE`
+* `plugin.audio.mp3streams/t0mm0/common/addon.py`: unicode() (Python 2) — `unicode(`
+* `plugin.audio.mp3streams/t0mm0/common/net.py`: urllib2 (Python 2) — `urllib2.`
+* `plugin.program.openwizard/resources/libs/yt.py`: urllib2 (Python 2) — `urllib2.`
+* `plugin.program.openwizard/resources/libs/yt.py`: urllib2 (Python 2) — `import urllib2`
+* `plugin.program.openwizard/resources/libs/yt.py`: print sem parênteses (Python 2) — `print "`
+* **ERRO DE SINTAXE** `plugin.program.openwizard/resources/libs/zipfile.py`
+      File "/tmp/tmp2d3oyrmh/plugin.program.openwizard/resources/libs/zipfile.py", line 437
+          if self.file_size in (0xffffffffffffffffL, 0xffffffffL):
+                                                 ^
+      SyntaxError: invalid hexadecimal literal
+* `plugin.program.openwizard/resources/libs/zipfile.py`: basestring (Python 2) — `basestring`
+* `plugin.program.openwizard/segno/__init__.py`: basestring (Python 2) — `basestring`
+* `plugin.program.openwizard/segno/encoder.py`: basestring (Python 2) — `basestring`
+* `plugin.program.openwizard/segno/helpers.py`: basestring (Python 2) — `basestring`
+* `plugin.video.BrazucaPlay.Matrix/database.py`: xbmc.translatePath (removido; usar xbmcvfs.translatePath) — `xbmc.translatePath`
+* `plugin.video.BrazucaPlay.Matrix/downloader.py`: urllib2 (Python 2) — `urllib2.`
+* `plugin.video.BrazucaPlay.Matrix/jsunpack.py`: print sem parênteses (Python 2) — `print '`
+* `plugin.video.youtube/resources/lib/youtube_plugin/kodion/compatibility/__init__.py`: xbmc.translatePath (removido; usar xbmcvfs.translatePath) — `xbmc.translatePath`
+* `plugin.video.youtube/resources/lib/youtube_plugin/kodion/compatibility/__init__.py`: xbmc.LOGNOTICE (removido no Kodi 20) — `xbmc.LOGNOTICE`
+* `plugin.video.youtube/resources/lib/youtube_plugin/kodion/compatibility/__init__.py`: unicode() (Python 2) — `unicode(`
+* `plugin.video.youtube/resources/lib/youtube_plugin/kodion/compatibility/__init__.py`: basestring (Python 2) — `basestring`
+* `plugin.video.youtube/resources/lib/youtube_plugin/kodion/json_store/json_store.py`: unicode() (Python 2) — `unicode(`
+* `plugin.video.youtube/resources/lib/youtube_plugin/kodion/logging.py`: xbmc.LOGNOTICE (removido no Kodi 20) — `xbmc.LOGNOTICE`
+* `plugin.video.youtube/resources/lib/youtube_plugin/kodion/logging.py`: unicode() (Python 2) — `unicode(`
+* `plugin.video.youtube/resources/lib/youtube_plugin/youtube/helper/yt_setup_wizard.py`: unicode() (Python 2) — `unicode(`
+* `repository.elementumorg/lib/entries.py`: unicode() (Python 2) — `unicode(`
+* `repository.elementumorg/lib/kodi.py`: unicode() (Python 2) — `unicode(`
+* `repository.elementumorg/lib/utils.py`: unicode() (Python 2) — `unicode(`
+* `repository.elementumorg/lib/utils.py`: basestring (Python 2) — `basestring`
+* `script.module.beautifulsoup4/lib/bs4/dammit.py`: unicode() (Python 2) — `unicode(`
+* `script.module.beautifulsoup4/lib/bs4/element.py`: unicode() (Python 2) — `unicode(`
+* `script.module.future/lib/future/backports/email/charset.py`: unicode() (Python 2) — `unicode(`
+* `script.module.future/lib/future/backports/xmlrpc/client.py`: unicode() (Python 2) — `unicode(`
+* `script.module.future/lib/future/types/newbytes.py`: .iteritems() (Python 2) — `.iteritems()`
+* `script.module.future/lib/future/types/newobject.py`: unicode() (Python 2) — `unicode(`
+* `script.module.future/lib/future/types/newstr.py`: unicode() (Python 2) — `unicode(`
+* `script.module.future/lib/future/utils/__init__.py`: unicode() (Python 2) — `unicode(`
+* `script.module.future/lib/future/utils/__init__.py`: basestring (Python 2) — `basestring`
+* `script.module.future/lib/libfuturize/fixes/__init__.py`: basestring (Python 2) — `basestring`
+* `script.module.future/lib/libfuturize/fixes/fix_UserDict.py`: unicode() (Python 2) — `unicode(`
+* `script.module.future/lib/libfuturize/fixes/fix_basestring.py`: basestring (Python 2) — `basestring`
+* `script.module.future/lib/libfuturize/fixes/fix_print.py`: print sem parênteses (Python 2) — `print "`
+* `script.module.future/lib/libpasteurize/fixes/fix_next.py`: unicode() (Python 2) — `unicode(`
+* `script.module.future/lib/libpasteurize/fixes/fix_unpacking.py`: unicode() (Python 2) — `unicode(`
+* `script.module.future/lib/past/builtins/__init__.py`: basestring (Python 2) — `basestring`
+* `script.module.future/lib/past/builtins/noniterators.py`: basestring (Python 2) — `basestring`
+* `script.module.future/lib/past/translation/__init__.py`: basestring (Python 2) — `basestring`
+* `script.module.future/lib/past/types/__init__.py`: basestring (Python 2) — `basestring`
+* `script.module.future/lib/past/types/basestring.py`: basestring (Python 2) — `basestring`
+* `script.module.kodi-six/libs/kodi_six/utils.py`: .iteritems() (Python 2) — `.iteritems()`
+* `script.module.requests/lib/requests/adapters.py`: basestring (Python 2) — `basestring`
+* `script.module.requests/lib/requests/auth.py`: basestring (Python 2) — `basestring`
+* `script.module.requests/lib/requests/compat.py`: basestring (Python 2) — `basestring`
+* `script.module.requests/lib/requests/cookies.py`: urllib2 (Python 2) — `urllib2.`
+* `script.module.requests/lib/requests/cookies.py`: .iteritems() (Python 2) — `.iteritems()`
+* `script.module.requests/lib/requests/models.py`: unicode() (Python 2) — `unicode(`
+* `script.module.requests/lib/requests/models.py`: basestring (Python 2) — `basestring`
+* `script.module.requests/lib/requests/utils.py`: unicode() (Python 2) — `unicode(`
+* `script.module.requests/lib/requests/utils.py`: basestring (Python 2) — `basestring`
+* `script.module.simplejson/lib/simplejson/__init__.py`: basestring (Python 2) — `basestring`
+* `script.module.simplejson/lib/simplejson/compat.py`: basestring (Python 2) — `basestring`
+* `script.module.simplejson/lib/simplejson/decoder.py`: unicode() (Python 2) — `unicode(`
+* `script.module.simplejson/lib/simplejson/encoder.py`: .iteritems() (Python 2) — `.iteritems()`
+* `script.module.simplejson/lib/simplejson/encoder.py`: unicode() (Python 2) — `unicode(`
+* `script.module.simplejson/lib/simplejson/encoder.py`: basestring (Python 2) — `basestring`
+* `script.module.six/lib/six.py`: unicode() (Python 2) — `unicode(`
+* `script.module.six/lib/six.py`: basestring (Python 2) — `basestring`
+* `script.module.urllib3/lib/urllib3/_collections.py`: .iteritems() (Python 2) — `.iteritems()`
+* `service.xbmc.versioncheck/resources/lib/version_check/common.py`: xbmc.translatePath (removido; usar xbmcvfs.translatePath) — `xbmc.translatePath`
+* `service.xbmc.versioncheck/resources/lib/version_check/common.py`: unicode() (Python 2) — `unicode(`
+* `service.xbmc.versioncheck/resources/lib/version_check/json_interface.py`: unicode() (Python 2) — `unicode(`
+
+663 arquivos .py compilados
+
+## Dependências
+
+* `One.repo` v1.16 (python ?) — OK
+* `addon.dns` v1.0.1 (python 3.0.0) — OK
+* `hunter.fm` v0.0.2 (python ?) — OK
+* `inputstream.adaptive` v21.5.25 (python ?) — OK
+* `metadata.album.universal` v3.1.20 (python ?) — OK
+* `metadata.artists.universal` v4.3.24 (python ?) — OK
+* `metadata.common.fanart.tv` v3.6.5 (python ?) — OK
+* `metadata.generic.albums` v1.0.20 (python 3.0.0) — OK
+* `metadata.generic.artists` v1.0.20 (python 3.0.0) — OK
+* `metadata.themoviedb.org.python` v3.2.2 (python 3.0.0) — OK
+* `metadata.tvshows.themoviedb.org.python` v1.7.13 (python 3.0.0) — OK
+* `plugin.audio.mp3streams` v2026.08.24 (python 3.0.0) — OK
+* `plugin.program.openwizard` v2.0.7 (python 3.0.0) — FALTA script.kodi.android.update, script.speedtester
+* `plugin.video.BrazucaPlay.Matrix` v2.1.4 (python ?) — FALTA inputstream.ffmpegdirect, script.module.inputstreamhelper
+* `plugin.video.youtube` v7.4.4rw+unofficial.3 (python 3.0.0) — FALTA script.module.inputstreamhelper, script.module.pysocks
+* `repository.elementumorg` v0.0.7 (python ?) — OK
+* `repository.redwizard` v1.2.2 (python ?) — OK
+* `repository.resolveurl` v1.0.0 (python ?) — OK
+* `repository.streamxtv.matrix` v3.6.7 (python 3.0.0) — OK
+* `resource.language.pt_br` v11.0.109 (python ?) — OK
+* `script.module.beautifulsoup4` v4.12.2 (python 3.0.0) — OK
+* `script.module.certifi` v2023.5.7 (python 3.0.0) — OK
+* `script.module.chardet` v5.1.0 (python 3.0.0) — OK
+* `script.module.future` v1.0.0+matrix.1 (python 3.0.0) — OK
+* `script.module.idna` v3.10.0 (python 3.0.0) — OK
+* `script.module.kodi-six` v0.1.3.1 (python 3.0.0) — OK
+* `script.module.mutagen` v1.47.0 (python 3.0.0) — OK
+* `script.module.requests` v2.31.0 (python 3.0.0) — OK
+* `script.module.simplejson` v3.19.1+matrix.1 (python 3.0.0) — OK
+* `script.module.six` v1.16.0+matrix.1 (python 3.0.0) — OK
+* `script.module.soupsieve` v2.4.1 (python 3.0.0) — OK
+* `script.module.urllib3` v2.2.3 (python 3.0.0) — OK
+* `service.subtitles.legendei` v0.1.0 (python ?) — OK
+* `service.xbmc.versioncheck` v0.5.30+matrix.1 (python 3.0.0) — OK
+* `vfs.rar` v21.0.2 (python ?) — OK
+* `vkkodi.repo` v3.33 (python ?) — OK
+
+## Brazuca Play em detalhe
+
+* 23 arquivos
+    - __pycache__/codec.cpython-311.opt-1.pyc
+    - __pycache__/codec.cpython-314.pyc
+    - __pycache__/database.cpython-314.pyc
+    - __pycache__/default.cpython-314.pyc
+    - __pycache__/downloader.cpython-311.opt-1.pyc
+    - __pycache__/downloader.cpython-314.pyc
+    - __pycache__/extract.cpython-314.pyc
+    - __pycache__/jsunhunt.cpython-314.pyc
+    - __pycache__/jsunpack.cpython-314.pyc
+    - addon.xml
+    - codec.py
+    - database.py
+    - default.py
+    - downloader.py
+    - extract.py
+    - fanart.jpg
+    - icon.png
+    - jsunhunt.py
+    - jsunpack.py
+    - resources/screenshots/home.jpg
+    - resources/screenshots/movies.jpg
+    - resources/screenshots/series.jpg
+    - resources/settings.xml
+* addon.xml:
+      <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      <addon id="plugin.video.BrazucaPlay.Matrix" name="[B][COLOR white]BRAZUCA PLAY[/COLOR][/B]" version="2.1.4" provider-name="[B][COLOR white]Brazuca Pla
+      <requires>
+      <import addon="script.module.six"/>
+      <import addon="script.module.kodi-six"/>
+      <import addon="script.module.requests"/>
+      <import addon="script.module.simplejson"/>
+      <import addon="inputstream.ffmpegdirect" optional="true"/>
+      <import addon="script.module.inputstreamhelper" optional="true"/>
+      </requires>
+      <extension point="xbmc.python.pluginsource" library="default.py">
+      <provides>video</provides>
+      </extension>
+      <extension point="xbmc.addon.repository" name="[B][COLOR white]Brazuca Play [COLOR blue]Repo[/COLOR][/COLOR][/B]">
+      <dir minversion="16.0.0" maxversion="18.9.0">
+      <info compressed="false">https://skyrisk.github.io/brazucaplay/addons/repo/addons.xml</info>
+      <checksum>https://skyrisk.github.io/brazucaplay/addons/repo/addons.xml.md5</checksum>
+      <datadir zip="true">https://skyrisk.github.io/brazucaplay/addons/repo/Plugins/</datadir>
+      <hashes>false</hashes>
+      </dir>
+      <dir minversion="18.9.1">
+      <info compressed="false">https://skyrisk.github.io/brazucaplay/addons/repo/addons_matrix.xml</info>
+      <checksum>https://skyrisk.github.io/brazucaplay/addons/repo/addons_matrix.xml.md5</checksum>
+      <datadir zip="true">https://skyrisk.github.io/brazucaplay/addons/repo/Plugins/</datadir>
+      <hashes>false</hashes>
+      </dir>
+      </extension>
+      <extension point="xbmc.addon.metadata">
+      <summary>[B][COLOR white]TV, Filmes, Séries, Desenhos e Animes.[/COLOR]</summary>
+      <description>[B][COLOR blue]●[/COLOR] [COLOR white]Brazuca Play é apenas um AGREGADOR de links e, assim como o Google.com, apenas agrega e organiza os
+      <disclaimer>[B][COLOR white]OBRIGADO POR USAR NOSSO ADD-ON [COLOR gold]S2[/COLOR][/COLOR][/B]</disclaimer>
+      <news>[B][COLOR gold]v2.1.4 - KODI 16 >[/COLOR][/B]</news>
+      <platform>all</platform>
+      <reuselanguageinvoker>true</reuselanguageinvoker>
+      <assets>
+      <icon>icon.png</icon>
+      <fanart>fanart.jpg</fanart>
+      <screenshot>resources/screenshots/home.jpg</screenshot>
+      <screenshot>resources/screenshots/movies.jpg</screenshot>
+      <screenshot>resources/screenshots/series.jpg</screenshot>
+      </assets>
+      </extension>
+      </addon>
+
+## addon_data que o perfil traz
+
+* peripheral.joystick/resources/buttonmaps/xml/android/uinput-fpc_v0666_p0888_2b.xml
+* plugin.audio.mp3streams/cookiejar.lwp
+* plugin.audio.mp3streams/downloads.list
+* plugin.audio.mp3streams/favourites_album.list
+* plugin.audio.mp3streams/favourites_artist.list
+* plugin.audio.mp3streams/favourites_songs.list
+* plugin.audio.mp3streams/playlist_file.list
+* plugin.audio.mp3streams/temp_dl/4742c4fbcace53b38c6568d152bd4069
+* plugin.program.openwizard/settings.xml
+* plugin.program.openwizard/wizard.log
+* plugin.video.BrazucaPlay.Matrix/cache.db
+* plugin.video.BrazucaPlay.Matrix/epg.db
+* plugin.video.BrazucaPlay.Matrix/pass.txt
+* plugin.video.BrazucaPlay.Matrix/settings.xml
+* plugin.video.youtube/access_manager.json
+* plugin.video.youtube/api_keys.json
+* plugin.video.youtube/eb8733fad6d44c2d99154d1bb70894a8/cache.sqlite
+* plugin.video.youtube/settings.xml
+* repository.elementumorg/entries.json
+* skin.estuary/settings.xml
+
+## __pycache__ embarcado (versão do Python)
+
+* tags: cpython-311, opt-1

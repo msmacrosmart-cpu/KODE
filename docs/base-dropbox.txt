@@ -121,7 +121,7 @@ guisettings.xml encontrados: ['assets/smarted/profile/userdata/guisettings.xml']
 
 * `assets/addons/service.smarted.bootstrap/smart_ads.py`: ca-app-pub-, AppOpenActivity, PreRollActivity
 
-## Manifesto (19 itens)
+## Manifesto (36 itens)
 
 * uses-permission: android.permission.WRITE_EXTERNAL_STORAGE
 * uses-permission: android.permission.MANAGE_EXTERNAL_STORAGE
@@ -131,17 +131,90 @@ guisettings.xml encontrados: ['assets/smarted/profile/userdata/guisettings.xml']
 * uses-permission: android.permission.MODIFY_AUDIO_SETTINGS
 * uses-permission: android.permission.ACCESS_NETWORK_STATE
 * uses-permission: android.permission.RECORD_AUDIO
+* uses-feature: android.hardware.bluetooth
+* uses-feature: android.hardware.microphone
+* uses-feature: android.hardware.screen.landscape
+* uses-feature: android.hardware.touchscreen
+* uses-feature: android.hardware.touchscreen.multitouch
+* uses-feature: android.hardware.type.television
+* uses-feature: android.hardware.usb.host
+* uses-feature: android.hardware.wifi
+* uses-feature: android.software.leanback
 * uses-permission: com.android.providers.tv.permission.WRITE_EPG_DATA
 * uses-permission: com.android.providers.tv.permission.READ_EPG_DATA
 * activity: org.xbmc.kodi.Splash
+* category: android.intent.category.LAUNCHER
+* category: android.intent.category.LEANBACK_LAUNCHER
+* category: android.intent.category.DEFAULT
+* category: android.intent.category.BROWSABLE
 * activity: org.xbmc.kodi.Main
 * receiver: org.xbmc.kodi.XBMCBroadcastReceiver
 * provider: org.xbmc.kodi.content.XBMCMediaContentProvider
 * provider: org.xbmc.kodi.content.XBMCFileContentProvider
 * provider: org.xbmc.kodi.content.XBMCYTDLContentProvider
 * activity: org.xbmc.kodi.XBMCSearchableActivity
+* category: android.intent.category.DEFAULT
+* category: android.intent.category.BROWSABLE
+* category: android.intent.category.DEFAULT
+* category: android.intent.category.BROWSABLE
 * service: org.xbmc.kodi.channels.SyncChannelJobService
 * service: org.xbmc.kodi.channels.SyncProgramsJobService
+
+## TV x celular (linhas cruas do manifesto)
+
+```
+E: uses-sdk (line=0)
+E: uses-feature (line=10)
+E: uses-feature (line=11)
+E: uses-feature (line=12)
+E: uses-feature (line=13)
+A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.hardware.touchscreen" (Raw: "android.hardware.touchscreen")
+E: uses-feature (line=14)
+A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.hardware.touchscreen.multitouch" (Raw: "android.hardware.touchscreen.multitouch")
+E: uses-feature (line=15)
+E: uses-feature (line=16)
+E: uses-feature (line=17)
+E: uses-feature (line=18)
+A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.software.leanback" (Raw: "android.software.leanback")
+A: http://schemas.android.com/apk/res/android:banner(0x010103f2)=@0x7f040001
+A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=6
+A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.intent.category.LAUNCHER" (Raw: "android.intent.category.LAUNCHER")
+A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.intent.category.LEANBACK_LAUNCHER" (Raw: "android.intent.category.LEANBACK_LAUNCHER")
+A: http://schemas.android.com/apk/res/android:screenOrientation(0x0101001e)=6
+```
+
+## XML da skin guardados em docs/skin-base (31)
+* Custom_1101_SettingsList.xml (7495 bytes)
+* Custom_1105_MusicOSDSettings.xml (2917 bytes)
+* DialogAddonSettings.xml (5205 bytes)
+* DialogPVRChannelManager.xml (9585 bytes)
+* DialogPVRGroupManager.xml (7169 bytes)
+* GameOSD.xml (8648 bytes)
+* Home.xml (66908 bytes)
+* Includes.xml (67009 bytes)
+* Includes_Animations.xml (6908 bytes)
+* Includes_Buttons.xml (14700 bytes)
+* Includes_DialogSelect.xml (25481 bytes)
+* Includes_Games.xml (19912 bytes)
+* Includes_Home.xml (40837 bytes)
+* Includes_MediaMenu.xml (16958 bytes)
+* Includes_MusicInfo.xml (9861 bytes)
+* Includes_PVR.xml (24359 bytes)
+* Includes_SecretUnlock.xml (2386 bytes)
+* MyFavourites.xml (9667 bytes)
+* MyGames.xml (4617 bytes)
+* MyMusicNav.xml (8515 bytes)
+* MyPics.xml (9915 bytes)
+* MyPrograms.xml (2475 bytes)
+* MyVideoNav.xml (19804 bytes)
+* Settings.xml (6645 bytes)
+* SettingsCategory.xml (6129 bytes)
+* SettingsProfile.xml (7890 bytes)
+* SkinSettings.xml (14265 bytes)
+* SmartPlaylistEditor.xml (3696 bytes)
+* SmartPlaylistRule.xml (2376 bytes)
+* Timers.xml (1934 bytes)
+* Variables.xml (70183 bytes)
 
 ## Classes no dex (1569 no total)
 
