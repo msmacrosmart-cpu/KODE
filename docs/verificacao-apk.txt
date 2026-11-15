@@ -51,6 +51,11 @@ tamanho: 248023338 bytes
      assets/smarted/profile/addons/One.repo/addon.xml
      assets/smarted/profile/addons/One.repo/fanart.jpg
      assets/smarted/profile/addons/One.repo/icon.png
+  guisettings do perfil: <setting id="lookandfeel.skin" default="true">skin.estuary</setting>
+  ajustes da skin.novatv: 0 arquivo(s)
+  atalhos/menus (skinshortcuts): 0 arquivo(s)
+  fontes do catálogo (sources.xml): 1 arquivo(s) — ex.: userdata/sources.xml
+  favoritos: 1 arquivo(s) — ex.: userdata/favourites.xml
   OK    Brazuca Play no perfil             assets/smarted/profile/addons/plugin.video.BrazucaPlay.Matrix/addon.xml
 
 == classes no dex (anúncios dentro do app)
