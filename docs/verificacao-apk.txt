@@ -1,4 +1,4 @@
-# Verificação do APK único — 1.0.71
+# Verificação do APK único — 1.0.72
 
 artifact do run 43705702272 (conferência sem recompilar)
 
@@ -13,8 +13,8 @@ tamanho: 249699150 bytes
 == identidade do pacote (aapt2 badging)
   package: name='smartedtv.full' versionCode='2103056' versionName='1.0.70' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
   OK    pacote                             smartedtv.full
-  FALHA versionName                        1.0.71
-  FALHA versionCode                        2103057
+  FALHA versionName                        1.0.72
+  FALHA versionCode                        2103058
 
 == manifesto (aapt2 xmltree)
   OK    activity de abertura               .AppOpenActivity
@@ -112,8 +112,8 @@ tamanho: 249699150 bytes
 == resumo
   obrigatórias com falha: 7
   avisos: 0
-  - versionName: 1.0.71
-  - versionCode: 2103057
+  - versionName: 1.0.72
+  - versionCode: 2103058
   - QR Code no pacote: assets/addons/script.smartedtv.ajustes/resources/qrcode.png
   - ponto de retomada: assets/addons/service.smarted.bootstrap/retomar.py
   - atalhos VIP/Compartilhar na Home: ensure_shortcuts
