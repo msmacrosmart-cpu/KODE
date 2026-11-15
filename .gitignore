@@ -10,3 +10,6 @@ build/
 # SMARTEDTV: saída de compilação (fonte patchado, dependências, APK)
 smartedtv/build/
 smartedtv/out-apk/
+
+# prévia local do blueprint (link público temporário)
+/preview/
