@@ -1,0 +1,305 @@
+# APK de referência (Dropbox) — inspeção
+
+arquivo: `referencia.apk`
+tamanho: 242.222.254 bytes (231.0 MB)
+sha256: `82c206e3eac9df9068414bc59908449008424927106e87a867e64f90b5bcee8d`
+
+## Conteúdo
+
+7774 arquivos
+
+
+| grupo | arquivos |
+|---|---|
+| addons | 3095 |
+| perfil smarted | 2732 |
+| python | 1605 |
+| system | 219 |
+| recursos compilados | 50 |
+| libs nativas | 46 |
+| media | 15 |
+| (outros) | 6 |
+| userdata | 3 |
+| assinatura | 3 |
+
+## Skin e catálogo
+
+* `assets/addons/skin.novatv/`: **934** arquivos (712 em media/)
+* `assets/addons/skin.novatv/addon.xml` — 1130 bytes:
+      <?xml version='1.0' encoding='UTF-8'?>
+      <addon id="skin.novatv" version="1.0.18" name="SMARTED" provider-name="SMARTED">
+      <requires>
+      <import addon="xbmc.gui" version="5.17.0" />
+      </requires>
+      <extension point="xbmc.gui.skin" debugging="false">
+      <res width="1920" height="1080" aspect="16:9" default="true" folder="xml" />
+      </extension>
+      <extension point="xbmc.addon.metadata">
+      <platform>all</platform>
+      <license>GPL-2.0-or-later, CC BY-SA 4.0 (base: Estuary, Team Kodi)</license>
+      <summary lang="pt_BR">Skin IPTV premium em preto fosco, branco e cinza</summary>
+* `assets/addons/plugin.video.smarted/addon.xml` — 689 bytes:
+      <?xml version="1.0" encoding="UTF-8"?>
+      <addon id="plugin.video.smarted" name="SMARTED-TV" version="0.3.3" provider-name="SMARTED-TV">
+      <requires>
+      <import addon="xbmc.python" version="3.0.0"/>
+      <import addon="plugin.video.BrazucaPlay.Matrix" version="2.1.4"/>
+      </requires>
+      <extension point="xbmc.python.pluginsource" library="default.py">
+      <provides>video</provides>
+      </extension>
+      <extension point="xbmc.addon.metadata">
+      <summary lang="pt_BR">Navegação do SMARTED-TV</summary>
+      <description lang="pt_BR">Organiza os menus do Brazuca Play instalado no perfil.</description>
+* `assets/addons/plugin.video.smarted/catalogue.py` — 12076 bytes:
+      """Read real Brazuca directories without inventing catalogue data or streams."""
+      import json
+      from urllib.parse import parse_qs, urlsplit
+      
+      from routes import brazuca
+      from search import TAGS, normalize
+      
+      ADDON = 'plugin.video.BrazucaPlay.Matrix'
+      
+      
+      def _brazuca_url(value):
+      if not isinstance(value, str):
+* `assets/addons/service.smarted.bootstrap/smart_ads.py` — 11488 bytes:
+      # -*- coding: utf-8 -*-
+      """Anuncios do AdMob disparados pelo Kodi (ponte nativa StartAndroidActivity).
+      
+      O Kodi do APK e um binario pronto: o SDK do AdMob nao pode ser injetado nele sem
+      recompilar o Kodi inteiro. Por isso o anuncio e exibido pelo app
+      ``org.smartedtv.ads`` (pasta ``android/smarted-ads``), assinado com a mesma
+      chave da linha, e o Kodi o abre por um builtin nativo:
+      
+      StartAndroidActivity(smartedtv.full,smartedtv.ads.PREROLL,,,,,,,org.smartedtv.ads.PreRollActivity)
+      
+      ATENCAO a ordem dos parametros do builtin (Kodi v20+):
+      
+
+## Addons (59)
+
+audioencoder.kodi.builtin.aac, audioencoder.kodi.builtin.wma, game.controller.default, game.controller.keyboard, game.controller.mouse, game.controller.snes, kodi.binary.global.audioengine, kodi.binary.global.filesystem, kodi.binary.global.general, kodi.binary.global.gui, kodi.binary.global.main, kodi.binary.global.network, kodi.binary.global.tools, kodi.binary.instance.audiodecoder, kodi.binary.instance.audioencoder, kodi.binary.instance.game, kodi.binary.instance.imagedecoder, kodi.binary.instance.inputstream, kodi.binary.instance.peripheral, kodi.binary.instance.pvr, kodi.binary.instance.screensaver, kodi.binary.instance.vfs, kodi.binary.instance.videocodec, kodi.binary.instance.visualization, kodi.resource, metadata.album.universal, metadata.artists.universal, metadata.common.allmusic.com, metadata.common.fanart.tv, metadata.common.musicbrainz.org, metadata.common.theaudiodb.com, metadata.generic.albums, metadata.generic.artists, metadata.local, metadata.themoviedb.org.python, metadata.tvshows.themoviedb.org.python, peripheral.joystick, plugin.video.smarted, repository.xbmc.org, resource.images.weathericons.default, resource.language.en_gb, resource.uisounds.kodi, resource.uisounds.silencio, screensaver.xbmc.builtin.black, screensaver.xbmc.builtin.dim, script.module.pil, script.module.pycryptodome, service.smarted.bootstrap, service.xbmc.versioncheck, skin.estuary, skin.novatv, webinterface.default, xbmc.addon, xbmc.core, xbmc.gui, xbmc.json, xbmc.metadata, xbmc.python, xbmc.webinterface
+
+## Skin ativa e perfil
+
+guisettings.xml encontrados: ['assets/smarted/profile/userdata/guisettings.xml']
+    assets/smarted/profile/userdata/guisettings.xml: <setting id="lookandfeel.skin" default="true">skin.estuary</setting>
+    assets/smarted/profile/userdata/guisettings.xml: <setting id="lookandfeel.skintheme" default="true">SKINDEFAULT</setting>
+    assets/smarted/profile/userdata/guisettings.xml: <setting id="lookandfeel.skincolors" default="true">SKINDEFAULT</setting>
+    assets/smarted/profile/userdata/guisettings.xml: <setting id="lookandfeel.font" default="true">Default</setting>
+    assets/smarted/profile/userdata/guisettings.xml: <setting id="lookandfeel.skinzoom" default="true">0</setting>
+* ajustes da skin.novatv: 0 arquivo(s)
+* menus/atalhos (skinshortcuts): 0 arquivo(s)
+* favoritos: 1 arquivo(s)
+    - assets/smarted/profile/userdata/favourites.xml
+* fontes: 3 arquivo(s)
+    - assets/system/library/music/sources.xml
+    - assets/userdata/iOS/sources.xml
+    - assets/smarted/profile/userdata/sources.xml
+* playlists: 29 arquivo(s)
+    - assets/addons/skin.estuary/playlists/inprogress_movies.xsp
+    - assets/addons/skin.estuary/playlists/mostplayed_albums.xsp
+    - assets/addons/skin.estuary/playlists/random_albums.xsp
+    - assets/addons/skin.estuary/playlists/random_artists.xsp
+    - assets/addons/skin.estuary/playlists/random_movies.xsp
+    - assets/addons/skin.estuary/playlists/random_musicvideo_artists.xsp
+* perfis do Kodi: 1 arquivo(s)
+    - assets/smarted/profile/userdata/profiles.xml
+
+## Splash em assets
+
+* res/drawable/applaunch_screen.png — 84.402 bytes (0.1 MB)
+* res/layout/activity_splash.xml — 1.896 bytes (0.0 MB)
+* res/drawable-xxxhdpi/applaunch_screen.png — 84.402 bytes (0.1 MB)
+* assets/addons/webinterface.default/images/splash_hi.png — 10.745 bytes (0.0 MB)
+* assets/media/applaunch_screen.png — 180.005 bytes (0.2 MB)
+* assets/media/splash.jpg — 115.455 bytes (0.1 MB)
+
+## Anúncios já presentes?
+
+* `assets/addons/service.smarted.bootstrap/smart_ads.py`: ca-app-pub-, AppOpenActivity, PreRollActivity
+
+## Amostra do perfil embutido (2735 arquivos)
+
+* assets/userdata/ModeLines_template.xml
+* assets/userdata/RssFeeds.xml
+* assets/userdata/iOS/sources.xml
+* assets/smarted/profile-manifest.txt
+* assets/smarted/profile/SaveData.zip
+* assets/smarted/profile/My_Builds/BACKUP%2BSMARTED_guisettings.zip
+* assets/smarted/profile/My_Builds/BACKUP+SMARTED.zip
+* assets/smarted/profile/addons/One.repo/addon.xml
+* assets/smarted/profile/addons/One.repo/fanart.jpg
+* assets/smarted/profile/addons/One.repo/icon.png
+* assets/smarted/profile/addons/One.repo/resources/screenshot-1.jpg
+* assets/smarted/profile/addons/One.repo/resources/screenshot-2.jpg
+* assets/smarted/profile/addons/One.repo/resources/screenshot-3.jpg
+* assets/smarted/profile/addons/addon.dns/addon.xml
+* assets/smarted/profile/addons/addon.dns/proxyhttp.py
+* assets/smarted/profile/addons/addon.dns/service.py
+* assets/smarted/profile/addons/addon.dns/set_proxy.py
+* assets/smarted/profile/addons/addon.dns/__pycache__/proxyhttp.cpython-311.opt-1.pyc
+* assets/smarted/profile/addons/addon.dns/__pycache__/set_proxy.cpython-311.opt-1.pyc
+* assets/smarted/profile/addons/addon.dns/resources/icon.png
+* assets/smarted/profile/addons/hunter.fm/addon.xml
+* assets/smarted/profile/addons/hunter.fm/default.py
+* assets/smarted/profile/addons/hunter.fm/icon.jpg
+* assets/smarted/profile/addons/hunter.fm/fanart.png
+* assets/smarted/profile/addons/hunter.fm/images/80s.jpg
+
+## aapt2
+
+```
+package: name='org.xbmc.kodi' versionCode='2103049' versionName='1.0.63' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
+install-location:'auto'
+minSdkVersion:'21'
+targetSdkVersion:'34'
+uses-permission: name='android.permission.WRITE_EXTERNAL_STORAGE'
+uses-permission: name='android.permission.MANAGE_EXTERNAL_STORAGE'
+uses-permission: name='android.permission.INTERNET'
+uses-permission: name='android.permission.BLUETOOTH'
+uses-permission: name='android.permission.RECEIVE_BOOT_COMPLETED'
+uses-permission: name='android.permission.MODIFY_AUDIO_SETTINGS'
+uses-permission: name='android.permission.ACCESS_NETWORK_STATE'
+uses-permission: name='android.permission.RECORD_AUDIO'
+uses-permission: name='com.android.providers.tv.permission.WRITE_EPG_DATA'
+uses-permission: name='com.android.providers.tv.permission.READ_EPG_DATA'
+application-label:'SMARTEDTV'
+application-label-af:'SMARTEDTV'
+application-label-am:'SMARTEDTV'
+application-label-ar:'SMARTEDTV'
+application-label-ar-SA:'SMARTEDTV'
+application-label-as:'SMARTEDTV'
+application-label-ast-ES:'SMARTEDTV'
+application-label-az:'SMARTEDTV'
+application-label-be:'SMARTEDTV'
+application-label-be-BY:'SMARTEDTV'
+application-label-bg:'SMARTEDTV'
+application-label-bn:'SMARTEDTV'
+application-label-bs:'SMARTEDTV'
+application-label-bs-BA:'SMARTEDTV'
+application-label-ca:'SMARTEDTV'
+application-label-ca-ES:'SMARTEDTV'
+application-label-cs:'SMARTEDTV'
+application-label-cs-CZ:'SMARTEDTV'
+application-label-da:'SMARTEDTV'
+application-label-da-DK:'SMARTEDTV'
+application-label-de:'SMARTEDTV'
+application-label-de-DE:'SMARTEDTV'
+application-label-el:'SMARTEDTV'
+application-label-en-AU:'SMARTEDTV'
+application-label-en-CA:'SMARTEDTV'
+application-label-en-GB:'SMARTEDTV'
+application-label-en-IN:'SMARTEDTV'
+application-label-en-NZ:'SMARTEDTV'
+application-label-en-US:'SMARTEDTV'
+application-label-en-XC:'SMARTEDTV'
+application-label-es:'SMARTEDTV'
+application-label-es-ES:'SMARTEDTV'
+application-label-es-MX:'SMARTEDTV'
+application-label-es-US:'SMARTEDTV'
+application-label-et:'SMARTEDTV'
+application-label-et-EE:'SMARTEDTV'
+application-label-eu:'SMARTEDTV'
+application-label-fa:'SMARTEDTV'
+application-label-fi:'SMARTEDTV'
+application-label-fi-FI:'SMARTEDTV'
+application-label-fr:'SMARTEDTV'
+application-label-fr-CA:'SMARTEDTV'
+application-label-fr-FR:'SMARTEDTV'
+application-label-gl:'SMARTEDTV'
+application-label-gu:'SMARTEDTV'
+application-label-he-IL:'SMARTEDTV'
+application-label-hi:'SMARTEDTV'
+application-label-hr:'SMARTEDTV'
+application-label-hr-HR:'SMARTEDTV'
+application-label-hu:'SMARTEDTV'
+application-label-hu-HU:'SMARTEDTV'
+application-label-hy:'SMARTEDTV'
+application-label-id-ID:'SMARTEDTV'
+application-label-in:'SMARTEDTV'
+application-label-is:'SMARTEDTV'
+application-label-is-IS:'SMARTEDTV'
+application-label-it:'SMARTEDTV'
+application-label-it-IT:'SMARTEDTV'
+application-label-iw:'SMARTEDTV'
+application-label-ja:'SMARTEDTV'
+application-label-ka:'SMARTEDTV'
+application-label-kk:'SMARTEDTV'
+application-label-km:'SMARTEDTV'
+application-label-kn:'SMARTEDTV'
+application-label-ko:'SMARTEDTV'
+application-label-ko-KR:'SMARTEDTV'
+application-label-ky:'SMARTEDTV'
+application-label-lo:'SMARTEDTV'
+application-label-lt:'SMARTEDTV'
+application-label-lt-LT:'SMARTEDTV'
+application-label-lv:'SMARTEDTV'
+application-label-lv-LV:'SMARTEDTV'
+application-label-mk:'SMARTEDTV'
+application-label-ml:'SMARTEDTV'
+application-label-mn:'SMARTEDTV'
+application-label-mr:'SMARTEDTV'
+application-label-ms:'SMARTEDTV'
+application-label-my:'SMARTEDTV'
+application-label-nb:'SMARTEDTV'
+application-label-nb-NO:'SMARTEDTV'
+application-label-ne:'SMARTEDTV'
+application-label-nl:'SMARTEDTV'
+application-label-nl-NL:'SMARTEDTV'
+application-label-oc-FR:'SMARTEDTV'
+application-label-or:'SMARTEDTV'
+application-label-pa:'SMARTEDTV'
+application-label-pl:'SMARTEDTV'
+application-label-pl-PL:'SMARTEDTV'
+application-label-pt:'SMARTEDTV'
+application-label-pt-BR:'SMARTEDTV'
+application-label-pt-PT:'SMARTEDTV'
+application-label-ro:'SMARTEDTV'
+application-label-ru:'SMARTEDTV'
+application-label-ru-RU:'SMARTEDTV'
+application-label-si:'SMARTEDTV'
+application-label-sk:'SMARTEDTV'
+application-label-sk-SK:'SMARTEDTV'
+application-label-sl:'SMARTEDTV'
+application-label-sl-SI:'SMARTEDTV'
+application-label-sq:'SMARTEDTV'
+application-label-sr:'SMARTEDTV'
+application-label-sr-Latn:'SMARTEDTV'
+application-label-sv:'SMARTEDTV'
+application-label-sv-SE:'SMARTEDTV'
+application-label-sw:'SMARTEDTV'
+application-label-ta:'SMARTEDTV'
+application-label-te:'SMARTEDTV'
+application-label-th:'SMARTEDTV'
+application-label-tl:'SMARTEDTV'
+application-label-tr:'SMARTEDTV'
+application-label-tr-TR:'SMARTEDTV'
+application-label-uk:'SMARTEDTV'
+application-label-uk-UA:'SMARTEDTV'
+application-label-ur:'SMARTEDTV'
+application-label-uz:'SMARTEDTV'
+application-label-vi:'SMARTEDTV'
+application-label-vi-VN:'SMARTEDTV'
+application-label-zh-CN:'SMARTEDTV'
+application-label-zh-HK:'SMARTEDTV'
+application-label-zh-TW:'SMARTEDTV'
+application-label-zu:'SMARTEDTV'
+application-icon-120:'res/drawable-ldpi/ic_launcher.png'
+application-icon-160:'res/drawable-mdpi/ic_launcher.png'
+application-icon-240:'res/drawable-hdpi/ic_launcher.png'
+application-icon-320:'res/drawable-xhdpi/ic_launcher.png'
+application-icon-480:'res/drawable-xxhdpi/ic_launcher.png'
+application-icon-640:'res/drawable-xxxhdpi/ic_launcher.png'
+application: label='SMARTEDTV' icon='res/drawable-mdpi/ic_launcher.png' banner='res/drawable-xhdpi/banner.png'
+launchable-activity: name='org.xbmc.kodi.Splash'  label='' icon=''
+leanback-launchable-activity: name='org.xbmc.kodi.Splash'  label='' icon='' banner=''
+uses-permission: name='android.permission.READ_EXTERNAL_STORAGE'
+uses-implied-permission: name='android.permission.READ_EXTERNAL_STORAGE' reason='requested WRITE_EXTERNAL_STORAGE'
+feature-group: label=''
+  uses-feature-not-required: name='android.hardware.bluetooth'
+  uses-feature-not-required: name='android.hardware.microphone'
+  uses-feature: name='android.
+```
