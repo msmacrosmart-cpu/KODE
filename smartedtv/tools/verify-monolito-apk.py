@@ -273,6 +273,15 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
         else:
             rel.falha("base estável", f"{MANIFESTO_BASE} ausente no APK")
 
+    # ------------------------------------------------------- TV x celular
+    rel.titulo("Android TV e celular no mesmo APK")
+    for rotulo, agulha in (
+        ("touchscreen opcional", b'android.hardware.touchscreen'),
+        ("leanback opcional", b'android.software.leanback'),
+        ("launcher de TV", b'LEANBACK_LAUNCHER'),
+    ):
+        rel.exige(agulha in arvore.encode("utf-8", "replace"), rotulo, agulha.decode())
+
     # -------------------------------------------------------------------- dex
     rel.titulo("classes no dex (anúncios dentro do app)")
     for rotulo, agulha in (

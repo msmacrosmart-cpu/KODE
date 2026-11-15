@@ -270,6 +270,9 @@ else
   echo '    A: android:screenOrientation(0x0101001e)=0x6'
   echo '    A: android:value(0x01010024)="ca-app-pub-2066014755407744~5076693043"'
   echo '    A: android:name(0x01010003)="com.google.android.gms.permission.AD_ID"'
+  echo '    A: android:name(0x01010003)="android.hardware.touchscreen"'
+  echo '    A: android:name(0x01010003)="android.software.leanback"'
+  echo '    A: android:name(0x01010003)="android.intent.category.LEANBACK_LAUNCHER"'
 fi
 """, encoding="utf-8")
         caminho.chmod(0o755)
