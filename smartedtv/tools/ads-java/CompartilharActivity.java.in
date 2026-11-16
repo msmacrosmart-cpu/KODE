@@ -7,7 +7,9 @@ import android.util.Log;
 
 /**
  * "Compartilhar Aplicativo": abre a folha de compartilhamento do Android
- * (WhatsApp, Telegram, e-mail...) com o convite e o link do app.
+ * (WhatsApp, Telegram, e-mail...) com o link de download do APK.
+ *
+ * O QR do celular (resources/qrcode.png) leva ao mesmo endereço.
  *
  * Chamada pelo add-on do Kodi:
  *   StartAndroidActivity(smartedtv.full, smartedtv.COMPARTILHAR, , smartedtv://compartilhar?texto=...)
@@ -15,9 +17,12 @@ import android.util.Log;
 public class CompartilharActivity extends Activity {
 
     private static final String TAG = "SmartAds";
-    private static final String LINK = "https://smartedtv-vip.lovable.app/";
+    /** Mesmo endereço do QR de compartilhamento (resources/qrcode.png). */
+    private static final String LINK =
+            "https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/SMARTEDTV-atual.apk"
+                    + "?rlkey=yp1ijxk6fdtcqm93gzi24ig5j&dl=1";
     private static final String CONVITE =
-            "Estou usando o SMARTEDTV e recomendo! Instale e assista TV, filmes e séries: " + LINK;
+            "Instale o SMARTEDTV (TV, filmes e séries): " + LINK;
 
     @Override
     protected void onCreate(Bundle estado) {

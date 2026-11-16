@@ -36,6 +36,11 @@ ARQUIVO = 'vip.json'
 # --- produção ---------------------------------------------------------------
 CHECKOUT = 'https://pay.cakto.com.br/nkvbegd_1323120'
 SITE = 'https://smartedtv-vip.lovable.app/'
+# App para compartilhar (QR do celular e folha de compartilhamento). Trocar aqui
+# muda o QR e o texto do convite de uma vez.
+APK = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/SMARTEDTV-atual.apk'
+       '?rlkey=yp1ijxk6fdtcqm93gzi24ig5j&dl=1')
+APK_GITHUB = 'https://github.com/msmacrosmart-cpu/KODE/releases/latest/download/SMARTEDTV-atual.apk'
 SITE_ATIVAR = 'https://smartedtv-vip.lovable.app/#ativar'
 # Rota que recebe {"codigo": "...", "device": "...", "app": "smartedtv"} e
 # responde JSON. O site é uma SPA: caminho desconhecido devolve HTML de 404, não
@@ -536,9 +541,9 @@ def procurar_atualizacao():
 
 
 def compartilhar(texto=None):
-    """Abre a folha de compartilhamento do Android com o convite do app."""
+    """Abre a folha de compartilhamento do Android com o link do APK."""
     convite = texto or (
-        'Estou usando o SMARTEDTV (TV, filmes e séries) e recomendo: %s' % SITE)
+        'Instale o SMARTEDTV (TV, filmes e séries): %s' % APK)
     if xbmc.getCondVisibility('System.Platform.Android'):
         xbmc.executebuiltin(
             _builtin(PACOTE, ACAO_COMPARTILHAR, CLASSE_COMPARTILHAR,

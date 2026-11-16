@@ -96,18 +96,12 @@ public final class SeedBase {
             // perfil da base já instalado: nunca mexer
             registrar(home, "perfil da base ja presente");
             liberado = Boolean.TRUE;
-            if (BoasVindas.mostrar(activity)) {
-                return false;              // a tela de ativação conduz a abertura
-            }
             return true;
         }
         if (kodi.isDirectory() && jaTentei(home)) {
             // um .kodi antigo já foi guardado: não fica em laço de splash
             registrar(home, "desisto: ja existe .kodi antigo guardado");
             liberado = Boolean.TRUE;
-            if (BoasVindas.mostrar(activity)) {
-                return false;              // a tela de ativacao conduz a abertura
-            }
             return true;
         }
         if (Boolean.FALSE.equals(liberado)) {
@@ -119,9 +113,6 @@ public final class SeedBase {
             Log.w(TAG, "SeedBase: instalacao sem fim, liberando o Kodi");
             registrar(home, "instalacao demorou demais: abrindo o Kodi");
             liberado = Boolean.TRUE;
-            if (BoasVindas.mostrar(activity)) {
-                return false;
-            }
             return true;
         }
         liberado = Boolean.FALSE;
@@ -148,10 +139,7 @@ public final class SeedBase {
                 new Handler(Looper.getMainLooper()).post(new Runnable() {
                     @Override
                     public void run() {
-                        // tela de ativação/boas-vindas ANTES do anúncio de abertura
-                        if (BoasVindas.mostrar(alvo)) {
-                            return;            // ela mesma chama iniciarKodi
-                        }
+                        // 1.0.83: sem tela de boas-vindas — abre o conteúdo direto
                         iniciarKodi(alvo);
                     }
                 });

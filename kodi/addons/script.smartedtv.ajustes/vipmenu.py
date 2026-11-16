@@ -13,8 +13,8 @@ Rotas:
     plugin://script.smartedtv.ajustes/                 -> menu
     plugin://script.smartedtv.ajustes/?acao=comprar    -> checkout Cakto
     plugin://script.smartedtv.ajustes/?acao=codigo     -> menu de ajustes (código)
-    plugin://script.smartedtv.ajustes/?acao=compartilhar
-    plugin://script.smartedtv.ajustes/?acao=qrcode     -> QR do site
+    plugin://script.smartedtv.ajustes/?acao=qrcode     -> QR do APK (celular aponta)
+    plugin://script.smartedtv.ajustes/?acao=compartilhar -> link do APK
     plugin://script.smartedtv.ajustes/?acao=continuar  -> retoma o último ponto
 
 Nada aqui depende do plugin de conteúdo: só chama o serviço (vip/retomar) ou um
@@ -32,6 +32,9 @@ import xbmcplugin
 
 BASE = 'plugin://script.smartedtv.ajustes/'
 SITE = 'https://smartedtv-vip.lovable.app/'
+# Onde o app é baixado: o QR da opção "Compartilhar" aponta para cá.
+APK = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/SMARTEDTV-atual.apk'
+       '?rlkey=yp1ijxk6fdtcqm93gzi24ig5j&dl=1')
 
 
 def _servico():
@@ -61,14 +64,14 @@ def _modulos():
 
 def acoes(vip, retomar):
     lista = [
-        ('Assistir sem anúncios (VIP)', 'comprar',
-         'Plano de R$ 24,90/mês, pagamento pela Cakto'),
+        ('Assinar o VIP (link da Cakto)', 'comprar',
+         'pay.cakto.com.br/nkvbegd_1323120'),
         ('Já tenho um código', 'codigo',
          'Insira o código de ativação e desligue os anúncios'),
-        ('Compartilhar aplicativo', 'compartilhar',
-         'Envie o convite pelo WhatsApp, Telegram ou e-mail'),
-        ('Mostrar QR Code', 'qrcode',
-         'Aponte a câmera do celular para baixar o app'),
+        ('Compartilhar o app (QR no celular)', 'qrcode',
+         'Aponte a câmera do celular para baixar o APK'),
+        ('Enviar o link do app', 'compartilhar',
+         'WhatsApp, Telegram ou e-mail com o link do APK'),
         ('Procurar atualização', 'atualizar',
          'Verifica se existe uma versão nova do aplicativo'),
     ]
@@ -98,12 +101,14 @@ def menu(handle):
 
 
 def mostrar_qr():
+    """Mostra o QR do APK — o celular aponta a câmera e baixa o app."""
     qr = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'qrcode.png')
     if os.path.isfile(qr):
         xbmc.executebuiltin('ShowPicture(%s)' % qr)
+        xbmc.executebuiltin('Notification(SMARTEDTV, QR do app no celular, 6000)')
         return True
     xbmcgui.Dialog().ok('SMARTEDTV', 'QR Code indisponível neste aparelho.',
-                        'Baixe o app em ' + SITE)
+                        'Baixe o app em ' + APK)
     return False
 
 
@@ -113,12 +118,22 @@ def executar(acao):
         if vip is not None:
             vip.abrir_checkout()
         else:
-            xbmcgui.Dialog().ok('SMARTEDTV VIP', 'Checkout: pay.cakto.com.br/nkvbegd_1323120')
+            xbmcgui.Dialog().ok('SMARTEDTV VIP',
+                                'https://pay.cakto.com.br/nkvbegd_1323120')
     elif acao == 'codigo':
         xbmc.executebuiltin('RunAddon(script.smartedtv.ajustes)')
     elif acao == 'compartilhar':
-        if vip is not None:
-            vip.compartilhar()
+        # o atalho "Compartilhar" da Home: QR para o celular ou o link do APK
+        escolha = xbmcgui.Dialog().select(
+            'Compartilhar o app',
+            ['Mostrar o QR (celular aponta a câmera)', 'Enviar o link do app'])
+        if escolha == 0:
+            mostrar_qr()
+        elif escolha == 1:
+            if vip is not None:
+                vip.compartilhar()
+            else:
+                xbmcgui.Dialog().ok('SMARTEDTV', APK)
     elif acao == 'qrcode':
         mostrar_qr()
     elif acao == 'atualizar':

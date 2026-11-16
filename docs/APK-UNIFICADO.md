@@ -1035,3 +1035,29 @@ convertidas para dp (1 px do blueprint = 0,68 dp sobre o quadro de 960x540).
   descrição 10,5 sp, etiquetas 9,5 sp, botões 10,5 sp e barra 12 sp;
 * telas de escolha TV/Celular, validação no servidor, cão de guarda de 2 min e
   saída para o Kodi sem mudanças.
+
+## 1.0.83 — sem tela de boas-vindas; VIP só com o link da Cakto; compartilhar pelo QR
+
+Mudança de rumo pedida pelo usuário: a tela inicial de boas-vindas/login saiu de
+vez e o app abre direto no conteúdo.
+
+* **tela removida** — `BoasVindas.java.in` e `Plataforma.java.in` foram
+  apagados; o `SeedBase` voltou a chamar `iniciarKodi(...)` em todos os
+  caminhos (perfil pronto, `.kodi` antigo guardado, instalação concluída). A
+  splash e o OTA continuam iguais, e o `docs/boas-vindas-blueprint.html` (e as
+  capturas) foram removidos;
+* **opções VIP com o link da Cakto** — o menu (`script.smartedtv.ajustes`)
+  mostra "Assinar o VIP (link da Cakto)" com
+  `pay.cakto.com.br/nkvbegd_1323120` na descrição e abre o checkout; o preço
+  saiu da tela (valor e condições ficam no checkout). "Já tenho um código"
+  continua para ativar o VIP;
+* **compartilhar = QR do APK** — o atalho "Compartilhar" da Home abre a escolha
+  **Mostrar o QR** (celular aponta a câmera) ou **Enviar o link do app**
+  (folha do Android). O QR (`resources/qrcode.png`, 512×512) e o texto do
+  convite (`CompartilharActivity`) apontam para o APK no Dropbox
+  (`/SMARTEDTV-atual.apk`, `dl=1`); a constante `APK` em `vip.py`/`vipmenu.py`
+  troca os dois de uma vez;
+* **menu de ajustes** — 1) Assinar o VIP (link da Cakto), 2) Já tenho um
+  código, 3) Enviar o link do app, 4) Compartilhar o app (QR no celular),
+  5) Procurar atualização, 6) Configurações do Kodi;
+* validados 439 testes; javac do CI compila as 12 classes restantes do app.

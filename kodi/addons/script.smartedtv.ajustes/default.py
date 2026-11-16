@@ -3,10 +3,10 @@
 
 Abre o diálogo "Deseja assistir sem anúncios?" com:
 
-  1. Sim, quero o VIP (R$ 24,90)  -> checkout da Cakto
+  1. Sim, quero o VIP             -> link da Cakto (pay.cakto.com.br)
   2. Já tenho um código           -> teclado do Kodi -> valida no site
-  3. Compartilhar aplicativo      -> folha de compartilhamento do Android
-  4. Mostrar QR Code              -> QR do site para o celular apontar
+  3. Enviar o link do app         -> folha de compartilhamento do Android
+  4. Compartilhar o app (QR)      -> QR do APK para o celular apontar
   5. Procurar atualização         -> OTA: link fixo com a versão mais nova
   6. Configurações do Kodi        -> janela normal de ajustes
 
@@ -45,10 +45,10 @@ def _status():
 
 def _dialogo():
     opcoes = [
-        'Assistir sem anúncios (VIP R$ 24,90)',
+        'Assinar o VIP (link da Cakto)',
         'Já tenho um código de ativação',
-        'Compartilhar aplicativo',
-        'Mostrar QR Code para baixar o app',
+        'Enviar o link do app',
+        'Compartilhar o app (QR no celular)',
         'Procurar atualização do aplicativo',
         'Configurações do Kodi',
     ]
@@ -74,14 +74,15 @@ def _ativar():
 
 
 def _mostrar_qr():
-    """Abre o QR do site como imagem; sem arquivo, mostra o link no diálogo."""
+    """Abre o QR do APK como imagem; sem arquivo, mostra o link no diálogo."""
     qr = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'qrcode.png')
-    site = getattr(vip, 'SITE', 'https://smartedtv-vip.lovable.app/') if vip else 'https://smartedtv-vip.lovable.app/'
+    apk = getattr(vip, 'APK', '') if vip else ''
     if os.path.isfile(qr):
         xbmc.executebuiltin('ShowPicture(%s)' % qr)
+        xbmc.executebuiltin('Notification(SMARTEDTV, QR do app no celular, 6000)')
         return True
     xbmcgui.Dialog().ok('SMARTEDTV', 'QR Code indisponível neste aparelho.',
-                        'Baixe o app em ' + site)
+                        'Baixe o app em ' + apk)
     return False
 
 
@@ -99,8 +100,8 @@ def main():
                 vip.abrir_checkout()
         else:
             if xbmcgui.Dialog().yesno('SMARTEDTV VIP',
-                                      'Assinar o Plano VIP por R$ 24,90?',
-                                      'Zero anúncios. Pagamento pela Cakto (Pix ou cartão).',
+                                      'Assinar o VIP?',
+                                      'pay.cakto.com.br/nkvbegd_1323120',
                                       nolabel='Agora não', yeslabel='Ir para o pagamento'):
                 vip.abrir_checkout()
     elif escolha == 1:
