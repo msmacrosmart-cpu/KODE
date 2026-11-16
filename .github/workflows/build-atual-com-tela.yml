@@ -27,8 +27,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       BASE_RELEASE: v1.0.83-unificado
       BASE_ASSET: SMARTEDTV-atual.apk
-      TAG_SAIDA: v1.0.83-tela-inicial-v5
-      FINAL: SMARTEDTV-atual-com-tela-inicial-v5.apk
+      TAG_SAIDA: v1.0.83-tela-inicial-v6
+      FINAL: SMARTEDTV-atual-com-tela-inicial-v6.apk
     steps:
       - uses: actions/checkout@v4
 
@@ -259,7 +259,7 @@ jobs:
               "build/tela-entrada-prova.png" "build/tela-entrada-dialogo.png" \
               "build/tela-entrada-status.png" \
               --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title 'SMARTEDTV 1.0.83 + tela inicial do pacote smartedtv-src (v5, tipografia revisada)' \
+              --title 'SMARTEDTV 1.0.83 + tela inicial do pacote smartedtv-src (v6, layout reestruturado)' \
               --notes 'APK atual (release v1.0.83-unificado) preservado integralmente: mesma versao, mesmo motor, mesma assinatura. A tela inicial e agora a do pacote smartedtv-src (Dropbox), substituindo por completo a tela anterior: layout HORIZONTAL 1920x1080 traduzido do HTML/CSS do pacote (o modo retrato do CSS nao e usado), texturas geradas a partir do proprio styles.css (gradiente radial do fundo, cartoes de vidro, botoes, pilulas de plano, placa do QR) e os DOIS QR Codes copiados byte a byte (qr-checkout.png e qr-apk.png). O addon script.smartedtv.welcome e injetado no APK e o Startup.xml de cada skin abre a tela NO LUGAR da Home (WINDOW_STARTUP_ANIM, a janela que o CApplication::Initialize do Kodi 21 carrega antes de criar a Home 10000). A Home so e carregada quando o usuario conclui a tela (continuar com anuncios, apos confirmacao, ou Voltar); enquanto a tela esta no ar nenhum comando vai para a Home. Ha um seguro de 30 s no proprio Startup.xml e um caminho de fallback no Python: se a tela nao abrir, a Home abre igual, o app nunca fica preso. As acoes reutilizam o que ja existe no app: codigo de ativacao -> vip.validar (rotas reais /api/validar e /functions/v1/validar-codigo), checkout -> vip.abrir_checkout (pay.cakto.com.br), compartilhar -> vip.compartilhar, baixar APK -> vip.abrir_url(APK) e atualizar -> vip.procurar_atualizacao. O service.smarted.bootstrap nao foi alterado. As skins do app ganharam as fontes wfNN que a tela usa (sem elas o Kodi cairia em font13). A revisao tipografica (v5) foi medida letra a letra com a fonte real: nenhum texto estoura o controle, encosta em icone, e cortado no topo/base ou usa glifo ausente (o auditor roda na CI e reprova o build se algo voltar). Os dois dialogos ganharam fundo solido proprio, e a mensagem de status usa textbox com quebra, porque o texto vem do servidor e pode ser longo. A prova visual (tela-entrada-prova.png, tela-entrada-dialogo.png e tela-entrada-status.png) e desenhada a partir do proprio DialogWelcome.xml + media do addon; nao houve execucao em Kodi real neste ambiente.'
           fi
           echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_SAIDA/$FINAL"
