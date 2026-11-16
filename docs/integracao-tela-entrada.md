@@ -104,6 +104,27 @@ comando que o `Startup.xml` original usava.
   igual e o motivo vai para o log.
 - Se o Python nem iniciar, o seguro de 30 s do `Startup.xml` abre a Home.
 
+## 4b. Tipografia: a regra que o build não deixa quebrar
+
+O layout nasceu de um HTML/CSS e o Kodi **não** tem layout automático: cada
+texto é uma caixa fixa em 1080p e o que não cabe é cortado em silêncio. Por isso
+todo texto passa por medição com a fonte real:
+
+- a altura de cada `<label>` vem de `altura_linha()` (ascendente + descendente da
+  Noto Sans naquele tamanho), não de um multiplicador estimado — é o que evita
+  cortar "ã", "ç", "J", "g" e "p";
+- onde o texto precisa quebrar linha há **uma `<label>` por linha**, medida, em
+  vez de `[CR]` (o `[CR]` só quebra dentro de `<textbox>`);
+- a mensagem do servidor no diálogo de status é `<textbox>`: o texto é dinâmico
+  e pode ser longo, então quebra sozinho e corta com "..." dentro da caixa;
+- botão com ícone tem folga simétrica dos dois lados (`texto + 2×(ícone+folga)`),
+  porque o Kodi centraliza o rótulo no botão;
+- todo botão precisa de textura de foco diferente da normal (D-pad sem realce =
+  usuário não sabe onde está).
+
+O `tools/kodi/auditar-tela-entrada.py` mede isso (37 textos no total) e roda na
+CI como passo bloqueante; há também testes em `tests/test_tela_entrada.py`.
+
 ## 5. Como conferir
 
 ```bash
@@ -117,16 +138,24 @@ python3 -m unittest tests.test_tela_entrada tests.test_injetor_tela_entrada
 python3 tools/kodi/injetar-tela-entrada.py --apk atual.apk --saida bruto.apk
 python3 tools/kodi/simular-boot-tela-entrada.py --apk bruto.apk
 
-# 4. prova visual a partir do próprio XML da tela
+# 4. auditoria tipográfica: mede CADA texto com a fonte real no px do Kodi e
+#    reprova estouro, corte de acento/descendente, encosto em ícone/borda,
+#    glifo ausente (tofu) e botão sem realce de foco
+python3 tools/kodi/auditar-tela-entrada.py          # relatório
+python3 tools/kodi/auditar-tela-entrada.py --falhar # sai 1 (usado na CI)
+
+# 5. prova visual a partir do próprio XML da tela
 python3 tools/kodi/renderizar-tela-entrada.py --saida prova.png
 python3 tools/kodi/renderizar-tela-entrada.py --dialogo ads --saida dialogo.png
+python3 tools/kodi/renderizar-tela-entrada.py --dialogo status --saida status.png
 
-# 5. regerar a tela a partir do pacote (se o pacote mudar)
+# 6. regerar a tela a partir do pacote (se o pacote mudar)
 python3 tools/kodi/gerar-tela-entrada.py --origem build_test/src_novo/smartedtv
 ```
 
 O workflow `.github/workflows/build-atual-com-tela.yml` faz tudo isso e publica
-o APK assinado na tag `v1.0.83-tela-inicial-v4`.
+o APK assinado na tag `v1.0.83-tela-inicial-v5`, e reprova o build se a
+auditoria tipográfica ou o mapa de botões falharem.
 
 ## 6. Limitações declaradas
 
@@ -145,17 +174,22 @@ o APK assinado na tag `v1.0.83-tela-inicial-v4`.
 
 ## 7. Resultado deste build
 
-- Release: `v1.0.83-tela-inicial-v4`
-- APK: `SMARTEDTV-atual-com-tela-inicial-v4.apk`, 249.852.599 bytes,
-  SHA-256 `2d71cc31f33d4f8d1775d83c44fa2371345a3327b71150390c9296c1e7ca7bec`
+- Release: `v1.0.83-tela-inicial-v5`
+- APK: `SMARTEDTV-atual-com-tela-inicial-v5.apk`, 249.861.331 bytes,
+  SHA-256 `ce6c323926ac7554f28f07cc39d1c73430625812b6fd235b36086ae7b7edbd8c`
 - Assinatura: `855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`
   (a mesma do app; v1/v2/v3 verificados pelo `apksigner`)
-- Delta sobre o APK atual: +31 arquivos (o addon da tela), 0 removidos e 7
+- Delta sobre o APK atual: +33 arquivos (o addon da tela), 0 removidos e 7
   arquivos alterados (`Startup.xml` e `Font.xml` das 3 skins +
   `assets/system/addon-manifest.xml`).
 - Conferido no arquivo final: `Startup.xml` das 3 skins com 2 `onload` e um único
   `ReplaceWindow` (o do seguro); addon registrado como
   `<addon optional="true">`; 2731 arquivos do perfil semeado intactos;
   `service.smarted.bootstrap` sem alteração.
-- Workflow `43933041529` (todos os passos verdes), incluindo o passo
-  "conferir que nada mais mudou", a simulação de boot e a assinatura.
+- Workflow `43967218564` (todos os passos verdes), incluindo auditoria
+  tipográfica, mapa de botões, "conferir que nada mais mudou", a simulação de
+  boot e a assinatura.
+- Conferido no arquivo publicado: os 31 arquivos da tela dentro do APK são
+  idênticos, byte a byte, aos do repositório; `Font.xml` das skins declara
+  `wf13 wf15 wf17 wf18 wf21 wf22 wf26 wf33 wf42`; o certificado é o mesmo do APK
+  base (`855de171…0951a`), e os digests do `MANIFEST.MF` conferem.
