@@ -238,8 +238,7 @@ class VerificadorDoApkTest(unittest.TestCase):
                                        b"AppOpenActivity PreRollActivity SmartAds "
                                        b"perfilSmarted .kodi.antigo- smarted-seed.log "
                        b"Licenca adsPermitidos AbrirUrlActivity CompartilharActivity "
-                       b"BoasVindas iniciarKodi Plataforma Supabase "
-                       b"qrcode-cakto "
+                       b"iniciarKodi Supabase qrcode.png "
                        b"Atualizacao OtaProvider AtualizaActivity atualizacao.json "
                        b".ota application/vnd.android.package-archive "
                                        b"com/google/android/gms/ads"))
