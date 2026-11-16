@@ -1,0 +1,177 @@
+# Build do APK ATUAL + apenas a tela inicial entregue no ZIP.
+#
+# Nao compila o Kodi, nao baixa/renomeia skin Bingie e nao muda versao: pega o
+# APK publicado na release atual, injeta o addon script.smartedtv.welcome (os
+# 15 arquivos do ZIP), liga o RunScript no service.smarted.bootstrap que ja
+# existe no APK, realinha e reassina com a MESMA chave do app.
+name: SMARTEDTV - APK atual + tela inicial do ZIP
+
+on:
+  # o push registra o workflow num branch que nao e o default; o job roda nele
+  # mesmo (e pode ser repetido por workflow_dispatch sem efeitos colaterais)
+  push:
+    branches: [arena/4c9d3a92-kode]
+    paths: [.github/workflows/build-atual-com-tela.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  injetar:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BASE_RELEASE: v1.0.83-unificado
+      BASE_ASSET: SMARTEDTV-atual.apk
+      TAG_SAIDA: v1.0.83-tela-inicial
+      FINAL: SMARTEDTV-atual-com-tela-inicial.apk
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Teste estatico (XML + Python)
+        run: python3 tools/kodi/static-check.py
+
+      - name: 2. Baixar o APK atual publicado
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          gh release download "$BASE_RELEASE" --repo "$GITHUB_REPOSITORY" \
+            --pattern "$BASE_ASSET" --dir build --clobber
+          mv "build/$BASE_ASSET" build/atual.apk
+          sha256sum build/atual.apk | tee build/atual.sha256
+          ls -lh build/atual.apk
+
+      - name: 3. Diagnostico do APK atual (o que sera preservado)
+        run: |
+          python3 - <<'PY'
+          import zipfile
+          z = zipfile.ZipFile('build/atual.apk')
+          nomes = z.namelist()
+          print('entradas:', len(nomes))
+          print('bootstrap no APK:', 'assets/addons/service.smarted.bootstrap/service.py' in nomes)
+          print('addon-manifest:', 'assets/system/addon-manifest.xml' in nomes)
+          print('perfil semeado:', sum(1 for n in nomes if n.startswith('assets/smarted/profile/')))
+          print('skins:', sorted({n.split('/')[2] for n in nomes
+                                  if n.startswith('assets/addons/skin.') and len(n.split('/')) > 2}))
+          print('addons smarted/brazuca:', sorted({n.split('/')[2] for n in nomes
+                                  if n.startswith('assets/addons/') and len(n.split('/')) > 2
+                                  and ('smarted' in n or 'brazuca' in n.lower())}))
+          print('tela ja presente:', any('script.smartedtv.welcome' in n for n in nomes))
+          m = z.read('assets/system/addon-manifest.xml').decode('utf-8')
+          print('manifest (fim):', m.strip().splitlines()[-5:])
+          print('assinaturas:', [n for n in nomes if n.startswith('META-INF/')
+                                 and n.endswith(('.RSA', '.SF', '.MF'))])
+          PY
+
+      - name: 4. Ferramentas de assinatura (Java + apksigner)
+        run: |
+          export KODE_BUILD_HOME="$RUNNER_TEMP/kode-build"
+          ./tools/kodi/setup.sh
+          echo "KODE_BUILD_HOME=$KODE_BUILD_HOME" >> "$GITHUB_ENV"
+
+      - name: 5. Injetar SOMENTE a tela inicial
+        run: |
+          set -euo pipefail
+          python3 tools/kodi/injetar-tela-entrada.py \
+            --apk build/atual.apk --saida build/bruto.apk
+
+      - name: 6. Conferir que nada mais mudou
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, zipfile, xml.etree.ElementTree as ET
+          ADDON = 'script.smartedtv.welcome'
+          PREFIX = 'assets/addons/' + ADDON + '/'
+          with zipfile.ZipFile('build/atual.apk') as antes, \
+               zipfile.ZipFile('build/bruto.apk') as depois:
+              a = set(antes.namelist()); d = set(depois.namelist())
+              novos = sorted(n for n in d - a if not n.startswith('META-INF/'))
+              removidos = sorted(n for n in a - d if not n.startswith('META-INF/'))
+              assert len(novos) == 15 and all(n.startswith(PREFIX) for n in novos), novos
+              assert not removidos, removidos
+              alterados = [n for n in sorted(a & d) if antes.read(n) != depois.read(n)]
+              esperado = ['assets/addons/service.smarted.bootstrap/service.py',
+                          'assets/system/addon-manifest.xml']
+              assert alterados == esperado, alterados
+              perfil = [n for n in a if n.startswith('assets/smarted/profile/')]
+              assert perfil and all(antes.read(n) == depois.read(n) for n in perfil)
+              for n in a:
+                  if n.startswith(PREFIX):
+                      raise SystemExit('APK base ja tinha a tela: ' + n)
+              layout = ET.fromstring(depois.read(PREFIX + 'resources/skins/Default/1080i/DialogWelcome.xml'))
+              assert layout.tag == 'window'
+              assert depois.read(PREFIX + 'resources/skins/Default/media/qr_1.png')[:8] == b'\x89PNG\r\n\x1a\n'
+              assert depois.read(PREFIX + 'resources/skins/Default/media/qr_2.png')[:8] == b'\x89PNG\r\n\x1a\n'
+              svc = depois.read('assets/addons/service.smarted.bootstrap/service.py').decode('utf-8')
+              assert "'RunScript(%s)' % WELCOME_ADDON" in svc and "name='welcome-entry'" in svc
+              compile(svc, 'service.py', 'exec')
+              man = depois.read('assets/system/addon-manifest.xml').decode('utf-8')
+              assert '>%s<' % ADDON in man
+              ET.fromstring(man)
+          print('OK: 15 arquivos novos, 2 arquivos adaptados, %d arquivos do perfil intactos' % len(perfil))
+          print('OK: demais entradas do APK byte a byte identicas ao atual')
+          PY
+
+      - name: 7. Alinhar e assinar com a mesma chave
+        run: |
+          set -euo pipefail
+          python3 tools/kodi/align-apk.py build/bruto.apk build/alinhado.apk
+          JAVA="$KODE_BUILD_HOME/python/jdk4py/java-runtime/bin/java"
+          SIGNER="$KODE_BUILD_HOME/tools/apksigner.jar"
+          "$JAVA" -jar "$SIGNER" sign \
+            --ks dropbox/smarted-tv-test.jks \
+            --ks-pass pass:android --key-pass pass:android \
+            --ks-key-alias smarted-tv-test \
+            --v1-signing-enabled true --v2-signing-enabled true \
+            --v3-signing-enabled true --v4-signing-enabled false \
+            --out "build/$FINAL" build/alinhado.apk
+          "$JAVA" -jar "$SIGNER" verify --verbose --print-certs "build/$FINAL" \
+            | tee build/certs.txt
+          grep -qi "855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a" build/certs.txt \
+            || { echo "::error::certificado diferente do app atual"; exit 1; }
+          rm -f build/bruto.apk build/alinhado.apk
+          ( cd build && sha256sum "$FINAL" > "$FINAL.sha256" )
+          ls -lh "build/$FINAL"
+          cat "build/$FINAL.sha256"
+
+      - name: 8. Publicar release (tag propria, nao sobrescreve a atual)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG_SAIDA" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG_SAIDA" "build/$FINAL" "build/$FINAL.sha256" \
+              --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG_SAIDA" "build/$FINAL" "build/$FINAL.sha256" \
+              --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title 'SMARTEDTV 1.0.83 + tela inicial do ZIP' \
+              --notes 'APK atual (release v1.0.83-unificado) preservado integralmente: mesma skin, mesma versao, mesmo motor, mesma assinatura. Unica adicao: o addon script.smartedtv.welcome (tela inicial 100% identica ao ZIP, inclusive os QR Codes) e o gancho de boot no service.smarted.bootstrap. Nenhuma skin Bingie foi baixada ou trocada.'
+          fi
+          echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_SAIDA/$FINAL"
+
+      - name: 9. Blobs para reconstruir o APK no workspace do agente
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, os, pathlib, subprocess
+          apk = pathlib.Path('build') / os.environ['FINAL']
+          dados = apk.read_bytes()
+          pedaco = 20 * 1024 * 1024
+          repo = os.environ['GITHUB_REPOSITORY']
+          shas = []
+          for i in range(0, len(dados), pedaco):
+              corpo = json.dumps({'content': base64.b64encode(dados[i:i + pedaco]).decode(),
+                                  'encoding': 'base64'})
+              p = subprocess.run(['gh', 'api', '-X', 'POST',
+                                  'repos/%s/git/blobs' % repo, '--input', '-'],
+                                 input=corpo.encode(), capture_output=True, check=True)
+              shas.append(json.loads(p.stdout)['sha'])
+          print('APK_BLOBS=' + ','.join(shas), flush=True)
+          print('APK_TAMANHO=%d' % len(dados), flush=True)
+          print('APK_SHA256=' + hashlib.sha256(dados).hexdigest(), flush=True)
+          PY

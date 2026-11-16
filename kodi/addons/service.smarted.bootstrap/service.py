@@ -33,6 +33,12 @@ REPAIR_ATTEMPTS = 6
 REPAIR_RETRY_SECONDS = 5
 UISOUNDS_SILENCIO = 'resource.uisounds.silencio'
 
+# Tela de entrada entregue no ZIP: addon independente (WindowXMLDialog).
+# Nao substitui a Home: o dialogo e modal e cobre 1920x1080.
+WELCOME_ADDON = 'script.smartedtv.welcome'
+WELCOME_TENTATIVAS = 6
+WELCOME_ESPERA = 1
+
 
 def log(message, level=xbmc.LOGINFO):
     xbmc.log('[%s] %s' % (ADDON_ID, message), level)
@@ -245,10 +251,54 @@ def repair_until_ready(monitor):
     return report, REPAIR_ATTEMPTS
 
 
+def abrir_tela_entrada(monitor):
+    """Abre a tela do ZIP uma unica vez por inicializacao do SMARTEDTV.
+
+    O dialogo e independente: aparece na frente da interface principal, sem
+    substitui-la, e devolve o controle a ela quando o usuario conclui uma acao
+    ou pressiona Voltar. Nenhum fluxo novo e criado aqui.
+    """
+    # O perfil semeado de versoes anteriores pode nao conhecer o addon novo:
+    # reaproveita o mecanismo de habilitacao por JSON-RPC ja usado no boot.
+    instalado = False
+    for tentativa in range(WELCOME_TENTATIVAS):
+        if monitor.abortRequested():
+            return
+        enable_addons([WELCOME_ADDON])
+        instalado = bool(xbmc.getCondVisibility('System.HasAddon(%s)' % WELCOME_ADDON))
+        if instalado:
+            break
+        xbmc.executebuiltin('UpdateLocalAddons()')
+        if monitor.waitForAbort(WELCOME_ESPERA):
+            return
+    if not instalado:
+        log('tela de entrada indisponivel: addon %s nao encontrado' % WELCOME_ADDON,
+            xbmc.LOGWARNING)
+        return
+    # RunScript precisa do gerenciador de janelas pronto; a Home (10000) e a
+    # interface principal que continua existindo por baixo do dialogo.
+    for tentativa in range(WELCOME_TENTATIVAS):
+        if monitor.abortRequested():
+            return
+        if xbmc.getCondVisibility('Window.IsActive(10000)'):
+            break
+        if monitor.waitForAbort(WELCOME_ESPERA):
+            return
+    xbmc.executebuiltin('RunScript(%s)' % WELCOME_ADDON)
+    log('tela de entrada aberta: %s' % WELCOME_ADDON)
+
+
 def main():
     monitor = xbmc.Monitor()
     log('startup: preparando o Brazuca Play')
     xbmc.executebuiltin('Notification(SMARTED, Preparando o conteudo..., 4000)')
+
+    # Entrada inicial do ZIP em thread propria: nao atrasa o preparo do
+    # conteudo e nao altera nenhuma janela/tela existente do aplicativo.
+    entrada = threading.Thread(target=abrir_tela_entrada, args=(monitor,),
+                               name='welcome-entry')
+    entrada.daemon = True
+    entrada.start()
 
     waited = 0
     while waited < WAIT_SECONDS and not monitor.abortRequested():
