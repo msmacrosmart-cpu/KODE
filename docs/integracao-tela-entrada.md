@@ -205,7 +205,8 @@ auditoria tipográfica ou o mapa de botões falharem.
 ## 7. Resultado deste build
 
 - Release: `v1.0.83-tela-inicial-v7`
-- APK: ver os números no fim deste arquivo (preenchidos pelo build v7)
+- APK: `SMARTEDTV-atual-com-tela-inicial-v7.apk`, 249.843.593 bytes,
+  SHA-256 `68ba50ebf38c7ff849f180d5f3bd675631c5a17806b979453612a9e3c53d354e`
 - Assinatura: `855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`
   (a mesma do app; v1/v2/v3 verificados pelo `apksigner`)
 - Delta sobre o APK atual: +33 arquivos (o addon da tela), 0 removidos e 7
@@ -215,7 +216,7 @@ auditoria tipográfica ou o mapa de botões falharem.
   `ReplaceWindow` (o do seguro); addon registrado como
   `<addon optional="true">`; 2731 arquivos do perfil semeado intactos;
   `service.smarted.bootstrap` sem alteração.
-- Workflow `43978859794` (todos os passos verdes), incluindo auditoria
+- Workflow `43982380460` (todos os passos verdes), incluindo auditoria
   tipográfica, mapa de botões, "conferir que nada mais mudou", a simulação de
   boot e a assinatura.
 - Conferido no arquivo publicado: os 31 arquivos da tela dentro do APK são
