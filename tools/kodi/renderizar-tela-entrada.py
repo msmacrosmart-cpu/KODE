@@ -156,6 +156,35 @@ def desenhar_controle(imagem, no, pais, tamanhos, props):
             topo += h + 4
         return
 
+    if tipo == "textbox":
+        rotulo = texto_de(no, "label")
+        if rotulo.startswith("$INFO[Window.Property("):
+            chave = rotulo[len("$INFO[Window.Property("):].rstrip(")]")
+            rotulo = props.get(chave, "")
+        if not rotulo:
+            return
+        f = fonte(texto_de(no, "font"), tamanhos)
+        cor_texto = cor(texto_de(no, "textcolor"))
+        desenho = ImageDraw.Draw(imagem)
+        finais, atual = [], ""
+        for palavra in rotulo.replace("[CR]", " ").split(" "):
+            teste = (atual + " " + palavra).strip()
+            if desenho.textlength(teste, font=f) <= largura or not atual:
+                atual = teste
+            else:
+                finais.append(atual)
+                atual = palavra
+        finais.append(atual)
+        passo = round(f.size * 1.35)
+        topo = y
+        for linha in finais:
+            if topo + passo > y + altura:
+                desenho.text((x, topo), "...", font=f, fill=cor_texto)
+                break
+            desenho.text((x, topo), linha, font=f, fill=cor_texto)
+            topo += passo
+        return
+
     if tipo in ("button", "edit"):
         textura = texto_de(no, "texturenofocus")
         # nos desenhos em repouso mostramos o estado sem foco
@@ -206,8 +235,13 @@ def main(argv=None):
     if args.dialogo:
         props["welcome_dialog"] = args.dialogo
         props["welcome_status_title"] = "Código não ativado"
+        # texto de propósito LONGO: e o pior caso do servidor real (mensagem de
+        # erro com detalhe). A prova precisa mostrar que ele quebra e nao vaza.
         props["welcome_status_text"] = (
-            "O serviço de validação não aceitou este código para o plano selecionado.")
+            "O serviço de validação não aceitou este código para o plano "
+            "selecionado. Confira se digitou todas as letras e números, "
+            "verifique se o código ainda não foi usado em outro aparelho e "
+            "tente novamente em alguns instantes.")
         props["welcome_status_ok"] = "Tentar novamente"
 
     imagem = Image.new("RGBA", (1920, 1080), (0, 0, 0, 255))

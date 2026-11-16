@@ -145,8 +145,65 @@ def fonte(tamanho):
     return ImageFont.truetype(str(SKIN_FONTS), tamanho)
 
 
+_FONTE_CACHE = {}
+
+
+def _fonte_medida(tamanho):
+    if tamanho not in _FONTE_CACHE:
+        _FONTE_CACHE[tamanho] = fonte(tamanho)
+    return _FONTE_CACHE[tamanho]
+
+
 def largura_texto(texto, tamanho):
-    return fonte(tamanho).getlength(texto)
+    return _fonte_medida(tamanho).getlength(texto)
+
+
+def altura_texto(texto, tamanho):
+    """Altura real da linha (ascendente+descendente), o que o Kodi desenha."""
+    caixa = _fonte_medida(tamanho).getbbox(texto or "Ágjy")
+    return caixa[3] - caixa[1]
+
+
+def altura_linha(tamanho):
+    """Caixa segura para uma linha: cobre acentos e descendentes."""
+    return altura_texto("ÁÉÍÓÚÇÃÕgjpqyJ", tamanho)
+
+
+def quebrar_em_linhas(texto, tamanho, largura):
+    """Quebra o texto por palavra respeitando a largura real em px.
+
+    O Kodi nao quebra linha em <label> (so em <textbox>/<wrapmultiline>); por
+    isso cada linha vira um controle proprio, com a altura medida da fonte.
+    """
+    linhas = []
+    for paragrafo in texto.replace("[CR]", "\n").split("\n"):
+        atual = ""
+        for palavra in paragrafo.split(" "):
+            teste = (atual + " " + palavra).strip()
+            if atual and largura_texto(teste, tamanho) > largura:
+                linhas.append(atual)
+                atual = palavra
+            else:
+                atual = teste
+        linhas.append(atual)
+    return linhas
+
+
+def xml_texto(cid, x, y, largura, texto, fonte_nome, tamanho, cor,
+              align="left", entrelinha=1.32):
+    """Um <label> por linha, com a altura exata da fonte.
+
+    Devolve (controles, altura_total). Assim nenhuma letra fica cortada em cima
+    ou embaixo e nada estoura a largura do cartao.
+    """
+    controles = []
+    linhas = quebrar_em_linhas(texto, tamanho, largura)
+    passo = round(tamanho * entrelinha)
+    h_linha = altura_linha(tamanho)
+    for i, linha in enumerate(linhas):
+        controles.append(xml_label(cid + i, x, y + i * passo, largura, h_linha,
+                                   linha, fonte_nome, cor, align=align))
+    return controles, (len(linhas) - 1) * passo + h_linha
 
 
 def _gradiente_vertical(tamanho, topo, base):
@@ -339,9 +396,25 @@ def gerar_texturas(med: Medidas) -> dict:
     campo_foco.alpha_composite(anel)
     campo_foco.save(MEDIA / "field_focus.png")
 
+    # sombra/escurecimento atras do dialogo: garante que nada da tela apareca
+    # por tras do texto (o Kodi nao tem blur; o CSS usa backdrop-filter)
+    retangulo((760, 352), round(rem(1.2) * med.k) + 8,
+              rgba("#000000", 0xB0 / 255), None, 0,
+              sombra=(round(rem(1.4) * med.k), 120)).save(MEDIA / "scrim.png")
+
+    # item ativo do seletor em foco: o fundo e branco, entao o realce e um anel
+    # escuro por fora (sem isso o D-pad nao mostra onde esta)
+    ativo = retangulo((med.seg_h * 3, med.seg_h), med.seg_h // 2,
+                     _gradiente_vertical((med.seg_h * 3, med.seg_h),
+                                         rgba("#ffffff"), rgba("#e8e8e8")))
+    ImageDraw.Draw(ativo).rounded_rectangle(
+        (0, 0, ativo.width - 1, ativo.height - 1), radius=med.seg_h // 2,
+        outline=rgba("#8a8a8a"), width=2)
+    ativo.save(MEDIA / "seg_active_focus.png")
+
     # pilulas: container e pilula ativa (raio = altura/2)
-    for nome, altura, ativo in (("seg", med.seg_h, False), ("seg_active", med.seg_h, True),
-                                ("plan", med.plan_h, False), ("plan_active", med.plan_h, True)):
+    for nome, altura, ativo in (("seg", med.seg_h, False),
+                                ("seg_active", med.seg_h, True)):
         raio = altura // 2
         if ativo:
             img = retangulo((altura * 3, altura), raio,
@@ -452,10 +525,15 @@ def xml_imagem(cid, x, y, w, h, textura, aspecto=None):
 
 
 def xml_botao(cid, x, y, w, h, rotulo, fonte_nome, cor_texto, normal, foco,
-              cor_foco=None, border=0):
+              cor_foco=None, border=0, pad_x=0):
+    """Botao da skin; `pad_x` empurra o texto (usado nos botoes com icone)."""
     el = ET.Element("control", {"type": "button", "id": str(cid)})
     for tag, valor in (("left", x), ("top", y), ("width", w), ("height", h)):
         ET.SubElement(el, tag).text = str(valor)
+    if pad_x:
+        # o <button> do Kodi centraliza o texto na area util: `margin` encolhe a
+        # area a esquerda, empurrando o texto para longe do icone
+        ET.SubElement(el, "margin").text = "0,0,0,%d" % pad_x
     ET.SubElement(el, "label").text = rotulo
     ET.SubElement(el, "font").text = fonte_nome
     ET.SubElement(el, "textcolor").text = cor_texto
@@ -528,10 +606,12 @@ def main(argv=None):
 
     marca_x = med.pad + 68 + 17
     h1_y = topo_y + 2
-    controles.append(xml_label(11, marca_x, h1_y, 400, med.fontes["h1"] + 8,
+    controles.append(xml_label(11, marca_x, h1_y, 400,
+                               altura_linha(med.fontes["h1"]),
                                "SMARTEDTV", estilos["h1"], ink))
-    sub_y = h1_y + med.fontes["h1"] + 8 + 7
-    controles.append(xml_label(12, marca_x, sub_y, 400, med.fontes["sub"] + 6,
+    sub_y = h1_y + altura_linha(med.fontes["h1"]) + 4
+    controles.append(xml_label(12, marca_x, sub_y, 400,
+                               altura_linha(med.fontes["sub"]),
                                "Ativação e assinatura", estilos["sub"], mut))
 
     seg_txt = ["Android TV", "Celular"]
@@ -544,7 +624,8 @@ def main(argv=None):
     bx = seg_x + round(rem(0.25) * med.k)
     controles.append(xml_botao(130, bx, seg_y + round(rem(0.25) * med.k), seg_larg[0],
                                med.seg_h - 2 * round(rem(0.25) * med.k), seg_txt[0],
-                               estilos["seg"], escuro, "seg_active.png", "seg_active.png",
+                               estilos["seg"], escuro, "seg_active.png",
+                               "seg_active_focus.png",
                                border=(med.seg_h // 2)))
     bx += seg_larg[0] + round(rem(0.25) * med.k)
     controles.append(xml_botao(131, bx, seg_y + round(rem(0.25) * med.k), seg_larg[1],
@@ -566,18 +647,22 @@ def main(argv=None):
     # cartao 1 — boas-vindas
     y = topo + 2
     controles.append(xml_imagem(24, c1, y + 5, 23, 2, "eyebrow_line.png"))
-    controles.append(xml_label(25, c1 + 29, y, interno - 29, med.fontes["eyebrow"] + 4,
+    controles.append(xml_label(25, c1 + 29, y, interno - 29,
+                               altura_linha(med.fontes["eyebrow"]),
                                "BEM-VINDO", estilos["eyebrow"], mut))
-    y += med.fontes["eyebrow"] + 4 + 12 + 12
+    y += altura_linha(med.fontes["eyebrow"]) + 18
+    passo_h3 = round(med.fontes["h3"] * 1.06)
+    h3_h = altura_linha(med.fontes["h3"])
     for i, linha in enumerate(("Sua TV,", "do seu jeito.")):
-        controles.append(xml_label(26 + i, c1, y + i * round(med.fontes["h3"] * 1.09),
-                                   interno, round(med.fontes["h3"] * 1.12),
-                                   linha, estilos["h3"], ink))
-    y += 2 * round(med.fontes["h3"] * 1.09) + 8
-    controles.append(xml_label(28, c1, y, interno, round(med.fontes["body"] * 2.9),
-                               "Ative o VIP com um código ou continue gratuitamente com anúncios.",
-                               estilos["body"], txt))
-    y += round(med.fontes["body"] * 2.9) + 14
+        controles.append(xml_label(26 + i, c1, y + i * passo_h3,
+                                   interno, h3_h, linha, estilos["h3"], ink))
+    y += passo_h3 + h3_h + 6
+    textos, altura_par = xml_texto(
+        28, c1, y, interno,
+        "Ative o VIP com um código ou continue gratuitamente com anúncios.",
+        estilos["body"], med.fontes["body"], txt, entrelinha=1.36)
+    controles.extend(textos)
+    y += altura_par + 14
 
     btn_y = med.grade_y + med.card_pad + med.grade_h - 2 * med.card_pad - med.btn_h
 
@@ -585,8 +670,8 @@ def main(argv=None):
     # entre ela e o paragrafo (como no flex do CSS)
     itens = ("Canais ao vivo, sem travar", "Sem anúncios com o VIP ativo",
              "Ativação em poucos segundos")
-    gap_item = round(rem(1.6) * med.k)
-    li_h = max(med.fontes["li"] + 6, texturas["tick"] + 4)
+    gap_item = round(rem(1.5) * med.k)
+    li_h = max(altura_linha(med.fontes["li"]) + 2, texturas["tick"] + 4)
     bloco_h = 3 * li_h + 2 * gap_item
     lista_y = btn_y - round(med.grade_h * 0.06) - bloco_h
     assert lista_y > y, (lista_y, y)
@@ -594,38 +679,49 @@ def main(argv=None):
         ly = lista_y + i * (li_h + gap_item)
         controles.append(xml_imagem(30 + i, c1 + 4, ly + (li_h - texturas["tick"]) // 2,
                                     texturas["tick"], texturas["tick"], "tick.png"))
-        controles.append(xml_label(34 + i, c1 + 4 + texturas["tick"] + 13,
-                                   ly + (li_h - (med.fontes["li"] + 6)) // 2,
-                                   interno - texturas["tick"] - 17, med.fontes["li"] + 6,
+        controles.append(xml_label(34 + i, c1 + 4 + texturas["tick"] + 14,
+                                   ly + (li_h - altura_linha(med.fontes["li"])) // 2,
+                                   interno - texturas["tick"] - 18,
+                                   altura_linha(med.fontes["li"]),
                                    item, estilos["li"], txt))
-    atualizar_w = round(largura_texto("ATUALIZAR APLICATIVO", med.fontes["btn"]) + 2 * round(rem(1.2) * med.k) + 8 + 20)
+    # botao com icone: `.btn{gap:.5rem}` -> o icone ocupa 20 px + 8 px de respiro
+    # e o texto e centralizado no espaco que sobra (nunca um por cima do outro)
+    ICONE = 20
+    RESP = 8
+    texto_atualizar = "ATUALIZAR APLICATIVO"
+    largura_txt = largura_texto(texto_atualizar, med.fontes["btn"])
+    pad_botao = round(rem(1.1) * med.k)
+    # folga dos dois lados = icone + respiro + padding; o texto (centralizado
+    # pelo Kodi) nunca alcanca o icone, que fica no padding esquerdo
+    atualizar_w = round(largura_txt + 2 * (ICONE + RESP + pad_botao))
     ax = c1 + (interno - atualizar_w) // 2
     controles.append(xml_botao(123, ax, btn_y, atualizar_w, med.btn_h,
-                               "ATUALIZAR APLICATIVO", estilos["btn"], ink,
+                               texto_atualizar, estilos["btn"], ink,
                                "btn_ghost.png", "btn_ghost_focus.png",
                                cor_foco=escuro, border=med.raio_btn))
-    inicio_texto = ax + (atualizar_w - largura_texto("ATUALIZAR APLICATIVO", med.fontes["btn"])) / 2
-    icone_x = round(inicio_texto - 8 - 20)
-    controles.append(xml_imagem(124, icone_x, btn_y + (med.btn_h - 20) // 2, 20, 20,
-                                "icon_refresh.png"))
+    icone_x = ax + pad_botao
+    controles.append(xml_imagem(124, icone_x, btn_y + (med.btn_h - ICONE) // 2,
+                                ICONE, ICONE, "icon_refresh.png"))
 
     # cartao 2 — assinatura (QR do checkout)
     x2 = xs[1]
     c2 = x2 + med.card_pad
     head_y = topo + 2
-    controles.append(xml_label(40, c2, head_y, interno - 150, med.fontes["h2"] + 8,
+    controles.append(xml_label(40, c2, head_y, interno - 150,
+                               altura_linha(med.fontes["h2"]),
                                "Sem anúncios", estilos["h2"], ink))
     chip_txt = "Plano mensal"
     chip_w = round(largura_texto(chip_txt, med.fontes["chip"]) + 2 * round(rem(0.8) * med.k))
     chip_h = med.fontes["chip"] + 15
     chip_x = c2 + interno - chip_w
     controles.append(xml_imagem(41, chip_x, head_y + 2, chip_w, chip_h, "chip.png", "stretch"))
-    controles.append(xml_label(42, chip_x, head_y + 2 + (chip_h - med.fontes["chip"]) // 2 - 1,
-                               chip_w, med.fontes["chip"] + 4, chip_txt, estilos["chip"], txt,
-                               align="center"))
+    controles.append(xml_label(42, chip_x, head_y + 2 + (chip_h - altura_linha(med.fontes["chip"])) // 2,
+                               chip_w, altura_linha(med.fontes["chip"]), chip_txt,
+                               estilos["chip"], txt, align="center"))
 
-    hint_h = round(med.fontes["hint"] * 2.83)
-    hint_y = btn_y - 14 - hint_h
+    hint_linhas = 2
+    hint_h = hint_linhas * altura_linha(med.fontes["hint"]) + round(med.fontes["hint"] * 0.28)
+    hint_y = btn_y - 16 - hint_h
     prato = med.qr_plate
     area_topo = head_y + chip_h + 14
     prato_y = area_topo + (hint_y - 14 - area_topo - prato) // 2
@@ -634,9 +730,11 @@ def main(argv=None):
     qr_off = (prato - med.qr_img) // 2
     controles.append(xml_imagem(44, prato_x + qr_off, prato_y + qr_off, med.qr_img,
                                 med.qr_img, "qr_checkout.png", "keep"))
-    controles.append(xml_label(45, c2, hint_y, interno, hint_h,
-                               "Aponte a câmera de outro celular.[CR]Valor e condições aparecem no checkout.",
-                               estilos["hint"], mut, align="center"))
+    dicas, _ = xml_texto(45, c2, hint_y, interno,
+                         "Aponte a câmera de outro celular.\nValor e condições aparecem no checkout.",
+                         estilos["hint"], med.fontes["hint"], mut, align="center",
+                         entrelinha=1.28)
+    controles.extend(dicas)
     controles.append(xml_botao(120, c2, btn_y, interno, med.btn_h, "Abrir checkout",
                                estilos["btn"], ink, "btn_ghost.png", "btn_ghost_focus.png",
                                cor_foco=escuro, border=med.raio_btn))
@@ -644,15 +742,16 @@ def main(argv=None):
     # cartao 3 — indicação (QR do app)
     x3 = xs[2]
     c3 = x3 + med.card_pad
-    controles.append(xml_label(50, c3, head_y, interno - 120, med.fontes["h2"] + 8,
+    controles.append(xml_label(50, c3, head_y, interno - 120,
+                               altura_linha(med.fontes["h2"]),
                                "Indique e ganhe", estilos["h2"], ink))
     chip2 = "Compartilhar"
     chip2_w = round(largura_texto(chip2, med.fontes["chip"]) + 2 * round(rem(0.8) * med.k))
     chip2_x = c3 + interno - chip2_w
     controles.append(xml_imagem(51, chip2_x, head_y + 2, chip2_w, chip_h, "chip.png", "stretch"))
-    controles.append(xml_label(52, chip2_x, head_y + 2 + (chip_h - med.fontes["chip"]) // 2 - 1,
-                               chip2_w, med.fontes["chip"] + 4, chip2, estilos["chip"], txt,
-                               align="center"))
+    controles.append(xml_label(52, chip2_x, head_y + 2 + (chip_h - altura_linha(med.fontes["chip"])) // 2,
+                               chip2_w, altura_linha(med.fontes["chip"]), chip2,
+                               estilos["chip"], txt, align="center"))
 
     baixar_y = btn_y
     share_y = btn_y - med.btn_h - 8
@@ -663,22 +762,25 @@ def main(argv=None):
     controles.append(xml_imagem(53, prato3_x, prato3_y, prato, prato, "qr_plate.png", "stretch"))
     controles.append(xml_imagem(54, prato3_x + qr_off, prato3_y + qr_off, med.qr_img,
                                 med.qr_img, "qr_apk.png", "keep"))
-    controles.append(xml_label(55, c3, hint3_y, interno, hint_h,
-                               "Aponte a câmera e envie o link[CR]do app a quem quiser.",
-                               estilos["hint"], mut, align="center"))
+    dicas3, _ = xml_texto(55, c3, hint3_y, interno,
+                          "Aponte a câmera e envie o link\ndo app a quem quiser.",
+                          estilos["hint"], med.fontes["hint"], mut, align="center",
+                          entrelinha=1.28)
+    controles.extend(dicas3)
     controles.append(xml_botao(121, c3, share_y, interno, med.btn_h, "Compartilhar link",
                                estilos["btn"], ink, "btn_ghost.png", "btn_ghost_focus.png",
                                cor_foco=escuro, border=med.raio_btn))
     texto_baixar = "Baixar APK (Android)"
-    baixar_w = round(largura_texto(texto_baixar, med.fontes["btn"]) + 2 * round(rem(1.2) * med.k) + 8 + 20)
+    largura_baixar = largura_texto(texto_baixar, med.fontes["btn"])
+    baixar_w = round(largura_baixar + 2 * (ICONE + RESP + pad_botao))
     bx3 = c3 + (interno - baixar_w) // 2
     controles.append(xml_botao(122, bx3, baixar_y, baixar_w, med.btn_h, texto_baixar,
                                estilos["btn"], QUIET_TXT_HEX, "btn_quiet.png",
-                               "btn_quiet_focus.png", cor_foco=escuro, border=med.raio_btn))
-    inicio3 = bx3 + (baixar_w - largura_texto(texto_baixar, med.fontes["btn"])) / 2
-    icone3_x = round(inicio3 - 8 - 20)
-    controles.append(xml_imagem(125, icone3_x, baixar_y + (med.btn_h - 20) // 2, 20, 20,
-                                "icon_download.png"))
+                               "btn_quiet_focus.png", cor_foco=escuro,
+                               border=med.raio_btn))
+    icone3_x = bx3 + pad_botao
+    controles.append(xml_imagem(125, icone3_x, baixar_y + (med.btn_h - ICONE) // 2,
+                                ICONE, ICONE, "icon_download.png"))
 
     # --- barra de ativacao -----------------------------------------------
     barra_y = med.barra_y
@@ -692,11 +794,12 @@ def main(argv=None):
     # var(--line);border-radius:1.2rem}`: o painel de vidro da barra
     controles.append(xml_imagem(6, med.pad, barra_y, med.largura, med.barra_h,
                                 "bar.png", "stretch"))
-    controles.append(xml_label(60, bx0, by + 2, copy_w, med.fontes["barh3"] + 8,
+    controles.append(xml_label(60, bx0, by + 2, copy_w,
+                               altura_linha(med.fontes["barh3"]),
                                "Já é assinante? Ative seu VIP", estilos["barh3"], ink))
-    controles.append(xml_label(61, bx0, by + 2 + med.fontes["barh3"] + 12, copy_w,
-                               med.fontes["barp"] + 6, "Digite o código que você recebeu.",
-                               estilos["barp"], mut))
+    controles.append(xml_label(61, bx0, by + 2 + altura_linha(med.fontes["barh3"]) + 8,
+                               copy_w, altura_linha(med.fontes["barp"]),
+                               "Digite o código que você recebeu.", estilos["barp"], mut))
 
     gap_bar = round(1842 * 0.015)
     form_x = bx0 + copy_w + gap_bar
@@ -718,22 +821,36 @@ def main(argv=None):
     ativar_x = form_dir - ativar_w
     field_w = ativar_x - 11 - (form_x + 0)          # preenchido depois de medir o plan
     plan_txt = ["10 min", "1 mês"]
-    plan_pad = round(rem(0.9) * med.k)
-    plan_larg = [round(largura_texto(t, med.fontes["plan"]) + 2 * plan_pad) for t in plan_txt]
-    plan_w = sum(plan_larg) + 2 * round(rem(0.25) * med.k) + round(rem(0.25) * med.k)
-    controles.append(xml_imagem(63, form_x, by + (med.btn_h - med.plan_h) // 2, plan_w,
-                                med.plan_h, "plan.png", "stretch"))
-    px0 = form_x + round(rem(0.25) * med.k)
-    ph = med.plan_h - 2 * round(rem(0.25) * med.k)
-    # o plano ativo e o que esta em foco (mesma linguagem do D-pad no Kodi);
-    # a pilula branca do pacote aparece no item escolhido
-    controles.append(xml_botao(140, px0, by + (med.btn_h - ph) // 2, plan_larg[0], ph,
-                               plan_txt[0], estilos["plan"], txt, "plan.png",
-                               "plan_active.png", cor_foco=escuro, border=ph // 2))
-    px0 += plan_larg[0] + round(rem(0.25) * med.k)
-    controles.append(xml_botao(141, px0, by + (med.btn_h - ph) // 2, plan_larg[1], ph,
-                               plan_txt[1], estilos["plan"], txt, "plan.png",
-                               "plan_active.png", cor_foco=escuro, border=ph // 2))
+    plan_pad = round(rem(1.0) * med.k)
+    plan_larg = [round(largura_texto(t, med.fontes["plan"]) + 2 * plan_pad)
+                 for t in plan_txt]
+    # uma textura por pilula, no tamanho exato do botao: `seg` do CSS tem fundo
+    # translucido + borda; esticar a mesma placa em duas medidas deixava as duas
+    # bordas aparecendo (efeito de "pilula dentro de pilula")
+    ph = med.plan_h
+    gap_plan = round(rem(0.25) * med.k)
+    px0 = form_x
+    for indice, (cid, rotulo) in enumerate(zip((140, 141), plan_txt)):
+        largura_pilula = plan_larg[indice]
+        nome = "plan_%d.png" % indice
+        # normal: contorno; em foco: pilula branca do CSS
+        # (`[aria-pressed=true]{background:linear-gradient(#fff,#e8e8e8)}`)
+        retangulo((largura_pilula, ph), ph // 2, (0, 0, 0, 0), LINE, 1).save(
+            MEDIA / nome)
+        pilula_foco = retangulo((largura_pilula, ph), ph // 2,
+                                _gradiente_vertical((largura_pilula, ph),
+                                                    rgba("#ffffff"),
+                                                    rgba("#e8e8e8")))
+        ImageDraw.Draw(pilula_foco).rounded_rectangle(
+            (0, 0, largura_pilula - 1, ph - 1), radius=ph // 2,
+            outline=rgba("#8a8a8a"), width=2)
+        pilula_foco.save(MEDIA / ("plan_active_%d.png" % indice))
+        controles.append(xml_botao(cid, px0, by + (med.btn_h - ph) // 2,
+                                   largura_pilula, ph, rotulo, estilos["plan"], txt,
+                                   nome, "plan_active_%d.png" % indice,
+                                   cor_foco=escuro, border=ph // 2))
+        px0 += largura_pilula + gap_plan
+    plan_w = px0 - gap_plan - form_x
 
     field_x = form_x + plan_w + 11
     field_w = ativar_x - 11 - field_x
@@ -753,9 +870,16 @@ def main(argv=None):
                                "btn_primary_focus.png", border=med.raio_btn))
 
     # --- legenda inferior -------------------------------------------------
-    controles.append(xml_label(70, 0, 1046, 1920, 22,
-                               "Android TV  ·  16:9  ·  tela única, sem rolagem  ·  setas/Enter navegam (D-pad)",
-                               estilos["legend"], "FF666666", align="center"))
+    # legenda: abaixo da barra e acima da margem inferior; se nao couber, nao
+    # desenha (melhor sem legenda do que legenda por cima do painel)
+    legenda_h = altura_linha(11)
+    legenda_y = med.barra_y + med.barra_h + 8
+    if legenda_y + legenda_h > 1080 - med.pad:
+        legenda_y = None      # `.legend` do CSS: -27px, fora da area util
+    if legenda_y is not None:
+        controles.append(xml_label(70, 0, legenda_y, 1920, legenda_h,
+                                   "Android TV  ·  16:9  ·  tela única, sem rolagem  ·  setas/Enter navegam (D-pad)",
+                                   estilos["legend"], "FF767676", align="center"))
 
     # --- dialogo: continuar com anuncios ---------------------------------
     grupo = ET.SubElement(controles, "control", {"type": "group", "id": "900"})
@@ -768,12 +892,19 @@ def main(argv=None):
              "assine pelo checkout ou ative um código VIP quando quiser.")
     dialogo_h = 300
     dialogo_y = (1080 - dialogo_h) // 2
+    # o dialogo tem fundo proprio e fica POR CIMA da tela (z-order): fica opaco
+    # o bastante para o QR nao "vazar" atras do texto
+    grupo.append(xml_imagem(908, dialogo_x - 6, dialogo_y - 6, dialogo_w + 12,
+                            dialogo_h + 12, "scrim.png", "stretch"))
     grupo.append(xml_imagem(902, dialogo_x, dialogo_y, dialogo_w, dialogo_h,
                             "dialog.png", "stretch"))
-    grupo.append(xml_label(903, dialogo_x + 38, dialogo_y + 33, dialogo_w - 76, 40,
+    grupo.append(xml_label(903, dialogo_x + 38, dialogo_y + 33, dialogo_w - 76,
+                           altura_linha(med.fontes["h2"]),
                            "Continuar com anúncios?", estilos["h2"], ink))
-    grupo.append(xml_label(904, dialogo_x + 38, dialogo_y + 83, dialogo_w - 76, 100,
-                           corpo, estilos["field"], txt))
+    linhas_dialogo, altura_dialogo = xml_texto(
+        910, dialogo_x + 38, dialogo_y + 83, dialogo_w - 76, corpo,
+        estilos["field"], med.fontes["field"], txt, entrelinha=1.4)
+    grupo.extend(linhas_dialogo)
     grupo.append(xml_botao(905, dialogo_x + 38, dialogo_y + 205, 300, med.btn_h, "Voltar",
                            estilos["btn"], ink, "btn_quiet.png", "btn_ghost_focus.png",
                            cor_foco=escuro, border=med.raio_btn))
@@ -787,14 +918,30 @@ def main(argv=None):
     ET.SubElement(grupo2, "visible").text = (
         "String.IsEqual(Window.Property(welcome_dialog),status)")
     grupo2.append(xml_imagem(951, 0, 0, 1920, 1080, "overlay.png"))
+    grupo2.append(xml_imagem(958, dialogo_x - 6, dialogo_y - 6, dialogo_w + 12,
+                             dialogo_h + 12, "scrim.png", "stretch"))
     grupo2.append(xml_imagem(952, dialogo_x, dialogo_y, dialogo_w, dialogo_h,
                              "dialog.png", "stretch"))
-    grupo2.append(xml_label(953, dialogo_x + 38, dialogo_y + 33, dialogo_w - 76, 40,
-                            "$INFO[Window.Property(welcome_status_title)]",
-                            estilos["h2"], ink))
-    grupo2.append(xml_label(954, dialogo_x + 38, dialogo_y + 83, dialogo_w - 76, 100,
-                            "$INFO[Window.Property(welcome_status_text)]",
-                            estilos["field"], txt))
+    # Titulo e mensagem vem do servidor (podem ser longos): cada um vira uma
+    # caixa de texto com quebra automatica do proprio Kodi, para nunca cortar
+    # nem invadir o botao. `<textbox>` quebra linha e corta com "..." sozinho.
+    titulo = ET.Element("control", {"type": "textbox", "id": "953"})
+    for tag, valor in (("left", dialogo_x + 38), ("top", dialogo_y + 30),
+                       ("width", dialogo_w - 76), ("height", 42)):
+        ET.SubElement(titulo, tag).text = str(valor)
+    ET.SubElement(titulo, "label").text = "$INFO[Window.Property(welcome_status_title)]"
+    ET.SubElement(titulo, "font").text = estilos["h2"]
+    ET.SubElement(titulo, "textcolor").text = ink
+    grupo2.append(titulo)
+
+    corpo_status = ET.Element("control", {"type": "textbox", "id": "954"})
+    for tag, valor in (("left", dialogo_x + 38), ("top", dialogo_y + 82),
+                       ("width", dialogo_w - 76), ("height", 104)):
+        ET.SubElement(corpo_status, tag).text = str(valor)
+    ET.SubElement(corpo_status, "label").text = "$INFO[Window.Property(welcome_status_text)]"
+    ET.SubElement(corpo_status, "font").text = estilos["field"]
+    ET.SubElement(corpo_status, "textcolor").text = txt
+    grupo2.append(corpo_status)
     grupo2.append(xml_botao(955, dialogo_x + dialogo_w - 38 - 322, dialogo_y + 205, 322,
                             med.btn_h, "$INFO[Window.Property(welcome_status_ok)]",
                             estilos["bar_btn"], escuro, "btn_primary.png",

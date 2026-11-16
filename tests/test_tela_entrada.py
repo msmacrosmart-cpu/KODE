@@ -193,6 +193,61 @@ class TelaDoPacoteTest(unittest.TestCase):
                                cfile=str(Path(tmp) / 'welcome.pyc'), doraise=True)
 
 
+class TipografiaTest(unittest.TestCase):
+    """Nenhuma letra por cima de botao/icone, nada cortado, nada de tofu."""
+
+    AUDITOR = ROOT / 'tools' / 'kodi' / 'auditar-tela-entrada.py'
+
+    def test_auditoria_sem_problemas(self):
+        spec = importlib.util.spec_from_file_location('auditor_tela',
+                                                      self.AUDITOR)
+        modulo = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(modulo)
+        problemas, textos = modulo.auditar()
+        self.assertEqual(problemas, [], '\n'.join(problemas))
+        self.assertGreaterEqual(len(textos), 25)
+
+    def test_todo_layout_tem_altura_de_fonte_medida(self):
+        """<label> com altura menor que a fonte corta acento e descendente."""
+        raiz = _raiz()
+        tamanhos = {nome: int(nome[2:]) for nome in
+                    set(re.findall(r'<font>(wf\d+)</font>',
+                                   LAYOUT.read_text(encoding='utf-8')))}
+        for no in raiz.iter('control'):
+            if no.get('type') != 'label':
+                continue
+            tamanho = tamanhos[(no.findtext('font') or 'wf15').strip()]
+            altura = int(no.findtext('height') or 0)
+            self.assertGreaterEqual(altura, round(tamanho * 1.05),
+                                    (no.get('id'), altura, tamanho))
+
+    def test_nenhum_texto_usa_cr_literal(self):
+        """[CR] so vale dentro de <textbox>; em <label> viraria texto na tela."""
+        raiz = _raiz()
+        for no in raiz.iter('control'):
+            if no.get('type') != 'textbox':
+                self.assertNotIn('[CR]', no.findtext('label') or '',
+                                 no.get('id'))
+
+    def test_dialogo_tem_fundo_solido_proprio(self):
+        """O texto do dialogo nao pode competir com o QR/cartao atras."""
+        raiz = _raiz()
+        for grupo in ('900', '950'):
+            no = raiz.find(".//control[@id='%s']" % grupo)
+            texturas = [(c.findtext('texture') or '').strip()
+                        for c in no.findall('control')
+                        if c.get('type') == 'image']
+            self.assertIn('scrim.png', texturas, grupo)
+            self.assertIn('dialog.png', texturas, grupo)
+
+    def test_textos_dinamicos_usam_textbox(self):
+        """Titulo/mensagem do servidor podem ser longos: <textbox> quebra."""
+        raiz = _raiz()
+        for ident in ('953', '954'):
+            no = raiz.find('.//control[@id="%s"]' % ident)
+            self.assertEqual(no.get('type'), 'textbox', ident)
+
+
 class MapaDeBotoesTest(unittest.TestCase):
     """A ferramenta de mapeamento tem de continuar fechando (id <-> acao)."""
 

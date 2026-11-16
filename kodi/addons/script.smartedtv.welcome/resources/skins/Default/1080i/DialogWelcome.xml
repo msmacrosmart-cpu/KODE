@@ -25,16 +25,16 @@
       <left>123</left>
       <top>51</top>
       <width>400</width>
-      <height>41</height>
+      <height>51</height>
       <label>SMARTEDTV</label>
       <font>wf33</font>
       <textcolor>FFF7F7F7</textcolor>
     </control>
     <control type="label" id="12">
       <left>123</left>
-      <top>99</top>
+      <top>106</top>
       <width>400</width>
-      <height>21</height>
+      <height>24</height>
       <label>Ativação e assinatura</label>
       <font>wf15</font>
       <textcolor>FF838383</textcolor>
@@ -56,7 +56,7 @@
       <font>wf17</font>
       <textcolor>FF080808</textcolor>
       <focusedcolor>FF080808</focusedcolor>
-      <texturefocus border="26">seg_active.png</texturefocus>
+      <texturefocus border="26">seg_active_focus.png</texturefocus>
       <texturenofocus border="26">seg_active.png</texturenofocus>
     </control>
     <control type="button" id="131">
@@ -106,7 +106,7 @@
       <left>80</left>
       <top>181</top>
       <width>543</width>
-      <height>17</height>
+      <height>23</height>
       <label>BEM-VINDO</label>
       <font>wf13</font>
       <textcolor>FF838383</textcolor>
@@ -115,81 +115,90 @@
       <left>51</left>
       <top>222</top>
       <width>572</width>
-      <height>47</height>
+      <height>62</height>
       <label>Sua TV,</label>
       <font>wf42</font>
       <textcolor>FFF7F7F7</textcolor>
     </control>
     <control type="label" id="27">
       <left>51</left>
-      <top>268</top>
+      <top>267</top>
       <width>572</width>
-      <height>47</height>
+      <height>62</height>
       <label>do seu jeito.</label>
       <font>wf42</font>
       <textcolor>FFF7F7F7</textcolor>
     </control>
     <control type="label" id="28">
       <left>51</left>
-      <top>322</top>
+      <top>335</top>
       <width>572</width>
-      <height>61</height>
-      <label>Ative o VIP com um código ou continue gratuitamente com anúncios.</label>
+      <height>34</height>
+      <label>Ative o VIP com um código ou continue gratuitamente</label>
+      <font>wf21</font>
+      <textcolor>FFBCBCBC</textcolor>
+    </control>
+    <control type="label" id="29">
+      <left>51</left>
+      <top>364</top>
+      <width>572</width>
+      <height>34</height>
+      <label>com anúncios.</label>
       <font>wf21</font>
       <textcolor>FFBCBCBC</textcolor>
     </control>
     <control type="image" id="30">
       <left>55</left>
-      <top>644</top>
+      <top>640</top>
       <width>23</width>
       <height>23</height>
       <texture>tick.png</texture>
     </control>
     <control type="label" id="34">
-      <left>91</left>
-      <top>643</top>
-      <width>532</width>
-      <height>24</height>
+      <left>92</left>
+      <top>638</top>
+      <width>531</width>
+      <height>28</height>
       <label>Canais ao vivo, sem travar</label>
       <font>wf18</font>
       <textcolor>FFBCBCBC</textcolor>
     </control>
     <control type="image" id="31">
       <left>55</left>
-      <top>698</top>
+      <top>695</top>
       <width>23</width>
       <height>23</height>
       <texture>tick.png</texture>
     </control>
     <control type="label" id="35">
-      <left>91</left>
-      <top>697</top>
-      <width>532</width>
-      <height>24</height>
+      <left>92</left>
+      <top>693</top>
+      <width>531</width>
+      <height>28</height>
       <label>Sem anúncios com o VIP ativo</label>
       <font>wf18</font>
       <textcolor>FFBCBCBC</textcolor>
     </control>
     <control type="image" id="32">
       <left>55</left>
-      <top>752</top>
+      <top>750</top>
       <width>23</width>
       <height>23</height>
       <texture>tick.png</texture>
     </control>
     <control type="label" id="36">
-      <left>91</left>
-      <top>751</top>
-      <width>532</width>
-      <height>24</height>
+      <left>92</left>
+      <top>748</top>
+      <width>531</width>
+      <height>28</height>
       <label>Ativação em poucos segundos</label>
       <font>wf18</font>
       <textcolor>FFBCBCBC</textcolor>
     </control>
     <control type="button" id="123">
-      <left>208</left>
+      <left>196</left>
       <top>821</top>
-      <width>258</width>
+      <width>282</width>
       <height>57</height>
       <label>ATUALIZAR APLICATIVO</label>
       <font>wf17</font>
@@ -209,7 +218,7 @@
       <left>674</left>
       <top>181</top>
       <width>422</width>
-      <height>34</height>
+      <height>40</height>
       <label>Sem anúncios</label>
       <font>wf26</font>
       <textcolor>FFF7F7F7</textcolor>
@@ -224,9 +233,9 @@
     </control>
     <control type="label" id="42">
       <left>1140</left>
-      <top>189</top>
+      <top>185</top>
       <width>106</width>
-      <height>17</height>
+      <height>23</height>
       <label>Plano mensal</label>
       <font>wf13</font>
       <textcolor>FFBCBCBC</textcolor>
@@ -234,7 +243,7 @@
     </control>
     <control type="image" id="43">
       <left>808</left>
-      <top>335</top>
+      <top>329</top>
       <width>303</width>
       <height>303</height>
       <texture>qr_plate.png</texture>
@@ -242,7 +251,7 @@
     </control>
     <control type="image" id="44">
       <left>824</left>
-      <top>351</top>
+      <top>345</top>
       <width>270</width>
       <height>270</height>
       <texture>qr_checkout.png</texture>
@@ -250,10 +259,20 @@
     </control>
     <control type="label" id="45">
       <left>674</left>
-      <top>765</top>
+      <top>753</top>
       <width>572</width>
-      <height>42</height>
-      <label>Aponte a câmera de outro celular.[CR]Valor e condições aparecem no checkout.</label>
+      <height>24</height>
+      <label>Aponte a câmera de outro celular.</label>
+      <font>wf15</font>
+      <textcolor>FF838383</textcolor>
+      <align>center</align>
+    </control>
+    <control type="label" id="46">
+      <left>674</left>
+      <top>772</top>
+      <width>572</width>
+      <height>24</height>
+      <label>Valor e condições aparecem no checkout.</label>
       <font>wf15</font>
       <textcolor>FF838383</textcolor>
       <align>center</align>
@@ -274,7 +293,7 @@
       <left>1297</left>
       <top>181</top>
       <width>452</width>
-      <height>34</height>
+      <height>40</height>
       <label>Indique e ganhe</label>
       <font>wf26</font>
       <textcolor>FFF7F7F7</textcolor>
@@ -289,9 +308,9 @@
     </control>
     <control type="label" id="52">
       <left>1764</left>
-      <top>189</top>
+      <top>185</top>
       <width>105</width>
-      <height>17</height>
+      <height>23</height>
       <label>Compartilhar</label>
       <font>wf13</font>
       <textcolor>FFBCBCBC</textcolor>
@@ -299,7 +318,7 @@
     </control>
     <control type="image" id="53">
       <left>1431</left>
-      <top>303</top>
+      <top>298</top>
       <width>303</width>
       <height>303</height>
       <texture>qr_plate.png</texture>
@@ -307,7 +326,7 @@
     </control>
     <control type="image" id="54">
       <left>1447</left>
-      <top>319</top>
+      <top>314</top>
       <width>270</width>
       <height>270</height>
       <texture>qr_apk.png</texture>
@@ -315,10 +334,20 @@
     </control>
     <control type="label" id="55">
       <left>1297</left>
-      <top>700</top>
+      <top>690</top>
       <width>572</width>
-      <height>42</height>
-      <label>Aponte a câmera e envie o link[CR]do app a quem quiser.</label>
+      <height>24</height>
+      <label>Aponte a câmera e envie o link</label>
+      <font>wf15</font>
+      <textcolor>FF838383</textcolor>
+      <align>center</align>
+    </control>
+    <control type="label" id="56">
+      <left>1297</left>
+      <top>709</top>
+      <width>572</width>
+      <height>24</height>
+      <label>do app a quem quiser.</label>
       <font>wf15</font>
       <textcolor>FF838383</textcolor>
       <align>center</align>
@@ -336,9 +365,9 @@
       <texturenofocus border="11">btn_ghost.png</texturenofocus>
     </control>
     <control type="button" id="122">
-      <left>1467</left>
+      <left>1455</left>
       <top>821</top>
-      <width>232</width>
+      <width>256</width>
       <height>57</height>
       <label>Baixar APK (Android)</label>
       <font>wf17</font>
@@ -366,16 +395,16 @@
       <left>67</left>
       <top>959</top>
       <width>500</width>
-      <height>30</height>
+      <height>34</height>
       <label>Já é assinante? Ative seu VIP</label>
       <font>wf22</font>
       <textcolor>FFF7F7F7</textcolor>
     </control>
     <control type="label" id="61">
       <left>67</left>
-      <top>993</top>
+      <top>1001</top>
       <width>500</width>
-      <height>21</height>
+      <height>24</height>
       <label>Digite o código que você recebeu.</label>
       <font>wf15</font>
       <textcolor>FF838383</textcolor>
@@ -400,37 +429,29 @@
       <texturefocus border="11">btn_quiet_focus.png</texturefocus>
       <texturenofocus border="11">btn_quiet.png</texturenofocus>
     </control>
-    <control type="image" id="63">
+    <control type="button" id="140">
       <left>595</left>
       <top>964</top>
-      <width>147</width>
+      <width>74</width>
       <height>42</height>
-      <texture>plan.png</texture>
-      <aspectratio>stretch</aspectratio>
-    </control>
-    <control type="button" id="140">
-      <left>599</left>
-      <top>968</top>
-      <width>70</width>
-      <height>34</height>
       <label>10 min</label>
       <font>wf13</font>
       <textcolor>FFBCBCBC</textcolor>
       <focusedcolor>FF080808</focusedcolor>
-      <texturefocus border="17">plan_active.png</texturefocus>
-      <texturenofocus border="17">plan.png</texturenofocus>
+      <texturefocus border="21">plan_active_0.png</texturefocus>
+      <texturenofocus border="21">plan_0.png</texturenofocus>
     </control>
     <control type="button" id="141">
       <left>673</left>
-      <top>968</top>
-      <width>65</width>
-      <height>34</height>
+      <top>964</top>
+      <width>69</width>
+      <height>42</height>
       <label>1 mês</label>
       <font>wf13</font>
       <textcolor>FFBCBCBC</textcolor>
       <focusedcolor>FF080808</focusedcolor>
-      <texturefocus border="17">plan_active.png</texturefocus>
-      <texturenofocus border="17">plan.png</texturenofocus>
+      <texturefocus border="21">plan_active_1.png</texturefocus>
+      <texturenofocus border="21">plan_1.png</texturenofocus>
     </control>
     <control type="edit" id="310">
       <left>753</left>
@@ -456,16 +477,6 @@
       <texturefocus border="11">btn_primary_focus.png</texturefocus>
       <texturenofocus border="11">btn_primary.png</texturenofocus>
     </control>
-    <control type="label" id="70">
-      <left>0</left>
-      <top>1046</top>
-      <width>1920</width>
-      <height>22</height>
-      <label>Android TV  ·  16:9  ·  tela única, sem rolagem  ·  setas/Enter navegam (D-pad)</label>
-      <font>wf11</font>
-      <textcolor>FF666666</textcolor>
-      <align>center</align>
-    </control>
     <control type="group" id="900">
       <visible>String.IsEqual(Window.Property(welcome_dialog),ads)</visible>
       <control type="image" id="901">
@@ -474,6 +485,14 @@
         <width>1920</width>
         <height>1080</height>
         <texture>overlay.png</texture>
+      </control>
+      <control type="image" id="908">
+        <left>600</left>
+        <top>384</top>
+        <width>720</width>
+        <height>312</height>
+        <texture>scrim.png</texture>
+        <aspectratio>stretch</aspectratio>
       </control>
       <control type="image" id="902">
         <left>606</left>
@@ -492,12 +511,21 @@
         <font>wf26</font>
         <textcolor>FFF7F7F7</textcolor>
       </control>
-      <control type="label" id="904">
+      <control type="label" id="910">
         <left>644</left>
         <top>473</top>
         <width>632</width>
-        <height>100</height>
-        <label>Você vai ver anúncios durante o uso. Para removê-los,[CR]assine pelo checkout ou ative um código VIP quando quiser.</label>
+        <height>28</height>
+        <label>Você vai ver anúncios durante o uso. Para removê-los,</label>
+        <font>wf17</font>
+        <textcolor>FFBCBCBC</textcolor>
+      </control>
+      <control type="label" id="911">
+        <left>644</left>
+        <top>497</top>
+        <width>632</width>
+        <height>28</height>
+        <label>assine pelo checkout ou ative um código VIP quando quiser.</label>
         <font>wf17</font>
         <textcolor>FFBCBCBC</textcolor>
       </control>
@@ -535,6 +563,14 @@
         <height>1080</height>
         <texture>overlay.png</texture>
       </control>
+      <control type="image" id="958">
+        <left>600</left>
+        <top>384</top>
+        <width>720</width>
+        <height>312</height>
+        <texture>scrim.png</texture>
+        <aspectratio>stretch</aspectratio>
+      </control>
       <control type="image" id="952">
         <left>606</left>
         <top>390</top>
@@ -543,20 +579,20 @@
         <texture>dialog.png</texture>
         <aspectratio>stretch</aspectratio>
       </control>
-      <control type="label" id="953">
+      <control type="textbox" id="953">
         <left>644</left>
-        <top>423</top>
+        <top>420</top>
         <width>632</width>
-        <height>40</height>
+        <height>42</height>
         <label>$INFO[Window.Property(welcome_status_title)]</label>
         <font>wf26</font>
         <textcolor>FFF7F7F7</textcolor>
       </control>
-      <control type="label" id="954">
+      <control type="textbox" id="954">
         <left>644</left>
-        <top>473</top>
+        <top>472</top>
         <width>632</width>
-        <height>100</height>
+        <height>104</height>
         <label>$INFO[Window.Property(welcome_status_text)]</label>
         <font>wf17</font>
         <textcolor>FFBCBCBC</textcolor>
