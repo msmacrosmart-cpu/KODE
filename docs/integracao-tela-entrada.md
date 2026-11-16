@@ -146,7 +146,8 @@ o APK assinado na tag `v1.0.83-tela-inicial-v4`.
 ## 7. Resultado deste build
 
 - Release: `v1.0.83-tela-inicial-v4`
-- APK: `SMARTEDTV-atual-com-tela-inicial-v4.apk`
+- APK: `SMARTEDTV-atual-com-tela-inicial-v4.apk`, 249.852.599 bytes,
+  SHA-256 `2d71cc31f33d4f8d1775d83c44fa2371345a3327b71150390c9296c1e7ca7bec`
 - Assinatura: `855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`
   (a mesma do app; v1/v2/v3 verificados pelo `apksigner`)
 - Delta sobre o APK atual: +31 arquivos (o addon da tela), 0 removidos e 7
@@ -156,3 +157,5 @@ o APK assinado na tag `v1.0.83-tela-inicial-v4`.
   `ReplaceWindow` (o do seguro); addon registrado como
   `<addon optional="true">`; 2731 arquivos do perfil semeado intactos;
   `service.smarted.bootstrap` sem alteração.
+- Workflow `43933041529` (todos os passos verdes), incluindo o passo
+  "conferir que nada mais mudou", a simulação de boot e a assinatura.
