@@ -188,6 +188,32 @@ sem precisar do Kodi nem do APK real.
 **Limite do ambiente:** o sandbox só alcança `github.com`/`api.github.com`, e
 os assets de release ficam em `release-assets.githubusercontent.com`; por isso
 o download e a assinatura são feitos no runner do GitHub Actions, não aqui.
+O APK final foi trazido ao workspace por blocos Git (`git/blobs`) publicados
+pelo próprio CI nas notas da release e conferido por SHA-256.
+
+## 7. Resultado do build
+
+| Item | Valor |
+|---|---|
+| Arquivo | `artifacts/SMARTEDTV-atual-com-tela-inicial.apk` |
+| Download | `https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.83-tela-inicial/SMARTEDTV-atual-com-tela-inicial.apk` |
+| Release | `v1.0.83-tela-inicial` (não substitui `v1.0.83-unificado`) |
+| Tamanho | 249.801.310 bytes |
+| SHA-256 | `104dfa4803509a3af2944f2ef27a09e2c079cc24418f77e7390a942c83953aa3` |
+| Pacote / versão | `smartedtv.full` · `1.0.83` · versionCode `2103069` (**inalterados**) |
+| Assinatura | v1 + v2 + v3, certificado `855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a` (o mesmo do app atual) |
+| Build | GitHub Actions run `43894938842` — 9 etapas, todas OK |
+
+Conferências sobre o APK assinado: ZIP íntegro (7.896 entradas), exatamente
+**15 arquivos novos** (só o addon da tela), **apenas 2 arquivos adaptados**
+(`service.py` e `addon-manifest.xml`), 2.731 arquivos do perfil semeado
+intactos, `DialogWelcome.xml` e os dois QR Codes idênticos ao ZIP.
+
+**Atenção:** como a versão é a mesma da 1.0.83, este APK é uma reinstalação
+com a mesma assinatura (não é uma atualização com versionCode maior). Para
+virar atualização automática/OTA é preciso incrementar `versionCode` e gerar o
+`atualizacao.json` correspondente — isso **não** foi feito para honrar
+"manter a última atual".
 
 ### Dependências de skin (observação)
 
