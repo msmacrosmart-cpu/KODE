@@ -122,3 +122,21 @@ o APK assinado na tag `v1.0.83-tela-inicial-v3`.
   `DialogWelcome.xml` + texturas do ZIP; não é captura de tela de um aparelho.
 - O `default.py` do ZIP é o único arquivo adaptado — necessário para ligar os
   botões ao app; todo o resto do visual é cópia fiel (SHA-256 conferido).
+
+## 7. Resultado deste build
+
+- Release: `v1.0.83-tela-inicial-v3`
+- APK: `SMARTEDTV-atual-com-tela-inicial-v3.apk`, 249.809.500 bytes,
+  SHA-256 `e8adc2b5fb3e579bcb63dee49613598431e22d7ac083a3366ad15104ba2e1715`
+- Assinatura: `855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`
+  (a mesma do app; v1/v2/v3 verificados pelo `apksigner`)
+- Delta sobre o APK atual: +15 arquivos (o addon do ZIP), 0 removidos e 7
+  arquivos alterados (`Startup.xml` e `Font.xml` das 3 skins +
+  `assets/system/addon-manifest.xml`).
+- Conferido no arquivo final: `Startup.xml` das 3 skins com 2 `onload` e um único
+  `ReplaceWindow` (o do seguro); addon registrado como
+  `<addon optional="true">`; 2731 arquivos do perfil semeado intactos;
+  `service.smarted.bootstrap` sem alteração.
+- Workflow `43920447527` (todos os passos verdes), incluindo os passos
+  "conferir que nada mais mudou", "assinar com a mesma chave" e a simulação de
+  boot.
