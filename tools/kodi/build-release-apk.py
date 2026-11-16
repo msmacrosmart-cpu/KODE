@@ -35,9 +35,11 @@ ROOT = Path(__file__).resolve().parents[2]
 SKIN = ROOT / "kodi" / "skin.estilo.personalizado"
 BRIDGE = ROOT / "kodi" / "addons" / "plugin.video.smarted"
 # Addons do repositório injetados como addons de sistema (assets/addons/).
-# service.smarted.bootstrap garante o Brazuca Play registrado no primeiro boot.
+# service.smarted.bootstrap garante o Brazuca Play registrado no primeiro boot
+# e abre a tela de entrada script.smartedtv.welcome (janela independente).
 BRIDGE_ADDONS = [BRIDGE, ROOT / "kodi" / "addons" / "service.smarted.bootstrap",
-                 ROOT / "kodi" / "addons" / "resource.uisounds.silencio"]
+                 ROOT / "kodi" / "addons" / "resource.uisounds.silencio",
+                 ROOT / "kodi" / "addons" / "script.smartedtv.welcome"]
 SIG = re.compile(r"^META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC))$", re.I)
 MANIFEST = "assets/system/addon-manifest.xml"
 
