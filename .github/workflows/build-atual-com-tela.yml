@@ -40,7 +40,7 @@ jobs:
           set -uo pipefail
           python3 --version
           if ! saida=$(python3 -m pip install --disable-pip-version-check \
-                 "Pillow==11.3.0" "fonttools==4.68.0" 2>&1); then
+                 "Pillow==11.3.0" "fonttools>=4.40,<5" 2>&1); then
             printf '%s\n' "$saida" | tail -15 | while IFS= read -r l; do
               printf '::error file=.github/workflows/build-atual-com-tela.yml::pip: %s\n' "$l"
             done
