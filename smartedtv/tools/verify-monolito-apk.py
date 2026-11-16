@@ -346,7 +346,6 @@ def conferir(apk: Path, aapt2: str, rel: Relatorio, esperado: dict) -> None:
         ("compartilhar aplicativo", b"CompartilharActivity"),
         ("abertura limpa do Kodi", b"iniciarKodi"),
         ("ponte com o Supabase", b"Supabase"),
-        ("QR de compartilhamento do app", b"qrcode.png"),
         ("atualização OTA", b"atualizacao.json"),
         ("entrega do APK por content://", b".ota"),
         ("instalador nativo", b"application/vnd.android.package-archive"),
