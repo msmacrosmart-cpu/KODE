@@ -1,15 +1,15 @@
-# Verificação do APK único — 1.0.82 (run 43775538981)
+# Verificação do APK único — 1.0.83 (run 43778794383)
 
-APK: `SMARTEDTV-1.0.82-unificado-arm64-v8a.apk`
+APK: `SMARTEDTV-1.0.83-unificado-arm64-v8a.apk`
 
 ```
-== arquivo: smartedtv/out-apk/SMARTEDTV-1.0.82-unificado-arm64-v8a.apk  (238.2 MB)
+== arquivo: smartedtv/out-apk/SMARTEDTV-1.0.83-unificado-arm64-v8a.apk  (238.2 MB)
 
 == identidade do pacote (aapt2 badging)
-  package: name='smartedtv.full' versionCode='2103068' versionName='1.0.82' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
+  package: name='smartedtv.full' versionCode='2103069' versionName='1.0.83' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
   OK    pacote                             smartedtv.full
-  OK    versionName                        1.0.82
-  OK    versionCode                        2103068
+  OK    versionName                        1.0.83
+  OK    versionCode                        2103069
 
 == manifesto (aapt2 xmltree)
   OK    activity de abertura               .AppOpenActivity
@@ -35,7 +35,7 @@ APK: `SMARTEDTV-1.0.82-unificado-arm64-v8a.apk`
   OK    QR Code no pacote                  assets/addons/script.smartedtv.ajustes/resources/qrcode.png
   OK    QR do checkout (Cakto) no pacote   assets/addons/script.smartedtv.ajustes/resources/qrcode-cakto.png
   OK    QR do checkout é PNG               11195 bytes
-  OK    QR é PNG                           2672 bytes
+  OK    QR é PNG                           2820 bytes
   OK    ponto de retomada                  assets/addons/service.smarted.bootstrap/retomar.py
   OK    atalhos VIP/Compartilhar na Home   ensure_shortcuts
   OK    atalhos apontam para o add-on de ajustes plugin://script.smartedtv.ajustes/
@@ -98,11 +98,9 @@ APK: `SMARTEDTV-1.0.82-unificado-arm64-v8a.apk`
   OK    checagem de VIP antes do anuncio   adsPermitidos
   OK    abrir link (checkout)              AbrirUrlActivity
   OK    compartilhar aplicativo            CompartilharActivity
-  OK    tela de boas-vindas/VIP            BoasVindas
   OK    abertura limpa do Kodi             iniciarKodi
-  OK    escolha Celular/TV                 Plataforma
   OK    ponte com o Supabase               Supabase
-  OK    QR do checkout mensal              qrcode-cakto
+  FALHA QR do checkout mensal              qrcode-cakto
   OK    atualização OTA                    atualizacao.json
   OK    entrega do APK por content://      .ota
   OK    instalador nativo                  application/vnd.android.package-archive
@@ -120,6 +118,7 @@ APK: `SMARTEDTV-1.0.82-unificado-arm64-v8a.apk`
   OK    texto de status                    escondido (gone)
 
 == resumo
-  obrigatórias com falha: 0
+  obrigatórias com falha: 1
   avisos: 0
+  - QR do checkout mensal: qrcode-cakto
 ```
