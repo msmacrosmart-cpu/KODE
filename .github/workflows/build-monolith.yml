@@ -25,6 +25,9 @@ on:
       - .github/workflows/build-monolith.yml
       - smartedtv/tools/integrate-monolith.py
       - smartedtv/tools/patch-source.py
+      # o passo bloqueante 10 usa este verificador: mudar nele exige build
+      - smartedtv/tools/verify-monolito-apk.py
+      - tests/**
       - smartedtv/tools/ads-java/**
       - smartedtv/assets/**
       - smartedtv/tools/make-brand-assets.py
