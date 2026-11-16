@@ -193,6 +193,40 @@ class TelaDoPacoteTest(unittest.TestCase):
                                cfile=str(Path(tmp) / 'welcome.pyc'), doraise=True)
 
 
+class MapaDeBotoesTest(unittest.TestCase):
+    """A ferramenta de mapeamento tem de continuar fechando (id <-> acao)."""
+
+    MAPEADOR = ROOT / 'tools' / 'kodi' / 'mapear-botoes.py'
+
+    def test_todo_botao_tem_acao_e_toda_acao_tem_botao(self):
+        spec = importlib.util.spec_from_file_location('mapeador',
+                                                      self.MAPEADOR)
+        modulo = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(modulo)
+
+        controles = modulo.controles_do_layout()
+        acoes = modulo.acoes_do_python()
+        sem_acao = sorted((ident for ident in controles
+                           if ident not in acoes
+                           and controles[ident][0] != 'edit'), key=int)
+        self.assertEqual(sem_acao, [], sem_acao)
+        self.assertEqual(sorted(set(acoes) - set(controles)), [])
+        # os ids citados no contrato do documento existem no layout
+        for ident in ('310', '311', '120', '121', '122', '123',
+                      '312', '905', '906', '955'):
+            self.assertIn(ident, controles, ident)
+
+    def test_saida_json_da_ferramenta(self):
+        import json
+        import subprocess
+        saida = subprocess.run([sys.executable, str(self.MAPEADOR), '--json'],
+                               capture_output=True, text=True, check=True)
+        dados = json.loads(saida.stdout)
+        self.assertTrue(dados)
+        for linha in dados:
+            self.assertTrue(linha['ok'], linha)
+
+
 class GeradorTest(unittest.TestCase):
     """A tela e reproduzivel a partir do pacote (nao e XML escrito a mao)."""
 
