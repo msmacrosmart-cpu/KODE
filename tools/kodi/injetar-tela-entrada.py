@@ -46,16 +46,26 @@ PROFILE_PREFIX = "assets/smarted/profile/"
 VIP_MODULO = "assets/addons/service.smarted.bootstrap/vip.py"
 SIG = re.compile(r"^META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC))$", re.I)
 
-# Fontes usadas por DialogWelcome.xml. Só as que faltarem em cada skin são
-# declaradas (no app atual faltam font20/22/24/30 nas duas skins SMARTED e
-# font16 também na skin.estuary); sem elas o Kodi cai em font13.
-FONTES_DA_TELA = [
-    ("font16", 16),
-    ("font20", 20),
-    ("font22", 22),
-    ("font24", 24),
-    ("font30", 30),
-]
+# Fontes usadas por DialogWelcome.xml: o gerador da tela nomeia cada estilo
+# `wf<tamanho>` (o tamanho em px de 1080p medido do CSS do pacote). Só as que
+# faltarem em cada skin são declaradas; sem elas o Kodi cai em font13 e a tela
+# sai fora de escala.
+FONTE_ARQUIVO = "NotoSans-Regular.ttf"
+
+
+def fontes_da_tela(raiz=None):
+    """Le do próprio DialogWelcome.xml quais estilos wfNN a tela usa."""
+    raiz = raiz or ROOT
+    layout = (raiz / "kodi" / "addons" / ADDON_ID / "resources" / "skins" /
+              "Default" / "1080i" / "DialogWelcome.xml")
+    texto = layout.read_text(encoding="utf-8")
+    nomes = sorted(set(re.findall(r"<font>(wf(\d+))</font>", texto)))
+    if not nomes:
+        raise SystemExit("DialogWelcome.xml sem estilos de fonte wfNN")
+    return [(nome, int(tamanho)) for nome, tamanho in nomes]
+
+
+FONTES_DA_TELA = None  # preenchido em main() a partir do XML (ver fontes_da_tela)
 
 STARTUP_ANTIGO = "<onload>ReplaceWindow($INFO[System.StartupWindow])</onload>"
 # RunScript pelo ID do addon: o Kodi resolve o caminho real (no Android os
@@ -93,8 +103,13 @@ def arquivos_do_addon():
         if not caminho.is_file() or "__pycache__" in caminho.parts or caminho.suffix == ".pyc":
             continue
         arquivos[ADDON_PREFIX + caminho.relative_to(ADDON_DIR).as_posix()] = caminho.read_bytes()
-    if len(arquivos) != 15:
-        raise SystemExit("addon da tela incompleto: %d arquivos (esperado 15)" % len(arquivos))
+    for obrigatorio in ("addon.xml", "default.py",
+                        "resources/skins/Default/1080i/DialogWelcome.xml",
+                        "resources/skins/Default/media/bg.png",
+                        "resources/skins/Default/media/qr_checkout.png",
+                        "resources/skins/Default/media/qr_apk.png"):
+        if ADDON_PREFIX + obrigatorio not in arquivos:
+            raise SystemExit("addon da tela incompleto: falta %s" % obrigatorio)
     return arquivos
 
 
@@ -114,7 +129,8 @@ def patch_startup(dados: bytes) -> bytes:
 def patch_fonts(dados: bytes) -> bytes:
     """Acrescenta, em cada fontset, as fontes do layout que a skin nao declara."""
     texto = dados.decode("utf-8")
-    faltando = [(nome, tamanho) for nome, tamanho in FONTES_DA_TELA
+    fontes = FONTES_DA_TELA if FONTES_DA_TELA is not None else fontes_da_tela()
+    faltando = [(nome, tamanho) for nome, tamanho in fontes
                 if "<name>%s</name>" % nome not in texto]
     if not faltando:
         raise SystemExit("a skin ja declara as fontes do layout; nada a corrigir")
@@ -123,10 +139,10 @@ def patch_fonts(dados: bytes) -> bytes:
         blocos.append(
             "\t\t<font>\n"
             "\t\t\t<name>%s</name>\n"
-            "\t\t\t<filename>NotoSans-Regular.ttf</filename>\n"
+            "\t\t\t<filename>%s</filename>\n"
             "\t\t\t<size>%d</size>\n"
             "\t\t\t<style>lighten</style>\n"
-            "\t\t</font>\n" % (nome, tamanho))
+            "\t\t</font>\n" % (nome, FONTE_ARQUIVO, tamanho))
     inserir = "".join(blocos)
     total_fontsets = texto.count("</fontset>")
     if total_fontsets < 1:
@@ -165,6 +181,8 @@ def main(argv=None):
     if args.apk.resolve() == args.saida.resolve():
         raise SystemExit("entrada e saida precisam ser diferentes")
 
+    global FONTES_DA_TELA
+    FONTES_DA_TELA = fontes_da_tela()
     extras = arquivos_do_addon()
     startups, fontes_alteradas = [], []
 

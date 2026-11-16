@@ -1,8 +1,13 @@
 # Tela de entrada do SMARTEDTV — a primeira interface do app
 
 Este documento descreve **o que foi entregue** e **por que funciona**: a tela do
-ZIP (`SMARTEDTV_Kodi_Omega_Welcome.zip`) é a primeira coisa que o usuário vê ao
-abrir o aplicativo, e a Home só é carregada quando ele conclui a tela.
+pacote `smartedtv-src` (Dropbox) é a primeira coisa que o usuário vê ao abrir o
+aplicativo, e a Home só é carregada quando ele conclui a tela.
+
+A tela é **sempre horizontal (16:9, 1920×1080)**. O pacote traz também um
+layout retrato para celular em pé; essa parte do CSS não é traduzida, porque o
+app roda deitado (TV/Android TV) — o seletor “Celular” do pacote é apenas
+visual.
 
 O desenho anterior — abrir a tela por cima de uma Home já carregada — foi
 descartado: o serviço (`service.smarted.bootstrap`) só começa **depois** da Home,
@@ -33,11 +38,15 @@ o ponto exato onde a tela entra.
 
 Delta exato sobre o APK da release `v1.0.83-unificado` (nada mais muda):
 
-1. **+15 arquivos** em `assets/addons/script.smartedtv.welcome/` — os arquivos do
-   ZIP, byte a byte (layout `DialogWelcome.xml` 1920×1080, as 10 texturas, os
-   dois QR Codes originais, `addon.xml`, `README.txt`) e o `default.py`
-   adaptado (único arquivo que não é cópia fiel, porque é ele que liga os
-   botões ao app).
+1. **+31 arquivos** em `assets/addons/script.smartedtv.welcome/` —
+   `addon.xml`, `resources/__init__.py`, o `default.py` (único arquivo de lógica:
+   liga os botões ao app), o layout `DialogWelcome.xml` (1920×1080, horizontal) e
+   as 27 texturas do pacote. A tela é **gerada** do próprio pacote por
+   `tools/kodi/gerar-tela-entrada.py`, que lê `css/styles.css` (cores, raios,
+   gradientes, `rem`/`vw`/`vh`/`clamp`) e desenha fundo, cartões de vidro,
+   botões, pílulas de plano, placa do QR e logo com os mesmos valores. Os dois
+   QR Codes (`qr_checkout.png`, `qr_apk.png`) são cópia **byte a byte** de
+   `assets/qr-checkout.png` e `assets/qr-apk.png` do pacote.
 2. **`xml/Startup.xml`** das 3 skins (`skin.novatv`, `skin.smartedtv.classic`,
    `skin.estuary`) — o salto direto para a Home é substituído por:
 
@@ -50,10 +59,11 @@ Delta exato sobre o APK da release `v1.0.83-unificado` (nada mais muda):
    alarme). O segundo é o **seguro**: se o Python não conseguir abrir a tela em
    30 s, a Home é liberada e o app continua utilizável. A tela cancela esse
    alarme no `onInit` — com a tela no ar, não existe Home por trás nem antes.
-3. **`xml/Font.xml`** das skins — declaradas as fontes que o layout do ZIP usa e
-   as skins do app não tinham (`font20`, `font22`, `font24`, `font30`; e
-   `font16` na `skin.estuary`). Sem elas `GUIFontManager::GetFont` cai em
-   `font13` e a tela fica fora de escala.
+3. **`xml/Font.xml`** das skins — declaradas as fontes `wfNN` do layout (o
+   número é a altura em px medida do CSS: `wf11`, `wf13`, `wf15`, `wf17`,
+   `wf18`, `wf21`, `wf22`, `wf26`, `wf33`, `wf42`), que as skins do app não
+   tinham. Sem elas `GUIFontManager::GetFont` cai em `font13` e a tela fica
+   fora de escala. A lista é lida do próprio `DialogWelcome.xml` pelo injetor.
 4. **`assets/system/addon-manifest.xml`** — `<addon optional="true">script.smartedtv.welcome</addon>`,
    a mesma forma dos outros addons do app. É o que faz a linha nova do banco de
    addons nascer habilitada, condição para o `RunScript(script.smartedtv.welcome)`
@@ -66,17 +76,20 @@ assinatura, perfil semeado intacto (2731 arquivos com SHA-256 conferido),
 ## 3. O que a tela faz
 
 `kodi/addons/script.smartedtv.welcome/default.py` (`WelcomeDialog`) mantém a
-janela do ZIP viva no lugar da Home e liga cada controle ao fluxo que **já
+janela do pacote viva no lugar da Home e liga cada controle ao fluxo que **já
 existe** no app:
 
 | controle | ação | implementação reutilizada |
 |---|---|---|
 | 311 (Ativar) + 310 (campo) | valida o código de ativação no servidor | `service.smarted.bootstrap/vip.py` → `validar()` (rotas `/api/validar`, `/api/codigos/validar`, `/functions/v1/validar-codigo`, …) gravando `vip.json` |
-| 120 (Abrir checkout) | abre a compra do plano sem anúncios | `vip.abrir_checkout()` → `https://pay.cakto.com.br/nkvbegd_1323120` (o mesmo QR `qr_1.png` da tela) |
+| 120 (Abrir checkout) | abre a compra do plano sem anúncios | `vip.abrir_checkout()` → `https://pay.cakto.com.br/nkvbegd_1323120` (o mesmo destino do QR `qr_checkout.png`) |
 | 121 (Compartilhar link) | compartilha o app | `vip.compartilhar()` (ponte `smartedtv.full.CompartilharActivity`) |
+| 122 (Baixar APK) | abre o download do app | `vip.abrir_url(vip.APK)` — o link que o próprio módulo VIP usa |
+| 123 (ATUALIZAR APLICATIVO) | abre a checagem de versão (OTA) | `vip.procurar_atualizacao()` (ponte `smartedtv.full.AtualizaActivity`); sem essa ponte, cai no download do APK |
+| 140/141 (10 min / 1 mês) | escolhe o plano que acompanha o código | o plano é só rótulo: quem decide validade é o servidor de ativação |
 | 312 → 905/906 | confirma "continuar com anúncios" | fecha o modal e libera a Home (versão com anúncios, como hoje) |
 | Voltar / menu anterior | volta do modal ou conclui a tela | `ReplaceWindow($INFO[System.StartupWindow])` |
-| 130/131 (Android TV / Celular) | seletor visual do ZIP | não existe fluxo equivalente no app: apenas registrado no log |
+| 130/131 (Android TV / Celular) | seletor visual do pacote | a tela é fixa em 16:9 (não há layout retrato): só registrado no log |
 
 Nenhuma API, endpoint ou credencial nova: o módulo VIP é importado da pasta do
 `service.smarted.bootstrap` que já vem no APK, e o "ir para a Home" usa o mesmo
@@ -97,19 +110,23 @@ comando que o `Startup.xml` original usava.
 # 1. XML + Python de todo o repositório
 python3 tools/kodi/static-check.py
 
-# 2. testes (fidelidade ao ZIP, Startup antes da Home, fluxos dos botões)
+# 2. testes (fidelidade ao pacote, Startup antes da Home, fluxos dos botões)
 python3 -m unittest tests.test_tela_entrada tests.test_injetor_tela_entrada
 
 # 3. injetar num APK limpo e simular o boot
 python3 tools/kodi/injetar-tela-entrada.py --apk atual.apk --saida bruto.apk
 python3 tools/kodi/simular-boot-tela-entrada.py --apk bruto.apk
 
-# 4. prova visual a partir do próprio XML do ZIP
+# 4. prova visual a partir do próprio XML da tela
 python3 tools/kodi/renderizar-tela-entrada.py --saida prova.png
+python3 tools/kodi/renderizar-tela-entrada.py --dialogo ads --saida dialogo.png
+
+# 5. regerar a tela a partir do pacote (se o pacote mudar)
+python3 tools/kodi/gerar-tela-entrada.py --origem build_test/src_novo/smartedtv
 ```
 
 O workflow `.github/workflows/build-atual-com-tela.yml` faz tudo isso e publica
-o APK assinado na tag `v1.0.83-tela-inicial-v3`.
+o APK assinado na tag `v1.0.83-tela-inicial-v4`.
 
 ## 6. Limitações declaradas
 
@@ -119,24 +136,23 @@ o APK assinado na tag `v1.0.83-tela-inicial-v3`.
   `SyncInstalled`), o APK gerado (conteúdo, fontes, manifest, perfil intacto,
   assinatura) e uma simulação com stubs do ciclo de vida da janela.
 - A prova visual (`tela-entrada-prova.png`) é desenhada a partir do
-  `DialogWelcome.xml` + texturas do ZIP; não é captura de tela de um aparelho.
-- O `default.py` do ZIP é o único arquivo adaptado — necessário para ligar os
-  botões ao app; todo o resto do visual é cópia fiel (SHA-256 conferido).
+  `DialogWelcome.xml` + texturas do addon; não é captura de tela de um aparelho.
+- A tradução HTML/CSS → XML/texturas é fiel nas cores (os tokens `--ink`,
+  `--txt`, `--mut` do CSS são conferidos por teste), nos raios, nos gradientes e
+  na geometria (box model de 1920×1080), mas não é um motor de layout CSS: o
+  texto é posicionado pelo box model calculado, como o Kodi exige.
+- O `default.py` é o único arquivo de lógica; todo o visual vem do pacote.
 
 ## 7. Resultado deste build
 
-- Release: `v1.0.83-tela-inicial-v3`
-- APK: `SMARTEDTV-atual-com-tela-inicial-v3.apk`, 249.809.500 bytes,
-  SHA-256 `e8adc2b5fb3e579bcb63dee49613598431e22d7ac083a3366ad15104ba2e1715`
+- Release: `v1.0.83-tela-inicial-v4`
+- APK: `SMARTEDTV-atual-com-tela-inicial-v4.apk`
 - Assinatura: `855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`
   (a mesma do app; v1/v2/v3 verificados pelo `apksigner`)
-- Delta sobre o APK atual: +15 arquivos (o addon do ZIP), 0 removidos e 7
+- Delta sobre o APK atual: +31 arquivos (o addon da tela), 0 removidos e 7
   arquivos alterados (`Startup.xml` e `Font.xml` das 3 skins +
   `assets/system/addon-manifest.xml`).
 - Conferido no arquivo final: `Startup.xml` das 3 skins com 2 `onload` e um único
   `ReplaceWindow` (o do seguro); addon registrado como
   `<addon optional="true">`; 2731 arquivos do perfil semeado intactos;
   `service.smarted.bootstrap` sem alteração.
-- Workflow `43920447527` (todos os passos verdes), incluindo os passos
-  "conferir que nada mais mudou", "assinar com a mesma chave" e a simulação de
-  boot.

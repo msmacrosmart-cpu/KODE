@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
-"""Desenha a tela do ZIP (DialogWelcome.xml) exatamente como o Kodi mostraria.
+# -*- coding: utf-8 -*-
+"""Desenha a tela de entrada a partir do DialogWelcome.xml entregue.
 
-Não é um mockup novo: cada controle do XML entregue é renderizado nas mesmas
-coordenadas, com as mesmas texturas do ZIP (``resources/skins/Default/media``) e
-os mesmos tamanhos de fonte resolvidos pelo Font.xml da skin. Serve como prova
-visual do que o APK abre, sem precisar de um dispositivo.
+Cada controle do XML e desenhado nas suas coordenadas, com as texturas do
+addon e as fontes do tamanho declarado no Font.xml das skins — serve como prova
+visual do que o APK abre, sem precisar de um aparelho. Nao e um mockup novo: o
+que aparece vem do proprio XML e das texturas que vao no APK.
 
-Uso: python3 tools/kodi/renderizar-tela-entrada.py --saida prova.png
+Uso:
+    python3 tools/kodi/renderizar-tela-entrada.py --saida prova.png
 """
 from __future__ import annotations
 
 import argparse
 import re
-import zipfile
+import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -21,8 +24,12 @@ ROOT = Path(__file__).resolve().parents[2]
 ADDON = ROOT / "kodi" / "addons" / "script.smartedtv.welcome"
 MEDIA = ADDON / "resources" / "skins" / "Default" / "media"
 LAYOUT = ADDON / "resources" / "skins" / "Default" / "1080i" / "DialogWelcome.xml"
-TEXTO_EXTRA = ROOT / "kodi" / "skin.novatv" / "fonts" / "Regular.ttf"
-FONTE_SISTEMA = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
+FONTS_DIR = ROOT / "kodi" / "skin.estilo.personalizado" / "fonts"
+# Copia da mesma fonte sem as tabelas de hinting: o FreeType deste ambiente
+# rasteriza os glifos com defeito quando o hinting da Noto Sans esta presente
+# (na TV o Kodi usa a fonte original do addon, sem alteracao alguma). Serve so
+# para esta prova visual.
+FONTE_PROVA = ROOT / "build_test" / "NotoSans-render.ttf"
 
 
 def texto_de(no, tag, padrao=""):
@@ -31,22 +38,10 @@ def texto_de(no, tag, padrao=""):
 
 
 def numero(no, tag, padrao=0):
-    valor = texto_de(no, tag, "")
     try:
-        return float(valor)
+        return float(texto_de(no, tag, ""))
     except ValueError:
         return padrao
-
-
-def fonte_tamanho(caminho_font_xml, nome):
-    if caminho_font_xml and caminho_font_xml.is_file():
-        texto = caminho_font_xml.read_text(encoding="utf-8", errors="replace")
-        for bloco in re.findall(r"<font>(.*?)</font>", texto, re.S):
-            if "<name>%s</name>" % nome in bloco:
-                m = re.search(r"<size>(\d+)</size>", bloco)
-                if m:
-                    return int(m.group(1))
-    return None
 
 
 def cor(valor, padrao=(255, 255, 255, 255)):
@@ -57,21 +52,34 @@ def cor(valor, padrao=(255, 255, 255, 255)):
                     int(valor[0:2], 16))
         except ValueError:
             return padrao
-    if len(valor) == 6:
-        try:
-            return (int(valor[0:2], 16), int(valor[2:4], 16), int(valor[4:6], 16), 255)
-        except ValueError:
-            return padrao
     return padrao
 
 
-def carregar_fonte(nome, tamanhos):
-    caminho = TEXTO_EXTRA if TEXTO_EXTRA.is_file() else FONTE_SISTEMA
-    return ImageFont.truetype(str(caminho), tamanhos.get(nome) or 30)
+def tamanhos_de_fonte(caminho_font_xml):
+    tamanhos = {}
+    if not caminho_font_xml.is_file():
+        return tamanhos
+    texto = caminho_font_xml.read_text(encoding="utf-8", errors="replace")
+    for bloco in re.findall(r"<font>(.*?)</font>", texto, re.S):
+        nome = re.search(r"<name>([^<]+)</name>", bloco)
+        tamanho = re.search(r"<size>(\d+)</size>", bloco)
+        if nome and tamanho and nome.group(1) not in tamanhos:
+            tamanhos[nome.group(1)] = int(tamanho.group(1))
+    return tamanhos
 
 
-def desenhar_controle(imagem, no, pais, tamanhos):
-    """Renderiza um controle do XML (recursivo para os grupos)."""
+def fonte(nome, tamanhos):
+    tamanho = tamanhos.get(nome) or 30
+    caminho = FONTE_PROVA if FONTE_PROVA.is_file() else FONTS_DIR / "NotoSans-Regular.ttf"
+    return ImageFont.truetype(str(caminho), tamanho)
+
+
+def rotulo_variado(no):
+    """`[CR]` e a quebra de linha do skinning do Kodi."""
+    return texto_de(no, "label").replace("[CR]", "\n")
+
+
+def desenhar_controle(imagem, no, pais, tamanhos, props):
     if no.tag != "control":
         return
     tipo = no.get("type") or ""
@@ -79,112 +87,132 @@ def desenhar_controle(imagem, no, pais, tamanhos):
     y = numero(no, "top") + pais[1]
     largura = numero(no, "width")
     altura = numero(no, "height")
+
+    if tipo == "group":
+        visivel = texto_de(no, "visible")
+        esperado = None
+        if "welcome_dialog),ads" in visivel.replace(" ", ""):
+            esperado = "ads"
+        elif "welcome_dialog),status" in visivel.replace(" ", ""):
+            esperado = "status"
+        if esperado and props.get("welcome_dialog") != esperado:
+            return
+        for filho in no.findall("control"):
+            desenhar_controle(imagem, filho, (x, y), tamanhos, props)
+        return
+
     if tipo == "image":
         textura = texto_de(no, "texture")
         arquivo = MEDIA / textura
-        if textura and arquivo.is_file():
-            img = Image.open(arquivo).convert("RGBA")
-            if largura and altura and (img.width, img.height) != (largura, altura):
-                if texto_de(no, "aspectratio") == "keep":
-                    img.thumbnail((int(largura), int(altura)), Image.LANCZOS)
-                else:
-                    img = img.resize((int(largura), int(altura)), Image.LANCZOS)
-            imagem.alpha_composite(img, (int(x), int(y)))
+        if not textura or not arquivo.is_file():
+            raise SystemExit("textura ausente no addon: %s" % textura)
+        img = Image.open(arquivo).convert("RGBA")
+        alvo = (int(largura), int(altura))
+        if img.size != alvo:
+            if texto_de(no, "aspectratio") in ("keep", "stretch"):
+                img = img.resize(alvo, Image.LANCZOS)
+            else:
+                img = img.resize(alvo, Image.LANCZOS)
+        imagem.alpha_composite(img, (int(x), int(y)))
         return
+
     if tipo == "label":
-        rotulo = texto_de(no, "label")
+        rotulo = rotulo_variado(no)
         if not rotulo:
             return
-        fonte = carregar_fonte(texto_de(no, "font"), tamanhos)
+        if rotulo.startswith("$INFO[Window.Property("):
+            chave = rotulo[len("$INFO[Window.Property("):].rstrip(")]")
+            rotulo = props.get(chave, "")
+            if not rotulo:
+                return
+        f = fonte(texto_de(no, "font"), tamanhos)
         cor_texto = cor(texto_de(no, "textcolor"))
         alinhamento = (texto_de(no, "align") or "left").strip()
         alinhar_y = (texto_de(no, "aligny") or "top").strip()
         desenho = ImageDraw.Draw(imagem)
-        linhas = rotulo.split("\n")
-        # quebra simples por palavra respeitando a largura declarada
         finais = []
-        for linha in linhas:
+        for linha in rotulo.split("\n"):
             atual = ""
             for palavra in linha.split(" "):
                 teste = (atual + " " + palavra).strip()
-                if desenho.textlength(teste, font=fonte) <= largura or not atual:
+                if desenho.textlength(teste, font=f) <= largura or not atual:
                     atual = teste
                 else:
                     finais.append(atual)
                     atual = palavra
             finais.append(atual)
-        alturas = [desenho.textbbox((0, 0), l, font=fonte)[3] for l in finais]
+        alturas = [desenho.textbbox((0, 0), l, font=f)[3] for l in finais]
         total = sum(alturas) + 4 * (len(finais) - 1)
-        if alinhar_y == "center":
-            topo = y + (altura - total) / 2 if altura else y
-        else:
-            topo = y
+        topo = y + (altura - total) / 2 if alinhar_y == "center" else y
         for linha, h in zip(finais, alturas):
-            w = desenho.textlength(linha, font=fonte)
+            w = desenho.textlength(linha, font=f)
             if alinhamento == "center":
                 px = x + (largura - w) / 2
             elif alinhamento == "right":
                 px = x + largura - w
             else:
                 px = x
-            desenho.text((px, topo), linha, font=fonte, fill=cor_texto)
+            desenho.text((px, topo), linha, font=f, fill=cor_texto)
             topo += h + 4
         return
+
     if tipo in ("button", "edit"):
-        if tipo == "edit":
-            arquivo = MEDIA / (texto_de(no, "texturenofocus") or "edit_nofocus.png")
-            if arquivo.is_file():
-                img = Image.open(arquivo).convert("RGBA").resize((int(largura), int(altura)))
-                imagem.alpha_composite(img, (int(x), int(y)))
-        elif texto_de(no, "texturenofocus"):
-            arquivo = MEDIA / texto_de(no, "texturenofocus")
-            if arquivo.is_file():
-                img = Image.open(arquivo).convert("RGBA").resize((int(largura), int(altura)))
-                imagem.alpha_composite(img, (int(x), int(y)))
+        textura = texto_de(no, "texturenofocus")
+        # nos desenhos em repouso mostramos o estado sem foco
+        arquivo = MEDIA / textura if textura else None
+        if arquivo is not None and arquivo.is_file():
+            img = Image.open(arquivo).convert("RGBA").resize(
+                (int(largura), int(altura)), Image.LANCZOS)
+            imagem.alpha_composite(img, (int(x), int(y)))
         rotulo = texto_de(no, "label")
-        fonte = carregar_fonte(texto_de(no, "font"), tamanhos)
-        cor_texto = cor(texto_de(no, "textcolor"), (255, 255, 255, 255))
-        desenho = ImageDraw.Draw(imagem)
-        w = desenho.textlength(rotulo, font=fonte)
-        desenho.text((x + (largura - w) / 2, y + (altura - fonte.size) / 2 - 2),
-                     rotulo, font=fonte, fill=cor_texto)
-        return
-    if tipo == "group":
-        visivel = no.find("visible")
-        if visivel is not None:
-            # o modal só aparece com a propriedade show_free_dialog=true
+        if rotulo.startswith("$INFO[Window.Property("):
+            chave = rotulo[len("$INFO[Window.Property("):].rstrip(")]")
+            rotulo = props.get(chave, "")
+        if not rotulo:
             return
-        for filho in no.findall("control"):
-            desenhar_controle(imagem, filho, (x, y), tamanhos)
+        f = fonte(texto_de(no, "font"), tamanhos)
+        cor_texto = cor(texto_de(no, "textcolor"))
+        desenho = ImageDraw.Draw(imagem)
+        w = desenho.textlength(rotulo, font=f)
+        caixa = desenho.textbbox((0, 0), rotulo, font=f)
+        altura_texto = caixa[3] - caixa[1]
+        desenho.text((x + (largura - w) / 2, y + (altura - altura_texto) / 2 - caixa[1]),
+                     rotulo, font=f, fill=cor_texto)
+        return
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--saida", type=Path, default=ROOT / "artifacts" / "tela-entrada-prova.png")
-    parser.add_argument("--font-xml", type=Path, default=ROOT / "kodi" / "skin.novatv" / "xml" / "Font.xml")
+    parser.add_argument("--saida", type=Path,
+                        default=ROOT / "artifacts" / "tela-entrada-prova.png")
+    parser.add_argument("--font-xml", type=Path,
+                        default=ROOT / "kodi" / "skin.estilo.personalizado" / "xml" / "Font.xml")
+    parser.add_argument("--dialogo", default="",
+                        help="ades|status para desenhar um dos dialogos")
     args = parser.parse_args(argv)
 
-    import xml.etree.ElementTree as ET
-
     raiz = ET.parse(LAYOUT).getroot()
-    tamanhos = {}
-    if args.font_xml.is_file():
-        texto = args.font_xml.read_text(encoding="utf-8", errors="replace")
-        for bloco in re.findall(r"<font>(.*?)</font>", texto, re.S)[:64]:
-            nome = re.search(r"<name>([^<]+)</name>", bloco)
-            tamanho = re.search(r"<size>(\d+)</size>", bloco)
-            if nome and tamanho and nome.group(1) not in tamanhos:
-                tamanhos[nome.group(1)] = int(tamanho.group(1))
+    tamanhos = tamanhos_de_fonte(args.font_xml)
+    # os estilos wfNN declarados pelo injetor (nome = tamanho)
+    for bloco in re.findall(r"<font>(.*?)</font>", args.font_xml.read_text(
+            encoding="utf-8", errors="replace"), re.S):
+        nome = re.search(r"<name>wf(\d+)</name>", bloco)
+        if nome:
+            tamanhos[nome.group(1) and "wf" + nome.group(1)] = int(nome.group(1))
+    for nome in re.findall(r"<font>(wf\d+)</font>", LAYOUT.read_text(encoding="utf-8")):
+        tamanhos.setdefault(nome, int(nome[2:]))
 
-    # as 4 fontes novas que o injetor declara no Font.xml da skin
-    tamanhos.setdefault("font20", 20)
-    tamanhos.setdefault("font22", 22)
-    tamanhos.setdefault("font24", 24)
-    tamanhos.setdefault("font30", 30)
+    props = {}
+    if args.dialogo:
+        props["welcome_dialog"] = args.dialogo
+        props["welcome_status_title"] = "Código não ativado"
+        props["welcome_status_text"] = (
+            "O serviço de validação não aceitou este código para o plano selecionado.")
+        props["welcome_status_ok"] = "Tentar novamente"
 
     imagem = Image.new("RGBA", (1920, 1080), (0, 0, 0, 255))
     for controle in raiz.find("controls").findall("control"):
-        desenhar_controle(imagem, controle, (0, 0), tamanhos)
+        desenhar_controle(imagem, controle, (0, 0), tamanhos, props)
 
     args.saida.parent.mkdir(parents=True, exist_ok=True)
     imagem.convert("RGB").save(args.saida, quality=95)
@@ -193,4 +221,4 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    sys.exit(main())

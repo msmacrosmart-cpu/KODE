@@ -1,19 +1,23 @@
 # -*- coding: utf-8 -*-
-"""Tela de entrada do SMARTEDTV — interface do ZIP, aberta ANTES da Home.
+"""Tela de entrada do SMARTEDTV — interface do pacote `smartedtv-src`, aberta
+ANTES da Home.
 
-Interface e 100% a do ZIP (`resources/skins/Default/1080i/DialogWelcome.xml` +
-`resources/skins/Default/media/`, sem nenhuma alteracao visual). Este arquivo so
-liga a tela ao ciclo de inicializacao do aplicativo:
+O desenho e o do pacote entregue (medido do CSS e reproduzido em
+`resources/skins/Default/1080i/DialogWelcome.xml`, com as texturas e os QR Codes
+originais). Este arquivo so liga os controles ao que ja existe no app:
 
 * e chamado pelo `Startup.xml` da skin ativa (janela 12999), que o Kodi abre no
-  lugar da Home durante `CApplication::Initialize`. Enquanto esse XML estiver em
-  uso, a Home (10000) ainda nao foi criada;
-* mantem a janela viva no lugar de `ReplaceWindow($INFO[System.StartupWindow])`,
-  entao o Kodi termina de inicializar com a tela na frente;
-* quando o usuario conclui, a janela fecha e a Home e aberta.
+  lugar da Home durante `CApplication::Initialize` — a Home (10000) ainda nao
+  foi criada e so e aberta quando a tela conclui;
+* os botoes usam o modulo `vip.py` do `service.smarted.bootstrap` que ja vem no
+  APK: validar codigo, abrir checkout, compartilhar, checar atualizacao e
+  abrir URLs. Nenhuma API, endpoint ou credencial nova.
 
-As acoes reutilizam o que ja existe no projeto (`vip.py` do
-service.smarted.bootstrap) e nao inventam API, endpoint nem credencial.
+Controles desta tela:
+    310 campo do codigo   311 ativar      140/141 plano 10 min / 1 mes
+    120 checkout          121 compartilhar link      122 baixar APK
+    123 atualizar aplicativo                       312 continuar com anuncios
+    905/906/955 dialogos  130/131 aparelho (visual, como no pacote)
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -29,8 +33,15 @@ ADDON_ID = 'script.smartedtv.welcome'
 SERVICO = 'service.smarted.bootstrap'
 XML_RELATIVO = 'resources/skins/Default/1080i/DialogWelcome.xml'
 MARCA_ABERTA = 'smartedtv.welcome.ativa'
-# Comando usado pelo proprio Startup.xml das skins do projeto para ir a Home.
+# Comando usado pelo proprio Startup.xml das skins para ir a Home.
 FLUXO_INTERFACE_PRINCIPAL = 'ReplaceWindow($INFO[System.StartupWindow])'
+
+# Propriedades da janela usadas pelos grupos do XML (dialogos).
+PROP_DIALOGO = 'welcome_dialog'
+PROP_TITULO = 'welcome_status_title'
+PROP_TEXTO = 'welcome_status_text'
+PROP_OK = 'welcome_status_ok'
+PROP_PLANO = 'welcome_plan'
 
 
 def _log(mensagem, nivel=None):
@@ -43,14 +54,12 @@ def _log(mensagem, nivel=None):
 
 def _pasta_do_servico():
     """Pasta real do service.smarted.bootstrap (no APK Android fica em xbmc)."""
-    # 1) banco de addons: e o caminho oficial, e o addon ja esta habilitado
     try:
         pasta = xbmcaddon.Addon(SERVICO).getAddonInfo('path')
         if pasta:
             return xbmcvfs.translatePath(pasta)
     except Exception:
         pass
-    # 2) caminhos conhecidos (addons embarcados no APK usam special://xbmc)
     for raiz in ('special://xbmc/addons/', 'special://home/addons/',
                  'special://profile/addons/'):
         try:
@@ -79,7 +88,7 @@ def _vip():
 
 
 def _pasta_da_tela():
-    """Pasta do addon, preferindo o caminho do proprio arquivo (sem banco de addons)."""
+    """Pasta do addon, preferindo o caminho do proprio arquivo."""
     arquivo = globals().get('__file__')
     if arquivo:
         try:
@@ -110,11 +119,181 @@ def _sinalizar_abertura():
 
 
 class WelcomeDialog(xbmcgui.WindowXMLDialog):
-    """Mesmo dialogo do ZIP; aqui so encaminhamos as acoes para o projeto."""
+    """Mesma tela do pacote; aqui so encaminhamos as acoes para o projeto."""
+
+    def __init__(self, *args, **kwargs):
+        xbmcgui.WindowXMLDialog.__init__(self, *args, **kwargs)
+        self.saiu = False
+        self.plano = '10min'
+        # plano 10 min e 1 mes: as duas opcoes do pacote. O servidor de
+        # ativacao continua sendo o unico que decide validade/duracao.
+        self._selecionar_plano('10min')
+
+    # --- dialogos ---------------------------------------------------------
+    def _dialogo(self, titulo, texto, ok='Entendi'):
+        for chave, valor in ((PROP_TITULO, titulo), (PROP_TEXTO, texto),
+                             (PROP_OK, ok)):
+            self.setProperty(chave, valor)
+        self.setProperty(PROP_DIALOGO, 'status')
+        try:
+            self.setFocusId(955)
+        except Exception:
+            pass
+
+    def _fechar_dialogo(self, foco=311):
+        self.clearProperty(PROP_DIALOGO)
+        try:
+            self.setFocusId(foco)
+        except Exception:
+            pass
+
+    # --- plano ------------------------------------------------------------
+    def _selecionar_plano(self, plano):
+        """Guarda o plano escolhido em 140/141 (a pilula branca e o foco).
+
+        O pacote mostra "10 min" pre-selecionado; aqui o plano ativo e o que
+        esta em foco, a mesma linguagem de navegacao do controle no Kodi.
+        """
+        self.plano = plano
+        self.setProperty(PROP_PLANO, plano)
+        _log('plano selecionado: %s' % plano)
+
+    # --- acoes ligadas ao que ja existe no projeto -----------------------
+    def _abrir_checkout(self):
+        vip = _vip()
+        if vip is not None and vip.abrir_checkout():
+            _log('checkout aberto pelo fluxo existente (vip.abrir_checkout)')
+            return
+        self._dialogo('Checkout indisponível',
+                      'Não consegui abrir o checkout neste aparelho. '
+                      'Aponte a câmera para o QR Code ao lado.')
+
+    def _compartilhar(self):
+        vip = _vip()
+        if vip is not None and vip.compartilhar():
+            _log('compartilhamento aberto (vip.compartilhar)')
+            return
+        self._dialogo('Compartilhamento indisponível',
+                      'Não consegui abrir o compartilhamento neste aparelho.')
+
+    def _baixar_apk(self):
+        vip = _vip()
+        if vip is None:
+            self._dialogo('Download indisponível',
+                          'Não consegui abrir o link do aplicativo neste aparelho.')
+            return
+        url = getattr(vip, 'APK', None) or getattr(vip, 'APK_GITHUB', None)
+        if url and vip.abrir_url(url, 'download do APK'):
+            _log('download do APK aberto')
+            return
+        self._dialogo('Download indisponível',
+                      'Não consegui abrir o link do aplicativo neste aparelho.')
+
+    def _atualizar(self):
+        """ATUALIZAR APLICATIVO: fluxo de atualizacao que ja existe no app."""
+        vip = _vip()
+        if vip is not None and vip.procurar_atualizacao():
+            _log('checagem de atualizacao aberta (vip.procurar_atualizacao)')
+            return
+        self._baixar_apk()
+
+    def _ativar_codigo(self):
+        """Le o controle 310 e valida com o servidor pelo modulo vip do projeto."""
+        vip = _vip()
+        if vip is None:
+            self._dialogo('Ativação indisponível',
+                          'A ativação por código não está disponível neste aparelho.')
+            return
+        try:
+            codigo = (self.getControl(310).getText() or '').strip()
+        except Exception:
+            codigo = ''
+        if not codigo:
+            codigo = xbmcgui.Dialog().input(
+                'Digite o código de ativação', type=xbmcgui.INPUT_ALPHANUM)
+        if not codigo:
+            try:
+                self.setFocusId(310)
+            except Exception:
+                pass
+            return
+        xbmcgui.Dialog().notification(
+            'SMARTEDTV', 'Validando o código...', xbmcgui.NOTIFICATION_INFO, 3000)
+        ok, mensagem = vip.validar(codigo)
+        if ok:
+            self._dialogo('VIP ativado', mensagem or 'Acesso VIP liberado.',
+                          'Começar a assistir')
+            _log('codigo ativado; licenca gravada em vip.json')
+        else:
+            self._dialogo('Código não ativado',
+                          mensagem or 'O serviço não aceitou este código.',
+                          'Tentar novamente')
+            _log('codigo recusado: %s' % mensagem, xbmc.LOGWARNING)
+
+    def _modo_gratuito(self):
+        """Fecha a entrada e libera a Home (versao com anuncios, como hoje)."""
+        self._sair()
+
+    def _sair(self):
+        self.saiu = True
+        self.close()
+
+    # --- eventos ---------------------------------------------------------
+    def onClick(self, control_id):
+        if self.getProperty(PROP_DIALOGO):
+            # qualquer clique com dialogo aberto so fecha o dialogo
+            if control_id in (905, 955):
+                self._fechar_dialogo()
+            elif control_id == 906:
+                self._fechar_dialogo(312)
+                self._sair()
+            return
+        if control_id == 312:
+            self.setProperty(PROP_DIALOGO, 'ads')
+            try:
+                self.setFocusId(905)
+            except Exception:
+                pass
+        elif control_id == 905:
+            self._fechar_dialogo(312)
+        elif control_id == 906:
+            self._fechar_dialogo(312)
+            self._modo_gratuito()
+        elif control_id == 955:
+            self._fechar_dialogo()
+        elif control_id == 140:
+            self._selecionar_plano('10min')
+        elif control_id == 141:
+            self._selecionar_plano('1month')
+        elif control_id == 120:
+            self._abrir_checkout()
+        elif control_id == 121:
+            self._compartilhar()
+        elif control_id == 122:
+            self._baixar_apk()
+        elif control_id == 123:
+            self._atualizar()
+        elif control_id == 311:
+            self._ativar_codigo()
+        elif control_id in (130, 131):
+            # Seletor de aparelho do pacote: a tela e sempre horizontal
+            # (1920x1080), entao nao ha layout retrato para trocar.
+            _log('seletor de aparelho: tela fixa em 16:9 (sem fluxo no projeto)',
+                 xbmc.LOGWARNING)
+
+    def onAction(self, action):
+        if action in (xbmcgui.ACTION_NAV_BACK, xbmcgui.ACTION_PREVIOUS_MENU):
+            if self.getProperty(PROP_DIALOGO) == 'ads':
+                self._fechar_dialogo(312)
+                return
+            if self.getProperty(PROP_DIALOGO) == 'status':
+                self._fechar_dialogo()
+                return
+            self._sair()
 
     def onInit(self):
-        # a tela realmente abriu: cancela o seguro de 30 s do Startup.xml para a
-        # Home nunca aparecer atras da tela de entrada
+        # a tela abriu: cancela o seguro de 30 s do Startup.xml para a Home
+        # nunca aparecer atras da tela de entrada
         try:
             xbmc.executebuiltin('CancelAlarm(smartedtv_entrada_seguro,silent)')
         except Exception:
@@ -127,107 +306,10 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         except Exception:
             pass
 
-    # --- acoes ligadas ao que ja existe no projeto -----------------------
-    def _abrir_checkout(self):
-        vip = _vip()
-        if vip is not None and vip.abrir_checkout():
-            _log('checkout aberto pelo fluxo existente (vip.abrir_checkout)')
-            return
-        _log('checkout: fluxo existente indisponivel', xbmc.LOGWARNING)
-
-    def _compartilhar(self):
-        vip = _vip()
-        if vip is not None and vip.compartilhar():
-            _log('compartilhamento aberto (vip.compartilhar)')
-            return
-        _log('compartilhamento: fluxo existente indisponivel', xbmc.LOGWARNING)
-
-    def _ativar_codigo(self):
-        """Le o controle 310 e valida com o servidor pelo modulo vip do projeto."""
-        vip = _vip()
-        if vip is None:
-            xbmcgui.Dialog().ok(
-                'SMARTEDTV VIP',
-                'A ativacao por codigo nao esta disponivel neste aparelho.')
-            return
-        try:
-            campo = self.getControl(310)
-            codigo = (campo.getText() or '').strip()
-        except Exception:
-            codigo = ''
-        if not codigo:
-            codigo = xbmcgui.Dialog().input(
-                'Digite o codigo de ativacao', type=xbmcgui.INPUT_ALPHANUM)
-        if not codigo:
-            return
-        xbmcgui.Dialog().notification(
-            'SMARTEDTV', 'Validando o codigo...', xbmcgui.NOTIFICATION_INFO, 3000)
-        ok, mensagem = vip.validar(codigo)
-        if ok:
-            xbmcgui.Dialog().ok(
-                'SMARTEDTV VIP', mensagem,
-                'Os anuncios param na proxima abertura do aplicativo.')
-            _log('codigo ativado; licenca gravada em vip.json')
-        else:
-            xbmcgui.Dialog().ok(
-                'SMARTEDTV VIP', mensagem,
-                'Compre um codigo em pay.cakto.com.br ou tente de novo.')
-            _log('codigo recusado: %s' % mensagem, xbmc.LOGWARNING)
-
-    def _modo_gratuito(self):
-        """Fecha a entrada e abre a Home (versao com anuncios, como ja e hoje)."""
-        self._sair()
-
-    def _continuar(self):
-        self._sair()
-
-    def _sair(self):
-        """Fecha a janela; a Home e aberta pelo chamador, depois do doModal."""
-        self.saiu = True
-        self.close()
-
-    # --- eventos ---------------------------------------------------------
-    def onClick(self, control_id):
-        if control_id == 312:                 # Abrir o modal de confirmacao
-            self.setProperty('show_free_dialog', 'true')
-            try:
-                self.setFocusId(905)
-            except Exception:
-                pass
-        elif control_id == 905:               # Voltar do modal
-            self.clearProperty('show_free_dialog')
-            try:
-                self.setFocusId(312)
-            except Exception:
-                pass
-        elif control_id == 906:               # Confirmar modo gratuito
-            self._modo_gratuito()
-        elif control_id == 120:               # Abrir checkout
-            self._abrir_checkout()
-        elif control_id == 121:               # Compartilhar link
-            self._compartilhar()
-        elif control_id == 311:               # Ativar codigo VIP
-            self._ativar_codigo()
-        elif control_id in (130, 131):
-            # Seletor visual de aparelho do ZIP: nao existe fluxo equivalente.
-            _log('seletor de aparelho: sem fluxo no projeto', xbmc.LOGWARNING)
-
-    def onAction(self, action):
-        if action in (xbmcgui.ACTION_NAV_BACK, xbmcgui.ACTION_PREVIOUS_MENU):
-            if self.getProperty('show_free_dialog') == 'true':
-                self.clearProperty('show_free_dialog')
-                try:
-                    self.setFocusId(312)
-                except Exception:
-                    pass
-                return
-            self._continuar()
-
 
 def _ir_para_home(motivo=''):
     if motivo:
         _log('abrindo a Home: %s' % motivo, xbmc.LOGWARNING)
-    # o seguro so serve enquanto a tela nao assumiu; agora quem manda e daqui
     try:
         xbmc.executebuiltin('CancelAlarm(smartedtv_entrada_seguro,silent)')
     except Exception:
@@ -239,11 +321,10 @@ def _ir_para_home(motivo=''):
 
 
 def abrir_tela_entrada():
-    """Abre o dialogo do ZIP no lugar da Home. Devolve True quando abriu."""
-    # O seguro de 30 s do Startup.xml continua ativo de proposito: ele so e
-    # cancelado quando a tela realmente aparece (onInit) ou quando saimos para
-    # a Home. Assim, se o Python travar antes de desenhar, o Kodi ainda abre a
-    # Home em 30 s em vez de ficar parado na janela de startup.
+    """Abre a tela do pacote no lugar da Home. Devolve True quando abriu."""
+    # O seguro de 30 s do Startup.xml continua ativo de proposito: so e
+    # cancelado quando a tela realmente aparece (onInit) ou quando saimos para a
+    # Home. Se o Python travar antes de desenhar, o Kodi ainda abre a Home.
     pasta = _pasta_da_tela()
     if not pasta:
         _log('pasta da tela nao encontrada', xbmc.LOGERROR)

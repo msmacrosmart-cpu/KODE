@@ -200,6 +200,12 @@ class Simulacao(object):
 class VipFalso(object):
     """Mesma superficie do vip.py real (service.smarted.bootstrap)."""
 
+    # constantes reais copiadas do vip.py do APK (links do app)
+    CHECKOUT = "https://pay.cakto.com.br/nkvbegd_1323120"
+    APK = "https://www.dropbox.com/scl/fi/.../SMARTEDTV-atual.apk"
+    APK_GITHUB = ("https://github.com/msmacrosmart-cpu/KODE/releases/latest/"
+                  "download/SMARTEDTV-atual.apk")
+
     def __init__(self, sim):
         self.sim = sim
         self.chamadas = []
@@ -221,6 +227,15 @@ class VipFalso(object):
 
     def compartilhar(self, texto=None):
         self.chamadas.append("compartilhar")
+        return True
+
+    def abrir_url(self, url, rotulo=None):
+        self.chamadas.append("apk" if "APK" in (rotulo or "").upper() or
+                             "apk" in (url or "").lower() else "url")
+        return True
+
+    def procurar_atualizacao(self):
+        self.chamadas.append("atualizar")
         return True
 
 
@@ -306,8 +321,11 @@ def criar_modulos(sim: Simulacao, raiz_addon: Path, raiz_servico: Path):
             sim.foco.append(controle)
 
         def getControl(self, controle):
-            if controle != 310:
-                raise KeyError(controle)
+            if controle == 310:
+                campo = types.SimpleNamespace()
+                campo.getText = lambda: self.props.get("_codigo", "")
+                return campo
+            return types.SimpleNamespace()
             campo = types.SimpleNamespace()
             campo.getText = lambda: self.props.get("_codigo", "")
             return campo
@@ -343,18 +361,23 @@ def carregar_default(sim, raiz_addon, raiz_servico):
     sys.modules.update(modulos)
     sys.modules["vip"] = vip
     sim.vip = vip
-    try:
-        spec = importlib.util.spec_from_file_location(
-            "welcome_sim", raiz_addon / "default.py")
-        modulo = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(modulo)
-        return modulo
-    finally:
-        for nome, antigo in salvos.items():
-            if antigo is None:
-                sys.modules.pop(nome, None)
-            else:
-                sys.modules[nome] = antigo
+    # Os modulos ficam em sys.modules enquanto a tela roda: o default.py faz
+    # `import vip` dentro das acoes, exatamente como no Kodi. A limpeza acontece
+    # em restaurar_modulos(), no fim do teste.
+    spec = importlib.util.spec_from_file_location(
+        "welcome_sim", raiz_addon / "default.py")
+    modulo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(modulo)
+    modulo._modulos_salvos = salvos
+    return modulo
+
+
+def restaurar_modulos(modulo):
+    for nome, antigo in getattr(modulo, "_modulos_salvos", {}).items():
+        if antigo is None:
+            sys.modules.pop(nome, None)
+        else:
+            sys.modules[nome] = antigo
 
 
 def conferir_execucao(sim, modulo, codigo_vip="SMARTED-1234"):
@@ -377,19 +400,33 @@ def conferir_execucao(sim, modulo, codigo_vip="SMARTED-1234"):
         janela.props["_codigo"] = codigo_vip
         janela.onClick(311)
         assert sim.vip.codigos == [codigo_vip], sim.vip.codigos
-        print("   311 -> vip.validar(%r) OK" % codigo_vip)
+        assert janela.getProperty("welcome_dialog") == "status", janela.props
+        print("   311 -> vip.validar(%r) OK, aviso na tela" % codigo_vip)
+        janela.onClick(955)  # fecha o aviso de "VIP ativado"
+        assert janela.getProperty("welcome_dialog") == "", janela.props
 
-        # 120/121: checkout e compartilhamento que ja existem
+        # 120/121/122/123: checkout, compartilhar, baixar APK e atualizar
         janela.onClick(120)
         janela.onClick(121)
-        assert sim.vip.chamadas == ["checkout", "compartilhar"], sim.vip.chamadas
-        print("   120 -> vip.abrir_checkout; 121 -> vip.compartilhar OK")
+        janela.onClick(122)
+        janela.onClick(123)
+        assert sim.vip.chamadas == ["checkout", "compartilhar", "apk", "atualizar"], \
+            sim.vip.chamadas
+        print("   120 -> checkout; 121 -> compartilhar; 122 -> baixar APK; "
+              "123 -> atualizar OK")
+
+        # 140/141: plano do codigo (10 min / 1 mes)
+        janela.onClick(141)
+        assert janela.plano == "1month", janela.plano
+        janela.onClick(140)
+        assert janela.plano == "10min", janela.plano
+        print("   140/141 -> plano 10 min / 1 mes OK")
 
         # 312 -> modal de confirmacao (905 volta, 906 confirma)
         janela.onClick(312)
-        assert janela.getProperty("show_free_dialog") == "true"
+        assert janela.getProperty("welcome_dialog") == "ads", janela.props
         janela.onClick(905)
-        assert janela.getProperty("show_free_dialog") == ""
+        assert janela.getProperty("welcome_dialog") == "", janela.props
         janela.onClick(312)
         print("   312 -> modal de confirmacao (905 volta, 906 confirma) OK")
 
@@ -442,6 +479,7 @@ def main(argv=None):
     sim = Simulacao(args.apk)
     modulo = carregar_default(sim, ADDON, ROOT / "kodi" / "addons" / SERVICO)
     conferir_execucao(sim, modulo)
+    restaurar_modulos(modulo)
 
     print("\nOK: a tela abre antes da Home, usa os fluxos que ja existem no app")
     print("    e a Home so e aberta quando a tela sai de cena.")

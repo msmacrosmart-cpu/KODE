@@ -1,12 +1,12 @@
-# Build do APK ATUAL + apenas a tela inicial entregue no ZIP.
+# Build do APK ATUAL + a tela inicial entregue no Dropbox (smartedtv-src).
 #
 # Nao compila o Kodi, nao baixa/renomeia skin Bingie e nao muda versao: pega o
-# APK publicado na release atual, injeta o addon script.smartedtv.welcome (os
-# 15 arquivos do ZIP), faz o Startup.xml de cada skin abrir essa tela NO LUGAR
-# da Home (WINDOW_STARTUP_ANIM, janela que o CApplication::Initialize carrega
-# antes da Home), declara as fontes que faltavam, realinha e reassina com a
-# MESMA chave do app.
-name: SMARTEDTV - APK atual + tela inicial do ZIP
+# APK publicado na release atual, injeta o addon script.smartedtv.welcome (o
+# layout horizontal 1920x1080 gerado do pacote + texturas + os QR Codes
+# originais), faz o Startup.xml de cada skin abrir essa tela NO LUGAR da Home
+# (WINDOW_STARTUP_ANIM, janela que o CApplication::Initialize carrega antes da
+# Home), declara as fontes que faltavam, realinha e reassina com a MESMA chave.
+name: SMARTEDTV - APK atual + tela inicial do pacote (horizontal)
 
 on:
   # o push registra o workflow num branch que nao e o default; o job roda nele
@@ -27,8 +27,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       BASE_RELEASE: v1.0.83-unificado
       BASE_ASSET: SMARTEDTV-atual.apk
-      TAG_SAIDA: v1.0.83-tela-inicial-v3
-      FINAL: SMARTEDTV-atual-com-tela-inicial-v3.apk
+      TAG_SAIDA: v1.0.83-tela-inicial-v4
+      FINAL: SMARTEDTV-atual-com-tela-inicial-v4.apk
     steps:
       - uses: actions/checkout@v4
 
@@ -65,9 +65,8 @@ jobs:
               f = 'assets/addons/%s/xml/Font.xml' % skin
               if f in nomes:
                   t = z.read(f).decode('utf-8', 'replace')
-                  print(f, '-> fontes do layout declaradas:',
-                        all(('<name>%s</name>' % x) in t
-                            for x in ('font16', 'font20', 'font22', 'font24', 'font30')))
+                  print(f, '-> fontes wfNN declaradas:',
+                        sorted(re.findall(r'<name>(wf\d+)</name>', t)))
           m = z.read('assets/system/addon-manifest.xml').decode('utf-8')
           print('manifest (fim):', m.strip().splitlines()[-5:])
           print('assinaturas:', [n for n in nomes if n.startswith('META-INF/')
@@ -96,13 +95,19 @@ jobs:
           ADDON = 'script.smartedtv.welcome'
           PREFIX = 'assets/addons/' + ADDON + '/'
           SKINS = ('skin.novatv', 'skin.smartedtv.classic', 'skin.estuary')
-          FONTES = ('font16', 'font20', 'font22', 'font24', 'font30')
           with zipfile.ZipFile('build/atual.apk') as antes, \
                zipfile.ZipFile('build/bruto.apk') as depois:
               a = set(antes.namelist()); d = set(depois.namelist())
               novos = sorted(n for n in d - a if not n.startswith('META-INF/'))
               removidos = sorted(n for n in a - d if not n.startswith('META-INF/'))
-              assert len(novos) == 15, novos
+              obrigatorios = ('addon.xml', 'default.py',
+                              'resources/skins/Default/1080i/DialogWelcome.xml',
+                              'resources/skins/Default/media/bg.png',
+                              'resources/skins/Default/media/qr_checkout.png',
+                              'resources/skins/Default/media/qr_apk.png')
+              for relativo in obrigatorios:
+                  assert PREFIX + relativo in novos, relativo
+              assert all(n.startswith(PREFIX) for n in novos), novos
               assert all(n.startswith(PREFIX) for n in novos), novos
               assert not removidos, removidos
               alterados = sorted(n for n in sorted(a & d) if antes.read(n) != depois.read(n))
@@ -118,10 +123,11 @@ jobs:
               for n in a:
                   if n.startswith(PREFIX):
                       raise SystemExit('APK base ja tinha a tela: ' + n)
-              # a tela e byte a byte a do ZIP
+              # a tela vai como esta no repositorio (gerada do pacote)
               for relativo in ('resources/skins/Default/1080i/DialogWelcome.xml',
-                               'resources/skins/Default/media/qr_1.png',
-                               'resources/skins/Default/media/qr_2.png'):
+                               'resources/skins/Default/media/qr_checkout.png',
+                               'resources/skins/Default/media/qr_apk.png',
+                               'resources/skins/Default/media/bg.png'):
                   repo = 'kodi/addons/' + ADDON + '/' + relativo
                   assert depois.read(PREFIX + relativo) == open(repo, 'rb').read(), relativo
               # Startup.xml: a tela antes da Home, em todas as skins
@@ -164,7 +170,7 @@ jobs:
                   antigas = antes.read(f).decode('utf-8')
                   for nome in re.findall(r'<name>([^<]+)</name>', antigas):
                       assert '<name>%s</name>' % nome in texto, (skin, nome)
-          print('OK: 15 arquivos novos (o addon do ZIP, byte a byte)')
+          print('OK: %d arquivos novos (o addon da tela gerado do pacote)' % len(novos))
           print('OK: Startup.xml das 3 skins abre a tela antes da Home')
           print('OK: %d arquivos do perfil intactos; demais entradas iguais' % len(perfil))
           PY
@@ -197,7 +203,9 @@ jobs:
           python3 -m pip install --quiet --disable-pip-version-check "Pillow==11.3.0"
           python3 tools/kodi/renderizar-tela-entrada.py \
             --saida build/tela-entrada-prova.png
-          ls -lh build/tela-entrada-prova.png
+          python3 tools/kodi/renderizar-tela-entrada.py \
+            --dialogo ads --saida build/tela-entrada-dialogo.png
+          ls -lh build/tela-entrada-prova.png build/tela-entrada-dialogo.png
 
       - name: 8. Publicar release (tag propria, nao sobrescreve a atual)
         env:
@@ -206,13 +214,14 @@ jobs:
           set -euo pipefail
           if gh release view "$TAG_SAIDA" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG_SAIDA" "build/$FINAL" "build/$FINAL.sha256" \
-              "build/tela-entrada-prova.png" --repo "$GITHUB_REPOSITORY" --clobber
+              "build/tela-entrada-prova.png" "build/tela-entrada-dialogo.png" \
+              --repo "$GITHUB_REPOSITORY" --clobber
           else
             gh release create "$TAG_SAIDA" "build/$FINAL" "build/$FINAL.sha256" \
-              "build/tela-entrada-prova.png" \
+              "build/tela-entrada-prova.png" "build/tela-entrada-dialogo.png" \
               --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title 'SMARTEDTV 1.0.83 + tela inicial do ZIP (v3, antes da Home)' \
-              --notes 'APK atual (release v1.0.83-unificado) preservado integralmente: mesma skin, mesma versao, mesmo motor, mesma assinatura. A tela de entrada do ZIP (addon script.smartedtv.welcome, os 15 arquivos byte a byte, QR Codes originais) e agora a PRIMEIRA interface: o Startup.xml de cada skin abre a tela no lugar da Home (WINDOW_STARTUP_ANIM, a janela que o CApplication::Initialize do Kodi 21 carrega antes de criar a Home 10000). A Home so e carregada quando o usuario conclui a tela (botao 906 "continuar com anuncios" ou Voltar); enquanto a tela esta no ar nenhum comando vai para a Home. Ha um seguro de 30 s no proprio Startup.xml e um caminho de fallback no Python: se a tela nao conseguir abrir, a Home abre igual, o app nunca fica preso. Complementos: as fontes que o layout do ZIP usa e as skins do app nao declaravam (font20/font22/font24/font30 e font16 na skin.estuary) - sem elas o Kodi caia em font13; o addon fica registrado no addon-manifest.xml como optional="true" (mesma forma dos outros addons do app) para o RunScript(script.smartedtv.welcome) do Startup.xml resolver. As acoes da tela reutilizam o que ja existe: codigo -> vip.validar (rotas reais do servidor), checkout -> vip.abrir_checkout (pay.cakto.com.br), compartilhar -> vip.compartilhar. O service.smarted.bootstrap nao foi alterado. Nenhuma skin Bingie foi baixada ou trocada. A prova visual (tela-entrada-prova.png) e desenhada a partir do proprio DialogWelcome.xml + media do ZIP; nao houve execucao em Kodi real neste ambiente.'
+              --title 'SMARTEDTV 1.0.83 + tela inicial do pacote smartedtv-src (v4)' \
+              --notes 'APK atual (release v1.0.83-unificado) preservado integralmente: mesma versao, mesmo motor, mesma assinatura. A tela inicial e agora a do pacote smartedtv-src (Dropbox), substituindo por completo a tela anterior: layout HORIZONTAL 1920x1080 traduzido do HTML/CSS do pacote (o modo retrato do CSS nao e usado), texturas geradas a partir do proprio styles.css (gradiente radial do fundo, cartoes de vidro, botoes, pilulas de plano, placa do QR) e os DOIS QR Codes copiados byte a byte (qr-checkout.png e qr-apk.png). O addon script.smartedtv.welcome e injetado no APK e o Startup.xml de cada skin abre a tela NO LUGAR da Home (WINDOW_STARTUP_ANIM, a janela que o CApplication::Initialize do Kodi 21 carrega antes de criar a Home 10000). A Home so e carregada quando o usuario conclui a tela (continuar com anuncios, apos confirmacao, ou Voltar); enquanto a tela esta no ar nenhum comando vai para a Home. Ha um seguro de 30 s no proprio Startup.xml e um caminho de fallback no Python: se a tela nao abrir, a Home abre igual, o app nunca fica preso. As acoes reutilizam o que ja existe no app: codigo de ativacao -> vip.validar (rotas reais /api/validar e /functions/v1/validar-codigo), checkout -> vip.abrir_checkout (pay.cakto.com.br), compartilhar -> vip.compartilhar, baixar APK -> vip.abrir_url(APK) e atualizar -> vip.procurar_atualizacao. O service.smarted.bootstrap nao foi alterado. As skins do app ganharam as fontes wfNN que a tela usa (sem elas o Kodi cairia em font13). A prova visual (tela-entrada-prova.png e tela-entrada-dialogo.png) e desenhada a partir do proprio DialogWelcome.xml + media do addon; nao houve execucao em Kodi real neste ambiente.'
           fi
           echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_SAIDA/$FINAL"
 

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Testa o injetor que aplica a tela do ZIP sobre um APK ja existente.
+"""Testa o injetor que aplica a tela do pacote sobre um APK ja existente.
 
-Usa um APK sintetico (sem Kodi, sem download): prova que apenas os 15 arquivos
-do addon entram, que so o ``Startup.xml`` das skins, o ``Font.xml`` das skins
-(quando faltam fontes) e o ``addon-manifest.xml`` sao alterados, e que o perfil
-semeado continua byte a byte identico.
+Usa um APK sintetico (sem Kodi, sem download): prova que apenas os arquivos do
+addon entram, que so o ``Startup.xml`` das skins, o ``Font.xml`` das skins
+(quando faltam fontes wfNN) e o ``addon-manifest.xml`` sao alterados, e que o
+perfil semeado continua byte a byte identico.
 """
 import hashlib
 import importlib.util
@@ -30,8 +30,9 @@ STARTUP = (b'<?xml version="1.0" encoding="UTF-8"?>\n'
            b'\t<onload>ReplaceWindow($INFO[System.StartupWindow])</onload>\n'
            b'\t<controls />\n'
            b'</window>\n')
-# Font.xml sintetico: declara as fontes classicas que o layout do ZIP usa
-# (font10/12/13/14) e, opcionalmente, font16 — que falta na skin.estuary do app.
+# Font.xml sintetico: declara as fontes classicas da skin (font10/12/13/14) e,
+# opcionalmente, a wf13 — so para provar que o injetor nao repete uma fonte que
+# a skin ja tem.
 _FONTES_BASE = ('<font><name>%s</name><filename>NotoSans-Regular.ttf</filename>'
                 '<size>30</size></font>\n')
 
@@ -43,7 +44,7 @@ def _font(*nomes):
             '  </fontset>\n</fonts>\n').encode()
 
 
-FONT = _font('font10', 'font12', 'font13', 'font14', 'font16')
+FONT = _font('font10', 'font12', 'font13', 'font14', 'wf13')
 FONT_SEM_16 = _font('font10', 'font12', 'font13', 'font14')
 VIP = (b'# -*- coding: utf-8 -*-\n'
        b'def validar(codigo):\n    return (False, "sem rede")\n')
@@ -94,11 +95,11 @@ class InjetorTest(unittest.TestCase):
         return modulo
 
     def test_injeta_apenas_a_tela(self):
-        self._injetar()
+        modulo = self._injetar()
         with zipfile.ZipFile(self.base) as antes, zipfile.ZipFile(self.saida) as depois:
             a, d = set(antes.namelist()), set(depois.namelist())
             novos = sorted(n for n in d - a if not n.startswith('META-INF/'))
-            self.assertEqual(len(novos), 15)
+            self.assertEqual(len(novos), len(modulo.arquivos_do_addon()))
             self.assertTrue(all(n.startswith(PREFIXO) for n in novos), novos)
             self.assertEqual(sorted(n for n in a - d),
                              ['META-INF/CERT.RSA', 'META-INF/CERT.SF',
@@ -116,11 +117,11 @@ class InjetorTest(unittest.TestCase):
             for nome, resumo in self.perfil.items():
                 self.assertEqual(
                     hashlib.sha256(depois.read(nome)).hexdigest(), resumo, nome)
-            # a tela e byte a byte a do ZIP
+            # a tela vai como esta no repositorio (gerada do pacote)
             for relativo in ('resources/skins/Default/1080i/DialogWelcome.xml',
-                             'resources/skins/Default/media/qr_1.png',
-                             'resources/skins/Default/media/qr_2.png',
-                             'resources/skins/Default/media/welcome_background.png',
+                             'resources/skins/Default/media/bg.png',
+                             'resources/skins/Default/media/qr_checkout.png',
+                             'resources/skins/Default/media/qr_apk.png',
                              'default.py', 'addon.xml'):
                 self.assertEqual(depois.read(PREFIXO + relativo),
                                  (ADDON / relativo).read_bytes(), relativo)
@@ -168,9 +169,16 @@ class InjetorTest(unittest.TestCase):
                 for fonte in usadas:
                     self.assertIn('<name>%s</name>' % fonte, texto, (skin, fonte))
                 self.assertIn('<name>font13</name>', texto)
-            # a skin.estuary (que nao tinha font16) ganha a fonte
+            # a skin.estuary (que nao tinha wf13) ganha a fonte com o tamanho
+            # certo, e as outras nao repetem a que ja existia
             texto = z.read('assets/addons/skin.estuary/xml/Font.xml').decode()
-            self.assertIn('<name>font16</name>', texto)
+            self.assertIn('<name>wf13</name>', texto)
+            bloco = re.search(r'<name>wf13</name>\s*<filename>(\S+)</filename>'
+                              r'\s*<size>(\d+)</size>', texto)
+            self.assertEqual(bloco.group(1), 'NotoSans-Regular.ttf')
+            self.assertEqual(int(bloco.group(2)), 13)
+            texto = z.read('assets/addons/skin.novatv/xml/Font.xml').decode()
+            self.assertEqual(texto.count('<name>wf13</name>'), 1)
 
     def test_recusa_apk_ja_injetado(self):
         self._injetar()
@@ -193,14 +201,15 @@ class InjetorTest(unittest.TestCase):
     def test_patch_fonts_preserva_o_resto(self):
         modulo = carregar()
         novo, adicionadas = modulo.patch_fonts(FONT)
-        self.assertEqual(adicionadas, ['font20', 'font22', 'font24', 'font30'])
+        esperadas = [nome for nome, _ in modulo.fontes_da_tela() if nome != 'wf13']
+        self.assertEqual(adicionadas, esperadas)
         raiz = ET.fromstring(novo)
         nomes = [f.findtext('name') for f in raiz.iter('font')]
         self.assertEqual(nomes[:5], ['font10', 'font12', 'font13', 'font14',
-                                     'font16'])
-        self.assertEqual(len(nomes), 9)
-        for nome, tamanho in modulo.FONTES_DA_TELA:
-            if nome == 'font16':
+                                     'wf13'])
+        self.assertEqual(len(nomes), 5 + len(esperadas))
+        for nome, tamanho in modulo.fontes_da_tela():
+            if nome == 'wf13':
                 continue
             self.assertIn(nome, nomes)
             bloco = re.search(r'<name>%s</name>.*?<size>(\d+)</size>' % nome,
@@ -214,8 +223,8 @@ class InjetorTest(unittest.TestCase):
         modulo = carregar()
         novo, adicionadas = modulo.patch_fonts(FONT_SEM_16)
         self.assertEqual(adicionadas,
-                         ['font16', 'font20', 'font22', 'font24', 'font30'])
-        self.assertEqual(novo.decode().count('<name>font16</name>'), 1)
+                         [nome for nome, _ in modulo.fontes_da_tela()])
+        self.assertEqual(novo.decode().count('<name>wf13</name>'), 1)
 
     def test_startup_com_duas_acoes_e_aceito_e_sem_home_e_recusado(self):
         modulo = carregar()

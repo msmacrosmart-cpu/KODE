@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
-"""Tela de entrada do ZIP integrada ao boot do SMARTEDTV (antes da Home).
+"""Tela de entrada do pacote `smartedtv-src` (Dropbox) integrada ao boot.
 
-Sem Kodi real: confere que o visual continua byte a byte igual ao ZIP, que o
-``Startup.xml`` da skin-fonte abre a tela em vez da Home, que o addon entra no
-APK como addon de sistema registrado, e que as acoes da tela usam os fluxos que
-ja existem no app (``vip.py``) — sem inventar endpoint.
+Sem Kodi real: confere que o layout reproduz o pacote (cores e QR Codes
+byte a byte, geometria em 1920x1080), que o ``Startup.xml`` da skin-fonte abre
+a tela em vez da Home, que o addon entra no APK como addon de sistema
+registrado, e que as acoes da tela usam os fluxos que ja existem no app
+(``vip.py``) — sem inventar endpoint.
 """
 import hashlib
 import importlib.util
 import py_compile
+import re
 import sys
 import tempfile
 import types
@@ -24,69 +26,158 @@ MEDIA = ADDON / 'resources' / 'skins' / 'Default' / 'media'
 SERVICE_DIR = ROOT / 'kodi' / 'addons' / 'service.smarted.bootstrap'
 SERVICE = SERVICE_DIR / 'service.py'
 STARTUP_SKIN = ROOT / 'kodi' / 'skin.estilo.personalizado' / 'xml' / 'Startup.xml'
-BUILD = ROOT / 'tools' / 'kodi' / 'build-release-apk.py'
+GERADOR = ROOT / 'tools' / 'kodi' / 'gerar-tela-entrada.py'
 INJETOR = ROOT / 'tools' / 'kodi' / 'injetar-tela-entrada.py'
 HOME = 'ReplaceWindow($INFO[System.StartupWindow])'
 
-# SHA-256 dos arquivos exatamente como vieram em SMARTEDTV_Kodi_Omega_Welcome.zip.
-# default.py fica de fora: é o único arquivo adaptado (pontos de integração).
-HASHES_ZIP = {
-    'addon.xml': 'a607b7d8771d447b21cdb4ea69b8d572a4afa2ffdc864aa041700eb52eed2b9a',
-    'README.txt': 'b973624b077a47498bf6abac58089e24e46fc41b11abd930e6eec7d490450e28',
-    'resources/__init__.py': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-    'resources/skins/Default/1080i/DialogWelcome.xml': '41d3d7cfbbe514d9139806cfeef0706722457b7d140ff22365d1bcf97544d5fe',
-    'resources/skins/Default/media/button_dark.png': 'a92b2e966d2e63205e5603e041356d03a1f2c984bbc81d6821c5697f28af0782',
-    'resources/skins/Default/media/dialog_panel.png': 'f5d01c26eda92e8df45287b465233b2ff9ed41f2e4c3d17d298d5ecc6b0a6a72',
-    'resources/skins/Default/media/edit_focus.png': 'fdba7d6a08804f39d9f7c86b7ce6f22db4057673fd225875a9b7c60b2eb8aa78',
-    'resources/skins/Default/media/edit_nofocus.png': 'c61b5d7107f22c6b85b69cb098805bc4575fec7c4f011999f1d419a4341ebf1e',
-    'resources/skins/Default/media/overlay_black.png': '332a498541645db23a4f3ebb9af0df4549e04fb740d32a41ce0d69e25fb54d31',
-    'resources/skins/Default/media/qr_1.png': '11f24709a55fc410afb3b5970c14d244978236b4267e904b1cdaba58aa0251a2',
-    'resources/skins/Default/media/qr_2.png': '3d91d28c9d883de50f16e6ef3bd103493c1b06907047543c734add95850fb2f2',
-    'resources/skins/Default/media/separator.png': '34a65d050c31d42abe52063b1ed59c24fdd1ed09b09ca329cd1bc9442514ac4d',
-    'resources/skins/Default/media/welcome_background.png': '84000614326f58e1174dfe09f4d4d15f2e8b36efe652fe9efcd9ade690238481',
-    'resources/skins/Default/media/white.png': '0e78a200db09cfa819694aa27ee02e3ffa26b4bf2d372c8be7bde2309da0c4b5',
+# Pacote entregue no Dropbox (smartedtv-src.zip): a tela no APK tem de ser esta.
+PACOTE = ROOT / 'build_test' / 'src_novo' / 'smartedtv'
+CSS = PACOTE / 'css' / 'styles.css'
+
+# QR Codes do pacote, copiados byte a byte (nada e redesenhado).
+QRS = {
+    'qr_checkout.png': '779aea29e8eed647d4b2114c8d7bc3c8b469888ac9d52835b93f976fff4107e5',
+    'qr_apk.png': '267c083fe18fe2893da7c71e3f38a5d02b990eaf3c56d645d46dfff3be346f52',
+}
+
+# IDs do pacote -> controles da tela (o D-pad percorre nesta ordem).
+CONTROLES = {
+    '120': 'Abrir checkout',
+    '121': 'Compartilhar link',
+    '122': 'Baixar APK (Android)',
+    '123': 'ATUALIZAR APLICATIVO',
+    '130': 'Android TV',
+    '131': 'Celular',
+    '140': '10 min',
+    '141': '1 mês',
+    '310': None,          # campo do codigo de ativacao
+    '311': 'Ativar',
+    '312': 'Continuar com anúncios',
+    '905': 'Voltar',
+    '906': 'Continuar com anúncios',
+    '955': None,          # OK do dialogo de status
 }
 
 
-class FidelidadeAoZipTest(unittest.TestCase):
-    def test_arquivos_visuais_identicos_ao_zip(self):
-        for relativo, esperado in HASHES_ZIP.items():
-            arquivo = ADDON / relativo
-            self.assertTrue(arquivo.is_file(), 'arquivo ausente: %s' % relativo)
-            self.assertEqual(hashlib.sha256(arquivo.read_bytes()).hexdigest(),
-                             esperado, 'arquivo alterado: %s' % relativo)
+def _raiz():
+    return ET.parse(LAYOUT).getroot()
 
-    def test_layout_e_16x9_e_tem_os_controles_entregues(self):
-        raiz = ET.parse(LAYOUT).getroot()
+
+def _controle(ident):
+    achado = _raiz().find("./controls/control[@id='%s']" % ident)
+    if achado is None:
+        achado = _raiz().find(".//control[@id='%s']" % ident)
+    return achado
+
+
+def _textos(raiz=None):
+    raiz = raiz if raiz is not None else _raiz()
+    return ' '.join((no.text or '') for no in raiz.iter('label'))
+
+
+class TelaDoPacoteTest(unittest.TestCase):
+    """O que o usuario ve tem de ser o pacote do Dropbox, nada mesclado."""
+
+    def test_qr_codes_sao_os_do_pacote_byte_a_byte(self):
+        for nome, esperado in QRS.items():
+            destino = MEDIA / nome
+            self.assertTrue(destino.is_file(), 'QR ausente: %s' % nome)
+            self.assertEqual(hashlib.sha256(destino.read_bytes()).hexdigest(),
+                             esperado, 'QR alterado: %s' % nome)
+
+    def test_qr_codes_batem_com_os_arquivos_do_pacote(self):
+        for origem, destino in (('qr-checkout.png', 'qr_checkout.png'),
+                                ('qr-apk.png', 'qr_apk.png')):
+            self.assertEqual((PACOTE / 'assets' / origem).read_bytes(),
+                             (MEDIA / destino).read_bytes(), origem)
+
+    def test_textos_sao_os_do_pacote(self):
+        textos = _textos()
+        for esperado in ('SMARTEDTV', 'Ativação e assinatura', 'BEM-VINDO',
+                         'Sua TV,', 'Sem anúncios', 'Indique e ganhe',
+                         'Android TV', 'Celular', '10 min', '1 mês',
+                         'Abrir checkout', 'Compartilhar link',
+                         'Baixar APK (Android)', 'ATUALIZAR APLICATIVO',
+                         'Ativar', 'Continuar com anúncios', 'Plano mensal'):
+            self.assertIn(esperado, textos, esperado)
+
+    def test_cores_vem_do_css_do_pacote(self):
+        css = CSS.read_text(encoding='utf-8')
+        tokens = dict(re.findall(r'--(ink|txt|mut):(#[0-9a-fA-F]{6})', css))
+        self.assertEqual(tokens['ink'], '#f7f7f7')
+        cores = {(no.text or '').strip() for no in _raiz().iter('textcolor')}
+        self.assertIn('FF' + tokens['ink'][1:].upper(), cores)
+        self.assertIn('FF' + tokens['txt'][1:].upper(), cores)
+        self.assertIn('FF' + tokens['mut'][1:].upper(), cores)
+
+    def test_layout_e_horizontal_16_9(self):
+        """A tela e sempre deitada (paisagem); o modo retrato do CSS e ignorado."""
+        css = CSS.read_text(encoding='utf-8')
+        fonte = GERADOR.read_text(encoding='utf-8')
+        self.assertIn('VW, VH = 1920.0, 1080.0', fonte)
+        # o layout vertical do pacote nao aparece na traducao
+        self.assertNotIn('@media (max-width: 900px)', _raiz().__str__())
+        self.assertIn('@media (max-width: 900px)', css)
+
+    def test_layout_e_1080p_e_ocupa_a_tela_toda(self):
+        raiz = _raiz()
         self.assertEqual(raiz.tag, 'window')
         self.assertEqual(raiz.findtext('defaultcontrol'), '310')
         fundo = raiz.find("./controls/control[@id='1']")
         self.assertEqual(fundo.findtext('width'), '1920')
         self.assertEqual(fundo.findtext('height'), '1080')
-        self.assertEqual(fundo.findtext('texture'), 'welcome_background.png')
-        self.assertEqual(raiz.find("./controls/control[@id='32']").findtext('texture'),
-                         'qr_1.png')
-        self.assertEqual(raiz.find("./controls/control[@id='42']").findtext('texture'),
-                         'qr_2.png')
-        ids = {c.get('id') for c in raiz.iter('control')}
-        for obrigatorio in ('312', '905', '906', '120', '121', '310', '311', '900'):
-            self.assertIn(obrigatorio, ids)
+        self.assertEqual(fundo.findtext('left'), '0')
+        self.assertEqual(fundo.findtext('top'), '0')
+
+    def test_controles_do_pacote_estao_presentes(self):
+        ids = {c.get('id') for c in _raiz().iter('control')}
+        for ident in CONTROLES:
+            self.assertIn(ident, ids, ident)
+        # os botoes mostram exatamente o texto do pacote
+        for ident, rotulo in CONTROLES.items():
+            if rotulo is None:
+                continue
+            controle = _controle(ident)
+            texto = (controle.findtext('label') or '').strip()
+            self.assertEqual(texto, rotulo, ident)
 
     def test_todas_as_texturas_existem_e_sao_png(self):
-        raiz = ET.parse(LAYOUT).getroot()
         texturas = set()
-        for no in raiz.iter():
+        for no in _raiz().iter():
             if no.tag in ('texture', 'texturefocus', 'texturenofocus'):
                 nome = (no.text or '').strip()
                 if nome:
                     texturas.add(nome)
-        self.assertEqual(len(texturas), 10, sorted(texturas))
+        self.assertGreaterEqual(len(texturas), 20, sorted(texturas))
         for nome in sorted(texturas):
             arquivo = MEDIA / nome
             self.assertTrue(arquivo.is_file(), 'textura ausente: %s' % nome)
             self.assertEqual(arquivo.read_bytes()[:8], b'\x89PNG\r\n\x1a\n')
 
-    def test_addon_e_script_kodi_21(self):
+    def test_nao_sobraram_restos_da_tela_anterior(self):
+        """Troca total: nada da tela antiga (ZIP Omega) na interface."""
+        layout = LAYOUT.read_text(encoding='utf-8')
+        for antigo in ('qr_1.png', 'qr_2.png', 'welcome_background.png',
+                       'dialog_panel.png', 'button_dark.png'):
+            self.assertNotIn(antigo, layout, antigo)
+        # e as texturas antigas nao ficam no addon
+        for antigo in ('qr_1.png', 'qr_2.png', 'welcome_background.png',
+                       'dialog_panel.png', 'button_dark.png', 'separator.png',
+                       'overlay_black.png', 'edit_focus.png',
+                       'edit_nofocus.png', 'white.png'):
+            self.assertFalse((MEDIA / antigo).exists(), 'sobra: %s' % antigo)
+
+    def test_media_so_tem_o_que_o_layout_usa(self):
+        usadas = set()
+        for no in _raiz().iter():
+            if no.tag in ('texture', 'texturefocus', 'texturenofocus'):
+                nome = (no.text or '').strip()
+                if nome:
+                    usadas.add(nome)
+        no_disco = {p.name for p in MEDIA.glob('*.png')}
+        self.assertEqual(no_disco, usadas, sorted(no_disco ^ usadas))
+
+    def test_addon_abre_em_1080i_com_script(self):
         raiz = ET.parse(ADDON / 'addon.xml').getroot()
         self.assertEqual(raiz.get('id'), ADDON_ID)
         self.assertEqual(raiz.find('./requires/import').get('addon'), 'xbmc.python')
@@ -102,9 +193,32 @@ class FidelidadeAoZipTest(unittest.TestCase):
                                cfile=str(Path(tmp) / 'welcome.pyc'), doraise=True)
 
 
-# --------------------------------------------------------------------------
-# Integração no boot: Startup.xml da skin-fonte (e o do APK via injetor)
-# --------------------------------------------------------------------------
+class GeradorTest(unittest.TestCase):
+    """A tela e reproduzivel a partir do pacote (nao e XML escrito a mao)."""
+
+    def test_gerador_le_o_css_e_o_pacote(self):
+        fonte = GERADOR.read_text(encoding='utf-8')
+        self.assertIn('styles.css', fonte)
+        self.assertIn('qr-checkout.png', fonte)
+        self.assertIn('qr-apk.png', fonte)
+
+    def test_geometria_bate_com_o_css(self):
+        spec = importlib.util.spec_from_file_location('gerador_tela', GERADOR)
+        gerador = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(gerador)
+        med = gerador.Medidas()
+        # .screen{padding:2.0% 2.0%} -> 38 px
+        self.assertEqual(med.pad, 38)
+        # .grid{gap:1.3%} em 1844 px uteis -> 25 px
+        self.assertEqual(med.col_gap, round(med.stage_w * 0.013 * med.k))
+        # .top{height:9%}, .screen{gap:2.0%}: a grade fecha os 1080 px
+        self.assertEqual(med.top_h, 90)
+        self.assertEqual(med.barra_h, 113)
+        self.assertEqual(med.grade_y, med.pad + med.top_h + med.gap)
+        self.assertEqual(med.barra_y, med.grade_y + med.grade_h + med.gap)
+        self.assertEqual(med.barra_y + med.barra_h, 1080 - med.pad)
+
+
 class StartupAntesDaHomeTest(unittest.TestCase):
     def _acoes(self, caminho):
         raiz = ET.fromstring(caminho.read_bytes())
@@ -117,8 +231,6 @@ class StartupAntesDaHomeTest(unittest.TestCase):
         self.assertIn('smartedtv_entrada,', acoes[0])
         self.assertIn('smartedtv_entrada_seguro', acoes[1])
         self.assertIn(HOME, acoes[1])
-        # nada de Home solta: o salto original foi substituido, sobrando apenas
-        # o ReplaceWindow do seguro (o outro esta no comentario do XML)
         corpo = STARTUP_SKIN.read_text(encoding='utf-8')
         corpo = corpo.split('<window>', 1)[1]
         self.assertEqual(corpo.count('ReplaceWindow'), 1)
@@ -128,29 +240,29 @@ class StartupAntesDaHomeTest(unittest.TestCase):
         injetor = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(injetor)
         original = ('<?xml version="1.0" encoding="UTF-8"?>\n<window>\n'
-                    '\t<onload>%s</onload>\n\t<controls />\n</window>\n' % HOME)
+                    '\t<onload>ReplaceWindow($INFO[System.StartupWindow])</onload>\n'
+                    '\t<controls />\n</window>\n')
         novo = injetor.patch_startup(original.encode()).decode()
         acoes = [(e.text or '').strip()
                  for e in ET.fromstring(novo.encode()).findall('onload')]
-        self.assertEqual(acoes, [
-            'AlarmClock(smartedtv_entrada,RunScript(%s),00:00:00,silent)' % ADDON_ID,
-            'AlarmClock(smartedtv_entrada_seguro,'
-            'ReplaceWindow($INFO[System.StartupWindow]),00:00:30,silent)'])
+        self.assertEqual(len(acoes), 2, acoes)
+        self.assertIn('RunScript(%s)' % ADDON_ID, acoes[0])
+        self.assertIn(HOME, acoes[1])
 
     def test_startup_com_home_solta_e_recusado(self):
-        spec = importlib.util.spec_from_file_location('injetor_guard', INJETOR)
+        spec = importlib.util.spec_from_file_location('injetor_recusa', INJETOR)
         injetor = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(injetor)
-        ruim = ('<window><onload>AlarmClock(smartedtv_entrada,'
-                'RunScript(%s),00:00:00,silent)</onload>'
-                '<onload>%s</onload></window>' % (ADDON_ID, HOME)).encode()
+        # com o disparo da tela, um ReplaceWindow solto tem de ser recusado
+        quebrado = ('<?xml version="1.0" encoding="UTF-8"?>\n<window>\n'
+                    '\t<onload>AlarmClock(smartedtv_entrada,RunScript(x),'
+                    '00:00:00,silent)</onload>\n'
+                    '\t<onload>ReplaceWindow($INFO[System.StartupWindow])</onload>\n'
+                    '\t<controls />\n</window>\n')
         with self.assertRaises(SystemExit):
-            injetor.validar_publicacao(ruim)
+            injetor.validar_publicacao(quebrado.encode())
 
 
-# --------------------------------------------------------------------------
-# Ações da tela: reutilizam o que já existe no app
-# --------------------------------------------------------------------------
 class JanelaFake(object):
     ultima = None
     falhar_modal = False
@@ -187,7 +299,6 @@ class JanelaFake(object):
         self.fechada = True
 
     def doModal(self):
-        # como no Kodi: onInit ao montar, e o retorno so quando a janela fecha
         if JanelaFake.falhar_modal:
             raise RuntimeError('GUI indisponivel')
         self.onInit()
@@ -198,8 +309,13 @@ class JanelaFake(object):
 
 
 class VipFake(object):
-    CHECKOUT = 'x'
-    SITE = 'y'
+    # constantes reais do vip.py do APK
+    CHECKOUT = 'https://pay.cakto.com.br/nkvbegd_1323120'
+    SITE = 'https://smartedtv-vip.lovable.app/'
+    APK = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
+           'SMARTEDTV-atual.apk')
+    APK_GITHUB = ('https://github.com/msmacrosmart-cpu/KODE/releases/latest/'
+                  'download/SMARTEDTV-atual.apk')
 
     def __init__(self):
         self.chamadas = []
@@ -220,14 +336,16 @@ class VipFake(object):
         self.chamadas.append('compartilhar')
         return True
 
+    def abrir_url(self, url, rotulo='link'):
+        self.chamadas.append('url:%s' % (rotulo or ''))
+        return True
+
+    def procurar_atualizacao(self):
+        self.chamadas.append('atualizar')
+        return True
+
 
 def _servico_com_vip(vip):
-    """Pasta do service.smarted.bootstrap com o vip.py real trocado pelo stub.
-
-    O addon do ZIP importa `vip` da pasta do serviço (é o módulo de licença que
-    já existe no APK). Aqui a pasta é temporária e o vip.py só encaminha para o
-    stub, para o teste observar as chamadas.
-    """
     pasta = Path(tempfile.mkdtemp(prefix='servico-'))
     (pasta / 'vip.py').write_text(
         'import sys\n'
@@ -238,7 +356,6 @@ def _servico_com_vip(vip):
 
 
 def carregar_default(vip=None):
-    """Carrega o default.py real com stubs mínimos de xbmc*."""
     vip = vip or VipFake()
     servico = _servico_com_vip(vip)
     xbmc = types.ModuleType('xbmc')
@@ -300,7 +417,8 @@ def carregar_default(vip=None):
                         'xbmcvfs': xbmcvfs, 'vip': vip,
                         '_smarted_vip_stub': vip})
     try:
-        spec = importlib.util.spec_from_file_location('welcome_teste', ADDON / 'default.py')
+        spec = importlib.util.spec_from_file_location('welcome_teste',
+                                                      ADDON / 'default.py')
         modulo = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(modulo)
     finally:
@@ -309,8 +427,6 @@ def carregar_default(vip=None):
                 sys.modules.pop(nome, None)
             else:
                 sys.modules[nome] = antigo
-    # o vip.py da pasta temporaria encaminha para este stub; ele precisa
-    # continuar registrado enquanto os testes chamarem o default.py
     sys.modules['_smarted_vip_stub'] = vip
     return modulo, xbmc, xbmcgui
 
@@ -325,83 +441,118 @@ class CicloDeVidaTest(unittest.TestCase):
         self.addCleanup(sys.modules.pop, '_smarted_vip_stub', None)
         self.addCleanup(sys.modules.pop, 'vip', None)
 
-    def test_abre_com_o_layout_do_zip_e_foca_o_codigo(self):
+    def _com_interacao(self, acoes):
+        def interacao(janela):
+            janela.onInit()
+            acoes(janela)
+        JanelaFake.interacao = interacao
         self.assertTrue(self.modulo.abrir_tela_entrada())
-        janela = JanelaFake.ultima
-        self.assertIsNotNone(janela)
+        return JanelaFake.ultima
+
+    def test_abre_com_o_layout_do_pacote_e_foca_o_codigo(self):
+        janela = self._com_interacao(lambda j: None)
         self.assertEqual(janela.args, ('DialogWelcome.xml', str(ADDON),
                                        'Default', '1080i'))
         self.assertTrue(janela.modal)
         self.assertIn(310, janela.foco)
         self.assertIn('CancelAlarm(smartedtv_entrada_seguro,silent)',
                       self.xbmc.BUILTINS)
-        # a Home só depois de a janela sair de cena
         self.assertEqual(self.xbmc.BUILTINS[-1], HOME)
 
     def test_home_so_depois_de_a_janela_fechar(self):
         observado = []
 
-        def interacao(janela):
-            janela.onInit()
+        def acoes(janela):
             janela.onClick(312)
             janela.onClick(906)
             observado.append(list(self.xbmc.BUILTINS))
 
-        JanelaFake.interacao = interacao
-        self.modulo.abrir_tela_entrada()
-        durante = observado[0]
-        self.assertTrue(JanelaFake.ultima.fechada)
-        self.assertNotIn(HOME, durante)
+        janela = self._com_interacao(acoes)
+        self.assertTrue(janela.fechada)
+        self.assertNotIn(HOME, observado[0])
         self.assertEqual(self.xbmc.BUILTINS.count(HOME), 1)
 
-    def test_voltar_fecha_modal_e_depois_a_janela(self):
+    def test_continuar_com_anuncios_pede_confirmacao(self):
+        def acoes(janela):
+            janela.onClick(312)
+            assert janela.getProperty('welcome_dialog') == 'ads'
+            janela.onClick(905)
+            assert janela.getProperty('welcome_dialog') == ''
+            janela.onClick(312)
+            janela.onClick(906)
+        janela = self._com_interacao(acoes)
+        self.assertTrue(janela.fechada)
+        self.assertEqual(self.xbmc.BUILTINS.count(HOME), 1)
+
+    def test_voltar_fecha_o_dialogo_e_depois_a_janela(self):
         foco = []
 
-        def interacao(janela):
-            janela.onInit()
+        def acoes(janela):
             janela.onClick(312)
             janela.onAction(self.xbmcgui.ACTION_NAV_BACK)
-            foco.append((janela.getProperty('show_free_dialog'), janela.fechada))
+            foco.append(janela.getProperty('welcome_dialog'))
             janela.onAction(self.xbmcgui.ACTION_PREVIOUS_MENU)
 
-        JanelaFake.interacao = interacao
-        self.modulo.abrir_tela_entrada()
-        self.assertEqual(foco, [('', False)])
-        self.assertTrue(JanelaFake.ultima.fechada)
+        janela = self._com_interacao(acoes)
+        self.assertEqual(foco, [''])
+        self.assertTrue(janela.fechada)
         self.assertEqual(self.xbmc.BUILTINS.count(HOME), 1)
 
-    def test_310_ativa_o_codigo_pelo_servidor(self):
-        def interacao(janela):
-            janela.onInit()
+    def test_311_ativa_o_codigo_pelo_servidor(self):
+        def acoes(janela):
             janela.props['_codigo'] = 'SMARTED-99'
             janela.onClick(311)
-
-        JanelaFake.interacao = interacao
-        self.modulo.abrir_tela_entrada()
+            assert janela.getProperty('welcome_dialog') == 'status'
+            janela.onClick(955)
+        self._com_interacao(acoes)
         self.assertEqual(self.vip.codigos, ['SMARTED-99'])
 
-    def test_120_e_121_usam_checkout_e_compartilhar_existentes(self):
-        def interacao(janela):
-            janela.onInit()
-            janela.onClick(120)
-            janela.onClick(121)
+    def test_120_a_123_usam_os_fluxos_existentes(self):
+        def acoes(janela):
+            for controle in (120, 121, 122, 123):
+                janela.onClick(controle)
+        self._com_interacao(acoes)
+        self.assertEqual(self.vip.chamadas[0], 'checkout')
+        self.assertEqual(self.vip.chamadas[1], 'compartilhar')
+        self.assertTrue(self.vip.chamadas[2].startswith('url:'))
+        self.assertEqual(self.vip.chamadas[3], 'atualizar')
 
-        JanelaFake.interacao = interacao
-        self.modulo.abrir_tela_entrada()
-        self.assertEqual(self.vip.chamadas, ['checkout', 'compartilhar'])
+    def test_122_e_123_nao_quebram_sem_ponte_android(self):
+        """Fora do Android abrir_url devolve False: a tela avisa e segue."""
+        def falhar(url, rotulo='link'):
+            return False
+        self.vip.abrir_url = falhar
+        self.vip.procurar_atualizacao = lambda: False
 
-    def test_acoes_sem_fluxo_no_app_nao_abrem_nada(self):
-        def interacao(janela):
-            janela.onInit()
-            janela.onClick(130)   # seletor de aparelho do ZIP: só registro
+        def acoes(janela):
+            janela.onClick(122)
+            assert janela.getProperty('welcome_dialog') == 'status'
+            janela.onClick(955)
+            janela.onClick(123)
+            assert janela.getProperty('welcome_dialog') == 'status'
+            janela.onClick(955)
+        self._com_interacao(acoes)
+        self.assertEqual(self.modulo._log.__module__, self.modulo.__name__)
+
+    def test_140_e_141_escolhem_o_plano(self):
+        def acoes(janela):
+            janela.onClick(141)
+            assert janela.plano == '1month'
+            janela.onClick(140)
+            assert janela.plano == '10min'
+        self._com_interacao(acoes)
+
+    def test_seletor_de_aparelho_nao_inventa_fluxo(self):
+        def acoes(janela):
+            janela.onClick(130)
             janela.onClick(131)
-
-        JanelaFake.interacao = interacao
-        self.modulo.abrir_tela_entrada()
+        self._com_interacao(acoes)
         self.assertEqual(self.vip.chamadas, [])
         self.assertEqual(self.vip.codigos, [])
-        avisos = [msg for nivel, msg in self.xbmc.LOGS if nivel == self.xbmc.LOGWARNING]
-        self.assertTrue(all('sem fluxo no projeto' in msg for msg in avisos), avisos)
+        avisos = [m for nivel, m in self.xbmc.LOGS
+                  if nivel == self.xbmc.LOGWARNING]
+        self.assertTrue(all('sem fluxo no projeto' in m for m in avisos), avisos)
+        self.assertTrue(any('16:9' in m for m in avisos), avisos)
 
     def test_sem_a_tela_a_home_ainda_abre(self):
         JanelaFake.falhar_modal = True
@@ -418,22 +569,22 @@ class CicloDeVidaTest(unittest.TestCase):
 
 class IntegracaoNoApkTest(unittest.TestCase):
     def test_addon_entra_no_apk_como_addon_de_sistema(self):
-        fonte = BUILD.read_text(encoding='utf-8')
+        fonte = (ROOT / 'tools' / 'kodi' / 'build-release-apk.py').read_text(
+            encoding='utf-8')
         self.assertIn('"script.smartedtv.welcome"', fonte)
         self.assertIn('BRIDGE_ADDONS', fonte)
 
     def test_bootstrap_nao_abre_mais_a_tela(self):
-        """Quem abre a tela é o Startup.xml, antes da Home — não o serviço."""
         fonte = SERVICE.read_text(encoding='utf-8')
         self.assertNotIn('tela_entrada', fonte)
         self.assertFalse((SERVICE_DIR / 'tela_entrada.py').exists())
 
 
 class FontesDaTelaTest(unittest.TestCase):
-    """O layout do ZIP usa fontes que as skins do app não declaravam."""
+    """A tela usa estilos wfNN (altura em px de 1080p) que a skin nao tem."""
 
     # Fontes publicadas pelas skins do APK atual (skin.novatv e
-    # skin.smartedtv.classic) — conferido no próprio APK.
+    # skin.smartedtv.classic) — conferido no proprio APK.
     FONTES_DA_SKIN = {
         'font10', 'font12', 'font13', 'font14', 'font11', 'font16',
         'font23_narrow', 'font25_narrow', 'font27', 'font27_narrow',
@@ -443,22 +594,24 @@ class FontesDaTelaTest(unittest.TestCase):
         'font_MainMenu', 'WeatherTemp', 'Mono26',
     }
 
-    def test_fontes_que_faltavam_sao_declaradas_pelo_injetor(self):
-        raiz = ET.parse(LAYOUT).getroot()
+    def test_estilos_usados_e_declarados_pelo_injetor(self):
+        raiz = _raiz()
         usadas = {(no.text or '').strip() for no in raiz.iter('font')}
         usadas.discard('')
         self.assertTrue(usadas)
+        self.assertEqual(usadas, set(re.findall(r'wf\d+', ' '.join(usadas))))
         faltantes = sorted(usadas - self.FONTES_DA_SKIN)
-        self.assertEqual(faltantes, ['font20', 'font22', 'font24', 'font30'])
+        self.assertEqual(faltantes, sorted(usadas))
 
-        spec = importlib.util.spec_from_file_location(
-            'injetor_fontes', INJETOR)
+        spec = importlib.util.spec_from_file_location('injetor_fontes', INJETOR)
         injetor = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(injetor)
-        declaradas = dict(injetor.FONTES_DA_TELA)
-        for nome in faltantes:
-            self.assertIn(nome, declaradas)
-            self.assertEqual(declaradas[nome], int(nome.replace('font', '')))
+        declaradas = dict(injetor.fontes_da_tela())
+        self.assertEqual(declaradas, {nome: int(nome[2:]) for nome in usadas})
+
+    def test_injetor_declara_sempre_a_mesma_fonte(self):
+        fonte = INJETOR.read_text(encoding='utf-8')
+        self.assertIn('NotoSans-Regular.ttf', fonte)
 
 
 if __name__ == '__main__':

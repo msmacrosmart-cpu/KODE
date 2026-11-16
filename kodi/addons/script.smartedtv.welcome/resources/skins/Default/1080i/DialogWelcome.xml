@@ -1,192 +1,578 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <window>
-    <defaultcontrol always="true">310</defaultcontrol>
-    <coordinates>
-        <system>1</system>
-        <posx>0</posx>
-        <posy>0</posy>
-    </coordinates>
-    <controls>
-        <control type="image" id="1">
-            <left>0</left><top>0</top><width>1920</width><height>1080</height>
-            <texture>welcome_background.png</texture>
-        </control>
-
-        <!-- Cabeçalho SMARTEDTV -->
-        <control type="label" id="10">
-            <left>125</left><top>39</top><width>600</width><height>42</height>
-            <label>SMARTEDTV</label><font>font24</font><textcolor>FFFFFFFF</textcolor>
-            <textoffsetx>0</textoffsetx><align>left</align><aligny>center</aligny>
-        </control>
-        <control type="label" id="11">
-            <left>125</left><top>81</top><width>600</width><height>30</height>
-            <label>Ativação e assinatura</label><font>font13</font><textcolor>FF838383</textcolor>
-            <align>left</align><aligny>center</aligny>
-        </control>
-
-        <!-- Seletor visual de aparelho, conforme o HTML de referência -->
-        <control type="button" id="130">
-            <left>1510</left><top>48</top><width>165</width><height>50</height>
-            <label>Android TV</label><font>font13</font><textcolor>FF080808</textcolor>
-            <texturefocus border="10">white.png</texturefocus>
-            <texturenofocus border="10">white.png</texturenofocus>
-        </control>
-        <control type="button" id="131">
-            <left>1680</left><top>48</top><width>165</width><height>50</height>
-            <label>Celular</label><font>font13</font><textcolor>FFBCBCBC</textcolor>
-            <texturefocus border="10">button_dark.png</texturefocus>
-            <texturenofocus border="10">button_dark.png</texturenofocus>
-        </control>
-
-        <!-- Cartão 1: boas-vindas -->
-        <control type="label" id="20">
-            <left>67</left><top>180</top><width>500</width><height>34</height>
-            <label>—  BEM-VINDO</label><font>font12</font><textcolor>FF838383</textcolor>
-        </control>
-        <control type="label" id="21">
-            <left>67</left><top>238</top><width>520</width><height>120</height>
-            <label>Sua TV,&#10;do seu jeito.</label><font>font30</font><textcolor>FFF7F7F7</textcolor>
-            <align>left</align><aligny>center</aligny>
-        </control>
-        <control type="label" id="22">
-            <left>67</left><top>385</top><width>510</width><height>110</height>
-            <label>Ative o VIP com um código ou continue&#10;gratuitamente com anúncios.</label>
-            <font>font16</font><textcolor>FFBCBCBC</textcolor><align>left</align><aligny>top</aligny>
-        </control>
-        <control type="label" id="23">
-            <left>75</left><top>605</top><width>510</width><height>42</height>
-            <label>✓   Canais ao vivo, sem travar</label><font>font16</font><textcolor>FFBCBCBC</textcolor>
-        </control>
-        <control type="label" id="24">
-            <left>75</left><top>665</top><width>510</width><height>42</height>
-            <label>✓   Sem anúncios com o VIP ativo</label><font>font16</font><textcolor>FFBCBCBC</textcolor>
-        </control>
-        <control type="label" id="25">
-            <left>75</left><top>725</top><width>510</width><height>42</height>
-            <label>✓   Ativação em poucos segundos</label><font>font16</font><textcolor>FFBCBCBC</textcolor>
-        </control>
-
-        <!-- Cartão 2: assinatura -->
-        <control type="label" id="30">
-            <left>690</left><top>178</top><width>390</width><height>48</height>
-            <label>Sem anúncios</label><font>font22</font><textcolor>FFFFFFFF</textcolor>
-        </control>
-        <control type="label" id="31">
-            <left>1030</left><top>178</top><width>185</width><height>42</height>
-            <label>Plano mensal</label><font>font13</font><textcolor>FFBCBCBC</textcolor>
-            <align>right</align>
-        </control>
-        <control type="image" id="32">
-            <left>766</left><top>320</top><width>370</width><height>370</height>
-            <texture>qr_1.png</texture><aspectratio>keep</aspectratio>
-        </control>
-        <control type="label" id="33">
-            <left>690</left><top>720</top><width>520</width><height>62</height>
-            <label>Aponte a câmera de outro celular.&#10;Valor e condições aparecem no checkout.</label>
-            <font>font13</font><textcolor>FF838383</textcolor><align>center</align><aligny>center</aligny>
-        </control>
-        <control type="button" id="120">
-            <left>690</left><top>790</top><width>520</width><height>48</height>
-            <label>Abrir checkout</label><font>font16</font>
-            <textcolor>FFFFFFFF</textcolor><focusedcolor>FF080808</focusedcolor>
-            <texturefocus border="12">white.png</texturefocus>
-            <texturenofocus border="12">button_dark.png</texturenofocus>
-        </control>
-
-        <!-- Cartão 3: indicação -->
-        <control type="label" id="40">
-            <left>1310</left><top>178</top><width>390</width><height>48</height>
-            <label>Indique e ganhe</label><font>font22</font><textcolor>FFFFFFFF</textcolor>
-        </control>
-        <control type="label" id="41">
-            <left>1650</left><top>178</top><width>470</width><height>42</height>
-            <label>Compartilhar</label><font>font13</font><textcolor>FFBCBCBC</textcolor><align>right</align>
-        </control>
-        <control type="image" id="42">
-            <left>1385</left><top>320</top><width>370</width><height>370</height>
-            <texture>qr_2.png</texture><aspectratio>keep</aspectratio>
-        </control>
-        <control type="label" id="43">
-            <left>1308</left><top>720</top><width>520</width><height>62</height>
-            <label>Aponte a câmera e envie o link&#10;do app a quem quiser.</label>
-            <font>font13</font><textcolor>FF838383</textcolor><align>center</align><aligny>center</aligny>
-        </control>
-        <control type="button" id="121">
-            <left>1308</left><top>790</top><width>520</width><height>48</height>
-            <label>Compartilhar link</label><font>font16</font>
-            <textcolor>FFFFFFFF</textcolor><focusedcolor>FF080808</focusedcolor>
-            <texturefocus border="12">white.png</texturefocus>
-            <texturenofocus border="12">button_dark.png</texturenofocus>
-        </control>
-
-        <!-- Barra de ativação -->
-        <control type="label" id="50">
-            <left>65</left><top>895</top><width>500</width><height>45</height>
-            <label>Já é assinante? Ative seu VIP</label><font>font20</font><textcolor>FFFFFFFF</textcolor>
-        </control>
-        <control type="label" id="51">
-            <left>65</left><top>940</top><width>500</width><height>35</height>
-            <label>Digite o código que você recebeu.</label><font>font13</font><textcolor>FF838383</textcolor>
-        </control>
-        <control type="edit" id="310">
-            <left>590</left><top>925</top><width>700</width><height>58</height>
-            <label>Código de ativação</label><font>font16</font>
-            <textcolor>FFFFFFFF</textcolor><disabledcolor>FF747474</disabledcolor>
-            <texturefocus border="10">edit_focus.png</texturefocus>
-            <texturenofocus border="10">edit_nofocus.png</texturenofocus>
-        </control>
-        <control type="button" id="311">
-            <left>1310</left><top>925</top><width>180</width><height>58</height>
-            <label>Ativar</label><font>font16</font><textcolor>FF080808</textcolor>
-            <texturefocus border="10">white.png</texturefocus>
-            <texturenofocus border="10">white.png</texturenofocus>
-        </control>
-        <control type="image" id="52">
-            <left>1510</left><top>900</top><width>2</width><height>115</height>
-            <texture>separator.png</texture>
-        </control>
-        <control type="button" id="312">
-            <left>1540</left><top>925</top><width>310</width><height>58</height>
-            <label>Continuar com anúncios</label><font>font14</font><textcolor>FFFFFFFF</textcolor>
-            <texturefocus border="10">white.png</texturefocus>
-            <texturenofocus border="10">button_dark.png</texturenofocus>
-        </control>
-
-        <!-- Modal de confirmação; controlado pela propriedade da janela -->
-        <control type="group" id="900">
-            <visible>String.IsEqual(Window.Property(show_free_dialog),true)</visible>
-            <control type="image" id="901">
-                <left>0</left><top>0</top><width>1920</width><height>1080</height>
-                <texture>overlay_black.png</texture>
-            </control>
-            <control type="image" id="902">
-                <left>550</left><top>365</top><width>820</width><height>350</height>
-                <texture>dialog_panel.png</texture>
-            </control>
-            <control type="label" id="903">
-                <left>610</left><top>410</top><width>700</width><height>55</height>
-                <label>Continuar com anúncios?</label><font>font22</font><textcolor>FFFFFFFF</textcolor>
-            </control>
-            <control type="label" id="904">
-                <left>610</left><top>485</top><width>700</width><height>110</height>
-                <label>Você vai ver anúncios durante o uso. Para removê-los,&#10;assine pelo checkout ou ative um código VIP quando quiser.</label>
-                <font>font16</font><textcolor>FFBCBCBC</textcolor>
-            </control>
-            <control type="button" id="905">
-                <left>610</left><top>625</top><width>330</width><height>58</height>
-                <label>Voltar</label><font>font16</font><textcolor>FFFFFFFF</textcolor>
-                <texturefocus border="10">white.png</texturefocus><texturenofocus border="10">button_dark.png</texturenofocus>
-            </control>
-            <control type="button" id="906">
-                <left>970</left><top>625</top><width>340</width><height>58</height>
-                <label>Continuar com anúncios</label><font>font14</font><textcolor>FF080808</textcolor>
-                <texturefocus border="10">white.png</texturefocus><texturenofocus border="10">white.png</texturenofocus>
-            </control>
-        </control>
-        <control type="label" id="60">
-            <left>500</left><top>1045</top><width>920</width><height>28</height>
-            <label>Android TV · 16:9     ·     tela única, sem rolagem     ·     setas/Enter navegam (D-pad)</label>
-            <font>font10</font><textcolor>FF5A5A5A</textcolor><align>center</align>
-        </control>
-    </controls>
+  <defaultcontrol always="true">310</defaultcontrol>
+  <coordinates>
+    <system>1</system>
+    <posx>0</posx>
+    <posy>0</posy>
+  </coordinates>
+  <controls>
+    <control type="image" id="1">
+      <left>0</left>
+      <top>0</top>
+      <width>1920</width>
+      <height>1080</height>
+      <texture>bg.png</texture>
+    </control>
+    <control type="image" id="10">
+      <left>38</left>
+      <top>49</top>
+      <width>68</width>
+      <height>68</height>
+      <texture>logo.png</texture>
+    </control>
+    <control type="label" id="11">
+      <left>123</left>
+      <top>51</top>
+      <width>400</width>
+      <height>41</height>
+      <label>SMARTEDTV</label>
+      <font>wf33</font>
+      <textcolor>FFF7F7F7</textcolor>
+    </control>
+    <control type="label" id="12">
+      <left>123</left>
+      <top>99</top>
+      <width>400</width>
+      <height>21</height>
+      <label>Ativação e assinatura</label>
+      <font>wf15</font>
+      <textcolor>FF838383</textcolor>
+    </control>
+    <control type="image" id="13">
+      <left>1627</left>
+      <top>57</top>
+      <width>255</width>
+      <height>52</height>
+      <texture>seg.png</texture>
+      <aspectratio>stretch</aspectratio>
+    </control>
+    <control type="button" id="130">
+      <left>1631</left>
+      <top>61</top>
+      <width>136</width>
+      <height>44</height>
+      <label>Android TV</label>
+      <font>wf17</font>
+      <textcolor>FF080808</textcolor>
+      <focusedcolor>FF080808</focusedcolor>
+      <texturefocus border="26">seg_active.png</texturefocus>
+      <texturenofocus border="26">seg_active.png</texturenofocus>
+    </control>
+    <control type="button" id="131">
+      <left>1771</left>
+      <top>61</top>
+      <width>107</width>
+      <height>44</height>
+      <label>Celular</label>
+      <font>wf17</font>
+      <textcolor>FFBCBCBC</textcolor>
+      <focusedcolor>FF080808</focusedcolor>
+      <texturefocus border="26">seg_active.png</texturefocus>
+      <texturenofocus border="26">seg.png</texturenofocus>
+    </control>
+    <control type="image" id="20">
+      <left>38</left>
+      <top>166</top>
+      <width>598</width>
+      <height>725</height>
+      <texture>card.png</texture>
+      <aspectratio>stretch</aspectratio>
+    </control>
+    <control type="image" id="21">
+      <left>661</left>
+      <top>166</top>
+      <width>598</width>
+      <height>725</height>
+      <texture>card.png</texture>
+      <aspectratio>stretch</aspectratio>
+    </control>
+    <control type="image" id="22">
+      <left>1284</left>
+      <top>166</top>
+      <width>598</width>
+      <height>725</height>
+      <texture>card.png</texture>
+      <aspectratio>stretch</aspectratio>
+    </control>
+    <control type="image" id="24">
+      <left>51</left>
+      <top>186</top>
+      <width>23</width>
+      <height>2</height>
+      <texture>eyebrow_line.png</texture>
+    </control>
+    <control type="label" id="25">
+      <left>80</left>
+      <top>181</top>
+      <width>543</width>
+      <height>17</height>
+      <label>BEM-VINDO</label>
+      <font>wf13</font>
+      <textcolor>FF838383</textcolor>
+    </control>
+    <control type="label" id="26">
+      <left>51</left>
+      <top>222</top>
+      <width>572</width>
+      <height>47</height>
+      <label>Sua TV,</label>
+      <font>wf42</font>
+      <textcolor>FFF7F7F7</textcolor>
+    </control>
+    <control type="label" id="27">
+      <left>51</left>
+      <top>268</top>
+      <width>572</width>
+      <height>47</height>
+      <label>do seu jeito.</label>
+      <font>wf42</font>
+      <textcolor>FFF7F7F7</textcolor>
+    </control>
+    <control type="label" id="28">
+      <left>51</left>
+      <top>322</top>
+      <width>572</width>
+      <height>61</height>
+      <label>Ative o VIP com um código ou continue gratuitamente com anúncios.</label>
+      <font>wf21</font>
+      <textcolor>FFBCBCBC</textcolor>
+    </control>
+    <control type="image" id="30">
+      <left>55</left>
+      <top>644</top>
+      <width>23</width>
+      <height>23</height>
+      <texture>tick.png</texture>
+    </control>
+    <control type="label" id="34">
+      <left>91</left>
+      <top>643</top>
+      <width>532</width>
+      <height>24</height>
+      <label>Canais ao vivo, sem travar</label>
+      <font>wf18</font>
+      <textcolor>FFBCBCBC</textcolor>
+    </control>
+    <control type="image" id="31">
+      <left>55</left>
+      <top>698</top>
+      <width>23</width>
+      <height>23</height>
+      <texture>tick.png</texture>
+    </control>
+    <control type="label" id="35">
+      <left>91</left>
+      <top>697</top>
+      <width>532</width>
+      <height>24</height>
+      <label>Sem anúncios com o VIP ativo</label>
+      <font>wf18</font>
+      <textcolor>FFBCBCBC</textcolor>
+    </control>
+    <control type="image" id="32">
+      <left>55</left>
+      <top>752</top>
+      <width>23</width>
+      <height>23</height>
+      <texture>tick.png</texture>
+    </control>
+    <control type="label" id="36">
+      <left>91</left>
+      <top>751</top>
+      <width>532</width>
+      <height>24</height>
+      <label>Ativação em poucos segundos</label>
+      <font>wf18</font>
+      <textcolor>FFBCBCBC</textcolor>
+    </control>
+    <control type="button" id="123">
+      <left>208</left>
+      <top>821</top>
+      <width>258</width>
+      <height>57</height>
+      <label>ATUALIZAR APLICATIVO</label>
+      <font>wf17</font>
+      <textcolor>FFF7F7F7</textcolor>
+      <focusedcolor>FF080808</focusedcolor>
+      <texturefocus border="11">btn_ghost_focus.png</texturefocus>
+      <texturenofocus border="11">btn_ghost.png</texturenofocus>
+    </control>
+    <control type="image" id="124">
+      <left>214</left>
+      <top>839</top>
+      <width>20</width>
+      <height>20</height>
+      <texture>icon_refresh.png</texture>
+    </control>
+    <control type="label" id="40">
+      <left>674</left>
+      <top>181</top>
+      <width>422</width>
+      <height>34</height>
+      <label>Sem anúncios</label>
+      <font>wf26</font>
+      <textcolor>FFF7F7F7</textcolor>
+    </control>
+    <control type="image" id="41">
+      <left>1140</left>
+      <top>183</top>
+      <width>106</width>
+      <height>28</height>
+      <texture>chip.png</texture>
+      <aspectratio>stretch</aspectratio>
+    </control>
+    <control type="label" id="42">
+      <left>1140</left>
+      <top>189</top>
+      <width>106</width>
+      <height>17</height>
+      <label>Plano mensal</label>
+      <font>wf13</font>
+      <textcolor>FFBCBCBC</textcolor>
+      <align>center</align>
+    </control>
+    <control type="image" id="43">
+      <left>808</left>
+      <top>335</top>
+      <width>303</width>
+      <height>303</height>
+      <texture>qr_plate.png</texture>
+      <aspectratio>stretch</aspectratio>
+    </control>
+    <control type="image" id="44">
+      <left>824</left>
+      <top>351</top>
+      <width>270</width>
+      <height>270</height>
+      <texture>qr_checkout.png</texture>
+      <aspectratio>keep</aspectratio>
+    </control>
+    <control type="label" id="45">
+      <left>674</left>
+      <top>765</top>
+      <width>572</width>
+      <height>42</height>
+      <label>Aponte a câmera de outro celular.[CR]Valor e condições aparecem no checkout.</label>
+      <font>wf15</font>
+      <textcolor>FF838383</textcolor>
+      <align>center</align>
+    </control>
+    <control type="button" id="120">
+      <left>674</left>
+      <top>821</top>
+      <width>572</width>
+      <height>57</height>
+      <label>Abrir checkout</label>
+      <font>wf17</font>
+      <textcolor>FFF7F7F7</textcolor>
+      <focusedcolor>FF080808</focusedcolor>
+      <texturefocus border="11">btn_ghost_focus.png</texturefocus>
+      <texturenofocus border="11">btn_ghost.png</texturenofocus>
+    </control>
+    <control type="label" id="50">
+      <left>1297</left>
+      <top>181</top>
+      <width>452</width>
+      <height>34</height>
+      <label>Indique e ganhe</label>
+      <font>wf26</font>
+      <textcolor>FFF7F7F7</textcolor>
+    </control>
+    <control type="image" id="51">
+      <left>1764</left>
+      <top>183</top>
+      <width>105</width>
+      <height>28</height>
+      <texture>chip.png</texture>
+      <aspectratio>stretch</aspectratio>
+    </control>
+    <control type="label" id="52">
+      <left>1764</left>
+      <top>189</top>
+      <width>105</width>
+      <height>17</height>
+      <label>Compartilhar</label>
+      <font>wf13</font>
+      <textcolor>FFBCBCBC</textcolor>
+      <align>center</align>
+    </control>
+    <control type="image" id="53">
+      <left>1431</left>
+      <top>303</top>
+      <width>303</width>
+      <height>303</height>
+      <texture>qr_plate.png</texture>
+      <aspectratio>stretch</aspectratio>
+    </control>
+    <control type="image" id="54">
+      <left>1447</left>
+      <top>319</top>
+      <width>270</width>
+      <height>270</height>
+      <texture>qr_apk.png</texture>
+      <aspectratio>keep</aspectratio>
+    </control>
+    <control type="label" id="55">
+      <left>1297</left>
+      <top>700</top>
+      <width>572</width>
+      <height>42</height>
+      <label>Aponte a câmera e envie o link[CR]do app a quem quiser.</label>
+      <font>wf15</font>
+      <textcolor>FF838383</textcolor>
+      <align>center</align>
+    </control>
+    <control type="button" id="121">
+      <left>1297</left>
+      <top>756</top>
+      <width>572</width>
+      <height>57</height>
+      <label>Compartilhar link</label>
+      <font>wf17</font>
+      <textcolor>FFF7F7F7</textcolor>
+      <focusedcolor>FF080808</focusedcolor>
+      <texturefocus border="11">btn_ghost_focus.png</texturefocus>
+      <texturenofocus border="11">btn_ghost.png</texturenofocus>
+    </control>
+    <control type="button" id="122">
+      <left>1467</left>
+      <top>821</top>
+      <width>232</width>
+      <height>57</height>
+      <label>Baixar APK (Android)</label>
+      <font>wf17</font>
+      <textcolor>FFD6D6D6</textcolor>
+      <focusedcolor>FF080808</focusedcolor>
+      <texturefocus border="11">btn_quiet_focus.png</texturefocus>
+      <texturenofocus border="11">btn_quiet.png</texturenofocus>
+    </control>
+    <control type="image" id="125">
+      <left>1473</left>
+      <top>839</top>
+      <width>20</width>
+      <height>20</height>
+      <texture>icon_download.png</texture>
+    </control>
+    <control type="image" id="6">
+      <left>38</left>
+      <top>929</top>
+      <width>1844</width>
+      <height>113</height>
+      <texture>bar.png</texture>
+      <aspectratio>stretch</aspectratio>
+    </control>
+    <control type="label" id="60">
+      <left>67</left>
+      <top>959</top>
+      <width>500</width>
+      <height>30</height>
+      <label>Já é assinante? Ative seu VIP</label>
+      <font>wf22</font>
+      <textcolor>FFF7F7F7</textcolor>
+    </control>
+    <control type="label" id="61">
+      <left>67</left>
+      <top>993</top>
+      <width>500</width>
+      <height>21</height>
+      <label>Digite o código que você recebeu.</label>
+      <font>wf15</font>
+      <textcolor>FF838383</textcolor>
+    </control>
+    <control type="image" id="62">
+      <left>1589</left>
+      <top>961</top>
+      <width>2</width>
+      <height>49</height>
+      <texture>divider.png</texture>
+      <aspectratio>stretch</aspectratio>
+    </control>
+    <control type="button" id="312">
+      <left>1617</left>
+      <top>957</top>
+      <width>208</width>
+      <height>57</height>
+      <label>Continuar com anúncios</label>
+      <font>wf15</font>
+      <textcolor>FFD6D6D6</textcolor>
+      <focusedcolor>FF080808</focusedcolor>
+      <texturefocus border="11">btn_quiet_focus.png</texturefocus>
+      <texturenofocus border="11">btn_quiet.png</texturenofocus>
+    </control>
+    <control type="image" id="63">
+      <left>595</left>
+      <top>964</top>
+      <width>147</width>
+      <height>42</height>
+      <texture>plan.png</texture>
+      <aspectratio>stretch</aspectratio>
+    </control>
+    <control type="button" id="140">
+      <left>599</left>
+      <top>968</top>
+      <width>70</width>
+      <height>34</height>
+      <label>10 min</label>
+      <font>wf13</font>
+      <textcolor>FFBCBCBC</textcolor>
+      <focusedcolor>FF080808</focusedcolor>
+      <texturefocus border="17">plan_active.png</texturefocus>
+      <texturenofocus border="17">plan.png</texturenofocus>
+    </control>
+    <control type="button" id="141">
+      <left>673</left>
+      <top>968</top>
+      <width>65</width>
+      <height>34</height>
+      <label>1 mês</label>
+      <font>wf13</font>
+      <textcolor>FFBCBCBC</textcolor>
+      <focusedcolor>FF080808</focusedcolor>
+      <texturefocus border="17">plan_active.png</texturefocus>
+      <texturenofocus border="17">plan.png</texturenofocus>
+    </control>
+    <control type="edit" id="310">
+      <left>753</left>
+      <top>957</top>
+      <width>710</width>
+      <height>57</height>
+      <label>Código de ativação</label>
+      <font>wf17</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <disabledcolor>FF747474</disabledcolor>
+      <texturefocus border="11">field_focus.png</texturefocus>
+      <texturenofocus border="11">field.png</texturenofocus>
+    </control>
+    <control type="button" id="311">
+      <left>1474</left>
+      <top>957</top>
+      <width>87</width>
+      <height>57</height>
+      <label>Ativar</label>
+      <font>wf17</font>
+      <textcolor>FF080808</textcolor>
+      <focusedcolor>FF080808</focusedcolor>
+      <texturefocus border="11">btn_primary_focus.png</texturefocus>
+      <texturenofocus border="11">btn_primary.png</texturenofocus>
+    </control>
+    <control type="label" id="70">
+      <left>0</left>
+      <top>1046</top>
+      <width>1920</width>
+      <height>22</height>
+      <label>Android TV  ·  16:9  ·  tela única, sem rolagem  ·  setas/Enter navegam (D-pad)</label>
+      <font>wf11</font>
+      <textcolor>FF666666</textcolor>
+      <align>center</align>
+    </control>
+    <control type="group" id="900">
+      <visible>String.IsEqual(Window.Property(welcome_dialog),ads)</visible>
+      <control type="image" id="901">
+        <left>0</left>
+        <top>0</top>
+        <width>1920</width>
+        <height>1080</height>
+        <texture>overlay.png</texture>
+      </control>
+      <control type="image" id="902">
+        <left>606</left>
+        <top>390</top>
+        <width>708</width>
+        <height>300</height>
+        <texture>dialog.png</texture>
+        <aspectratio>stretch</aspectratio>
+      </control>
+      <control type="label" id="903">
+        <left>644</left>
+        <top>423</top>
+        <width>632</width>
+        <height>40</height>
+        <label>Continuar com anúncios?</label>
+        <font>wf26</font>
+        <textcolor>FFF7F7F7</textcolor>
+      </control>
+      <control type="label" id="904">
+        <left>644</left>
+        <top>473</top>
+        <width>632</width>
+        <height>100</height>
+        <label>Você vai ver anúncios durante o uso. Para removê-los,[CR]assine pelo checkout ou ative um código VIP quando quiser.</label>
+        <font>wf17</font>
+        <textcolor>FFBCBCBC</textcolor>
+      </control>
+      <control type="button" id="905">
+        <left>644</left>
+        <top>595</top>
+        <width>300</width>
+        <height>57</height>
+        <label>Voltar</label>
+        <font>wf17</font>
+        <textcolor>FFF7F7F7</textcolor>
+        <focusedcolor>FF080808</focusedcolor>
+        <texturefocus border="11">btn_ghost_focus.png</texturefocus>
+        <texturenofocus border="11">btn_quiet.png</texturenofocus>
+      </control>
+      <control type="button" id="906">
+        <left>954</left>
+        <top>595</top>
+        <width>322</width>
+        <height>57</height>
+        <label>Continuar com anúncios</label>
+        <font>wf15</font>
+        <textcolor>FF080808</textcolor>
+        <focusedcolor>FF080808</focusedcolor>
+        <texturefocus border="11">btn_primary_focus.png</texturefocus>
+        <texturenofocus border="11">btn_primary.png</texturenofocus>
+      </control>
+    </control>
+    <control type="group" id="950">
+      <visible>String.IsEqual(Window.Property(welcome_dialog),status)</visible>
+      <control type="image" id="951">
+        <left>0</left>
+        <top>0</top>
+        <width>1920</width>
+        <height>1080</height>
+        <texture>overlay.png</texture>
+      </control>
+      <control type="image" id="952">
+        <left>606</left>
+        <top>390</top>
+        <width>708</width>
+        <height>300</height>
+        <texture>dialog.png</texture>
+        <aspectratio>stretch</aspectratio>
+      </control>
+      <control type="label" id="953">
+        <left>644</left>
+        <top>423</top>
+        <width>632</width>
+        <height>40</height>
+        <label>$INFO[Window.Property(welcome_status_title)]</label>
+        <font>wf26</font>
+        <textcolor>FFF7F7F7</textcolor>
+      </control>
+      <control type="label" id="954">
+        <left>644</left>
+        <top>473</top>
+        <width>632</width>
+        <height>100</height>
+        <label>$INFO[Window.Property(welcome_status_text)]</label>
+        <font>wf17</font>
+        <textcolor>FFBCBCBC</textcolor>
+      </control>
+      <control type="button" id="955">
+        <left>954</left>
+        <top>595</top>
+        <width>322</width>
+        <height>57</height>
+        <label>$INFO[Window.Property(welcome_status_ok)]</label>
+        <font>wf15</font>
+        <textcolor>FF080808</textcolor>
+        <focusedcolor>FF080808</focusedcolor>
+        <texturefocus border="11">btn_primary_focus.png</texturefocus>
+        <texturenofocus border="11">btn_primary.png</texturenofocus>
+      </control>
+    </control>
+  </controls>
 </window>
