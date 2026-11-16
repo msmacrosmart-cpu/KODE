@@ -122,7 +122,7 @@ todo texto passa por medição com a fonte real:
 - todo botão precisa de textura de foco diferente da normal (D-pad sem realce =
   usuário não sabe onde está).
 
-O `tools/kodi/auditar-tela-entrada.py` mede isso (37 textos no total) e roda na
+O `tools/kodi/auditar-tela-entrada.py` mede isso (36 textos no total) e roda na
 CI como passo bloqueante; há também testes em `tests/test_tela_entrada.py`.
 
 ## 5. Como conferir
