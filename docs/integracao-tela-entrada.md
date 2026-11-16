@@ -104,6 +104,21 @@ comando que o `Startup.xml` original usava.
   igual e o motivo vai para o log.
 - Se o Python nem iniciar, o seguro de 30 s do `Startup.xml` abre a Home.
 
+## 4a. O que mudou na revisão de layout (v6)
+
+- **Cabeçalho:** só a marca, à esquerda. O seletor "Android TV / Celular" saiu
+  (a tela é 16:9 fixa; o seletor não levava a lugar nenhum).
+- **Barra inferior:** as pílulas "10 min" / "1 mês" saíram — eram elas que
+  invadiam o campo do código. Sobrou rótulo + campo + **Ativar** + link.
+  Sem escolha de plano na tela: o servidor define validade na ativação.
+- **Grade:** margem 56, respiro 32, entre cards 28, padding interno do card 32.
+  Tudo múltiplo de 8 px, para nada ficar "quase alinhado".
+- **Linha de base única:** as ações primárias dos três cards terminam na mesma
+  altura. No card 3 os dois botões ficam lado a lado, na mesma linha de ação do
+  card 2 — assim os dois QR Codes têm o mesmo tamanho e ficam na mesma linha.
+- **Ícones dos botões** nascem a partir do início real do rótulo (o Kodi
+  centraliza o texto do botão); antes o ícone cobria a primeira letra.
+
 ## 4b. Tipografia: a regra que o build não deixa quebrar
 
 O layout nasceu de um HTML/CSS e o Kodi **não** tem layout automático: cada
@@ -174,9 +189,9 @@ auditoria tipográfica ou o mapa de botões falharem.
 
 ## 7. Resultado deste build
 
-- Release: `v1.0.83-tela-inicial-v5`
-- APK: `SMARTEDTV-atual-com-tela-inicial-v5.apk`, 249.861.331 bytes,
-  SHA-256 `ce6c323926ac7554f28f07cc39d1c73430625812b6fd235b36086ae7b7edbd8c`
+- Release: `v1.0.83-tela-inicial-v6`
+- APK: `SMARTEDTV-atual-com-tela-inicial-v6.apk`, 249.844.006 bytes,
+  SHA-256 `a9eaad18a24a2244412a059125040262eb17c2b872ed7e4211b6d72f8035033a`
 - Assinatura: `855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`
   (a mesma do app; v1/v2/v3 verificados pelo `apksigner`)
 - Delta sobre o APK atual: +33 arquivos (o addon da tela), 0 removidos e 7
@@ -186,7 +201,7 @@ auditoria tipográfica ou o mapa de botões falharem.
   `ReplaceWindow` (o do seguro); addon registrado como
   `<addon optional="true">`; 2731 arquivos do perfil semeado intactos;
   `service.smarted.bootstrap` sem alteração.
-- Workflow `43967218564` (todos os passos verdes), incluindo auditoria
+- Workflow `43978859794` (todos os passos verdes), incluindo auditoria
   tipográfica, mapa de botões, "conferir que nada mais mudou", a simulação de
   boot e a assinatura.
 - Conferido no arquivo publicado: os 31 arquivos da tela dentro do APK são
