@@ -37,11 +37,26 @@ jobs:
 
       - name: 1b. Auditoria tipografica (nada cortado, nada por cima)
         run: |
-          set -euo pipefail
+          # sem `set -e`: o `if` logo abaixo precisa receber a falha, para
+          # transformar o motivo em anotacao em vez de morrer calado
+          set -uo pipefail
           python3 -m pip install --quiet --disable-pip-version-check \
             "Pillow==11.3.0" "fonttools==4.68.0"
-          python3 tools/kodi/auditar-tela-entrada.py --falhar
-          python3 tools/kodi/mapear-botoes.py
+          # o log do runner nem sempre chega ao agente: cada falha vira anotacao
+          # (::error::) para o motivo ficar visivel na propria execucao
+          if ! saida=$(python3 tools/kodi/auditar-tela-entrada.py --falhar 2>&1); then
+            printf '%s\n' "$saida" | tail -20 | while IFS= read -r linha; do
+              printf '::error file=tools/kodi/auditar-tela-entrada.py::%s\n' "$linha"
+            done
+            exit 1
+          fi
+          printf '%s\n' "$saida"
+          if ! saida=$(python3 tools/kodi/mapear-botoes.py 2>&1); then
+            printf '%s\n' "$saida" | tail -20 | while IFS= read -r linha; do
+              printf '::error file=tools/kodi/mapear-botoes.py::%s\n' "$linha"
+            done
+            exit 1
+          fi
 
       - name: 2. Baixar o APK atual publicado
         run: |
