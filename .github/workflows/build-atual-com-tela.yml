@@ -171,7 +171,19 @@ jobs:
                                   'repos/%s/git/blobs' % repo, '--input', '-'],
                                  input=corpo.encode(), capture_output=True, check=True)
               shas.append(json.loads(p.stdout)['sha'])
-          print('APK_BLOBS=' + ','.join(shas), flush=True)
+          resumo = hashlib.sha256(dados).hexdigest()
+          lista = ','.join(shas)
+          print('APK_BLOBS=' + lista, flush=True)
           print('APK_TAMANHO=%d' % len(dados), flush=True)
-          print('APK_SHA256=' + hashlib.sha256(dados).hexdigest(), flush=True)
+          print('APK_SHA256=' + resumo, flush=True)
+          # o sandbox do agente so alcanca api.github.com: deixa a lista dos
+          # blocos NAS NOTAS da release, que sao lidas por essa API.
+          notas = (
+              'APK atual v1.0.83 preservado integralmente + apenas a tela inicial do ZIP '
+              '(addon script.smartedtv.welcome, 15 arquivos, QR Codes originais). '
+              'Sem skin Bingie, sem troca de versao, mesma assinatura.\n\n'
+              'APK_TAMANHO=%d\nAPK_SHA256=%s\nAPK_BLOBS=%s\n'
+              % (len(dados), resumo, lista))
+          subprocess.run(['gh', 'release', 'edit', os.environ['TAG_SAIDA'],
+                          '--repo', repo, '--notes', notas], check=True)
           PY
