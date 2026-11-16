@@ -1,18 +1,25 @@
 #!/usr/bin/env python3
-"""Injeta SOMENTE a tela inicial do ZIP num APK SMARTEDTV ja existente.
+"""Injeta a tela inicial do ZIP num APK SMARTEDTV ja existente.
 
-Nao troca skin, nao muda versao, nao recompila nada e nao altera nenhum outro
-arquivo: todas as entradas do APK original sao copiadas como estao (exceto as
-assinaturas META-INF, que sao refeitas depois), e sao acrescentados apenas:
+Nao troca skin, nao muda versao, nao recompila nada e nao recria interface:
+todas as entradas do APK original sao copiadas como estao (exceto as
+assinaturas META-INF, que sao refeitas depois). O que e acrescentado/ajustado:
 
-* ``assets/addons/script.smartedtv.welcome/`` (os 15 arquivos do ZIP);
-* uma linha no ``assets/system/addon-manifest.xml``;
-* o gancho de inicializacao dentro do ``service.smarted.bootstrap/service.py``
-  que JA existe no APK (nenhuma funcao nova de negocio e criada).
+* ``assets/addons/script.smartedtv.welcome/`` — os 15 arquivos do ZIP, byte a
+  byte iguais (layout, imagens e QR Codes originais);
+* ``assets/addons/service.smarted.bootstrap/tela_entrada.py`` — modulo do
+  servico de boot que ja existe no APK; abre/confirma a tela sem depender do
+  banco de addons do Kodi;
+* ``assets/addons/service.smarted.bootstrap/service.py`` — 2 linhas: o import
+  do modulo e o disparo da thread ``welcome-entry``;
+* ``assets/system/addon-manifest.xml`` — registro do addon da tela;
+* ``Font.xml`` das skins do projeto — apenas nomes de fonte NOVOS que o layout
+  do ZIP usa (font20/font22/font24/font30) e que faltavam no app; sem isso o
+  Kodi cai em font13 e a tela nao fica 100% formatada. Nenhuma fonte existente
+  e alterada e nenhuma outra tela usa esses nomes.
 
 O perfil semeado ``assets/smarted/profile/`` e intocado: o dex confere o SHA-256
-de cada arquivo dele contra o profile-manifest, e qualquer alteracao ali
-impediria o boot.
+de cada arquivo dele contra o profile-manifest.
 
 Uso:
     python3 tools/kodi/injetar-tela-entrada.py --apk ATUAL.apk --saida BRUTO.apk
@@ -29,51 +36,29 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 ADDON_DIR = ROOT / "kodi" / "addons" / "script.smartedtv.welcome"
+BOOTSTRAP_DIR = ROOT / "kodi" / "addons" / "service.smarted.bootstrap"
 ADDON_ID = ADDON_DIR.name
 ADDON_PREFIX = "assets/addons/%s/" % ADDON_ID
 BOOTSTRAP = "assets/addons/service.smarted.bootstrap/service.py"
+MODULO = "assets/addons/service.smarted.bootstrap/tela_entrada.py"
 MANIFEST = "assets/system/addon-manifest.xml"
 PROFILE_PREFIX = "assets/smarted/profile/"
 SIG = re.compile(r"^META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC))$", re.I)
 
-# Espelho do gancho que ja esta integrado em
-# kodi/addons/service.smarted.bootstrap/service.py neste branch. Reaproveita as
-# funcoes existentes no servico (log/jsonrpc/enable_addons) e o builtin RunScript.
-HOOK_DEFS = '''# --- Tela de entrada entregue no ZIP (integracao, sem recriar interface) ---
-WELCOME_ADDON = 'script.smartedtv.welcome'
-WELCOME_TENTATIVAS = 6
-WELCOME_ESPERA = 1
+# Fontes usadas por DialogWelcome.xml que nao existem nas skins do APK. Sao
+# apenas nomes novos, com o mesmo arquivo de fonte e o mesmo estilo das vizinhas.
+FONTES_DA_TELA = [
+    ("font20", 20),
+    ("font22", 22),
+    ("font24", 24),
+    ("font30", 30),
+]
+SKINS = ("skin.novatv", "skin.smartedtv.classic", "skin.estuary")
 
+HOOK_IMPORT = "from tela_entrada import abrir_tela_entrada\n"
 
-def abrir_tela_entrada(monitor):
-    """Abre a tela do ZIP uma unica vez por inicializacao, sem substituir a Home."""
-    instalado = False
-    for tentativa in range(WELCOME_TENTATIVAS):
-        if monitor.abortRequested():
-            return
-        enable_addons([WELCOME_ADDON])
-        instalado = bool(xbmc.getCondVisibility('System.HasAddon(%s)' % WELCOME_ADDON))
-        if instalado:
-            break
-        xbmc.executebuiltin('UpdateLocalAddons()')
-        if monitor.waitForAbort(WELCOME_ESPERA):
-            return
-    if not instalado:
-        log('tela de entrada indisponivel: addon %s nao encontrado' % WELCOME_ADDON,
-            xbmc.LOGWARNING)
-        return
-    for tentativa in range(WELCOME_TENTATIVAS):
-        if monitor.abortRequested():
-            return
-        if xbmc.getCondVisibility('Window.IsActive(10000)'):
-            break
-        if monitor.waitForAbort(WELCOME_ESPERA):
-            return
-    xbmc.executebuiltin('RunScript(%s)' % WELCOME_ADDON)
-    log('tela de entrada aberta: %s' % WELCOME_ADDON)
-'''
-
-HOOK_CALL = '''    entrada = threading.Thread(target=abrir_tela_entrada, args=(monitor,),
+HOOK_CALL = '''    entrada = threading.Thread(target=abrir_tela_entrada,
+                               args=(monitor, log),
                                name='welcome-entry')
     entrada.daemon = True
     entrada.start()
@@ -93,16 +78,16 @@ def arquivos_do_addon():
 
 def patch_service(dados: bytes) -> bytes:
     texto = dados.decode("utf-8")
-    if "def abrir_tela_entrada(" in texto:
+    if "tela_entrada import abrir_tela_entrada" in texto:
         raise SystemExit("service.py do APK ja tem o gancho da tela de entrada")
+    ancora_import = "import xbmcvfs\n"
     ancora_main = "def main():\n    monitor = xbmc.Monitor()\n"
-    ancora_fim = "if __name__ == '__main__':"
-    if texto.count(ancora_main) != 1 or texto.count(ancora_fim) != 1:
-        raise SystemExit("anchors do main()/__main__ nao encontrados no service.py do APK")
-    if not re.search(r"^import threading$", texto, re.M) or "def enable_addons(" not in texto:
-        raise SystemExit("service.py do APK nao tem threading/enable_addons")
+    if texto.count(ancora_import) != 1 or texto.count(ancora_main) != 1:
+        raise SystemExit("ancoras de import/main() nao encontradas no service.py do APK")
+    if not re.search(r"^import threading$", texto, re.M):
+        raise SystemExit("service.py do APK nao importa threading")
+    texto = texto.replace(ancora_import, ancora_import + HOOK_IMPORT, 1)
     texto = texto.replace(ancora_main, ancora_main + "\n" + HOOK_CALL + "\n", 1)
-    texto = texto.replace(ancora_fim, HOOK_DEFS + "\n\n" + ancora_fim, 1)
     compile(texto, BOOTSTRAP, "exec")  # nunca entregar Python quebrado
     return texto.encode("utf-8")
 
@@ -120,6 +105,36 @@ def patch_manifest(dados: bytes) -> bytes:
     return novo.encode("utf-8")
 
 
+def patch_fonts(dados: bytes) -> bytes:
+    """Acrescenta font20/font22/font24/font30 em cada fontset, sem tocar no resto."""
+    texto = dados.decode("utf-8")
+    for nome, _tamanho in FONTES_DA_TELA:
+        if "<name>%s</name>" % nome in texto:
+            raise SystemExit("a skin ja declara %s; nada a corrigir" % nome)
+    blocos = []
+    for nome, tamanho in FONTES_DA_TELA:
+        blocos.append(
+            "\t\t<font>\n"
+            "\t\t\t<name>%s</name>\n"
+            "\t\t\t<filename>NotoSans-Regular.ttf</filename>\n"
+            "\t\t\t<size>%d</size>\n"
+            "\t\t\t<style>lighten</style>\n"
+            "\t\t</font>\n" % (nome, tamanho))
+    inserir = "".join(blocos)
+    total_fontsets = texto.count("</fontset>")
+    if total_fontsets < 1:
+        raise SystemExit("Font.xml sem fontset")
+    # declara as fontes antes de cada </fontset>, sem mexer em nada mais
+    novo = texto.replace("</fontset>", inserir + "</fontset>")
+    ET.fromstring(novo.encode("utf-8"))
+    for nome, _ in FONTES_DA_TELA:
+        if novo.count("<name>%s</name>" % nome) != total_fontsets:
+            raise SystemExit("falha ao declarar %s em todos os fontsets" % nome)
+        if "<name>%s</name>" % nome in dados.decode("utf-8"):
+            raise SystemExit("%s ja existia na skin" % nome)
+    return novo.encode("utf-8")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apk", required=True, type=Path, help="APK atual (integro)")
@@ -127,7 +142,11 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.apk.resolve() == args.saida.resolve():
         raise SystemExit("entrada e saida precisam ser diferentes")
+
     extras = arquivos_do_addon()
+    extras[MODULO] = (BOOTSTRAP_DIR / "tela_entrada.py").read_bytes()
+    compile(extras[MODULO].decode("utf-8"), MODULO, "exec")
+    fontes_alteradas = []
 
     with zipfile.ZipFile(args.apk) as origem, \
             zipfile.ZipFile(args.saida, "w", allowZip64=True) as destino:
@@ -144,35 +163,41 @@ def main(argv=None):
                 perfil[item.filename] = hashlib.sha256(dados).hexdigest()
             if item.filename == BOOTSTRAP:
                 dados = patch_service(dados)
-                print("  service.py: gancho da tela de entrada injetado")
+                print("  service.py: import + thread welcome-entry")
             elif item.filename == MANIFEST:
                 dados = patch_manifest(dados)
                 print("  addon-manifest.xml: %s registrado" % ADDON_ID)
+            else:
+                m = re.fullmatch(r"assets/addons/([^/]+)/xml/Font\.xml", item.filename)
+                if m and m.group(1) in SKINS:
+                    dados = patch_fonts(dados)
+                    fontes_alteradas.append(item.filename)
+                    print("  %s: font20/font22/font24/font30 declaradas" % item.filename)
             info = zipfile.ZipInfo(item.filename, date_time=item.date_time)
             info.compress_type = item.compress_type
             info.external_attr = item.external_attr
             info.comment = item.comment
             destino.writestr(info, dados)
 
-        if BOOTSTRAP not in nomes:
-            raise SystemExit("APK atual sem %s - ponto de entrada nao localizado" % BOOTSTRAP)
-        if MANIFEST not in nomes:
-            raise SystemExit("APK atual sem %s" % MANIFEST)
+        for obrigatorio in (BOOTSTRAP, MANIFEST):
+            if obrigatorio not in nomes:
+                raise SystemExit("APK atual sem %s" % obrigatorio)
         if not perfil:
             raise SystemExit("APK atual sem perfil semeado (assets/smarted/profile/)")
+        if not fontes_alteradas:
+            raise SystemExit("nenhum Font.xml das skins do projeto encontrado no APK")
 
         for nome, dados in extras.items():
             if nome in nomes:
-                raise SystemExit("addon ja presente no APK: %s" % nome)
+                raise SystemExit("arquivo ja presente no APK: %s" % nome)
             info = zipfile.ZipInfo(nome, date_time=(2026, 11, 16, 13, 44, 0))
             # sem compressao, como os demais addons de sistema do APK: o Kodi
-            # le assets/addons direto do APK e align-apk.py realinha entradas
+            # le assets/addons direto do APK e align-apk.py realinha as entradas
             # stored a 4 bytes antes da assinatura.
             info.compress_type = zipfile.ZIP_STORED
             info.external_attr = 0o644 << 16
             destino.writestr(info, dados)
 
-    # o perfil semeado precisa sair byte a byte identico (dex verifica hashes)
     with zipfile.ZipFile(args.saida) as conferido:
         for nome, resumo in perfil.items():
             if hashlib.sha256(conferido.read(nome)).hexdigest() != resumo:
@@ -181,8 +206,9 @@ def main(argv=None):
             if nome not in conferido.namelist():
                 raise SystemExit("arquivo da tela ausente: %s" % nome)
 
-    print("APK com a tela: %s (%d entradas, %d arquivos novos, perfil intacto)"
-          % (args.saida, len(nomes) + len(extras), len(extras)))
+    print("APK com a tela: %s (%d entradas, %d arquivos novos, %d Font.xml, perfil intacto)"
+          % (args.saida, len(nomes) + len(extras), len(extras),
+             len(fontes_alteradas)))
     return 0
 
 

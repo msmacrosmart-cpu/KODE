@@ -19,6 +19,7 @@ from favourites import ensure_favourites
 from performance import ensure_performance
 from menu_smarted import garantir_menu, rodar_validacao_navegacao, silenciar_avisos_brazuca
 from skin_setup import ensure_home_nodes, ensure_skin, home_xml_candidates
+from tela_entrada import abrir_tela_entrada
 
 ADDON = xbmcaddon.Addon()
 ADDON_ID = ADDON.getAddonInfo('id')
@@ -34,11 +35,8 @@ REPAIR_RETRY_SECONDS = 5
 UISOUNDS_SILENCIO = 'resource.uisounds.silencio'
 
 # Tela de entrada entregue no ZIP: addon independente (WindowXMLDialog).
-# Nao substitui a Home: o dialogo e modal e cobre 1920x1080.
+# A abertura/confirmacao vive em tela_entrada.py, neste mesmo servico.
 WELCOME_ADDON = 'script.smartedtv.welcome'
-WELCOME_TENTATIVAS = 6
-WELCOME_ESPERA = 1
-
 
 def log(message, level=xbmc.LOGINFO):
     xbmc.log('[%s] %s' % (ADDON_ID, message), level)
@@ -251,43 +249,6 @@ def repair_until_ready(monitor):
     return report, REPAIR_ATTEMPTS
 
 
-def abrir_tela_entrada(monitor):
-    """Abre a tela do ZIP uma unica vez por inicializacao do SMARTEDTV.
-
-    O dialogo e independente: aparece na frente da interface principal, sem
-    substitui-la, e devolve o controle a ela quando o usuario conclui uma acao
-    ou pressiona Voltar. Nenhum fluxo novo e criado aqui.
-    """
-    # O perfil semeado de versoes anteriores pode nao conhecer o addon novo:
-    # reaproveita o mecanismo de habilitacao por JSON-RPC ja usado no boot.
-    instalado = False
-    for tentativa in range(WELCOME_TENTATIVAS):
-        if monitor.abortRequested():
-            return
-        enable_addons([WELCOME_ADDON])
-        instalado = bool(xbmc.getCondVisibility('System.HasAddon(%s)' % WELCOME_ADDON))
-        if instalado:
-            break
-        xbmc.executebuiltin('UpdateLocalAddons()')
-        if monitor.waitForAbort(WELCOME_ESPERA):
-            return
-    if not instalado:
-        log('tela de entrada indisponivel: addon %s nao encontrado' % WELCOME_ADDON,
-            xbmc.LOGWARNING)
-        return
-    # RunScript precisa do gerenciador de janelas pronto; a Home (10000) e a
-    # interface principal que continua existindo por baixo do dialogo.
-    for tentativa in range(WELCOME_TENTATIVAS):
-        if monitor.abortRequested():
-            return
-        if xbmc.getCondVisibility('Window.IsActive(10000)'):
-            break
-        if monitor.waitForAbort(WELCOME_ESPERA):
-            return
-    xbmc.executebuiltin('RunScript(%s)' % WELCOME_ADDON)
-    log('tela de entrada aberta: %s' % WELCOME_ADDON)
-
-
 def main():
     monitor = xbmc.Monitor()
     log('startup: preparando o Brazuca Play')
@@ -295,7 +256,8 @@ def main():
 
     # Entrada inicial do ZIP em thread propria: nao atrasa o preparo do
     # conteudo e nao altera nenhuma janela/tela existente do aplicativo.
-    entrada = threading.Thread(target=abrir_tela_entrada, args=(monitor,),
+    entrada = threading.Thread(target=abrir_tela_entrada,
+                               args=(monitor, log),
                                name='welcome-entry')
     entrada.daemon = True
     entrada.start()

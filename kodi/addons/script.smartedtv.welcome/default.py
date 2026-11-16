@@ -2,15 +2,24 @@
 """Janela independente de boas-vindas do SMARTEDTV para Kodi Omega 21.
 
 A interface e 100% a do ZIP (DialogWelcome.xml + media/, sem nenhuma alteracao
-visual). Este arquivo so adapta os pontos de integracao: abre/fecha a janela e
-encaminha cada acao para os fluxos ja existentes no SMARTEDTV. Onde o projeto
-nao tem implementacao correspondente, a acao e apenas registrada no log e NAO
-e simulada (relatorio em docs/integracao-tela-entrada.md).
+visual). Este arquivo so adapta os pontos de integracao: resolve o proprio
+caminho (o ZIP usava xbmcaddon.Addon(), que so funciona quando o Kodi associa o
+script a um addon habilitado no banco de addons), sinaliza ao servico de boot que
+a janela abriu, registra cada etapa no log e encaminha cada acao para os fluxos
+ja existentes no SMARTEDTV. Onde o projeto nao tem implementacao correspondente,
+a acao e apenas registrada no log e NAO e simulada
+(relatorio em docs/integracao-tela-entrada.md).
 """
+import os
+import traceback
+
 import xbmc
 import xbmcgui
-import xbmcaddon
-import os
+import xbmcvfs
+
+ADDON_ID = 'script.smartedtv.welcome'
+XML_RELATIVO = 'resources/skins/Default/1080i/DialogWelcome.xml'
+MARCA_ABERTA = 'smartedtv.welcome.ativa'
 
 
 # Comando de navegacao ja usado pela skin do projeto para voltar a interface
@@ -27,17 +36,84 @@ ACOES_SEM_FLUXO = {
 }
 
 
+def _log(mensagem, nivel=None):
+    try:
+        xbmc.log('[%s] %s' % (ADDON_ID, mensagem),
+                 xbmc.LOGINFO if nivel is None else nivel)
+    except Exception:
+        pass
+
+
+def _caminho_da_tela():
+    """Resolve a pasta do addon sem depender do banco de addons do Kodi.
+
+    Ordem: pasta do proprio script (__file__), addons de sistema do APK
+    (special://xbmc/addons), addons do perfil (special://home/addons) e, por
+    ultimo, xbmcaddon.Addon() (que exige o addon registrado/habilitado).
+    """
+    candidatos = []
+    arquivo = globals().get('__file__')
+    if arquivo:
+        try:
+            candidatos.append(os.path.dirname(xbmcvfs.translatePath(arquivo)))
+        except Exception:
+            candidatos.append(os.path.dirname(arquivo))
+    for raiz in ('special://xbmc/addons/', 'special://home/addons/'):
+        try:
+            candidatos.append(xbmcvfs.translatePath(raiz + ADDON_ID))
+        except Exception:
+            candidatos.append(raiz + ADDON_ID)
+    try:
+        import xbmcaddon
+        candidatos.append(xbmcvfs.translatePath(
+            xbmcaddon.Addon().getAddonInfo('path')))
+    except Exception:
+        pass
+
+    for candidato in candidatos:
+        if not candidato:
+            continue
+        xml = os.path.join(candidato, XML_RELATIVO)
+        try:
+            existe = xbmcvfs.exists(xml)
+        except Exception:
+            existe = os.path.isfile(xml)
+        if existe:
+            _log('layout localizado em %s' % xml)
+            return candidato
+    _log('nenhum candidato contem %s: %r' % (XML_RELATIVO, candidatos),
+         xbmc.LOGERROR)
+    return None
+
+
+def _sinalizar_abertura():
+    """Permite ao servico de boot confirmar que a janela realmente abriu."""
+    try:
+        xbmcgui.Window(10000).setProperty(MARCA_ABERTA, '1')
+        return
+    except Exception:
+        pass
+    try:
+        xbmc.executebuiltin('SetProperty(%s,1,10000)' % MARCA_ABERTA)
+    except Exception:
+        pass
+
+
 class WelcomeDialog(xbmcgui.WindowXMLDialog):
     def __init__(self, *args, **kwargs):
         super(WelcomeDialog, self).__init__(*args, **kwargs)
         self._closing = False
 
     def onInit(self):
+        # onInit so roda quando a janela foi carregada de verdade: e o sinal
+        # usado pelo servico de boot para confirmar que a tela entrou no ar.
+        _sinalizar_abertura()
+        _log('onInit: janela carregada')
         # Mantem o foco inicial no campo de codigo, como no HTML de referencia.
         try:
             self.setFocusId(310)
         except Exception:
-            pass
+            _log('onInit: nao foi possivel focar 310', xbmc.LOGWARNING)
 
     def _sem_fluxo(self, acao):
         xbmc.log('[script.smartedtv.welcome] %s: sem implementacao correspondente '
@@ -85,20 +161,21 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
 
 
 def open_welcome():
-    addon = xbmcaddon.Addon()
-    addon_path = addon.getAddonInfo("path")
-    dialog = WelcomeDialog(
-        "DialogWelcome.xml",
-        addon_path,
-        "Default",
-        "1080i"
-    )
+    _log('open_welcome() iniciada; __file__=%r' % globals().get('__file__'))
+    caminho = _caminho_da_tela()
+    if not caminho:
+        return
+    dialog = None
     try:
+        # Mesmos parametros visuais do ZIP: XML, skin Default, resolucao 1080i.
+        dialog = WelcomeDialog('DialogWelcome.xml', caminho, 'Default', '1080i')
+        _log('WindowXMLDialog criado; abrindo doModal()')
         dialog.doModal()
+        _log('doModal() encerrado normalmente')
     except Exception as error:
         # Uma falha da janela de entrada nao pode interromper o aplicativo.
-        xbmc.log('[script.smartedtv.welcome] falha ao abrir a tela: %s' % error,
-                 xbmc.LOGERROR)
+        xbmc.log('[%s] falha ao abrir a tela: %s\n%s'
+                 % (ADDON_ID, error, traceback.format_exc()), xbmc.LOGERROR)
     finally:
         del dialog
 

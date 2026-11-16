@@ -2,8 +2,9 @@
 #
 # Nao compila o Kodi, nao baixa/renomeia skin Bingie e nao muda versao: pega o
 # APK publicado na release atual, injeta o addon script.smartedtv.welcome (os
-# 15 arquivos do ZIP), liga o RunScript no service.smarted.bootstrap que ja
-# existe no APK, realinha e reassina com a MESMA chave do app.
+# 15 arquivos do ZIP), liga a abertura no service.smarted.bootstrap que ja
+# existe no APK (modulo tela_entrada.py), declara as 4 fontes que o layout do
+# ZIP usa, realinha e reassina com a MESMA chave do app.
 name: SMARTEDTV - APK atual + tela inicial do ZIP
 
 on:
@@ -25,8 +26,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       BASE_RELEASE: v1.0.83-unificado
       BASE_ASSET: SMARTEDTV-atual.apk
-      TAG_SAIDA: v1.0.83-tela-inicial
-      FINAL: SMARTEDTV-atual-com-tela-inicial.apk
+      TAG_SAIDA: v1.0.83-tela-inicial-v2
+      FINAL: SMARTEDTV-atual-com-tela-inicial-v2.apk
     steps:
       - uses: actions/checkout@v4
 
@@ -59,6 +60,15 @@ jobs:
                                   if n.startswith('assets/addons/') and len(n.split('/')) > 2
                                   and ('smarted' in n or 'brazuca' in n.lower())}))
           print('tela ja presente:', any('script.smartedtv.welcome' in n for n in nomes))
+          print('modulo tela_entrada ja presente:',
+                'assets/addons/service.smarted.bootstrap/tela_entrada.py' in nomes)
+          for skin in ('skin.novatv', 'skin.smartedtv.classic', 'skin.estuary'):
+              f = 'assets/addons/%s/xml/Font.xml' % skin
+              if f in nomes:
+                  t = z.read(f).decode('utf-8', 'replace')
+                  print(f, '-> font20/font22/font24/font30:',
+                        all(('<name>%s</name>' % x) in t
+                            for x in ('font20', 'font22', 'font24', 'font30')))
           m = z.read('assets/system/addon-manifest.xml').decode('utf-8')
           print('manifest (fim):', m.strip().splitlines()[-5:])
           print('assinaturas:', [n for n in nomes if n.startswith('META-INF/')
@@ -76,24 +86,34 @@ jobs:
           set -euo pipefail
           python3 tools/kodi/injetar-tela-entrada.py \
             --apk build/atual.apk --saida build/bruto.apk
+          echo '--- simulacao do carregamento da tela (stubs do Kodi) ---'
+          python3 tools/kodi/simular-boot-tela-entrada.py --apk build/bruto.apk
 
       - name: 6. Conferir que nada mais mudou
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import hashlib, zipfile, xml.etree.ElementTree as ET
+          import hashlib, re, zipfile, xml.etree.ElementTree as ET
           ADDON = 'script.smartedtv.welcome'
           PREFIX = 'assets/addons/' + ADDON + '/'
+          MODULO = 'assets/addons/service.smarted.bootstrap/tela_entrada.py'
+          SKINS = ('skin.novatv', 'skin.smartedtv.classic', 'skin.estuary')
+          FONTES = ('font20', 'font22', 'font24', 'font30')
           with zipfile.ZipFile('build/atual.apk') as antes, \
                zipfile.ZipFile('build/bruto.apk') as depois:
               a = set(antes.namelist()); d = set(depois.namelist())
               novos = sorted(n for n in d - a if not n.startswith('META-INF/'))
               removidos = sorted(n for n in a - d if not n.startswith('META-INF/'))
-              assert len(novos) == 15 and all(n.startswith(PREFIX) for n in novos), novos
+              assert len(novos) == 16, novos
+              assert [n for n in novos if not n.startswith(PREFIX)] == [MODULO], novos
+              assert len([n for n in novos if n.startswith(PREFIX)]) == 15, novos
               assert not removidos, removidos
-              alterados = [n for n in sorted(a & d) if antes.read(n) != depois.read(n)]
-              esperado = ['assets/addons/service.smarted.bootstrap/service.py',
-                          'assets/system/addon-manifest.xml']
+              alterados = sorted(n for n in sorted(a & d) if antes.read(n) != depois.read(n))
+              esperado = sorted([
+                  'assets/addons/service.smarted.bootstrap/service.py',
+                  'assets/system/addon-manifest.xml'] +
+                  ['assets/addons/%s/xml/Font.xml' % s for s in SKINS
+                   if 'assets/addons/%s/xml/Font.xml' % s in a])
               assert alterados == esperado, alterados
               perfil = [n for n in a if n.startswith('assets/smarted/profile/')]
               assert perfil and all(antes.read(n) == depois.read(n) for n in perfil)
@@ -105,13 +125,32 @@ jobs:
               assert depois.read(PREFIX + 'resources/skins/Default/media/qr_1.png')[:8] == b'\x89PNG\r\n\x1a\n'
               assert depois.read(PREFIX + 'resources/skins/Default/media/qr_2.png')[:8] == b'\x89PNG\r\n\x1a\n'
               svc = depois.read('assets/addons/service.smarted.bootstrap/service.py').decode('utf-8')
-              assert "'RunScript(%s)' % WELCOME_ADDON" in svc and "name='welcome-entry'" in svc
+              assert 'from tela_entrada import abrir_tela_entrada' in svc
+              assert "name='welcome-entry'" in svc
+              assert "RunScript(%s)' % WELCOME_ADDON" not in svc  # nao usa id
               compile(svc, 'service.py', 'exec')
+              mod = depois.read(MODULO).decode('utf-8')
+              assert 'def abrir_tela_entrada(' in mod
+              assert 'importlib.util' in mod and 'RunScript("%s")' in mod
+              compile(mod, 'tela_entrada.py', 'exec')
               man = depois.read('assets/system/addon-manifest.xml').decode('utf-8')
               assert '>%s<' % ADDON in man
               ET.fromstring(man)
-          print('OK: 15 arquivos novos, 2 arquivos adaptados, %d arquivos do perfil intactos' % len(perfil))
-          print('OK: demais entradas do APK byte a byte identicas ao atual')
+              for skin in SKINS:
+                  f = 'assets/addons/%s/xml/Font.xml' % skin
+                  if f not in a:
+                      continue
+                  texto = depois.read(f).decode('utf-8')
+                  ET.fromstring(texto)
+                  for fonte in FONTES:
+                      assert '<name>%s</name>' % fonte in texto, (skin, fonte)
+                  # fontes antigas continuam declaradas
+                  antigas = antes.read(f).decode('utf-8')
+                  for nome in re.findall(r'<name>([^<]+)</name>', antigas):
+                      assert '<name>%s</name>' % nome in texto, (skin, nome)
+          print('OK: 16 arquivos novos (15 do ZIP + tela_entrada.py)')
+          print('OK: 5 arquivos adaptados (service.py, manifest e 3 Font.xml)')
+          print('OK: %d arquivos do perfil intactos; demais entradas byte a byte iguais' % len(perfil))
           PY
 
       - name: 7. Alinhar e assinar com a mesma chave
@@ -136,6 +175,14 @@ jobs:
           ls -lh "build/$FINAL"
           cat "build/$FINAL.sha256"
 
+      - name: 7b. Desenhar a prova visual da tela exata
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet --disable-pip-version-check "Pillow==11.3.0"
+          python3 tools/kodi/renderizar-tela-entrada.py \
+            --saida build/tela-entrada-prova.png
+          ls -lh build/tela-entrada-prova.png
+
       - name: 8. Publicar release (tag propria, nao sobrescreve a atual)
         env:
           GH_TOKEN: ${{ github.token }}
@@ -143,12 +190,13 @@ jobs:
           set -euo pipefail
           if gh release view "$TAG_SAIDA" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG_SAIDA" "build/$FINAL" "build/$FINAL.sha256" \
-              --repo "$GITHUB_REPOSITORY" --clobber
+              "build/tela-entrada-prova.png" --repo "$GITHUB_REPOSITORY" --clobber
           else
             gh release create "$TAG_SAIDA" "build/$FINAL" "build/$FINAL.sha256" \
+              "build/tela-entrada-prova.png" \
               --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title 'SMARTEDTV 1.0.83 + tela inicial do ZIP' \
-              --notes 'APK atual (release v1.0.83-unificado) preservado integralmente: mesma skin, mesma versao, mesmo motor, mesma assinatura. Unica adicao: o addon script.smartedtv.welcome (tela inicial 100% identica ao ZIP, inclusive os QR Codes) e o gancho de boot no service.smarted.bootstrap. Nenhuma skin Bingie foi baixada ou trocada.'
+              --title 'SMARTEDTV 1.0.83 + tela inicial do ZIP (v2)' \
+              --notes 'APK atual (release v1.0.83-unificado) preservado integralmente: mesma skin, mesma versao, mesmo motor, mesma assinatura. Adicoes: o addon script.smartedtv.welcome (os 15 arquivos do ZIP, tela 100% identica, QR Codes originais), o modulo tela_entrada.py no service.smarted.bootstrap (abre a tela sem depender do banco de addons: RunScript(addonid) exige addon habilitado) e as 4 fontes que o layout do ZIP usa e que as skins do app nao declaravam (font20/font22/font24/font30) - sem elas o Kodi caia em font13 e a tela nao ficava 100% formatada. Nenhuma skin Bingie foi baixada ou trocada. A prova visual (tela-entrada-prova.png) e desenhada a partir do proprio DialogWelcome.xml + media do ZIP.'
           fi
           echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_SAIDA/$FINAL"
 

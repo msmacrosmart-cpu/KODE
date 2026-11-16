@@ -21,8 +21,11 @@ ADDON = ROOT / 'kodi' / 'addons' / 'script.smartedtv.welcome'
 ADDON_ID = 'script.smartedtv.welcome'
 LAYOUT = ADDON / 'resources' / 'skins' / 'Default' / '1080i' / 'DialogWelcome.xml'
 MEDIA = ADDON / 'resources' / 'skins' / 'Default' / 'media'
-SERVICE = ROOT / 'kodi' / 'addons' / 'service.smarted.bootstrap' / 'service.py'
+SERVICE_DIR = ROOT / 'kodi' / 'addons' / 'service.smarted.bootstrap'
+SERVICE = SERVICE_DIR / 'service.py'
+MODULO = SERVICE_DIR / 'tela_entrada.py'
 BUILD = ROOT / 'tools' / 'kodi' / 'build-release-apk.py'
+SKINS = ('skin.novatv', 'skin.smartedtv.classic')
 
 # SHA-256 dos arquivos exatamente como vieram em SMARTEDTV_Kodi_Omega_Welcome.zip.
 # default.py fica de fora: é o único arquivo adaptado (pontos de integração).
@@ -154,9 +157,14 @@ def carregar_default():
 
     xbmcaddon.Addon = Addon
 
+    xbmcvfs = types.ModuleType('xbmcvfs')
+    xbmcvfs.translatePath = lambda p: p
+    xbmcvfs.exists = lambda p: Path(p).exists()
+
     salvos = {nome: sys.modules.get(nome)
-              for nome in ('xbmc', 'xbmcgui', 'xbmcaddon')}
-    sys.modules.update({'xbmc': xbmc, 'xbmcgui': xbmcgui, 'xbmcaddon': xbmcaddon})
+              for nome in ('xbmc', 'xbmcgui', 'xbmcaddon', 'xbmcvfs')}
+    sys.modules.update({'xbmc': xbmc, 'xbmcgui': xbmcgui, 'xbmcaddon': xbmcaddon,
+                        'xbmcvfs': xbmcvfs})
     try:
         spec = importlib.util.spec_from_file_location('welcome_teste', ADDON / 'default.py')
         modulo = importlib.util.module_from_spec(spec)
@@ -235,16 +243,101 @@ class CicloDeVidaTest(unittest.TestCase):
 class IntegracaoNoBootTest(unittest.TestCase):
     def test_bootstrap_abre_a_tela_uma_vez(self):
         fonte = SERVICE.read_text(encoding='utf-8')
-        self.assertIn("WELCOME_ADDON = '%s'" % ADDON_ID, fonte)
-        self.assertIn('def abrir_tela_entrada(monitor):', fonte)
-        self.assertIn('RunScript(%s)', fonte)
+        self.assertIn('from tela_entrada import abrir_tela_entrada', fonte)
         self.assertIn("name='welcome-entry'", fonte)
         self.assertEqual(fonte.count('entrada.start()'), 1)
+        self.assertEqual(fonte.count('abrir_tela_entrada'), 2)  # import + thread
 
     def test_addon_entra_no_apk(self):
         fonte = BUILD.read_text(encoding='utf-8')
         self.assertIn('"script.smartedtv.welcome"', fonte)
         self.assertIn('BRIDGE_ADDONS', fonte)
+
+
+class ModuloDeAberturaTest(unittest.TestCase):
+    """O modulo do servico que abre a tela, sem depender do banco de addons."""
+
+    def carregar_modulo(self, api):
+        salvos = {nome: sys.modules.get(nome) for nome in api}
+        sys.modules.update(api)
+        try:
+            spec = importlib.util.spec_from_file_location('tela_entrada_teste', MODULO)
+            modulo = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(modulo)
+        finally:
+            for nome, antigo in salvos.items():
+                if antigo is None:
+                    sys.modules.pop(nome, None)
+                else:
+                    sys.modules[nome] = antigo
+        modulo._LOGGER = None
+        return modulo
+
+    def test_localiza_o_default_py_do_zip(self):
+        api = {
+            'xbmc': types.SimpleNamespace(LOGINFO=1, LOGWARNING=3, LOGERROR=4,
+                                          log=lambda *a, **k: None),
+            'xbmcaddon': types.SimpleNamespace(Addon=lambda *a: None),
+            'xbmcvfs': types.SimpleNamespace(translatePath=lambda p: p,
+                                             exists=lambda p: True),
+        }
+        api['xbmcaddon'].Addon = lambda *a: types.SimpleNamespace(
+            getAddonInfo=lambda k: str(ADDON))
+        modulo = self.carregar_modulo(api)
+        caminho = modulo.caminho_da_tela()
+        self.assertTrue(caminho.endswith('script.smartedtv.welcome/default.py'))
+
+    def test_abre_mesmo_sem_runscript_por_id(self):
+        """Nao pode depender de RunScript(addonid) nem de System.HasAddon."""
+        fonte = MODULO.read_text(encoding='utf-8')
+        self.assertNotIn("RunScript(%s)' % WELCOME_ADDON", fonte)
+        self.assertNotIn('System.HasAddon', fonte)
+        self.assertIn('importlib.util', fonte)
+        self.assertIn('RunScript("%s")', fonte)
+
+    def test_confirmacao_usa_a_marca_do_oninit(self):
+        fonte_default = (ADDON / 'default.py').read_text(encoding='utf-8')
+        fonte_modulo = MODULO.read_text(encoding='utf-8')
+        self.assertIn('_sinalizar_abertura()', fonte_default)
+        self.assertIn('smartedtv.welcome.ativa', fonte_default)
+        self.assertIn('smartedtv.welcome.ativa', fonte_modulo)
+
+    def test_log_em_userdata_para_diagnostico(self):
+        fonte = MODULO.read_text(encoding='utf-8')
+        self.assertIn('smarted-tela-entrada.log', fonte)
+        self.assertIn('special://home', fonte)
+
+
+class FontesDaTelaTest(unittest.TestCase):
+    """O layout do ZIP usa fontes que a skin do app nao declarava."""
+
+    # Conjunto de fontes publicado pelas skins do APK atual (skin.novatv /
+    # skin.smartedtv.classic / skin.estuary) - conferido no proprio APK.
+    FONTES_DA_SKIN = {
+        'font10', 'font12', 'font13', 'font14', 'font11', 'font16',
+        'font23_narrow', 'font25_narrow', 'font27', 'font27_narrow',
+        'font32', 'font37', 'font45', 'font60', 'font_clock', 'font_flag',
+        'font20_title', 'font25_title', 'font30_title', 'font32_title',
+        'font36_title', 'font40_title', 'font45_title', 'font52_title',
+        'font_MainMenu', 'WeatherTemp', 'Mono26',
+    }
+
+    def test_fontes_que_faltavam_sao_declaradas_pelo_injetor(self):
+        raiz = ET.parse(LAYOUT).getroot()
+        usadas = {(no.text or '').strip() for no in raiz.iter('font')}
+        usadas.discard('')
+        self.assertTrue(usadas)
+        faltantes = sorted(usadas - self.FONTES_DA_SKIN)
+        self.assertEqual(faltantes, ['font20', 'font22', 'font24', 'font30'])
+
+        spec = importlib.util.spec_from_file_location(
+            'injetor_fontes', ROOT / 'tools' / 'kodi' / 'injetar-tela-entrada.py')
+        injetor = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(injetor)
+        self.assertEqual([nome for nome, _ in injetor.FONTES_DA_TELA], faltantes)
+        # e o injetor declara exatamente esses tamanhos
+        self.assertEqual(dict(injetor.FONTES_DA_TELA),
+                         {'font20': 20, 'font22': 22, 'font24': 24, 'font30': 30})
 
 
 if __name__ == '__main__':
