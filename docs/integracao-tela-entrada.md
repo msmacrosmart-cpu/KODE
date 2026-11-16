@@ -119,6 +119,21 @@ comando que o `Startup.xml` original usava.
 - **Ícones dos botões** nascem a partir do início real do rótulo (o Kodi
   centraliza o texto do botão); antes o ícone cobria a primeira letra.
 
+## 4a-bis. Ajustes finos de acabamento (v7)
+
+- **QR Codes:** a imagem aparece no tamanho normal do pacote (sem ampliar), com
+  apenas 1 px de moldura branca em volta e **cantos retos**. O arredondamento
+  exagerado vinha de uma placa de 80 px com raio esticada para 320 px (o raio
+  era multiplicado por 4); agora a moldura é desenhada no tamanho final, sem raio.
+- **Botões sem ícone:** "ATUALIZAR APLICATIVO", "Compartilhar link" e "Baixar APK
+  (Android)" mostram só o texto (as texturas `icon_refresh` / `icon_download`
+  saíram do addon).
+- **Texto centralizado:** todo `<button>` declara `align=center` e
+  `aligny=center` no XML, em vez de depender do padrão da skin.
+- **Barra inferior:** "Continuar com anúncios" virou o botão **"Assistir com
+  anúncios"**, com o mesmo vidro/pílula dos outros secundários e a mesma altura
+  do "Ativar", ao lado do campo. O diálogo de confirmação mantém o texto antigo.
+
 ## 4b. Tipografia: a regra que o build não deixa quebrar
 
 O layout nasceu de um HTML/CSS e o Kodi **não** tem layout automático: cada
@@ -189,9 +204,8 @@ auditoria tipográfica ou o mapa de botões falharem.
 
 ## 7. Resultado deste build
 
-- Release: `v1.0.83-tela-inicial-v6`
-- APK: `SMARTEDTV-atual-com-tela-inicial-v6.apk`, 249.844.006 bytes,
-  SHA-256 `a9eaad18a24a2244412a059125040262eb17c2b872ed7e4211b6d72f8035033a`
+- Release: `v1.0.83-tela-inicial-v7`
+- APK: ver os números no fim deste arquivo (preenchidos pelo build v7)
 - Assinatura: `855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`
   (a mesma do app; v1/v2/v3 verificados pelo `apksigner`)
 - Delta sobre o APK atual: +33 arquivos (o addon da tela), 0 removidos e 7

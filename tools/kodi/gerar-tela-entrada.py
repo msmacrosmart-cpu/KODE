@@ -380,12 +380,11 @@ def gerar_texturas(med: Medidas) -> dict:
     retangulo((180, b), r, GHOST_BG, BTN_LINE, 1).save(MEDIA / "btn_ghost.png")
     retangulo((180, b), r, _gradiente_vertical((180, b), rgba("#ffffff"), rgba("#ebebeb"))).save(
         MEDIA / "btn_primary.png")
-    retangulo((180, b), r, (0, 0, 0, 0)).save(MEDIA / "btn_quiet.png")
+    retangulo((180, b), r, (0, 0, 0, 0)).save(MEDIA / "btn_quiet.png")  # dialogo: Voltar
     foco_ghost = retangulo((180, b), r, rgba("#ffffff"))
     foco_ghost.save(MEDIA / "btn_ghost_focus.png")
     retangulo((180, b), r, rgba("#ffffff")).save(MEDIA / "btn_primary_focus.png")
-    # "quiet" focado: o CSS troca para fundo branco tambem
-    retangulo((180, b), r, rgba("#ffffff")).save(MEDIA / "btn_quiet_focus.png")
+    # (o "quiet" focado usa btn_ghost_focus.png: fundo branco, igual ao CSS)
     saida["botao"] = (180, b)
 
     # campo de codigo
@@ -411,8 +410,13 @@ def gerar_texturas(med: Medidas) -> dict:
     chip_h = 28
     retangulo((120, chip_h), chip_h // 2, CHIP_BG, CHIP_LINE, 1).save(MEDIA / "chip.png")
 
-    # placa branca do QR Code
-    retangulo((80, 80), round(rem(0.6) * med.k), rgba("#ffffff")).save(MEDIA / "qr_plate.png")
+    # moldura do QR Code: retangulo branco de cantos RETOS.
+    # Desenhada ja no tamanho em que vai aparecer (o `stretch` antigo pegava uma
+    # placa de 80 px com raio e multiplicava o raio por 4 -> aquele canto
+    # arredondado exagerado). 1 px de sobra branca em volta do QR.
+    MOLDURA_QR = med.qr_plate
+    retangulo((MOLDURA_QR, MOLDURA_QR), 0, rgba("#ffffff")).save(
+        MEDIA / "qr_plate.png")
 
     # check do item de lista
     tick = med.fontes["li"] + 5
@@ -458,27 +462,8 @@ def gerar_texturas(med: Medidas) -> dict:
                        DIALOG_LINE, 1)
     painel.save(MEDIA / "dialog.png")
 
-    # icones das acoes (traco branco, como os SVGs do pacote)
-    icone(20, [((21, 12), (12, 12))])
-    refresh = Image.new("RGBA", (20, 20), (0, 0, 0, 0))
-    up = Image.new("RGBA", (20 * SCALE, 20 * SCALE), (0, 0, 0, 0))
-    d = ImageDraw.Draw(up)
-    kk = 20 * SCALE / 24.0
-    e = max(1, int(round(2.4 * kk)))
-    d.arc([4 * kk, 4 * kk, 20 * kk, 20 * kk], start=-60, end=300, fill=rgba("#ffffff"),
-          width=e)
-    d.line([(20 * kk, 3 * kk), (20.4 * kk, 9 * kk), (14.4 * kk, 8.6 * kk)],
-           fill=rgba("#ffffff"), width=e)
-    up.resize((20, 20), Image.LANCZOS).save(MEDIA / "icon_refresh.png")
-    down = Image.new("RGBA", (20 * SCALE, 20 * SCALE), (0, 0, 0, 0))
-    d = ImageDraw.Draw(down)
-    kk = 20 * SCALE / 24.0
-    e = max(1, int(round(2.4 * kk)))
-    d.line([(12 * kk, 3 * kk), (12 * kk, 15 * kk)], fill=rgba("#ffffff"), width=e)
-    d.line([(7 * kk, 10 * kk), (12 * kk, 15 * kk), (17 * kk, 10 * kk)],
-           fill=rgba("#ffffff"), width=e, joint="curve")
-    d.line([(5 * kk, 21 * kk), (19 * kk, 21 * kk)], fill=rgba("#ffffff"), width=e)
-    down.resize((20, 20), Image.LANCZOS).save(MEDIA / "icon_download.png")
+    # (os icones dos botoes sairam do layout: os botoes mostram so o texto)
+
     return saida
 
 
@@ -517,6 +502,10 @@ def xml_botao(cid, x, y, w, h, rotulo, fonte_nome, cor_texto, normal, foco,
         # o <button> do Kodi centraliza o texto na area util: `margin` encolhe a
         # area a esquerda, empurrando o texto para longe do icone
         ET.SubElement(el, "margin").text = "0,0,0,%d" % pad_x
+    # Centralizacao pedida no desenho (flex + align/justify center): declarada
+    # no XML em vez de depender do padrao da skin, que pode variar.
+    ET.SubElement(el, "align").text = "center"
+    ET.SubElement(el, "aligny").text = "center"
     ET.SubElement(el, "label").text = rotulo
     ET.SubElement(el, "font").text = fonte_nome
     ET.SubElement(el, "textcolor").text = cor_texto
@@ -666,10 +655,11 @@ def main(argv=None):
                                    altura_linha(li), item, estilos["li"], txt))
 
     # acao principal do cartao 1 (largura cheia, como nos outros cartoes)
-    ICONE, RESP, pad_botao = 20, 10, 22
+    pad_botao = 22
     texto_atualizar = "ATUALIZAR APLICATIVO"
     largura_txt = largura_texto(texto_atualizar, med.fontes["btn"])
-    atualizar_w = round(largura_txt + 2 * (ICONE + RESP + pad_botao))
+    # Botao so com texto (sem icone): largura = texto + respiro dos dois lados.
+    atualizar_w = round(largura_txt + 2 * pad_botao)
     atualizar_w = max(atualizar_w, round(interno * 0.72))
     atualizar_w = min(atualizar_w, interno)
     ax = c1 + (interno - atualizar_w) // 2
@@ -677,12 +667,6 @@ def main(argv=None):
                                texto_atualizar, estilos["btn"], ink,
                                "btn_ghost.png", "btn_ghost_focus.png",
                                cor_foco=escuro, border=med.raio_btn))
-    # o Kodi centraliza o rotulo no botao: o texto comeca em (w - texto)/2.
-    # O icone entra a esquerda desse ponto, com RESP de respiro.
-    texto_x = ax + round((atualizar_w - largura_txt) / 2)
-    icone_x = texto_x - RESP - ICONE
-    controles.append(xml_imagem(124, icone_x, cta_y + (btn_h - ICONE) // 2,
-                                ICONE, ICONE, "icon_refresh.png"))
 
     # cabecalho de cartao com indicador opcional a direita
     lh2 = altura_linha(med.fontes["h2"])
@@ -723,14 +707,17 @@ def main(argv=None):
     hint2_y = cta_y - 24 - hint_h                  # dica 2 logo acima da acao
     hint3_y = hint2_y                              # simetria entre os cartoes
     area_topo = topo + lh2 + 24                    # abaixo do cabecalho
-    # o QR tem o MESMO tamanho e a MESMA proporcao nos dois cartoes
+    # QR no tamanho NORMAL (o mesmo em que o pacote entrega a imagem), sem
+    # esticar nem ampliar. A moldura e so uma linha branca de 1 px em volta
+    # (BORDA_QR), com cantos retos.
+    BORDA_QR = 1
     livre = (hint2_y - 24) - area_topo
-    prato = min(med.qr_plate, interno, livre)
-    prato -= prato % 2                             # par: centraliza sem .5 px
-    if prato < 200:
-        raise SystemExit("QR Code pequeno demais (%d)" % prato)
-    qr_img = round(prato * med.qr_img / med.qr_plate)   # mesma proporcao interna
-    qr_off = (prato - qr_img) // 2
+    qr_img = min(med.qr_img, interno, livre - 2 * BORDA_QR)
+    qr_img -= qr_img % 2                           # par: centraliza sem .5 px
+    if qr_img < 200:
+        raise SystemExit("QR Code pequeno demais (%d)" % qr_img)
+    prato = qr_img + 2 * BORDA_QR
+    qr_off = BORDA_QR
 
     def qr(cid, cx, cartao_x, topo_livre, altura_livre, textura):
         py = topo_livre + (altura_livre - prato) // 2
@@ -761,7 +748,6 @@ def main(argv=None):
                                "btn_ghost_focus.png", cor_foco=escuro,
                                border=med.raio_btn))
     texto_baixar = "Baixar APK (Android)"
-    largura_baixar = largura_texto(texto_baixar, med.fontes["btn"])
     baixar_w = interno - gap_botoes - meia
     bx3 = c3 + meia + gap_botoes
     baixar_y = cta_y
@@ -769,10 +755,6 @@ def main(argv=None):
                                estilos["btn"], ink, "btn_ghost.png",
                                "btn_ghost_focus.png", cor_foco=escuro,
                                border=med.raio_btn))
-    texto3_x = bx3 + round((baixar_w - largura_baixar) / 2)
-    icone3_x = texto3_x - RESP - ICONE
-    controles.append(xml_imagem(125, icone3_x, baixar_y + (btn_h - ICONE) // 2,
-                                ICONE, ICONE, "icon_download.png"))
 
     # --- barra de ativacao VIP --------------------------------------------
     # Painel proprio, isolado da grade por um respiro fixo (med.gap). Dentro
@@ -798,7 +780,9 @@ def main(argv=None):
                                estilos["barp"], mut))
 
     pad_pill = 24
-    gratis_txt = "Continuar com anúncios"
+    # Botao secundario da barra: mesmo vidro/pill dos outros botoes (nao e mais
+    # um texto solto), com a mesma altura do "Ativar" ao lado.
+    gratis_txt = "Assistir com anúncios"
     gratis_w = round(largura_texto(gratis_txt, med.fontes["bar_btn"]) + 2 * pad_pill)
     gratis_x = bdir - gratis_w
     div_x = gratis_x - 28
@@ -811,8 +795,8 @@ def main(argv=None):
     controles.append(xml_imagem(62, div_x, by + 2, 2, btn_h - 4, "divider.png",
                                 "stretch"))
     controles.append(xml_botao(312, gratis_x, by, gratis_w, btn_h, gratis_txt,
-                               estilos["bar_btn"], QUIET_TXT_HEX, "btn_quiet.png",
-                               "btn_quiet_focus.png", cor_foco=escuro,
+                               estilos["bar_btn"], ink, "btn_ghost.png",
+                               "btn_ghost_focus.png", cor_foco=escuro,
                                border=med.raio_btn))
 
     edit = ET.Element("control", {"type": "edit", "id": "310"})

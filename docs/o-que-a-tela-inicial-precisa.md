@@ -96,8 +96,7 @@ O que já está mapeado hoje (e funciona de verdade no APK):
 | 121 | Compartilhar link | `vip.compartilhar()` → `smartedtv.full.CompartilharActivity` |
 | 122 | Baixar APK | `vip.abrir_url(vip.APK)` |
 | 123 | Atualizar aplicativo | `vip.procurar_atualizacao()` → `smartedtv.full.AtualizaActivity` |
-| 312 → 905/906 | Continuar com anúncios | confirmação e depois libera a Home |
-| 130/131 | Android TV / Celular | não faz nada (a tela é fixa 16:9) |
+| 312 → 905/906 | Assistir com anúncios | confirmação e depois libera a Home |
 | 955 | OK de diálogo | fecha o diálogo de status |
 
 Nada de endpoint novo: tudo vem do `vip.py` que **já está dentro do APK**
@@ -193,11 +192,9 @@ Saída de hoje (a tela que está publicada):
 | 121 | Compartilhar link | `_compartilhar` → `vip.compartilhar()` |
 | 122 | Baixar APK (Android) | `_baixar_apk` → `vip.abrir_url(vip.APK)` |
 | 123 | ATUALIZAR APLICATIVO | `_atualizar` → `vip.procurar_atualizacao()` |
-| 130 / 131 | Android TV / Celular | só log (a tela é fixa 16:9) |
-| 140 / 141 | 10 min / 1 mês | `_selecionar_plano` |
 | 310 | campo do código | (edit — lido por 311) |
 | 311 | Ativar | `_ativar_codigo` → `vip.validar()` |
-| 312 | Continuar com anúncios | abre o diálogo de confirmação |
+| 312 | Assistir com anúncios | abre o diálogo de confirmação |
 | 905 / 906 | Voltar / Continuar | fecha ou libera a Home |
 | 955 | OK do diálogo | fecha o diálogo |
 

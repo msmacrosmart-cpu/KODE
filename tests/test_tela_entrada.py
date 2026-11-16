@@ -49,7 +49,7 @@ CONTROLES = {
     '123': 'ATUALIZAR APLICATIVO',
     '310': None,          # campo do codigo de ativacao
     '311': 'Ativar',
-    '312': 'Continuar com anúncios',
+    '312': 'Assistir com anúncios',
     '905': 'Voltar',
     '906': 'Continuar com anúncios',
     '955': None,          # OK do dialogo de status
@@ -94,7 +94,7 @@ class TelaDoPacoteTest(unittest.TestCase):
                          'Sua TV,', 'Sem anúncios', 'Indique e ganhe',
                          'Abrir checkout', 'Compartilhar link',
                          'Baixar APK (Android)', 'ATUALIZAR APLICATIVO',
-                         'Ativar', 'Continuar com anúncios', 'Plano mensal'):
+                         'Ativar', 'Assistir com anúncios', 'Plano mensal'):
             self.assertIn(esperado, textos, esperado)
 
     def test_cores_vem_do_css_do_pacote(self):

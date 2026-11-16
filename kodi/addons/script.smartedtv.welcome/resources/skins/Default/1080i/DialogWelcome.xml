@@ -168,19 +168,14 @@
       <top>799</top>
       <width>374</width>
       <height>57</height>
+      <align>center</align>
+      <aligny>center</aligny>
       <label>ATUALIZAR APLICATIVO</label>
       <font>wf17</font>
       <textcolor>FFF7F7F7</textcolor>
       <focusedcolor>FF080808</focusedcolor>
       <texturefocus border="11">btn_ghost_focus.png</texturefocus>
       <texturenofocus border="11">btn_ghost.png</texturenofocus>
-    </control>
-    <control type="image" id="124">
-      <left>223</left>
-      <top>817</top>
-      <width>20</width>
-      <height>20</height>
-      <texture>icon_refresh.png</texture>
     </control>
     <control type="label" id="40">
       <left>700</left>
@@ -210,10 +205,10 @@
       <align>center</align>
     </control>
     <control type="image" id="43">
-      <left>800</left>
-      <top>333</top>
-      <width>320</width>
-      <height>320</height>
+      <left>823</left>
+      <top>356</top>
+      <width>274</width>
+      <height>274</height>
       <texture>qr_plate.png</texture>
       <aspectratio>stretch</aspectratio>
     </control>
@@ -250,6 +245,8 @@
       <top>799</top>
       <width>520</width>
       <height>57</height>
+      <align>center</align>
+      <aligny>center</aligny>
       <label>Abrir checkout</label>
       <font>wf17</font>
       <textcolor>FFF7F7F7</textcolor>
@@ -267,10 +264,10 @@
       <textcolor>FFF7F7F7</textcolor>
     </control>
     <control type="image" id="53">
-      <left>1412</left>
-      <top>333</top>
-      <width>320</width>
-      <height>320</height>
+      <left>1435</left>
+      <top>356</top>
+      <width>274</width>
+      <height>274</height>
       <texture>qr_plate.png</texture>
       <aspectratio>stretch</aspectratio>
     </control>
@@ -307,6 +304,8 @@
       <top>799</top>
       <width>254</width>
       <height>57</height>
+      <align>center</align>
+      <aligny>center</aligny>
       <label>Compartilhar link</label>
       <font>wf17</font>
       <textcolor>FFF7F7F7</textcolor>
@@ -319,19 +318,14 @@
       <top>799</top>
       <width>254</width>
       <height>57</height>
+      <align>center</align>
+      <aligny>center</aligny>
       <label>Baixar APK (Android)</label>
       <font>wf17</font>
       <textcolor>FFF7F7F7</textcolor>
       <focusedcolor>FF080808</focusedcolor>
       <texturefocus border="11">btn_ghost_focus.png</texturefocus>
       <texturenofocus border="11">btn_ghost.png</texturenofocus>
-    </control>
-    <control type="image" id="125">
-      <left>1593</left>
-      <top>817</top>
-      <width>20</width>
-      <height>20</height>
-      <texture>icon_download.png</texture>
     </control>
     <control type="image" id="6">
       <left>56</left>
@@ -360,7 +354,7 @@
       <textcolor>FF838383</textcolor>
     </control>
     <control type="image" id="62">
-      <left>1592</left>
+      <left>1610</left>
       <top>945</top>
       <width>2</width>
       <height>53</height>
@@ -368,21 +362,23 @@
       <aspectratio>stretch</aspectratio>
     </control>
     <control type="button" id="312">
-      <left>1620</left>
+      <left>1638</left>
       <top>943</top>
-      <width>216</width>
+      <width>198</width>
       <height>57</height>
-      <label>Continuar com anúncios</label>
+      <align>center</align>
+      <aligny>center</aligny>
+      <label>Assistir com anúncios</label>
       <font>wf15</font>
-      <textcolor>FFD6D6D6</textcolor>
+      <textcolor>FFF7F7F7</textcolor>
       <focusedcolor>FF080808</focusedcolor>
-      <texturefocus border="11">btn_quiet_focus.png</texturefocus>
-      <texturenofocus border="11">btn_quiet.png</texturenofocus>
+      <texturefocus border="11">btn_ghost_focus.png</texturefocus>
+      <texturenofocus border="11">btn_ghost.png</texturenofocus>
     </control>
     <control type="edit" id="310">
       <left>516</left>
       <top>943</top>
-      <width>941</width>
+      <width>959</width>
       <height>57</height>
       <label>Código de ativação</label>
       <font>wf17</font>
@@ -392,10 +388,12 @@
       <texturenofocus border="11">field.png</texturenofocus>
     </control>
     <control type="button" id="311">
-      <left>1469</left>
+      <left>1487</left>
       <top>943</top>
       <width>95</width>
       <height>57</height>
+      <align>center</align>
+      <aligny>center</aligny>
       <label>Ativar</label>
       <font>wf17</font>
       <textcolor>FF080808</textcolor>
@@ -460,6 +458,8 @@
         <top>595</top>
         <width>300</width>
         <height>57</height>
+        <align>center</align>
+        <aligny>center</aligny>
         <label>Voltar</label>
         <font>wf17</font>
         <textcolor>FFF7F7F7</textcolor>
@@ -472,6 +472,8 @@
         <top>595</top>
         <width>322</width>
         <height>57</height>
+        <align>center</align>
+        <aligny>center</aligny>
         <label>Continuar com anúncios</label>
         <font>wf15</font>
         <textcolor>FF080808</textcolor>
@@ -528,6 +530,8 @@
         <top>595</top>
         <width>322</width>
         <height>57</height>
+        <align>center</align>
+        <aligny>center</aligny>
         <label>$INFO[Window.Property(welcome_status_ok)]</label>
         <font>wf15</font>
         <textcolor>FF080808</textcolor>
