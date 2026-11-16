@@ -14,10 +14,10 @@ originais). Este arquivo so liga os controles ao que ja existe no app:
   abrir URLs. Nenhuma API, endpoint ou credencial nova.
 
 Controles desta tela:
-    310 campo do codigo   311 ativar      140/141 plano 10 min / 1 mes
+    310 campo do codigo   311 ativar
     120 checkout          121 compartilhar link      122 baixar APK
     123 atualizar aplicativo                       312 continuar com anuncios
-    905/906/955 dialogos  130/131 aparelho (visual, como no pacote)
+    905/906/955 dialogos
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -41,7 +41,6 @@ PROP_DIALOGO = 'welcome_dialog'
 PROP_TITULO = 'welcome_status_title'
 PROP_TEXTO = 'welcome_status_text'
 PROP_OK = 'welcome_status_ok'
-PROP_PLANO = 'welcome_plan'
 
 
 def _log(mensagem, nivel=None):
@@ -124,10 +123,6 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
     def __init__(self, *args, **kwargs):
         xbmcgui.WindowXMLDialog.__init__(self, *args, **kwargs)
         self.saiu = False
-        self.plano = '10min'
-        # plano 10 min e 1 mes: as duas opcoes do pacote. O servidor de
-        # ativacao continua sendo o unico que decide validade/duracao.
-        self._selecionar_plano('10min')
 
     # --- dialogos ---------------------------------------------------------
     def _dialogo(self, titulo, texto, ok='Entendi'):
@@ -146,17 +141,6 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
             self.setFocusId(foco)
         except Exception:
             pass
-
-    # --- plano ------------------------------------------------------------
-    def _selecionar_plano(self, plano):
-        """Guarda o plano escolhido em 140/141 (a pilula branca e o foco).
-
-        O pacote mostra "10 min" pre-selecionado; aqui o plano ativo e o que
-        esta em foco, a mesma linguagem de navegacao do controle no Kodi.
-        """
-        self.plano = plano
-        self.setProperty(PROP_PLANO, plano)
-        _log('plano selecionado: %s' % plano)
 
     # --- acoes ligadas ao que ja existe no projeto -----------------------
     def _abrir_checkout(self):
@@ -261,10 +245,6 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
             self._modo_gratuito()
         elif control_id == 955:
             self._fechar_dialogo()
-        elif control_id == 140:
-            self._selecionar_plano('10min')
-        elif control_id == 141:
-            self._selecionar_plano('1month')
         elif control_id == 120:
             self._abrir_checkout()
         elif control_id == 121:
@@ -275,11 +255,6 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
             self._atualizar()
         elif control_id == 311:
             self._ativar_codigo()
-        elif control_id in (130, 131):
-            # Seletor de aparelho do pacote: a tela e sempre horizontal
-            # (1920x1080), entao nao ha layout retrato para trocar.
-            _log('seletor de aparelho: tela fixa em 16:9 (sem fluxo no projeto)',
-                 xbmc.LOGWARNING)
 
     def onAction(self, action):
         if action in (xbmcgui.ACTION_NAV_BACK, xbmcgui.ACTION_PREVIOUS_MENU):

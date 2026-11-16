@@ -415,12 +415,14 @@ def conferir_execucao(sim, modulo, codigo_vip="SMARTED-1234"):
         print("   120 -> checkout; 121 -> compartilhar; 122 -> baixar APK; "
               "123 -> atualizar OK")
 
-        # 140/141: plano do codigo (10 min / 1 mes)
-        janela.onClick(141)
-        assert janela.plano == "1month", janela.plano
-        janela.onClick(140)
-        assert janela.plano == "10min", janela.plano
-        print("   140/141 -> plano 10 min / 1 mes OK")
+        # contadores removidos do layout (seletor de aparelho e pilulas de
+        # plano) nao podem ter acao: se alguem clicar, nada acontece
+        antes = list(sim.vip.chamadas)
+        for removido in (130, 131, 140, 141):
+            janela.onClick(removido)
+        assert sim.vip.chamadas == antes, sim.vip.chamadas
+        assert janela.getProperty("welcome_dialog") == "", janela.props
+        print("   130/131/140/141 (removidos) -> nenhum efeito OK")
 
         # 312 -> modal de confirmacao (905 volta, 906 confirma)
         janela.onClick(312)

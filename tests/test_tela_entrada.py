@@ -27,6 +27,7 @@ SERVICE_DIR = ROOT / 'kodi' / 'addons' / 'service.smarted.bootstrap'
 SERVICE = SERVICE_DIR / 'service.py'
 STARTUP_SKIN = ROOT / 'kodi' / 'skin.estilo.personalizado' / 'xml' / 'Startup.xml'
 GERADOR = ROOT / 'tools' / 'kodi' / 'gerar-tela-entrada.py'
+DEFAULT_PY = ADDON / 'default.py'
 INJETOR = ROOT / 'tools' / 'kodi' / 'injetar-tela-entrada.py'
 HOME = 'ReplaceWindow($INFO[System.StartupWindow])'
 
@@ -46,10 +47,6 @@ CONTROLES = {
     '121': 'Compartilhar link',
     '122': 'Baixar APK (Android)',
     '123': 'ATUALIZAR APLICATIVO',
-    '130': 'Android TV',
-    '131': 'Celular',
-    '140': '10 min',
-    '141': '1 mês',
     '310': None,          # campo do codigo de ativacao
     '311': 'Ativar',
     '312': 'Continuar com anúncios',
@@ -95,7 +92,6 @@ class TelaDoPacoteTest(unittest.TestCase):
         textos = _textos()
         for esperado in ('SMARTEDTV', 'Ativação e assinatura', 'BEM-VINDO',
                          'Sua TV,', 'Sem anúncios', 'Indique e ganhe',
-                         'Android TV', 'Celular', '10 min', '1 mês',
                          'Abrir checkout', 'Compartilhar link',
                          'Baixar APK (Android)', 'ATUALIZAR APLICATIVO',
                          'Ativar', 'Continuar com anúncios', 'Plano mensal'):
@@ -296,13 +292,14 @@ class GeradorTest(unittest.TestCase):
         gerador = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(gerador)
         med = gerador.Medidas()
-        # .screen{padding:2.0% 2.0%} -> 38 px
-        self.assertEqual(med.pad, 38)
-        # .grid{gap:1.3%} em 1844 px uteis -> 25 px
-        self.assertEqual(med.col_gap, round(med.stage_w * 0.013 * med.k))
-        # .top{height:9%}, .screen{gap:2.0%}: a grade fecha os 1080 px
-        self.assertEqual(med.top_h, 90)
-        self.assertEqual(med.barra_h, 113)
+        # Grade de 8 px: margem 56, respiro 32, entre cartoes 28.
+        # (O CSS do pacote pedia 2%/1.3%, mas o desenho foi revisado para dar
+        #  respiro de Smart TV; os testes travam a grade nova.)
+        self.assertEqual(med.pad, 56)
+        self.assertEqual(med.gap, 32)
+        self.assertEqual(med.col_gap, 28)
+        self.assertEqual(med.top_h, 96)
+        self.assertEqual(med.barra_h, 104)
         self.assertEqual(med.grade_y, med.pad + med.top_h + med.gap)
         self.assertEqual(med.barra_y, med.grade_y + med.grade_h + med.gap)
         self.assertEqual(med.barra_y + med.barra_h, 1080 - med.pad)
@@ -623,25 +620,16 @@ class CicloDeVidaTest(unittest.TestCase):
         self._com_interacao(acoes)
         self.assertEqual(self.modulo._log.__module__, self.modulo.__name__)
 
-    def test_140_e_141_escolhem_o_plano(self):
-        def acoes(janela):
-            janela.onClick(141)
-            assert janela.plano == '1month'
-            janela.onClick(140)
-            assert janela.plano == '10min'
-        self._com_interacao(acoes)
-
-    def test_seletor_de_aparelho_nao_inventa_fluxo(self):
-        def acoes(janela):
-            janela.onClick(130)
-            janela.onClick(131)
-        self._com_interacao(acoes)
-        self.assertEqual(self.vip.chamadas, [])
-        self.assertEqual(self.vip.codigos, [])
-        avisos = [m for nivel, m in self.xbmc.LOGS
-                  if nivel == self.xbmc.LOGWARNING]
-        self.assertTrue(all('sem fluxo no projeto' in m for m in avisos), avisos)
-        self.assertTrue(any('16:9' in m for m in avisos), avisos)
+    def test_controles_removidos_nao_existem_mais(self):
+        """Seletor de aparelho e pilulas de plano sairam do layout e do codigo."""
+        ids = {c.get('id') for c in _raiz().iter('control')}
+        for ident in ('130', '131', '140', '141'):
+            self.assertNotIn(ident, ids, ident)
+        fonte = DEFAULT_PY.read_text(encoding='utf-8')
+        for ident in ('130', '131', '140', '141'):
+            self.assertNotIn('control_id == %s' % ident, fonte)
+        # a tela nao tem mais escolha de plano: so campo + Ativar
+        self.assertNotIn('welcome_plan', fonte)
 
     def test_sem_a_tela_a_home_ainda_abre(self):
         JanelaFake.falhar_modal = True

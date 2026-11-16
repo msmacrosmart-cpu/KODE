@@ -141,10 +141,14 @@ def desenhar_controle(imagem, no, pais, tamanhos, props):
                     finais.append(atual)
                     atual = palavra
             finais.append(atual)
-        alturas = [desenho.textbbox((0, 0), l, font=f)[3] for l in finais]
-        total = sum(alturas) + 4 * (len(finais) - 1)
+        # Altura de linha = ascendente + descendente da fonte (o que o Kodi
+        # reserva), nao o bitmap de cada string: assim o acento de "Ativação"
+        # nao e cortado, e a linha nao "sobe" quando o texto tem acento.
+        ascent, descent = f.getmetrics()
+        passo = ascent + descent
+        total = passo * len(finais) + 4 * (len(finais) - 1)
         topo = y + (altura - total) / 2 if alinhar_y == "center" else y
-        for linha, h in zip(finais, alturas):
+        for i, linha in enumerate(finais):
             w = desenho.textlength(linha, font=f)
             if alinhamento == "center":
                 px = x + (largura - w) / 2
@@ -152,8 +156,10 @@ def desenhar_controle(imagem, no, pais, tamanhos, props):
                 px = x + largura - w
             else:
                 px = x
-            desenho.text((px, topo), linha, font=f, fill=cor_texto)
-            topo += h + 4
+            # ancora "la": a linha de base fica na ascendente, sobra espaco
+            # para o acento e para o descendente (igual ao Kodi)
+            desenho.text((px, topo + i * (passo + 4)), linha, font=f,
+                         fill=cor_texto, anchor="la")
         return
 
     if tipo == "textbox":
@@ -205,7 +211,13 @@ def desenhar_controle(imagem, no, pais, tamanhos, props):
         w = desenho.textlength(rotulo, font=f)
         caixa = desenho.textbbox((0, 0), rotulo, font=f)
         altura_texto = caixa[3] - caixa[1]
-        desenho.text((x + (largura - w) / 2, y + (altura - altura_texto) / 2 - caixa[1]),
+        if tipo == "edit":
+            # o <edit> do Kodi alinha o texto a ESQUERDA, com padding interno;
+            # centralizar aqui daria uma prova visual enganosa
+            px = x + 14
+        else:
+            px = x + (largura - w) / 2
+        desenho.text((px, y + (altura - altura_texto) / 2 - caixa[1]),
                      rotulo, font=f, fill=cor_texto)
         return
 

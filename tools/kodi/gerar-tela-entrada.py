@@ -99,20 +99,22 @@ class Medidas(object):
     def __init__(self):
         self.stage_w = min(VW, (VH - 42) * 16 / 9)
         self.k = VW / self.stage_w          # stage -> 1920
-        self.pad = round(self.stage_w * 0.02 * self.k)
-        self.gap = self.pad
+        # Grade de referencia: 8 px uteis na escala da TV. Todo respiro e um
+        # multiplo dela, para nada ficar "quase alinhado" com nada.
+        self.pad = 56                        # margem da tela
+        self.gap = 32                        # entre cabecalho, grade e barra
         self.largura = int(VW) - 2 * self.pad
-        self.col_gap = round(self.stage_w * 0.013 * self.k)
+        self.col_gap = 28                    # entre os tres cartoes
         self.col_w = int((self.largura - 2 * self.col_gap) / 3)
-        self.top_h = 90
-        self.barra_h = 113
+        self.top_h = 96                      # altura do cabecalho
+        self.barra_h = 104                   # altura da barra de ativacao
         self.grade_y = self.pad + self.top_h + self.gap
         self.grade_h = int(VH) - self.pad - self.barra_h - self.gap - self.grade_y
         self.barra_y = self.grade_y + self.grade_h + self.gap
-        self.card_pad = 13
+        self.card_pad = 32                   # respiro interno do cartao
         self.card_inner = self.col_w - 2 * self.card_pad
-        self.qr_plate = 303
-        self.qr_img = 270
+        self.qr_plate = 320
+        self.qr_img = self.qr_plate - 48     # sobra branca em volta do QR
         self.raio_card = round(rem(1.5) * self.k)
         self.raio_btn = round(rem(0.65) * self.k)
         self.raio_pill = None
@@ -402,27 +404,8 @@ def gerar_texturas(med: Medidas) -> dict:
               rgba("#000000", 0xB0 / 255), None, 0,
               sombra=(round(rem(1.4) * med.k), 120)).save(MEDIA / "scrim.png")
 
-    # item ativo do seletor em foco: o fundo e branco, entao o realce e um anel
-    # escuro por fora (sem isso o D-pad nao mostra onde esta)
-    ativo = retangulo((med.seg_h * 3, med.seg_h), med.seg_h // 2,
-                     _gradiente_vertical((med.seg_h * 3, med.seg_h),
-                                         rgba("#ffffff"), rgba("#e8e8e8")))
-    ImageDraw.Draw(ativo).rounded_rectangle(
-        (0, 0, ativo.width - 1, ativo.height - 1), radius=med.seg_h // 2,
-        outline=rgba("#8a8a8a"), width=2)
-    ativo.save(MEDIA / "seg_active_focus.png")
-
-    # pilulas: container e pilula ativa (raio = altura/2)
-    for nome, altura, ativo in (("seg", med.seg_h, False),
-                                ("seg_active", med.seg_h, True)):
-        raio = altura // 2
-        if ativo:
-            img = retangulo((altura * 3, altura), raio,
-                            _gradiente_vertical((altura * 3, altura),
-                                                rgba("#ffffff"), rgba("#e8e8e8")))
-        else:
-            img = retangulo((altura * 3, altura), raio, GHOST_BG, LINE, 1)
-        img.save(MEDIA / ("%s.png" % nome))
+    # (as texturas do seletor "Android TV / Celular" e das pilulas "10 min /
+    #  1 mes" nao existem mais: os controles sairam do layout)
 
     # chip do cabecalho dos cartoes
     chip_h = 28
@@ -600,38 +583,25 @@ def main(argv=None):
     # fundo
     controles.append(xml_imagem(1, 0, 0, 1920, 1080, "bg.png"))
 
-    # --- topo: marca + seletor de aparelho -------------------------------
-    topo_y = med.pad + (med.top_h - 68) // 2
-    controles.append(xml_imagem(10, med.pad, topo_y, 68, 68, "logo.png"))
+    # --- topo: so a marca, alinhada a esquerda com respiro -----------------
+    # (o seletor "Android TV / Celular" saiu: a tela e 16:9 fixa, o seletor nao
+    #  levava a lugar nenhum e poluia o canto direito)
+    logo = 64
+    topo_y = med.pad + (med.top_h - logo) // 2
+    controles.append(xml_imagem(10, med.pad, topo_y, logo, logo, "logo.png"))
 
-    marca_x = med.pad + 68 + 17
-    h1_y = topo_y + 2
-    controles.append(xml_label(11, marca_x, h1_y, 400,
-                               altura_linha(med.fontes["h1"]),
+    marca_x = med.pad + logo + 20      # respiro entre logo e nome
+    h1 = med.fontes["h1"]
+    sub = med.fontes["sub"]
+    lh1, lsub = altura_linha(h1), altura_linha(sub)
+    respiro_marca = 6
+    bloco = lh1 + respiro_marca + lsub
+    # alinha o bloco de duas linhas com o centro do logo (nada de 2 px tortos)
+    bloco_y = topo_y + (logo - bloco) // 2
+    controles.append(xml_label(11, marca_x, bloco_y, 460, lh1,
                                "SMARTEDTV", estilos["h1"], ink))
-    sub_y = h1_y + altura_linha(med.fontes["h1"]) + 4
-    controles.append(xml_label(12, marca_x, sub_y, 400,
-                               altura_linha(med.fontes["sub"]),
+    controles.append(xml_label(12, marca_x, bloco_y + lh1 + respiro_marca, 460, lsub,
                                "Ativação e assinatura", estilos["sub"], mut))
-
-    seg_txt = ["Android TV", "Celular"]
-    seg_pad_x = round(rem(1.5) * med.k)
-    seg_larg = [round(largura_texto(t, med.fontes["seg"]) + 2 * seg_pad_x) for t in seg_txt]
-    seg_w = sum(seg_larg) + 2 * round(rem(0.25) * med.k) + round(rem(0.25) * med.k)
-    seg_x = med.pad + med.largura - seg_w
-    seg_y = med.pad + (med.top_h - med.seg_h) // 2
-    controles.append(xml_imagem(13, seg_x, seg_y, seg_w, med.seg_h, "seg.png", "stretch"))
-    bx = seg_x + round(rem(0.25) * med.k)
-    controles.append(xml_botao(130, bx, seg_y + round(rem(0.25) * med.k), seg_larg[0],
-                               med.seg_h - 2 * round(rem(0.25) * med.k), seg_txt[0],
-                               estilos["seg"], escuro, "seg_active.png",
-                               "seg_active_focus.png",
-                               border=(med.seg_h // 2)))
-    bx += seg_larg[0] + round(rem(0.25) * med.k)
-    controles.append(xml_botao(131, bx, seg_y + round(rem(0.25) * med.k), seg_larg[1],
-                               med.seg_h - 2 * round(rem(0.25) * med.k), seg_txt[1],
-                               estilos["seg"], txt, "seg.png", "seg_active.png",
-                               cor_foco=escuro, border=(med.seg_h // 2)))
 
     # --- grade dos cartoes -----------------------------------------------
     xs = [med.pad, med.pad + med.col_w + med.col_gap,
@@ -640,223 +610,214 @@ def main(argv=None):
         controles.append(xml_imagem(20 + i, x, med.grade_y, med.col_w, med.grade_h,
                                     "card.png", "stretch"))
 
-    c1 = xs[0] + med.card_pad
+    # Linha de base comum: TODAS as acoes primarias terminam na mesma altura,
+    # com o mesmo respiro da borda de baixo do cartao.
+    btn_h = med.btn_h
+    cta_y = med.grade_y + med.grade_h - med.card_pad - btn_h
+    topo = med.grade_y + med.card_pad          # topo util do conteudo do cartao
     interno = med.card_inner
-    topo = med.grade_y + med.card_pad
 
     # cartao 1 — boas-vindas
-    y = topo + 2
-    controles.append(xml_imagem(24, c1, y + 5, 23, 2, "eyebrow_line.png"))
-    controles.append(xml_label(25, c1 + 29, y, interno - 29,
-                               altura_linha(med.fontes["eyebrow"]),
+    c1 = xs[0] + med.card_pad
+    lh_eyebrow = altura_linha(med.fontes["eyebrow"])
+    y = topo
+    controles.append(xml_imagem(24, c1, y + lh_eyebrow // 2 - 1, 24, 2,
+                                "eyebrow_line.png"))
+    controles.append(xml_label(25, c1 + 24 + 12, y, interno - 36, lh_eyebrow,
                                "BEM-VINDO", estilos["eyebrow"], mut))
-    y += altura_linha(med.fontes["eyebrow"]) + 18
-    passo_h3 = round(med.fontes["h3"] * 1.06)
-    h3_h = altura_linha(med.fontes["h3"])
+    y += lh_eyebrow + 24
+
+    h3 = med.fontes["h3"]
+    lh3 = altura_linha(h3)
+    passo_h3 = round(h3 * 1.12)      # entrelinha do titulo (2 linhas)
     for i, linha in enumerate(("Sua TV,", "do seu jeito.")):
-        controles.append(xml_label(26 + i, c1, y + i * passo_h3,
-                                   interno, h3_h, linha, estilos["h3"], ink))
-    y += passo_h3 + h3_h + 6
+        controles.append(xml_label(26 + i, c1, y + i * passo_h3, interno, lh3,
+                                   linha, estilos["h3"], ink))
+    y += passo_h3 + lh3 + 18
+
     textos, altura_par = xml_texto(
         28, c1, y, interno,
         "Ative o VIP com um código ou continue gratuitamente com anúncios.",
-        estilos["body"], med.fontes["body"], txt, entrelinha=1.36)
+        estilos["body"], med.fontes["body"], txt, entrelinha=1.42)
     controles.extend(textos)
-    y += altura_par + 14
 
-    btn_y = med.grade_y + med.card_pad + med.grade_h - 2 * med.card_pad - med.btn_h
-
-    # `.list{margin:auto 0 6%}`: a lista fica logo acima do botao, com o vazio
-    # entre ela e o paragrafo (como no flex do CSS)
+    # beneficios: ancorados logo acima da acao, com respiro previsivel
     itens = ("Canais ao vivo, sem travar", "Sem anúncios com o VIP ativo",
              "Ativação em poucos segundos")
-    gap_item = round(rem(1.5) * med.k)
-    li_h = max(altura_linha(med.fontes["li"]) + 2, texturas["tick"] + 4)
-    bloco_h = 3 * li_h + 2 * gap_item
-    lista_y = btn_y - round(med.grade_h * 0.06) - bloco_h
-    assert lista_y > y, (lista_y, y)
+    li = med.fontes["li"]
+    li_h = max(altura_linha(li) + 2, texturas["tick"] + 4)
+    # O vazio entre o paragrafo e a acao e distribuido nos intervalos da lista
+    # (limitado): a lista "respira" e o cartao nao fica com um buraco no meio.
+    topo_lista = y + altura_par + 28
+    fundo_lista = cta_y - 40
+    livre = fundo_lista - topo_lista - len(itens) * li_h
+    gap_item = int(clamp(18, livre / max(1, len(itens) - 1), 40))
+    bloco_h = len(itens) * li_h + (len(itens) - 1) * gap_item
+    lista_y = topo_lista + max(0, (fundo_lista - topo_lista - bloco_h) // 2)
+    if lista_y < y + altura_par + 24:
+        raise SystemExit("cartao 1 sem espaco para a lista (%d)" % lista_y)
     for i, item in enumerate(itens):
         ly = lista_y + i * (li_h + gap_item)
-        controles.append(xml_imagem(30 + i, c1 + 4, ly + (li_h - texturas["tick"]) // 2,
+        controles.append(xml_imagem(30 + i, c1, ly + (li_h - texturas["tick"]) // 2,
                                     texturas["tick"], texturas["tick"], "tick.png"))
-        controles.append(xml_label(34 + i, c1 + 4 + texturas["tick"] + 14,
-                                   ly + (li_h - altura_linha(med.fontes["li"])) // 2,
-                                   interno - texturas["tick"] - 18,
-                                   altura_linha(med.fontes["li"]),
-                                   item, estilos["li"], txt))
-    # botao com icone: `.btn{gap:.5rem}` -> o icone ocupa 20 px + 8 px de respiro
-    # e o texto e centralizado no espaco que sobra (nunca um por cima do outro)
-    ICONE = 20
-    RESP = 8
+        controles.append(xml_label(34 + i, c1 + texturas["tick"] + 16,
+                                   ly + (li_h - altura_linha(li)) // 2,
+                                   interno - texturas["tick"] - 16,
+                                   altura_linha(li), item, estilos["li"], txt))
+
+    # acao principal do cartao 1 (largura cheia, como nos outros cartoes)
+    ICONE, RESP, pad_botao = 20, 10, 22
     texto_atualizar = "ATUALIZAR APLICATIVO"
     largura_txt = largura_texto(texto_atualizar, med.fontes["btn"])
-    pad_botao = round(rem(1.1) * med.k)
-    # folga dos dois lados = icone + respiro + padding; o texto (centralizado
-    # pelo Kodi) nunca alcanca o icone, que fica no padding esquerdo
     atualizar_w = round(largura_txt + 2 * (ICONE + RESP + pad_botao))
+    atualizar_w = max(atualizar_w, round(interno * 0.72))
+    atualizar_w = min(atualizar_w, interno)
     ax = c1 + (interno - atualizar_w) // 2
-    controles.append(xml_botao(123, ax, btn_y, atualizar_w, med.btn_h,
+    controles.append(xml_botao(123, ax, cta_y, atualizar_w, btn_h,
                                texto_atualizar, estilos["btn"], ink,
                                "btn_ghost.png", "btn_ghost_focus.png",
                                cor_foco=escuro, border=med.raio_btn))
-    icone_x = ax + pad_botao
-    controles.append(xml_imagem(124, icone_x, btn_y + (med.btn_h - ICONE) // 2,
+    # o Kodi centraliza o rotulo no botao: o texto comeca em (w - texto)/2.
+    # O icone entra a esquerda desse ponto, com RESP de respiro.
+    texto_x = ax + round((atualizar_w - largura_txt) / 2)
+    icone_x = texto_x - RESP - ICONE
+    controles.append(xml_imagem(124, icone_x, cta_y + (btn_h - ICONE) // 2,
                                 ICONE, ICONE, "icon_refresh.png"))
 
+    # cabecalho de cartao com indicador opcional a direita
+    lh2 = altura_linha(med.fontes["h2"])
+    chip_h = med.fontes["chip"] + 16
+    chip_pad = 14
+
+    def cabecalho(cid, cx, titulo, chip=None, chip_id=None):
+        controles.append(xml_label(cid, cx, topo, interno, lh2, titulo,
+                                  estilos["h2"], ink))
+        if not chip:
+            return
+        cw = round(largura_texto(chip, med.fontes["chip"]) + 2 * chip_pad)
+        chip_x = cx + interno - cw
+        chip_y = topo + (lh2 - chip_h) // 2        # centralizado com o titulo
+        controles.append(xml_imagem(chip_id, chip_x, chip_y, cw, chip_h,
+                                    "chip.png", "stretch"))
+        controles.append(xml_label(chip_id + 1, chip_x,
+                                   chip_y + (chip_h - altura_linha(med.fontes["chip"])) // 2,
+                                   cw, altura_linha(med.fontes["chip"]), chip,
+                                   estilos["chip"], txt, align="center"))
+
     # cartao 2 — assinatura (QR do checkout)
-    x2 = xs[1]
-    c2 = x2 + med.card_pad
-    head_y = topo + 2
-    controles.append(xml_label(40, c2, head_y, interno - 150,
-                               altura_linha(med.fontes["h2"]),
-                               "Sem anúncios", estilos["h2"], ink))
-    chip_txt = "Plano mensal"
-    chip_w = round(largura_texto(chip_txt, med.fontes["chip"]) + 2 * round(rem(0.8) * med.k))
-    chip_h = med.fontes["chip"] + 15
-    chip_x = c2 + interno - chip_w
-    controles.append(xml_imagem(41, chip_x, head_y + 2, chip_w, chip_h, "chip.png", "stretch"))
-    controles.append(xml_label(42, chip_x, head_y + 2 + (chip_h - altura_linha(med.fontes["chip"])) // 2,
-                               chip_w, altura_linha(med.fontes["chip"]), chip_txt,
-                               estilos["chip"], txt, align="center"))
+    x2, c2 = xs[1], xs[1] + med.card_pad
+    cabecalho(40, c2, "Sem anúncios", "Plano mensal", 41)
 
-    hint_linhas = 2
-    hint_h = hint_linhas * altura_linha(med.fontes["hint"]) + round(med.fontes["hint"] * 0.28)
-    hint_y = btn_y - 16 - hint_h
-    prato = med.qr_plate
-    area_topo = head_y + chip_h + 14
-    prato_y = area_topo + (hint_y - 14 - area_topo - prato) // 2
-    prato_x = x2 + (med.col_w - prato) // 2
-    controles.append(xml_imagem(43, prato_x, prato_y, prato, prato, "qr_plate.png", "stretch"))
-    qr_off = (prato - med.qr_img) // 2
-    controles.append(xml_imagem(44, prato_x + qr_off, prato_y + qr_off, med.qr_img,
-                                med.qr_img, "qr_checkout.png", "keep"))
-    dicas, _ = xml_texto(45, c2, hint_y, interno,
-                         "Aponte a câmera de outro celular.\nValor e condições aparecem no checkout.",
-                         estilos["hint"], med.fontes["hint"], mut, align="center",
-                         entrelinha=1.28)
+    hint = med.fontes["hint"]
+    lh_hint = altura_linha(hint)
+    passo_hint = round(hint * 1.38)
+    hint_h = passo_hint + lh_hint                  # duas linhas medidas
+    dica2 = ("Aponte a câmera de outro celular.\n"
+             "Valor e condições aparecem no checkout.")
+    dica3 = ("Aponte a câmera e envie o link\ndo app a quem quiser.")
+
+    # Cada cartao tem UMA linha de acoes na base (dois botoes lado a lado no
+    # cartao 3). Assim os tres cartoes terminam na mesma altura, os dois QR
+    # Codes ficam na mesma linha e nenhuma dica encosta em botao.
+    gap_botoes = 12
+    hint2_y = cta_y - 24 - hint_h                  # dica 2 logo acima da acao
+    hint3_y = hint2_y                              # simetria entre os cartoes
+    area_topo = topo + lh2 + 24                    # abaixo do cabecalho
+    # o QR tem o MESMO tamanho e a MESMA proporcao nos dois cartoes
+    livre = (hint2_y - 24) - area_topo
+    prato = min(med.qr_plate, interno, livre)
+    prato -= prato % 2                             # par: centraliza sem .5 px
+    if prato < 200:
+        raise SystemExit("QR Code pequeno demais (%d)" % prato)
+    qr_img = round(prato * med.qr_img / med.qr_plate)   # mesma proporcao interna
+    qr_off = (prato - qr_img) // 2
+
+    def qr(cid, cx, cartao_x, topo_livre, altura_livre, textura):
+        py = topo_livre + (altura_livre - prato) // 2
+        px = cartao_x + (med.col_w - prato) // 2
+        controles.append(xml_imagem(cid, px, py, prato, prato, "qr_plate.png",
+                                    "stretch"))
+        controles.append(xml_imagem(cid + 1, px + qr_off, py + qr_off, qr_img,
+                                    qr_img, textura, "keep"))
+
+    qr(43, c2, x2, area_topo, livre, "qr_checkout.png")
+    dicas, _ = xml_texto(45, c2, hint2_y, interno, dica2, estilos["hint"], hint,
+                         mut, align="center", entrelinha=1.38)
     controles.extend(dicas)
-    controles.append(xml_botao(120, c2, btn_y, interno, med.btn_h, "Abrir checkout",
-                               estilos["btn"], ink, "btn_ghost.png", "btn_ghost_focus.png",
-                               cor_foco=escuro, border=med.raio_btn))
+    controles.append(xml_botao(120, c2, cta_y, interno, btn_h, "Abrir checkout",
+                               estilos["btn"], ink, "btn_ghost.png",
+                               "btn_ghost_focus.png", cor_foco=escuro,
+                               border=med.raio_btn))
 
-    # cartao 3 — indicação (QR do app)
-    x3 = xs[2]
-    c3 = x3 + med.card_pad
-    controles.append(xml_label(50, c3, head_y, interno - 120,
-                               altura_linha(med.fontes["h2"]),
-                               "Indique e ganhe", estilos["h2"], ink))
-    chip2 = "Compartilhar"
-    chip2_w = round(largura_texto(chip2, med.fontes["chip"]) + 2 * round(rem(0.8) * med.k))
-    chip2_x = c3 + interno - chip2_w
-    controles.append(xml_imagem(51, chip2_x, head_y + 2, chip2_w, chip_h, "chip.png", "stretch"))
-    controles.append(xml_label(52, chip2_x, head_y + 2 + (chip_h - altura_linha(med.fontes["chip"])) // 2,
-                               chip2_w, altura_linha(med.fontes["chip"]), chip2,
-                               estilos["chip"], txt, align="center"))
-
-    baixar_y = btn_y
-    share_y = btn_y - med.btn_h - 8
-    hint3_y = share_y - 14 - hint_h
-    area3_topo = head_y + chip_h + 14
-    prato3_y = area3_topo + (hint3_y - 14 - area3_topo - prato) // 2
-    prato3_x = x3 + (med.col_w - prato) // 2
-    controles.append(xml_imagem(53, prato3_x, prato3_y, prato, prato, "qr_plate.png", "stretch"))
-    controles.append(xml_imagem(54, prato3_x + qr_off, prato3_y + qr_off, med.qr_img,
-                                med.qr_img, "qr_apk.png", "keep"))
-    dicas3, _ = xml_texto(55, c3, hint3_y, interno,
-                          "Aponte a câmera e envie o link\ndo app a quem quiser.",
-                          estilos["hint"], med.fontes["hint"], mut, align="center",
-                          entrelinha=1.28)
+    x3, c3 = xs[2], xs[2] + med.card_pad
+    cabecalho(50, c3, "Indique e ganhe")
+    qr(53, c3, x3, area_topo, livre, "qr_apk.png")
+    dicas3, _ = xml_texto(55, c3, hint3_y, interno, dica3, estilos["hint"], hint,
+                          mut, align="center", entrelinha=1.38)
     controles.extend(dicas3)
-    controles.append(xml_botao(121, c3, share_y, interno, med.btn_h, "Compartilhar link",
-                               estilos["btn"], ink, "btn_ghost.png", "btn_ghost_focus.png",
-                               cor_foco=escuro, border=med.raio_btn))
+    meia = (interno - gap_botoes) // 2
+    controles.append(xml_botao(121, c3, cta_y, meia, btn_h, "Compartilhar link",
+                               estilos["btn"], ink, "btn_ghost.png",
+                               "btn_ghost_focus.png", cor_foco=escuro,
+                               border=med.raio_btn))
     texto_baixar = "Baixar APK (Android)"
     largura_baixar = largura_texto(texto_baixar, med.fontes["btn"])
-    baixar_w = round(largura_baixar + 2 * (ICONE + RESP + pad_botao))
-    bx3 = c3 + (interno - baixar_w) // 2
-    controles.append(xml_botao(122, bx3, baixar_y, baixar_w, med.btn_h, texto_baixar,
-                               estilos["btn"], QUIET_TXT_HEX, "btn_quiet.png",
-                               "btn_quiet_focus.png", cor_foco=escuro,
+    baixar_w = interno - gap_botoes - meia
+    bx3 = c3 + meia + gap_botoes
+    baixar_y = cta_y
+    controles.append(xml_botao(122, bx3, baixar_y, baixar_w, btn_h, texto_baixar,
+                               estilos["btn"], ink, "btn_ghost.png",
+                               "btn_ghost_focus.png", cor_foco=escuro,
                                border=med.raio_btn))
-    icone3_x = bx3 + pad_botao
-    controles.append(xml_imagem(125, icone3_x, baixar_y + (med.btn_h - ICONE) // 2,
+    texto3_x = bx3 + round((baixar_w - largura_baixar) / 2)
+    icone3_x = texto3_x - RESP - ICONE
+    controles.append(xml_imagem(125, icone3_x, baixar_y + (btn_h - ICONE) // 2,
                                 ICONE, ICONE, "icon_download.png"))
 
-    # --- barra de ativacao -----------------------------------------------
+    # --- barra de ativacao VIP --------------------------------------------
+    # Painel proprio, isolado da grade por um respiro fixo (med.gap). Dentro
+    # dele, tudo fica na mesma linha de centro: texto, campo, Ativar e o link.
     barra_y = med.barra_y
-    py = round(1842 * 0.015)
-    px = round(1842 * 0.016)
-    by = barra_y + py
-    bx0 = med.pad + px
-    inner_bar = med.largura - 2 * px
-    copy_w = round(inner_bar * 0.28)
-    # `.bar{background:linear-gradient(180deg,#ffffff13,#ffffff05);border:1px solid
-    # var(--line);border-radius:1.2rem}`: o painel de vidro da barra
+    pad_barra = 28
     controles.append(xml_imagem(6, med.pad, barra_y, med.largura, med.barra_h,
                                 "bar.png", "stretch"))
-    controles.append(xml_label(60, bx0, by + 2, copy_w,
-                               altura_linha(med.fontes["barh3"]),
+    bx0 = med.pad + pad_barra
+    bdir = med.pad + med.largura - pad_barra        # borda util direita
+    by = barra_y + (med.barra_h - btn_h) // 2       # centro vertical da barra
+
+    barh3, barp = med.fontes["barh3"], med.fontes["barp"]
+    lh_barh3, lh_barp = altura_linha(barh3), altura_linha(barp)
+    respiro_copy = 6
+    bloco_copy = lh_barh3 + respiro_copy + lh_barp
+    copy_w = 400
+    copy_y = barra_y + (med.barra_h - bloco_copy) // 2
+    controles.append(xml_label(60, bx0, copy_y, copy_w, lh_barh3,
                                "Já é assinante? Ative seu VIP", estilos["barh3"], ink))
-    controles.append(xml_label(61, bx0, by + 2 + altura_linha(med.fontes["barh3"]) + 8,
-                               copy_w, altura_linha(med.fontes["barp"]),
-                               "Digite o código que você recebeu.", estilos["barp"], mut))
+    controles.append(xml_label(61, bx0, copy_y + lh_barh3 + respiro_copy, copy_w,
+                               lh_barp, "Digite o código que você recebeu.",
+                               estilos["barp"], mut))
 
-    gap_bar = round(1842 * 0.015)
-    form_x = bx0 + copy_w + gap_bar
-    form_dir = bx0 + inner_bar - gap_bar
+    pad_pill = 24
     gratis_txt = "Continuar com anúncios"
-    gratis_w = min(round(inner_bar * 0.22),
-                   round(largura_texto(gratis_txt, med.fontes["bar_btn"]) + 2 * round(rem(1.2) * med.k)))
-    gratis_x = form_dir - gratis_w
-    div_x = gratis_x - gap_bar
-    form_dir = div_x - gap_bar
-
-    controles.append(xml_imagem(62, div_x, by + 4, 2, med.btn_h - 8, "divider.png", "stretch"))
-    controles.append(xml_botao(312, gratis_x, by, gratis_w, med.btn_h, gratis_txt,
-                               estilos["bar_btn"], QUIET_TXT_HEX, "btn_quiet.png",
-                               "btn_quiet_focus.png", cor_foco=escuro, border=med.raio_btn))
-
+    gratis_w = round(largura_texto(gratis_txt, med.fontes["bar_btn"]) + 2 * pad_pill)
+    gratis_x = bdir - gratis_w
+    div_x = gratis_x - 28
     ativar_txt = "Ativar"
-    ativar_w = round(largura_texto(ativar_txt, med.fontes["btn"]) + 2 * round(rem(1.2) * med.k))
-    ativar_x = form_dir - ativar_w
-    field_w = ativar_x - 11 - (form_x + 0)          # preenchido depois de medir o plan
-    plan_txt = ["10 min", "1 mês"]
-    plan_pad = round(rem(1.0) * med.k)
-    plan_larg = [round(largura_texto(t, med.fontes["plan"]) + 2 * plan_pad)
-                 for t in plan_txt]
-    # uma textura por pilula, no tamanho exato do botao: `seg` do CSS tem fundo
-    # translucido + borda; esticar a mesma placa em duas medidas deixava as duas
-    # bordas aparecendo (efeito de "pilula dentro de pilula")
-    ph = med.plan_h
-    gap_plan = round(rem(0.25) * med.k)
-    px0 = form_x
-    for indice, (cid, rotulo) in enumerate(zip((140, 141), plan_txt)):
-        largura_pilula = plan_larg[indice]
-        nome = "plan_%d.png" % indice
-        # normal: contorno; em foco: pilula branca do CSS
-        # (`[aria-pressed=true]{background:linear-gradient(#fff,#e8e8e8)}`)
-        retangulo((largura_pilula, ph), ph // 2, (0, 0, 0, 0), LINE, 1).save(
-            MEDIA / nome)
-        pilula_foco = retangulo((largura_pilula, ph), ph // 2,
-                                _gradiente_vertical((largura_pilula, ph),
-                                                    rgba("#ffffff"),
-                                                    rgba("#e8e8e8")))
-        ImageDraw.Draw(pilula_foco).rounded_rectangle(
-            (0, 0, largura_pilula - 1, ph - 1), radius=ph // 2,
-            outline=rgba("#8a8a8a"), width=2)
-        pilula_foco.save(MEDIA / ("plan_active_%d.png" % indice))
-        controles.append(xml_botao(cid, px0, by + (med.btn_h - ph) // 2,
-                                   largura_pilula, ph, rotulo, estilos["plan"], txt,
-                                   nome, "plan_active_%d.png" % indice,
-                                   cor_foco=escuro, border=ph // 2))
-        px0 += largura_pilula + gap_plan
-    plan_w = px0 - gap_plan - form_x
+    ativar_w = round(largura_texto(ativar_txt, med.fontes["btn"]) + 2 * pad_pill)
+    ativar_x = div_x - 28 - ativar_w
+    field_x = bx0 + copy_w + 32
+    field_w = ativar_x - 12 - field_x
 
-    field_x = form_x + plan_w + 11
-    field_w = ativar_x - 11 - field_x
+    controles.append(xml_imagem(62, div_x, by + 2, 2, btn_h - 4, "divider.png",
+                                "stretch"))
+    controles.append(xml_botao(312, gratis_x, by, gratis_w, btn_h, gratis_txt,
+                               estilos["bar_btn"], QUIET_TXT_HEX, "btn_quiet.png",
+                               "btn_quiet_focus.png", cor_foco=escuro,
+                               border=med.raio_btn))
+
     edit = ET.Element("control", {"type": "edit", "id": "310"})
     for tag, valor in (("left", field_x), ("top", by), ("width", field_w),
-                       ("height", med.btn_h)):
+                       ("height", btn_h)):
         ET.SubElement(edit, tag).text = str(valor)
     ET.SubElement(edit, "label").text = "Código de ativação"
     ET.SubElement(edit, "font").text = estilos["field"]
@@ -865,7 +826,7 @@ def main(argv=None):
     ET.SubElement(edit, "texturefocus", {"border": str(med.raio_btn)}).text = "field_focus.png"
     ET.SubElement(edit, "texturenofocus", {"border": str(med.raio_btn)}).text = "field.png"
     controles.append(edit)
-    controles.append(xml_botao(311, ativar_x, by, ativar_w, med.btn_h, ativar_txt,
+    controles.append(xml_botao(311, ativar_x, by, ativar_w, btn_h, ativar_txt,
                                estilos["btn"], escuro, "btn_primary.png",
                                "btn_primary_focus.png", border=med.raio_btn))
 
