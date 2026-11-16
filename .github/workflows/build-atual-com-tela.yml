@@ -48,7 +48,7 @@ jobs:
       - name: 3. Diagnostico do APK atual (o que sera preservado)
         run: |
           python3 - <<'PY'
-          import zipfile
+          import re, zipfile
           z = zipfile.ZipFile('build/atual.apk')
           nomes = z.namelist()
           print('entradas:', len(nomes))
