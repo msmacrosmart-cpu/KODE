@@ -1,0 +1,166 @@
+name: SMARTEDTV - reempacotar tela VÍDEOS (rápido)
+
+# Reempacotamento RÁPIDO, sem compilar o Kodi do código-fonte.
+#
+# Base: o APK v1.0.83-tela-inicial-v9 já publicado em releases/
+#       Ele é baixado como insumo e NÃO é alterado no código nativo:
+#       libkodi.so, classes.dex, AndroidManifest continuam byte a byte.
+#
+# O que muda neste build:
+#   1. skin.novatv/ entra em assets/addons/ (com MyVideos.xml, Home.xml, qrcode.png)
+#   2. plugin.video.smarted/ entra em assets/addons/ (default.py com as 5 ações)
+#   3. service.smarted.bootstrap/ entra em assets/addons/
+#   4. addon-manifest.xml registra os 3 addons
+#   5. versionName/versionCode sobem para permitir atualizar por cima do 1.0.83
+#   6. Assinatura com chave smarted-tv-test do Dropbox
+#
+# Tempo tipico: 2-5 min (vs 60+ min de compilação do zero).
+
+on:
+  workflow_dispatch:
+    inputs:
+      versao:
+        description: 'versionName novo'
+        type: string
+        default: '21.4.1'
+      codigo:
+        description: 'versionCode novo'
+        type: number
+        default: 2104001
+  push:
+    branches: [arena/28b146c9-kode]
+    paths:
+      - .github/workflows/smartedtv-repack-videos.yml
+      - tools/kodi/injetar-videos.py
+      - kodi/**
+
+permissions:
+  contents: write
+
+concurrency:
+  group: smartedtv-repack-videos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reempacotar:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      BASE_TAG: v1.0.83-tela-inicial-v9
+      BASE_APK: SMARTEDTV-atual-com-tela-inicial-v9.apk
+      NOVA_VERSAO: ${{ inputs.versao || '21.4.1' }}
+      NOVO_CODIGO: ${{ inputs.codigo || 2104001 }}
+      TAG_SAIDA: smartedtv-videos-21.4.1-arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Baixar APK base publicado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/base"
+          gh release download "$BASE_TAG" -R "$GITHUB_REPOSITORY" \
+            --pattern '*.apk' --dir "$RUNNER_TEMP/base"
+          ls -lh "$RUNNER_TEMP/base/"
+          APK_FILE=$(find "$RUNNER_TEMP/base" -name '*.apk' | head -1)
+          echo "APK base: $APK_FILE"
+          echo "BASE_APK_PATH=$APK_FILE" >> "$GITHUB_ENV"
+
+      - name: 2. Ferramentas de sistema
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq 2>/dev/null || true
+          sudo apt-get install -y -qq --no-install-recommends \
+            python3 python3-pip unzip zip curl 2>/dev/null || true
+          python3 -m pip install --quiet --break-system-packages Pillow==11.3.0 pyaxmlparser==0.3.31 2>/dev/null \
+            || python3 -m pip install --quiet --user Pillow==11.3.0 pyaxmlparser==0.3.31
+          python3 -c 'import PIL, pyaxmlparser; print("Pillow", PIL.__version__, "| pyaxmlparser OK")'
+
+      - name: 3. Injetar modificações da tela VÍDEOS no APK base
+        run: |
+          set -euo pipefail
+          python3 tools/kodi/injetar-videos.py \
+            --apk "$BASE_APK_PATH" \
+            --saida "$RUNNER_TEMP/bruto.apk"
+          ls -lh "$RUNNER_TEMP/bruto.apk"
+
+      - name: 4. Alinhar e assinar com a chave do projeto
+        run: |
+          set -euo pipefail
+          python3 tools/kodi/align-apk.py "$RUNNER_TEMP/bruto.apk" "$RUNNER_TEMP/alinhado.apk"
+          ls -lh "$RUNNER_TEMP/alinhado.apk"
+
+          # Chave de assinatura do repositório
+          JAVA=$(find /usr -name java -type f 2>/dev/null | head -1)
+          if [ -z "$JAVA" ]; then
+            sudo apt-get install -y -qq openjdk-17-jdk-headless 2>/dev/null || true
+            JAVA=/usr/bin/java
+          fi
+          "$JAVA" -jar "$HOME/.cache/kode-build/tools/apksigner.jar" sign \
+            --ks dropbox/smarted-tv-test.jks \
+            --ks-pass pass:android \
+            --key-pass pass:android \
+            --ks-key-alias smarted-tv-test \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --v4-signing-enabled false \
+            --out "$RUNNER_TEMP/assinado.apk" "$RUNNER_TEMP/alinhado.apk"
+          ls -lh "$RUNNER_TEMP/assinado.apk"
+
+      - name: 5. Verificar assinatura e identidade
+        run: |
+          set -euo pipefail
+          JAVA=$(find /usr -name java -type f 2>/dev/null | head -1)
+          "$JAVA" -jar "$HOME/.cache/kode-build/tools/apksigner.jar" verify \
+            --verbose --print-certs "$RUNNER_TEMP/assinado.apk" \
+            | tee "$RUNNER_TEMP/verify.txt"
+          grep -qi "SMARTED\|smarted-tv-test" "$RUNNER_TEMP/verify.txt" && echo "Assinatura OK" || echo "::warning::verifique o certificado"
+
+      - name: 6. Preparar APK final
+        run: |
+          set -euo pipefail
+          cp "$RUNNER_TEMP/assinado.apk" "$RUNNER_TEMP/final.apk"
+          ls -lh "$RUNNER_TEMP/final.apk"
+
+      - name: 7. Publicar release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cp "$RUNNER_TEMP/final.apk" "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk"
+          sha256sum "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk" > "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk.sha256"
+          cat "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk.sha256"
+          NOTES="SMARTEDTV ${NOVA_VERSAO} — tela VÍDEOS com 5 ações externas do Android.
+
+          Base: SMARTEDTV 1.0.83 (release ${BASE_TAG}), reempacotado sem recompilar o Kodi.
+          Apenas injeção de addons: skin.novatv, plugin.video.smarted, service.smarted.bootstrap.
+
+          - Tela VÍDEOS personalizada (MyVideos.xml)
+          - 5 ações: open_url (Cakto VIP), enter_code, show_qr (QR Code), share_link (ACTION_SEND), check_update, download_apk
+          - Application ID: org.xbmc.kodi (preservado)
+          - Assinatura: smarted-tv-test (atualiza o 1.0.83; não atualiza Kodi oficial)
+          - SHA-256 no arquivo .sha256"
+
+          if gh release view "$TAG_SAIDA" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG_SAIDA" "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk" "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk.sha256" -R "$GITHUB_REPOSITORY" --clobber
+            gh release edit "$TAG_SAIDA" -R "$GITHUB_REPOSITORY" --notes "$NOTES"
+          else
+            gh release create "$TAG_SAIDA" \
+              "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk" \
+              "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk.sha256" \
+              -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "SMARTEDTV ${NOVA_VERSAO} (arm64-v8a) — Tela VÍDEOS" \
+              --notes "$NOTES"
+          fi
+          echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG_SAIDA"
+
+      - name: 8. Guardar artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartedtv-apk-repack-videos
+          path: |
+            SMARTEDTV-*-arm64-v8a.apk
+            SMARTEDTV-*.sha256
+        retention-days: 30
