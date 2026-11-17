@@ -153,6 +153,8 @@ jobs:
               a = set(antes.namelist()); d = set(depois.namelist())
               novos = sorted(n for n in d - a if not n.startswith('META-INF/'))
               removidos = sorted(n for n in a - d if not n.startswith('META-INF/'))
+              print("DEBUG novos=%s" % novos)
+              print("DEBUG removidos=%s" % removidos)
               obrigatorios = ('addon.xml', 'default.py',
                               'resources/skins/Default/1080i/DialogWelcome.xml',
                               'resources/skins/Default/media/bg.png',
@@ -179,6 +181,7 @@ jobs:
               assert 'backspace' in [e.tag for e in casa.find('keyboard')]
               assert not removidos, removidos
               alterados = sorted(n for n in sorted(a & d) if antes.read(n) != depois.read(n))
+              print("DEBUG alterados=%s" % alterados)
               esperado = sorted(
                   ['assets/system/addon-manifest.xml'] +
                   ['assets/addons/%s/xml/Startup.xml' % s for s in SKINS
