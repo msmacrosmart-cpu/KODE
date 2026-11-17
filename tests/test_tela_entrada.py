@@ -13,6 +13,7 @@ import py_compile
 import re
 import sys
 import tempfile
+import textwrap
 import types
 import unittest
 import xml.etree.ElementTree as ET
@@ -29,7 +30,9 @@ STARTUP_SKIN = ROOT / 'kodi' / 'skin.estilo.personalizado' / 'xml' / 'Startup.xm
 GERADOR = ROOT / 'tools' / 'kodi' / 'gerar-tela-entrada.py'
 DEFAULT_PY = ADDON / 'default.py'
 INJETOR = ROOT / 'tools' / 'kodi' / 'injetar-tela-entrada.py'
-HOME = 'ReplaceWindow($INFO[System.StartupWindow])'
+# A Home agora e aberta pelo proprio addon (a v7 usava ReplaceWindow do
+# Startup.xml, que disparava em torno da janela de startup -> tela preta).
+HOME = 'ActivateWindow(Home,return)'
 
 # Pacote entregue no Dropbox (smartedtv-src.zip): a tela no APK tem de ser esta.
 PACOTE = ROOT / 'build_test' / 'src_novo' / 'smartedtv'
@@ -315,11 +318,12 @@ class StartupAntesDaHomeTest(unittest.TestCase):
         self.assertEqual(len(acoes), 2, acoes)
         self.assertIn('RunScript(%s)' % ADDON_ID, acoes[0])
         self.assertIn('smartedtv_entrada,', acoes[0])
-        self.assertIn('smartedtv_entrada_seguro', acoes[1])
-        self.assertIn(HOME, acoes[1])
+        # o seguro agora e um processo proprio do addon (nao um AlarmClock,
+        # que disparava em torno da janela de startup e deixava tela preta)
+        self.assertIn('RunScript(script.smartedtv.welcome,seguro=1)', acoes[1])
         corpo = STARTUP_SKIN.read_text(encoding='utf-8')
         corpo = corpo.split('<window>', 1)[1]
-        self.assertEqual(corpo.count('ReplaceWindow'), 1)
+        self.assertEqual(corpo.count('ReplaceWindow'), 0)
 
     def test_injetor_aplica_o_mesmo_startup_no_apk(self):
         spec = importlib.util.spec_from_file_location('injetor_startup', INJETOR)
@@ -333,7 +337,8 @@ class StartupAntesDaHomeTest(unittest.TestCase):
                  for e in ET.fromstring(novo.encode()).findall('onload')]
         self.assertEqual(len(acoes), 2, acoes)
         self.assertIn('RunScript(%s)' % ADDON_ID, acoes[0])
-        self.assertIn(HOME, acoes[1])
+        self.assertIn('seguro=1', acoes[1])
+        self.assertNotIn('ReplaceWindow', novo)
 
     def test_startup_com_home_solta_e_recusado(self):
         spec = importlib.util.spec_from_file_location('injetor_recusa', INJETOR)
@@ -446,12 +451,30 @@ def carregar_default(vip=None):
     servico = _servico_com_vip(vip)
     xbmc = types.ModuleType('xbmc')
     xbmc.BUILTINS = []
+    xbmc.PROPS = {}
     xbmc.LOGS = []
     xbmc.LOGINFO = 1
     xbmc.LOGWARNING = 3
     xbmc.LOGERROR = 4
     xbmc.log = lambda msg, level=1: xbmc.LOGS.append((level, msg))
-    xbmc.executebuiltin = lambda cmd, wait=False: xbmc.BUILTINS.append(cmd)
+    xbmc.JANELA = {'atual': 'Startup'}
+
+    def _builtin(cmd, wait=False):
+        xbmc.BUILTINS.append(cmd)
+        if cmd.startswith('ReplaceWindow('):
+            alvo = cmd[len('ReplaceWindow('):-1]
+            if alvo == '$INFO[System.StartupWindow]':
+                alvo = 'Startup' if xbmc.JANELA['atual'] == 'Startup' else 'Home'
+            xbmc.JANELA['atual'] = alvo
+        elif cmd.startswith('ActivateWindow(Home'):
+            xbmc.JANELA['atual'] = 'Home'
+        elif cmd.startswith('RestartApp'):
+            xbmc.JANELA['atual'] = 'Startup'
+
+    xbmc.executebuiltin = _builtin
+    xbmc.sleep = lambda ms: None
+    xbmc.getInfoLabel = lambda exp: (xbmc.JANELA['atual']
+                                     if exp == 'System.CurrentWindow' else '')
 
     xbmcgui = types.ModuleType('xbmcgui')
     xbmcgui.WindowXMLDialog = JanelaFake
@@ -466,6 +489,13 @@ def carregar_default(vip=None):
 
         def setProperty(self, chave, valor):
             xbmc.LOGS.append(('prop', chave))
+            xbmc.PROPS[chave] = valor
+
+        def clearProperty(self, chave):
+            xbmc.PROPS.pop(chave, None)
+
+        def getProperty(self, chave):
+            return xbmc.PROPS.get(chave, '')
 
     class Dialog(object):
         def ok(self, *args):
@@ -541,9 +571,9 @@ class CicloDeVidaTest(unittest.TestCase):
                                        'Default', '1080i'))
         self.assertTrue(janela.modal)
         self.assertIn(310, janela.foco)
-        self.assertIn('CancelAlarm(smartedtv_entrada_seguro,silent)',
-                      self.xbmc.BUILTINS)
-        self.assertEqual(self.xbmc.BUILTINS[-1], HOME)
+        self.assertEqual(self.xbmc.PROPS.get('smartedtv.welcome.ativa'), '1')
+        self.assertEqual(self.xbmc.PROPS.get('smartedtv.welcome.home'), 'ok')
+        self.assertEqual(self.xbmc.JANELA['atual'], 'Home')
 
     def test_home_so_depois_de_a_janela_fechar(self):
         observado = []
@@ -630,6 +660,78 @@ class CicloDeVidaTest(unittest.TestCase):
             self.assertNotIn('control_id == %s' % ident, fonte)
         # a tela nao tem mais escolha de plano: so campo + Ativar
         self.assertNotIn('welcome_plan', fonte)
+
+    def test_voltar_na_home_reabre_a_tela_sem_reiniciar(self):
+        """Pedido do usuário: VOLTAR na Home volta para a tela (quem tem código)."""
+        self.xbmc.JANELA['atual'] = 'Home'
+        aberta = []
+        JanelaFake.interacao = lambda j: (aberta.append(j.args),
+                                          j.onClick(312), j.onClick(906))
+        self.assertTrue(self.modulo.voltar_para_a_tela())
+        self.assertEqual(aberta[0][0], 'DialogWelcome.xml')
+        # a Home ja estava carregada: continua na Home, sem RestartApp
+        self.assertEqual(self.xbmc.JANELA['atual'], 'Home')
+        self.assertFalse([b for b in self.xbmc.BUILTINS
+                          if b.startswith('RestartApp')], self.xbmc.BUILTINS)
+        self.assertFalse([b for b in self.xbmc.BUILTINS
+                          if b.startswith('ReplaceWindow')], self.xbmc.BUILTINS)
+        self.assertEqual(self.xbmc.PROPS.get('smartedtv.welcome.home'), 'ok')
+
+    def test_voltar_na_home_preserva_a_licenca(self):
+        """Quem ja ativou continua ativo; a tela e que nao guarda estado."""
+        self.xbmc.JANELA['atual'] = 'Home'
+        self.vip.licenca = {'ativo': True, 'codigo': 'TESTE-CF9CB49C05EA'}
+        JanelaFake.interacao = lambda j: j.onAction(92)   # VOLTAR na tela
+        self.modulo.voltar_para_a_tela()
+        # nada de validacao/rede ao abrir a tela: a licenca fica como estava
+        self.assertEqual(self.vip.codigos, [])
+        self.assertEqual(self.vip.chamadas, [])
+        self.assertEqual(self.vip.licenca['codigo'], 'TESTE-CF9CB49C05EA')
+
+    def test_voltar_na_home_devolve_o_campo_vazio(self):
+        """O campo abre vazio, pronto para quem tem um codigo novo."""
+        self.xbmc.JANELA['atual'] = 'Home'
+        vistos = []
+        JanelaFake.interacao = lambda j: (vistos.append(
+            j.getControl(310).getText()), j.onAction(92))
+        self.modulo.voltar_para_a_tela()
+        self.assertEqual(vistos, [''])
+
+    def test_voltar_sem_a_tela_nao_derruba_nada(self):
+        """Se a pasta da tela sumir, VOLTAR na Home so registra e a Home fica."""
+        self.xbmc.JANELA['atual'] = 'Home'
+        self.modulo._pasta_da_tela = lambda: None
+        self.assertFalse(self.modulo.voltar_para_a_tela())
+        self.assertEqual(self.xbmc.JANELA['atual'], 'Home')
+
+    def test_argumento_voltar_escolhe_o_modo_certo(self):
+        """O keymap chama RunScript(...,voltar): modo proprio, sem vigia de boot."""
+        fonte = (ADDON / 'default.py').read_text(encoding='utf-8')
+        modulo = types.ModuleType('welcome_argv')
+        modulo.__file__ = str(ADDON / 'default.py')
+        modulo.__name__ = '__main__'
+        chamadas = []
+        modulo.__dict__['sys'] = sys
+        modulo.__dict__['ARG_VOLTAR'] = 'voltar'
+        modulo.__dict__['voltar_para_a_tela'] = \
+            lambda: chamadas.append('voltar')
+        modulo.__dict__['vigiar_inicializacao'] = \
+            lambda: chamadas.append('vigia')
+        modulo.__dict__['abrir_tela_entrada'] = \
+            lambda: chamadas.append('boot')
+        codigo = textwrap.dedent(
+            fonte.split("if __name__ == '__main__':", 1)[1])
+        argv = sys.argv
+        try:
+            for args, esperado in (('voltar', 'voltar'),
+                                   ('seguro=1', 'vigia'),
+                                   ('', 'boot')):
+                chamadas[:] = []
+                sys.argv = ['default.py'] + ([args] if args else [])
+                exec(compile(codigo, 'default.py', 'exec'), modulo.__dict__)
+                self.assertEqual(chamadas, [esperado], args)
+        finally:
+            sys.argv = argv
 
     def test_sem_a_tela_a_home_ainda_abre(self):
         JanelaFake.falhar_modal = True

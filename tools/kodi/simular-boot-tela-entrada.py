@@ -66,15 +66,43 @@ def conferir_startup(z: zipfile.ZipFile) -> list:
         assert "RunScript(%s)" % ADDON_ID in disparo[0], (nome, disparo)
         # nenhuma acao solta na Home: o unico ReplaceWindow e o seguro
         homes = [a for a in acoes if "ReplaceWindow" in a]
-        assert len(homes) == 1, (nome, homes)
-        assert "smartedtv_entrada_seguro" in homes[0], (nome, homes)
-        seguro = re.search(r"(\d\d):(\d\d):(\d\d)", homes[0])
-        assert seguro and seguro.group(1) == "00" and seguro.group(2) == "00", homes[0]
-        # o disparo vem antes do seguro na ordem de execucao
-        assert acoes.index(disparo[0]) < acoes.index(homes[0]), (nome, acoes)
-        print("   %-26s dispara a tela; Home so pelo seguro de %ss"
-              % (nome, int(seguro.group(3))))
+        assert not homes, (nome, homes)   # Startup.xml nao abre a Home: o addon abre
+        seguros = [a for a in acoes if "seguro=1" in a and "RunScript" in a]
+        assert len(seguros) == 1, (nome, acoes)
+        assert seguros[0].startswith("RunScript(%s" % ADDON_ID), seguros
+        assert acoes.index(disparo[0]) < acoes.index(seguros[0]), (nome, acoes)
+        print("   %-26s dispara a tela; vigia proprio (sem ReplaceWindow)"
+              % nome)
     return skins
+
+
+# --------------------------------------------------------------------------
+# 1b. Keymap: VOLTAR na Home reabre a tela de entrada
+# --------------------------------------------------------------------------
+KEYMAP = "assets/system/keymaps/zzz-smartedtv-voltar.xml"
+
+
+def conferir_keymap(z: zipfile.ZipFile) -> None:
+    """Sem esta secao <Home>, quem entra so para ver nao volta para o codigo."""
+    assert KEYMAP in z.namelist(), "keymap de VOLTAR na Home ausente do APK"
+    raiz = ET.fromstring(z.read(KEYMAP))
+    janelas = [e.tag for e in raiz]
+    assert janelas == ["Home"], janelas
+    casa = raiz.find("Home")
+    acoes = [(e.text or "").strip() for e in casa.iter()
+             if e is not casa and e.tag not in ("keyboard", "remote")]
+    assert acoes, "keymap da Home sem acao"
+    for acao in acoes:
+        assert acao == "RunScript(%s,voltar)" % ADDON_ID, acao
+    teclas = {e.tag for e in casa.find("keyboard")}
+    # KEYCODE_BACK do Android chega ao Kodi como XBMCK_BACKSPACE
+    assert "backspace" in teclas, teclas
+    # ordem alfabetica: o ultimo arquivo vence, o nosso tem de ser o ultimo
+    do_sistema = sorted(n for n in z.namelist()
+                        if re.fullmatch(r"assets/system/keymaps/[^/]+\.xml", n))
+    assert do_sistema[-1] == KEYMAP, do_sistema[-3:]
+    print("   %s: VOLTAR na Home reabre a tela (carregado por ultimo)"
+          % KEYMAP.split("/")[-1])
 
 
 # --------------------------------------------------------------------------
@@ -187,14 +215,31 @@ class Simulacao(object):
         self.modal_ativo = False
         self.interacao = None
         self.vip = None
+        self.relogio = 0.0
+        self.janela_atual = "Startup"
 
     def log(self, mensagem, nivel=1):
         self.logs.append(mensagem)
+
+    def dormir(self, ms):
+        self.relogio += (ms or 0) / 1000.0
 
     def builtin(self, comando, *args, **kwargs):
         self.builtins.append(comando)
         if self.modal_ativo and "ReplaceWindow" in comando:
             self.home_durante_modal.append(comando)
+        # reproduz o Kodi: ReplaceWindow troca a janela corrente. Enquanto o
+        # Startup.xml e a janela corrente, "System.StartupWindow" aponta para
+        # a propria 12999 -> ReplaceWindow(Startup) NAO leva a Home nenhuma.
+        if comando.startswith("ReplaceWindow("):
+            alvo = comando[len("ReplaceWindow("):-1]
+            if alvo == "$INFO[System.StartupWindow]":
+                alvo = "Startup" if self.janela_atual == "Startup" else "Home"
+            self.janela_atual = alvo
+        elif comando.startswith("ActivateWindow(Home"):
+            self.janela_atual = "Home"
+        elif comando.startswith("RestartApp"):
+            self.janela_atual = "Startup"
 
 
 class VipFalso(object):
@@ -244,8 +289,11 @@ def criar_modulos(sim: Simulacao, raiz_addon: Path, raiz_servico: Path):
     xbmc.LOGINFO, xbmc.LOGWARNING, xbmc.LOGERROR = 1, 3, 4
     xbmc.log = sim.log
     xbmc.executebuiltin = sim.builtin
-    xbmc.getInfoLabel = lambda exp: ""
+    sim.janela_atual = "Startup"
+    xbmc.getInfoLabel = lambda exp: (sim.janela_atual
+                                     if exp == "System.CurrentWindow" else "")
     xbmc.getCondVisibility = lambda cond: True
+    xbmc.sleep = lambda ms: sim.dormir(ms)
 
     class Monitor(object):
         def abortRequested(self):
@@ -393,8 +441,7 @@ def conferir_execucao(sim, modulo, codigo_vip="SMARTED-1234"):
                                                        janela.resolution)
         assert sim.foco and sim.foco[0] == 310, sim.foco
         assert sim.properties.get("smartedtv.welcome.ativa") == "1"
-        assert "CancelAlarm(smartedtv_entrada_seguro,silent)" in sim.builtins
-        print("   abriu 1080i, foco no campo 310, seguro cancelado")
+        print("   abriu 1080i, foco no campo 310, vigia avisado")
 
         # 311: ativa o codigo pelo servidor (vip.validar)
         janela.props["_codigo"] = codigo_vip
@@ -434,8 +481,8 @@ def conferir_execucao(sim, modulo, codigo_vip="SMARTED-1234"):
 
         # durante toda a vida da tela, nenhum comando vai para a Home
         assert not sim.home_durante_modal, sim.home_durante_modal
-        assert HOME not in sim.builtins, sim.builtins
-        print("   durante a tela: nenhum ReplaceWindow para a Home")
+        assert sim.janela_atual == "Startup", sim.janela_atual
+        print("   durante a tela: nenhum comando de janela para a Home")
 
         janela.onClick(906)
         assert janela.fechada
@@ -443,18 +490,74 @@ def conferir_execucao(sim, modulo, codigo_vip="SMARTED-1234"):
     sim.interacao = interacao
     abriu = modulo.abrir_tela_entrada()
     assert abriu and sim.janela is not None
-    assert sim.builtins.count(HOME) == 1, sim.builtins
-    assert sim.builtins.index(HOME) > sim.builtins.index(
-        "CancelAlarm(smartedtv_entrada_seguro,silent)")
+    # A Home TEM de estar na tela agora: o bug da v7 (tela preta) era sair do
+    # modal e nao ativar nenhuma janela.
+    assert sim.janela_atual == "Home", (
+        "tela preta: apos sair da tela a janela corrente e %r" % sim.janela_atual)
+    assert "ActivateWindow(Home,return)" in sim.builtins, sim.builtins
+    assert sim.properties.get("smartedtv.welcome.home") == "ok", sim.properties
     print("   906 -> Home aberta SOMENTE depois de a tela sair de cena")
+
+    # Voltando com o botao Voltar: mesmo caminho, Home garantida.
+    sim_volta = Simulacao(sim.apk)
+    modulo_volta = carregar_default(sim_volta, ADDON,
+                                    ROOT / "kodi" / "addons" / SERVICO)
+
+    def so_voltar(janela):
+        janela.onAction(92)          # ACTION_NAV_BACK
+
+    sim_volta.interacao = so_voltar
+    assert modulo_volta.abrir_tela_entrada() is True
+    assert sim_volta.janela_atual == "Home", sim_volta.janela_atual
+    restaurar_modulos(modulo_volta)
+    print("   Voltar -> Home aberta tambem")
 
     # Caminho de falha: sem a tela, a Home ainda abre (nunca prende o boot).
     sim2 = Simulacao(sim.apk)
     modulo2 = carregar_default(sim2, ADDON, ROOT / "kodi" / "addons" / SERVICO)
     modulo2._pasta_da_tela = lambda: None
     assert modulo2.abrir_tela_entrada() is False
-    assert sim2.builtins.count(HOME) == 1, sim2.builtins
+    assert sim2.janela_atual == "Home", sim2.janela_atual
+    restaurar_modulos(modulo2)
     print("   falha na tela -> Home abre mesmo assim (boot nunca fica preso)")
+
+    # Regressao do bug da v7: o AlarmClock do Startup.xml disparava em torno da
+    # janela de startup (que ja morreu) e a Home nunca aparecia. O Startup.xml
+    # nao tem mais ReplaceWindow nenhum — conferido em conferir_startup().
+    sim3 = Simulacao(sim.apk)
+    modulo3 = carregar_default(sim3, ADDON, ROOT / "kodi" / "addons" / SERVICO)
+    # vigia: a tela nunca avisa que desenhou -> ele abre a Home sozinho
+    sim3.interacao = None
+    modulo3.abrir_tela_entrada = lambda: False
+    modulo3.vigiar_inicializacao()
+    assert sim3.janela_atual == "Home", sim3.janela_atual
+    restaurar_modulos(modulo3)
+    print("   vigia: tela nao desenhou -> Home aberta em %ds" % 8)
+
+    # VOLTAR ja na Home (keymap): reabre a tela POR CIMA da Home, sem restart
+    sim4 = Simulacao(sim.apk)
+    modulo4 = carregar_default(sim4, ADDON, ROOT / "kodi" / "addons" / SERVICO)
+    sim4.janela_atual = "Home"
+    vistas = []
+
+    def interacao_voltar(janela):
+        vistas.append(janela.xml_filename)
+        assert sim4.janela_atual == "Home", sim4.janela_atual
+        # o campo abre vazio, pronto para quem tem codigo
+        assert janela.props.get("_codigo", "") == ""
+        janela.onClick(312)          # abre o dialogo de confirmacao
+        janela.onClick(906)          # continua com anuncios
+        vistas.append(sim4.janela_atual)
+
+    sim4.interacao = interacao_voltar
+    assert modulo4.voltar_para_a_tela() is True
+    assert vistas == ["DialogWelcome.xml", "Home"], vistas
+    assert not [b for b in sim4.builtins if b.startswith("RestartApp")], \
+        sim4.builtins
+    assert not [b for b in sim4.builtins if b.startswith("ReplaceWindow")], \
+        sim4.builtins
+    restaurar_modulos(modulo4)
+    print("   VOLTAR na Home -> tela reaberta sobre a Home, sem reiniciar")
 
 
 def main(argv=None):
@@ -466,6 +569,9 @@ def main(argv=None):
     with zipfile.ZipFile(args.apk) as z:
         print("1. Startup.xml de cada skin")
         skins = conferir_startup(z)
+
+        print("1b. Keymap de VOLTAR na Home")
+        conferir_keymap(z)
 
         print("2. Addon da tela habilitado no boot")
         conferir_addon_habilitado(z)
@@ -485,6 +591,7 @@ def main(argv=None):
 
     print("\nOK: a tela abre antes da Home, usa os fluxos que ja existem no app")
     print("    e a Home so e aberta quando a tela sai de cena.")
+    print("    VOLTAR na Home reabre a tela para quem tem codigo.")
     print("    (Simulacao com stubs: nao substitui um teste em Kodi real.)")
     return 0
 

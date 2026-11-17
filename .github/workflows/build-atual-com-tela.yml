@@ -27,8 +27,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       BASE_RELEASE: v1.0.83-unificado
       BASE_ASSET: SMARTEDTV-atual.apk
-      TAG_SAIDA: v1.0.83-tela-inicial-v7
-      FINAL: SMARTEDTV-atual-com-tela-inicial-v7.apk
+      TAG_SAIDA: v1.0.83-tela-inicial-v8
+      FINAL: SMARTEDTV-atual-com-tela-inicial-v8.apk
     steps:
       - uses: actions/checkout@v4
 
@@ -141,8 +141,17 @@ jobs:
                               'resources/skins/Default/media/qr_apk.png')
               for relativo in obrigatorios:
                   assert PREFIX + relativo in novos, relativo
-              assert all(n.startswith(PREFIX) for n in novos), novos
-              assert all(n.startswith(PREFIX) for n in novos), novos
+              # alem do addon da tela, entra SO o keymap de VOLTAR na Home
+              KEYMAP = 'assets/system/keymaps/zzz-smartedtv-voltar.xml'
+              assert [n for n in novos if not n.startswith(PREFIX)] == [KEYMAP], novos
+              raiz_km = ET.fromstring(depois.read(KEYMAP))
+              assert [e.tag for e in raiz_km] == ['Home'], [e.tag for e in raiz_km]
+              casa = raiz_km.find('Home')
+              acoes_km = {(e.text or '').strip() for e in casa.iter()
+                          if e is not casa and e.tag not in ('keyboard', 'remote')}
+              assert acoes_km == {'RunScript(%s,voltar)' % ADDON}, acoes_km
+              # KEYCODE_BACK do Android chega ao Kodi como XBMCK_BACKSPACE
+              assert 'backspace' in [e.tag for e in casa.find('keyboard')]
               assert not removidos, removidos
               alterados = sorted(n for n in sorted(a & d) if antes.read(n) != depois.read(n))
               esperado = sorted(
@@ -175,10 +184,10 @@ jobs:
                   assert len(acoes) == 2, (skin, acoes)
                   assert 'RunScript(%s)' % ADDON in acoes[0], (skin, acoes)
                   assert 'smartedtv_entrada,' in acoes[0], (skin, acoes)
-                  assert 'smartedtv_entrada_seguro' in acoes[1], (skin, acoes)
-                  assert 'ReplaceWindow' in acoes[1], (skin, acoes)
-                  # so o ReplaceWindow do seguro: nenhum salto solto para a Home
-                  assert texto.count('ReplaceWindow') == 1, skin
+                  assert acoes[1] == 'RunScript(%s,seguro=1)' % ADDON, (skin, acoes)
+                  # NENHUM ReplaceWindow: era o seguro de 30 s que deixava a
+                  # tela preta (o alarme disparava na janela de startup morta)
+                  assert 'ReplaceWindow' not in texto, skin
               # manifest: addon registrado como os outros (optional), nunca
               # obrigatorio (addon obrigatorio que falhe derruba o Kodi)
               man = depois.read('assets/system/addon-manifest.xml').decode('utf-8')
@@ -204,8 +213,9 @@ jobs:
                   antigas = antes.read(f).decode('utf-8')
                   for nome in re.findall(r'<name>([^<]+)</name>', antigas):
                       assert '<name>%s</name>' % nome in texto, (skin, nome)
-          print('OK: %d arquivos novos (o addon da tela gerado do pacote)' % len(novos))
-          print('OK: Startup.xml das 3 skins abre a tela antes da Home')
+          print('OK: %d arquivos novos (o addon da tela gerado do pacote + keymap)' % len(novos))
+          print('OK: Startup.xml das 3 skins abre a tela antes da Home (sem ReplaceWindow)')
+          print('OK: keymap zzz-smartedtv-voltar.xml: VOLTAR na Home reabre a tela')
           print('OK: %d arquivos do perfil intactos; demais entradas iguais' % len(perfil))
           PY
 
@@ -259,8 +269,8 @@ jobs:
               "build/tela-entrada-prova.png" "build/tela-entrada-dialogo.png" \
               "build/tela-entrada-status.png" \
               --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title 'SMARTEDTV 1.0.83 + tela inicial do pacote smartedtv-src (v7, acabamento dos botoes e QR)' \
-              --notes 'APK atual (release v1.0.83-unificado) preservado integralmente: mesma versao, mesmo motor, mesma assinatura. A tela inicial e agora a do pacote smartedtv-src (Dropbox), substituindo por completo a tela anterior: layout HORIZONTAL 1920x1080 traduzido do HTML/CSS do pacote (o modo retrato do CSS nao e usado), texturas geradas a partir do proprio styles.css (gradiente radial do fundo, cartoes de vidro, botoes, pilulas de plano, placa do QR) e os DOIS QR Codes copiados byte a byte (qr-checkout.png e qr-apk.png). O addon script.smartedtv.welcome e injetado no APK e o Startup.xml de cada skin abre a tela NO LUGAR da Home (WINDOW_STARTUP_ANIM, a janela que o CApplication::Initialize do Kodi 21 carrega antes de criar a Home 10000). A Home so e carregada quando o usuario conclui a tela (continuar com anuncios, apos confirmacao, ou Voltar); enquanto a tela esta no ar nenhum comando vai para a Home. Ha um seguro de 30 s no proprio Startup.xml e um caminho de fallback no Python: se a tela nao abrir, a Home abre igual, o app nunca fica preso. As acoes reutilizam o que ja existe no app: codigo de ativacao -> vip.validar (rotas reais /api/validar e /functions/v1/validar-codigo), checkout -> vip.abrir_checkout (pay.cakto.com.br), compartilhar -> vip.compartilhar, baixar APK -> vip.abrir_url(APK) e atualizar -> vip.procurar_atualizacao. O service.smarted.bootstrap nao foi alterado. As skins do app ganharam as fontes wfNN que a tela usa (sem elas o Kodi cairia em font13). A revisao tipografica (v5) foi medida letra a letra com a fonte real: nenhum texto estoura o controle, encosta em icone, e cortado no topo/base ou usa glifo ausente (o auditor roda na CI e reprova o build se algo voltar). Os dois dialogos ganharam fundo solido proprio, e a mensagem de status usa textbox com quebra, porque o texto vem do servidor e pode ser longo. A prova visual (tela-entrada-prova.png, tela-entrada-dialogo.png e tela-entrada-status.png) e desenhada a partir do proprio DialogWelcome.xml + media do addon; nao houve execucao em Kodi real neste ambiente.'
+              --title 'SMARTEDTV 1.0.83 + tela inicial do pacote smartedtv-src (v8, Home garantida e VOLTAR para a tela)' \
+              --notes 'APK atual (release v1.0.83-unificado) preservado integralmente: mesma versao, mesmo motor, mesma assinatura. A tela inicial e agora a do pacote smartedtv-src (Dropbox), substituindo por completo a tela anterior: layout HORIZONTAL 1920x1080 traduzido do HTML/CSS do pacote (o modo retrato do CSS nao e usado), texturas geradas a partir do proprio styles.css (gradiente radial do fundo, cartoes de vidro, botoes, pilulas de plano, placa do QR) e os DOIS QR Codes copiados byte a byte (qr-checkout.png e qr-apk.png). O addon script.smartedtv.welcome e injetado no APK e o Startup.xml de cada skin abre a tela NO LUGAR da Home (WINDOW_STARTUP_ANIM, a janela que o CApplication::Initialize do Kodi 21 carrega antes de criar a Home 10000). A Home so e carregada quando o usuario conclui a tela (continuar com anuncios, apos confirmacao, ou Voltar); enquanto a tela esta no ar nenhum comando vai para a Home. CORRECAO DA TELA PRETA (v8): o Startup.xml nao tem mais ReplaceWindow nenhum. A v7 usava AlarmClock(smartedtv_entrada_seguro,ReplaceWindow($INFO[System.StartupWindow]),00:00:30), e esse alarme dispara em torno da janela de startup (12999), que ja saiu de cena quando o prazo termina, apontando para ela mesma: depois de "Assistir com anuncios" nenhuma janela era ativada e a tela ficava preta. Agora o Startup.xml tem dois onload (dispara a tela + RunScript(script.smartedtv.welcome,seguro=1)) e quem abre a Home e o proprio addon, depois que a modal sai de cena: ActivateWindow(Home,return), ReplaceWindow(Home), confirmacao por ate 5 s e, em ultimo caso, RestartApp. O vigia seguro=1 abre a Home em 8 s se a tela nao desenhar. VOLTAR NA HOME (pedido do usuario): o APK passa a levar assets/system/keymaps/zzz-smartedtv-voltar.xml, que liga o VOLTAR da Home (KEYCODE_BACK do Android = XBMCK_BACKSPACE, alem de browser_back, escape e o back do controle) a RunScript(script.smartedtv.welcome,voltar): a tela de entrada reabre por cima da Home, com o campo do codigo vazio, para quem entrou em "Assistir com anuncios" so para ver e depois tem um codigo VIP. A licenca (vip.json) fica intacta e a Home continua carregada, sem restart. As acoes reutilizam o que ja existe no app: codigo de ativacao -> vip.validar (rotas reais /api/validar e /functions/v1/validar-codigo), checkout -> vip.abrir_checkout (pay.cakto.com.br), compartilhar -> vip.compartilhar, baixar APK -> vip.abrir_url(APK) e atualizar -> vip.procurar_atualizacao. O service.smarted.bootstrap nao foi alterado. As skins do app ganharam as fontes wfNN que a tela usa (sem elas o Kodi cairia em font13). A revisao tipografica (v5) foi medida letra a letra com a fonte real: nenhum texto estoura o controle, encosta em icone, e cortado no topo/base ou usa glifo ausente (o auditor roda na CI e reprova o build se algo voltar). Os dois dialogos ganharam fundo solido proprio, e a mensagem de status usa textbox com quebra, porque o texto vem do servidor e pode ser longo. A prova visual (tela-entrada-prova.png, tela-entrada-dialogo.png e tela-entrada-status.png) e desenhada a partir do proprio DialogWelcome.xml + media do addon; nao houve execucao em Kodi real neste ambiente.'
           fi
           echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_SAIDA/$FINAL"
 

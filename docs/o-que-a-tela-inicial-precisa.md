@@ -42,21 +42,56 @@ O `Startup.xml` de hoje (nas 3 skins) tem exatamente duas ações:
 ```xml
 <window>
   <onload>AlarmClock(smartedtv_entrada,RunScript(script.smartedtv.welcome),00:00:00,silent)</onload>
-  <onload>AlarmClock(smartedtv_entrada_seguro,ReplaceWindow($INFO[System.StartupWindow]),00:00:30,silent)</onload>
+  <onload>RunScript(script.smartedtv.welcome,seguro=1)</onload>
   <controls />
 </window>
 ```
 
 - linha 1 = abre a tela no próximo ciclo do alarme;
-- linha 2 = **seguro**: se a tela não abrir em 30 s, entra na Home (o app nunca
-  fica preso); a tela cancela esse alarme no `onInit`.
+- linha 2 = **vigia**: um processo Python separado que abre a Home em 8 s se a
+  tela não avisar que desenhou (o app nunca fica preso).
+
+**Não existe mais `ReplaceWindow` no `Startup.xml`.** A v7 usava
+`AlarmClock(smartedtv_entrada_seguro,ReplaceWindow($INFO[System.StartupWindow]),00:00:30,silent)`
+e isso deixava **tela preta**: o alarme dispara em torno da janela de startup
+(12999), que já saiu de cena quando o prazo termina, e
+`$INFO[System.StartupWindow]` aponta para ela mesma. Quem abre a Home agora é o
+addon, depois que a modal fecha.
 
 Regras que o injetor impõe (e que você não precisa mudar):
 
 - a skin precisa ter `Startup.xml` — hoje **as 3 têm**;
-- não pode existir `ReplaceWindow` solto no `Startup.xml` (senão a Home abre
-  antes/concorrente à tela; o injetor recusa);
-- só o `ReplaceWindow($INFO[System.StartupWindow])` dentro do seguro é aceito.
+- **nenhum `ReplaceWindow`** no `Startup.xml` (o injetor recusa);
+- o segundo `onload` tem de ser `RunScript(script.smartedtv.welcome,seguro=1)`
+  (o injetor recusa sem ele).
+
+### 2.1b VOLTAR na Home reabre a tela
+
+O APK leva também `assets/system/keymaps/zzz-smartedtv-voltar.xml`:
+
+```xml
+<keymap>
+  <Home>
+    <keyboard>
+      <backspace>RunScript(script.smartedtv.welcome,voltar)</backspace>
+      <browser_back>RunScript(script.smartedtv.welcome,voltar)</browser_back>
+      <escape>RunScript(script.smartedtv.welcome,voltar)</escape>
+    </keyboard>
+    <remote>
+      <back>RunScript(script.smartedtv.welcome,voltar)</back>
+    </remote>
+  </Home>
+</keymap>
+```
+
+- `backspace` é o `KEYCODE_BACK` do Android (o `AndroidKey.cpp` do Kodi mapeia
+  `AKEYCODE_BACK` → `XBMCK_BACKSPACE`);
+- só a janela `<Home>` é tocada: vídeo, listas e diálogos continuam iguais;
+- o prefixo `zzz-` garante que o arquivo é carregado **por último** (o Kodi lê os
+  `*.xml` de `system/keymaps` em ordem alfabética e o último vence), então nada
+  do app sobrescreve esta seção;
+- a tela reabre **por cima da Home** com o campo do código vazio; a licença
+  (`vip.json`) não é tocada — quem já ativou continua ativo.
 
 ### 2.2 O addon que desenha a tela
 
@@ -215,6 +250,7 @@ seu desenho ──► gerador (XML 1920×1080 + texturas PNG)
 APK base ──► injetor ─┤ + Startup.xml das 3 skins (tela antes da Home)
                      │ + Font.xml das 3 skins (estilos wfNN)
                      │ + addon-manifest.xml (optional="true")
+                     │ + system/keymaps/zzz-smartedtv-voltar.xml
                      ▼
               zipalign + apksigner (mesma chave 855de171…)
                      ▼
@@ -224,8 +260,9 @@ APK base ──► injetor ─┤ + Startup.xml das 3 skins (tela antes da Home)
 Conferências que rodam sozinhas em cada build (e que o seu desenho não pode
 quebrar):
 
-- as 3 skins mantêm `Startup.xml` com 2 `onload` e **um único** `ReplaceWindow`
-  (o do seguro);
+- as 3 skins mantêm `Startup.xml` com 2 `onload` e **nenhum** `ReplaceWindow`;
+- o keymap `zzz-smartedtv-voltar.xml` só mexe na seção `<Home>` e só chama
+  `RunScript(script.smartedtv.welcome,voltar)`;
 - o addon entra como `optional="true"`, nunca obrigatório;
 - os 2731 arquivos do perfil semeado ficam **byte a byte** iguais;
 - `service.smarted.bootstrap/service.py` não muda uma linha;

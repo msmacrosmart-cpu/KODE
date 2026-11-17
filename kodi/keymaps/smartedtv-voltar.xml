@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SMARTEDTV: VOLTAR na Home reabre a tela de entrada.
+
+     Motivo: quem escolhe "Assistir com anúncios" só para ver como é fica sem
+     caminho de volta para a tela inicial — e nela estão o campo do código de
+     ativação, o checkout, o QR do APK e a indicação. Com este keymap, VOLTAR
+     na Home chama a MESMA tela do boot (script.smartedtv.welcome): o que o
+     usuário digitou continua valendo (a licença fica em vip.json) e ele
+     retoma de onde parou.
+
+     Este arquivo vai para assets/system/keymaps/ dentro do APK (o
+     special://xbmc/system/keymaps/ do Kodi Android). O nome começa com "zzz-"
+     de propósito: os keymaps são lidos em ordem alfabética e o último vence,
+     então nenhum arquivo do app pode sobrescrever esta seção <Home>.
+
+     Só a seção <Home> é tocada: teclas em vídeo, listas e diálogos continuam
+     exatamente como no app.
+-->
+<keymap>
+  <Home>
+    <keyboard>
+      <!-- Android/TV: KEYCODE_BACK chega como XBMCK_BACKSPACE -->
+      <backspace>RunScript(script.smartedtv.welcome,voltar)</backspace>
+      <browser_back>RunScript(script.smartedtv.welcome,voltar)</browser_back>
+      <!-- teclado de PC/comando de teste -->
+      <escape>RunScript(script.smartedtv.welcome,voltar)</escape>
+    </keyboard>
+    <remote>
+      <!-- controle/CEC: o botao "voltar" do controle -->
+      <back>RunScript(script.smartedtv.welcome,voltar)</back>
+    </remote>
+  </Home>
+</keymap>

@@ -18,6 +18,6 @@
 -->
 <window>
 	<onload>AlarmClock(smartedtv_entrada,RunScript(script.smartedtv.welcome),00:00:00,silent)</onload>
-	<onload>AlarmClock(smartedtv_entrada_seguro,ReplaceWindow($INFO[System.StartupWindow]),00:00:30,silent)</onload>
+	<onload>RunScript(script.smartedtv.welcome,seguro=1)</onload>
 	<controls />
 </window>

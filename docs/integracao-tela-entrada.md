@@ -52,13 +52,28 @@ Delta exato sobre o APK da release `v1.0.83-unificado` (nada mais muda):
 
    ```xml
    <onload>AlarmClock(smartedtv_entrada,RunScript(script.smartedtv.welcome),00:00:00,silent)</onload>
-   <onload>AlarmClock(smartedtv_entrada_seguro,ReplaceWindow($INFO[System.StartupWindow]),00:00:30,silent)</onload>
+   <onload>RunScript(script.smartedtv.welcome,seguro=1)</onload>
    ```
 
    O primeiro dispara a tela imediatamente (`00:00:00`, no próximo ciclo do
-   alarme). O segundo é o **seguro**: se o Python não conseguir abrir a tela em
-   30 s, a Home é liberada e o app continua utilizável. A tela cancela esse
-   alarme no `onInit` — com a tela no ar, não existe Home por trás nem antes.
+   alarme). O segundo é o **vigia**: um processo Python separado que, se a tela
+   não avisar em 8 s que desenhou, abre a Home. **Não há `ReplaceWindow` nenhum
+   no `Startup.xml`** — era exatamente esse o defeito da v7:
+
+   ```xml
+   <!-- v7 (ERRADO, deixava tela preta) -->
+   <onload>AlarmClock(smartedtv_entrada_seguro,ReplaceWindow($INFO[System.StartupWindow]),00:00:30,silent)</onload>
+   ```
+
+   O `AlarmClock` dispara **em torno da janela que o criou** — a janela de
+   startup 12999 —, que já saiu de cena quando os 30 s terminam; e
+   `$INFO[System.StartupWindow]` resolve para essa mesma janela (o Kodi define
+   essa propriedade para a janela de startup, não para um destino). Resultado:
+   comando executado numa janela morta, Home (10000) nunca carregada e **tela
+   preta** depois de "Assistir com anúncios". Quem abre a Home agora é o próprio
+   addon, depois que a modal sai de cena: `ActivateWindow(Home,return)` →
+   `ReplaceWindow(Home)` → espera de 5 s → `RestartApp` (último recurso,
+   marcando `smartedtv.welcome.saiu` para a tela não reaparecer).
 3. **`xml/Font.xml`** das skins — declaradas as fontes `wfNN` do layout (o
    número é a altura em px medida do CSS: `wf11`, `wf13`, `wf15`, `wf17`,
    `wf18`, `wf21`, `wf22`, `wf26`, `wf33`, `wf42`), que as skins do app não
@@ -88,7 +103,8 @@ existe** no app:
 | 123 (ATUALIZAR APLICATIVO) | abre a checagem de versão (OTA) | `vip.procurar_atualizacao()` (ponte `smartedtv.full.AtualizaActivity`); sem essa ponte, cai no download do APK |
 | 140/141 (10 min / 1 mês) | escolhe o plano que acompanha o código | o plano é só rótulo: quem decide validade é o servidor de ativação |
 | 312 → 905/906 | confirma "continuar com anúncios" | fecha o modal e libera a Home (versão com anúncios, como hoje) |
-| Voltar / menu anterior | volta do modal ou conclui a tela | `ReplaceWindow($INFO[System.StartupWindow])` |
+| Voltar / menu anterior | volta do modal ou conclui a tela | `_sair()` → `_abrir_home()` (ActivateWindow(Home) com confirmação e rede de segurança) |
+| **Voltar já na Home** | reabre esta tela do zero, para quem entrou só para ver e depois tem um código | keymap `system/keymaps/zzz-smartedtv-voltar.xml` → `RunScript(script.smartedtv.welcome,voltar)` → `voltar_para_a_tela()` (modal por cima da Home; a Home continua carregada, a licença é preservada) |
 | 130/131 (Android TV / Celular) | seletor visual do pacote | a tela é fixa em 16:9 (não há layout retrato): só registrado no log |
 
 Nenhuma API, endpoint ou credencial nova: o módulo VIP é importado da pasta do
@@ -97,12 +113,46 @@ comando que o `Startup.xml` original usava.
 
 ## 4. Robustez: o app nunca fica preso
 
-- `onInit` da tela → `CancelAlarm(smartedtv_entrada_seguro,silent)` (a tela
-  assumiu).
-- `abrir_tela_entrada()` sempre termina em `ReplaceWindow(...)`: se a pasta da
-  tela não existir, se a janela não montar ou se `doModal()` falhar, a Home abre
+- `onInit` da tela → `smartedtv.welcome.ativa=1` na janela 10000 (a tela
+  assumiu; o vigia para de agir).
+- `abrir_tela_entrada()` sempre termina em `_abrir_home()`: se a pasta da tela
+  não existir, se a janela não montar ou se `doModal()` falhar, a Home abre
   igual e o motivo vai para o log.
-- Se o Python nem iniciar, o seguro de 30 s do `Startup.xml` abre a Home.
+- Se o Python da tela nem iniciar, o vigia `seguro=1` (o segundo `onload`) abre
+  a Home em 8 s; depois que a tela saiu, ele ainda espera 25 s por
+  `smartedtv.welcome.home` e assume se a Home não vier.
+
+### 4a-0. Voltar na Home volta para a tela inicial
+
+Pedido do usuário: *"quando estiver na tela home e usar a opção voltar, ele deve
+voltar pra tela inicial (assim, quem tiver código pode pôr; mesmo que tenha
+clicado em assistir com anúncios só pra ver) continue de onde parou"*.
+
+Como funciona:
+
+1. o build injeta `assets/system/keymaps/zzz-smartedtv-voltar.xml` no APK
+   (`special://xbmc/system/keymaps/`, o `xbmc/system/keymaps/` do motor). O nome
+   `zzz-` importa: o Kodi carrega os `*.xml` em ordem alfabética e o último
+   vence, então nenhum keymap do app sobrescreve esta seção;
+2. só a seção `<Home>` é tocada — `backspace` (é o `KEYCODE_BACK` do Android,
+   que chega ao Kodi como `XBMCK_BACKSPACE`), `browser_back`, `escape` no
+   teclado e `back` no controle. Vídeo, listas e diálogos continuam iguais;
+3. a ação é `RunScript(script.smartedtv.welcome,voltar)`: o `default.py` entra
+   em `voltar_para_a_tela()` e mostra a modal **por cima da Home** (a Home já
+   está carregada, portanto o caminho do boot — que só carrega a Home quando a
+   modal fecha — não se aplica). Ao sair, a tela não chama `RestartApp` nem
+   `ReplaceWindow`: confirma que a Home continua ativa e devolve o controle;
+4. o campo do código abre vazio, pronto para um código VIP, e o estado que
+   importa é preservado: a licença é lida/gravada em `vip.json` pelo módulo VIP,
+   não na tela — quem já ativou continua ativo, e quem entrou em "Assistir com
+   anúncios" só para ver pode voltar e ativar depois.
+
+Limite conhecido e declarado: sem aparelho/emulador neste ambiente, a ligação
+`KEYCODE_BACK → XBMCK_BACKSPACE → <Home><keyboard><backspace>` foi conferida no
+código-fonte do Kodi 21 (`xbmc/platform/android/activity/AndroidKey.cpp`) e no
+`system/keymaps/keyboard.xml` da Omega, e a lógica do `voltar` é exercitada nos
+testes e na simulação — a confirmação final é no aparelho (o mesmo vale para a
+fila de ativação por código, que depende de rede até o servidor VIP).
 
 ## 4a. O que mudou na revisão de layout (v6)
 
@@ -204,22 +254,38 @@ auditoria tipográfica ou o mapa de botões falharem.
 
 ## 7. Resultado deste build
 
-- Release: `v1.0.83-tela-inicial-v7`
-- APK: `SMARTEDTV-atual-com-tela-inicial-v7.apk`, 249.843.593 bytes,
-  SHA-256 `68ba50ebf38c7ff849f180d5f3bd675631c5a17806b979453612a9e3c53d354e`
+- Release: `v1.0.83-tela-inicial-v8`
+- APK: `SMARTEDTV-atual-com-tela-inicial-v8.apk` (tamanho e SHA-256 no corpo da
+  release, junto com os blocos `APK_BLOBS` para reconstruir o arquivo)
 - Assinatura: `855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`
   (a mesma do app; v1/v2/v3 verificados pelo `apksigner`)
-- Delta sobre o APK atual: +33 arquivos (o addon da tela), 0 removidos e 7
-  arquivos alterados (`Startup.xml` e `Font.xml` das 3 skins +
-  `assets/system/addon-manifest.xml`).
-- Conferido no arquivo final: `Startup.xml` das 3 skins com 2 `onload` e um único
-  `ReplaceWindow` (o do seguro); addon registrado como
-  `<addon optional="true">`; 2731 arquivos do perfil semeado intactos;
+- Delta sobre o APK atual: +33 arquivos do addon da tela, +1 keymap
+  (`assets/system/keymaps/zzz-smartedtv-voltar.xml`), 0 removidos e 7 arquivos
+  alterados (`Startup.xml` e `Font.xml` das 3 skins + `addon-manifest.xml`).
+- Conferido no arquivo final: `Startup.xml` das 3 skins com 2 `onload` e
+  **zero** `ReplaceWindow`; keymap só com a seção `<Home>`; addon registrado
+  como `<addon optional="true">`; 2731 arquivos do perfil semeado intactos;
   `service.smarted.bootstrap` sem alteração.
-- Workflow `43982380460` (todos os passos verdes), incluindo auditoria
-  tipográfica, mapa de botões, "conferir que nada mais mudou", a simulação de
-  boot e a assinatura.
-- Conferido no arquivo publicado: os 31 arquivos da tela dentro do APK são
-  idênticos, byte a byte, aos do repositório; `Font.xml` das skins declara
-  `wf13 wf15 wf17 wf18 wf21 wf22 wf26 wf33 wf42`; o certificado é o mesmo do APK
-  base (`855de171…0951a`), e os digests do `MANIFEST.MF` conferem.
+- Antes de publicar: teste estático (214 XML), auditoria tipográfica (31
+  textos), mapa de botões, 282 testes, injeção num APK base e a simulação de
+  boot (incluindo o caminho "VOLTAR na Home").
+
+### 7a. Correção do bug reportado (tela preta) e o pedido novo (VOLTAR na Home)
+
+| defeito | causa | correção |
+|---|---|---|
+| tela preta depois de "Assistir com anúncios" | `AlarmClock(smartedtv_entrada_seguro,ReplaceWindow($INFO[System.StartupWindow]),00:00:30,silent)` dispara em torno da janela de startup 12999, que já morreu, e aponta para ela mesma; nenhuma janela era ativada | `Startup.xml` sem `ReplaceWindow`; Home aberta pelo addon (`ActivateWindow` → `ReplaceWindow(Home)` → espera 5 s → `RestartApp`), com vigia `seguro=1` de 8 s |
+| preso na Home sem caminho de volta para o código | a tela só existia no boot | keymap `<Home><keyboard><backspace>` → `RunScript(script.smartedtv.welcome,voltar)`; a tela reabre por cima da Home com o campo vazio, sem restart e sem tocar na licença |
+
+**O que ainda precisa de aparelho** (declarado, não maquiado):
+
+1. a ligação `KEYCODE_BACK → <Home><backspace>` foi conferida no código-fonte do
+   Kodi 21 e nos keymaps da Omega, e a lógica do modo `voltar` é exercitada por
+   testes e pela simulação — mas o toque real no controle precisa ser validado
+   no aparelho;
+2. a ativação por código depende de rede até `smartedtv-vip.lovable.app`. **Este
+   ambiente não tem rota até esse host** (`curl` retorna `000`; `github.com` e
+   `pypi.org` respondem 200), então o código `TESTE-CF9CB49C05EA` (validade de
+   10 minutos) não pôde ser validado aqui. Ele precisa ser testado no aparelho,
+   com o relógio do servidor, dentro da janela de validade.
+

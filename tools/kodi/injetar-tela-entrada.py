@@ -17,7 +17,11 @@ META-INF, que sao refeitas depois). O que muda:
 4. ``addon-manifest.xml`` — registro do addon da tela (``optional="true"``,
    igual aos outros addons do app): e o que garante, no Kodi Omega 21, que a
    linha nova do banco de addons nasce com ``enabled=1``, condicao para o
-   ``RunScript(<id>)`` do Startup.xml funcionar.
+   ``RunScript(<id>)`` do Startup.xml funcionar;
+5. ``assets/system/keymaps/zzz-smartedtv-voltar.xml`` — VOLTAR na Home reabre a
+   tela de entrada (``RunScript(script.smartedtv.welcome,voltar)``). O prefixo
+   ``zzz-`` poe o arquivo por ultimo na ordem alfabetica que o Kodi usa, entao
+   nenhum keymap do app sobrescreve essa secao.
 
 O perfil semeado ``assets/smarted/profile/`` e intocado: o dex confere o SHA-256
 de cada arquivo dele contra o profile-manifest. O ``service.py`` do APK tambem
@@ -44,6 +48,10 @@ MANIFEST = "assets/system/addon-manifest.xml"
 PROFILE_PREFIX = "assets/smarted/profile/"
 # Modulo de licenca VIP que ja existe no APK (usado pelos botoes da tela).
 VIP_MODULO = "assets/addons/service.smarted.bootstrap/vip.py"
+# Keymap de VOLTAR na Home (ver kodi/keymaps/smartedtv-voltar.xml). O diretorio
+# tem de ser assets/system/keymaps: e o special://xbmc/system/keymaps/ do motor.
+KEYMAP_ORIGEM = ROOT / "kodi" / "keymaps" / "smartedtv-voltar.xml"
+KEYMAP_DESTINO = "assets/system/keymaps/zzz-smartedtv-voltar.xml"
 SIG = re.compile(r"^META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC))$", re.I)
 
 # Fontes usadas por DialogWelcome.xml: o gerador da tela nomeia cada estilo
@@ -80,21 +88,58 @@ STARTUP_ANTIGO = "<onload>ReplaceWindow($INFO[System.StartupWindow])</onload>"
 STARTUP_NOVO = (
     "<onload>AlarmClock(smartedtv_entrada,"
     "RunScript(script.smartedtv.welcome),00:00:00,silent)</onload>\n"
-    "\t<onload>AlarmClock(smartedtv_entrada_seguro,"
-    "ReplaceWindow($INFO[System.StartupWindow]),00:00:30,silent)</onload>")
+    "\t<onload>RunScript(script.smartedtv.welcome,seguro=1)</onload>")
 
 
 def validar_publicacao(dados: bytes) -> None:
-    """Recusa um Startup.xml que carregue a Home antes da tela."""
+    """Recusa um Startup.xml que carregue a Home antes da tela.
+
+    O Startup.xml NAO pode ter ReplaceWindow nenhum: ele dispara a tela e o
+    seguro; quem abre a Home e o proprio addon (depois de a tela sair de cena).
+    Um ReplaceWindow aqui apontaria de volta para a janela de startup, que ja
+    saiu de cena no instante do disparo — o resultado seria tela preta.
+    """
     texto = dados.decode("utf-8")
     if "smartedtv_entrada," not in texto:
         raise SystemExit("Startup.xml sem o disparo da tela de entrada")
-    # o unico ReplaceWindow permitido e o seguro de 30 s
-    if texto.count("ReplaceWindow") != 1:
-        raise SystemExit("Startup.xml com ReplaceWindow indevido")
-    if "smartedtv_entrada_seguro" not in texto.split("ReplaceWindow")[0]:
-        raise SystemExit("ReplaceWindow do Startup.xml nao pertence ao seguro")
+    if "ReplaceWindow" in texto:
+        raise SystemExit("Startup.xml com ReplaceWindow: a Home e aberta pelo addon")
+    if "RunScript(script.smartedtv.welcome,seguro=1)" not in texto:
+        raise SystemExit("Startup.xml sem o seguro de inicializacao da tela")
     ET.fromstring(texto.encode("utf-8"))
+
+
+def extrair_keymap() -> dict:
+    """Keymap que faz VOLTAR (na Home) reabrir a tela de entrada."""
+    if not KEYMAP_ORIGEM.is_file():
+        raise SystemExit("keymap ausente: %s" % KEYMAP_ORIGEM)
+    dados = KEYMAP_ORIGEM.read_bytes()
+    validar_keymap(dados)
+    return {KEYMAP_DESTINO: dados}
+
+
+def validar_keymap(dados: bytes) -> None:
+    """Confere o contrato: so <Home>, e VOLTAR chamando o addon da tela."""
+    texto = dados.decode("utf-8")
+    raiz = ET.fromstring(texto.encode("utf-8"))
+    if raiz.tag != "keymap":
+        raise SystemExit("keymap sem <keymap>")
+    janelas = [e.tag for e in raiz]
+    if janelas != ["Home"]:
+        raise SystemExit("keymap mexe em janelas alem da Home: %s" % janelas)
+    casa = raiz.find("Home")
+    dispositivos = ("keyboard", "remote", "mouse", "gamepad", "joystick")
+    acoes = [(e.text or "").strip() for e in casa.iter()
+             if e is not casa and e.tag not in dispositivos]
+    if not acoes:
+        raise SystemExit("keymap da Home sem acao")
+    for acao in acoes:
+        if acao != "RunScript(%s,voltar)" % ADDON_ID:
+            raise SystemExit("acao inesperada no keymap: %r" % acao)
+    teclas = [e.tag for e in casa.find("keyboard")]
+    # KEYCODE_BACK do Android chega ao Kodi como XBMCK_BACKSPACE
+    if "backspace" not in teclas:
+        raise SystemExit("keymap sem <backspace> (o VOLTAR do Android)")
 
 
 def arquivos_do_addon():
@@ -184,7 +229,8 @@ def main(argv=None):
     global FONTES_DA_TELA
     FONTES_DA_TELA = fontes_da_tela()
     extras = arquivos_do_addon()
-    startups, fontes_alteradas = [], []
+    extras.update(extrair_keymap())
+    startups, fontes_alteradas, keymaps = [], [], []
 
     with zipfile.ZipFile(args.apk) as origem, \
             zipfile.ZipFile(args.saida, "w", allowZip64=True) as destino:
@@ -203,6 +249,11 @@ def main(argv=None):
                 dados = patch_manifest(dados)
                 print("  addon-manifest.xml: %s registrado" % ADDON_ID)
             else:
+                if item.filename.startswith("assets/system/keymaps/"):
+                    # o app pode ja ter keymap com este nome: recusa em vez de
+                    # sobrescrever (o nosso entra como arquivo novo)
+                    if item.filename == KEYMAP_DESTINO:
+                        raise SystemExit("APK ja tem %s" % KEYMAP_DESTINO)
                 if re.fullmatch(r"assets/addons/[^/]+/xml/Startup\.xml", item.filename):
                     dados = patch_startup(dados)
                     startups.append(item.filename)
@@ -232,6 +283,9 @@ def main(argv=None):
         for nome, dados in extras.items():
             if nome in nomes:
                 raise SystemExit("arquivo ja presente no APK: %s" % nome)
+            if nome == KEYMAP_DESTINO:
+                keymaps.append(nome)
+                print("  %s: VOLTAR na Home reabre a tela" % nome)
             info = zipfile.ZipInfo(nome, date_time=(2026, 11, 16, 13, 44, 0))
             # sem compressao, como os demais addons de sistema do APK: o Kodi
             # le assets/addons direto do APK e align-apk.py realinha as entradas
@@ -247,11 +301,14 @@ def main(argv=None):
         for nome in extras:
             if nome not in conferido.namelist():
                 raise SystemExit("arquivo da tela ausente: %s" % nome)
+        if not keymaps:
+            raise SystemExit("keymap de VOLTAR na Home nao entrou no APK")
+        validar_keymap(conferido.read(KEYMAP_DESTINO))
 
     print("APK com a tela: %s (%d entradas, %d arquivos novos, %d Startup.xml, "
-          "%d Font.xml, perfil intacto)"
+          "%d Font.xml, %d keymap, perfil intacto)"
           % (args.saida, len(nomes) + len(extras), len(extras), len(startups),
-             len(fontes_alteradas)))
+             len(fontes_alteradas), len(keymaps)))
     return 0
 
 

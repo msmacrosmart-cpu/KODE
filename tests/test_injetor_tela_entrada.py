@@ -20,6 +20,7 @@ INJETOR = ROOT / 'tools' / 'kodi' / 'injetar-tela-entrada.py'
 ADDON = ROOT / 'kodi' / 'addons' / 'script.smartedtv.welcome'
 PREFIXO = 'assets/addons/script.smartedtv.welcome/'
 SKINS = ('skin.novatv', 'skin.smartedtv.classic', 'skin.estuary')
+KEYMAP = 'assets/system/keymaps/zzz-smartedtv-voltar.xml'
 
 MANIFEST = (b'<?xml version="1.0"?>\n<addons>\n'
             b'  <addon>skin.estuary</addon>\n'
@@ -99,8 +100,12 @@ class InjetorTest(unittest.TestCase):
         with zipfile.ZipFile(self.base) as antes, zipfile.ZipFile(self.saida) as depois:
             a, d = set(antes.namelist()), set(depois.namelist())
             novos = sorted(n for n in d - a if not n.startswith('META-INF/'))
-            self.assertEqual(len(novos), len(modulo.arquivos_do_addon()))
-            self.assertTrue(all(n.startswith(PREFIXO) for n in novos), novos)
+            self.assertEqual(len(novos), len(modulo.arquivos_do_addon()) + 1)
+            # o addon da tela + o keymap de VOLTAR na Home (fora do addon)
+            self.assertEqual([n for n in novos if not n.startswith(PREFIXO)],
+                             [KEYMAP])
+            self.assertTrue(all(n.startswith(PREFIXO)
+                                for n in novos if n != KEYMAP), novos)
             self.assertEqual(sorted(n for n in a - d),
                              ['META-INF/CERT.RSA', 'META-INF/CERT.SF',
                               'META-INF/MANIFEST.MF'])
@@ -136,14 +141,60 @@ class InjetorTest(unittest.TestCase):
                 self.assertEqual(len(acoes), 2, acoes)
                 self.assertIn('RunScript(script.smartedtv.welcome)', acoes[0])
                 self.assertIn('smartedtv_entrada,', acoes[0])
-                # Home so pelo seguro, e depois do disparo
-                self.assertIn('ReplaceWindow', acoes[1])
-                self.assertIn('smartedtv_entrada_seguro', acoes[1])
-                self.assertEqual(texto.count('ReplaceWindow'), 1)
+                # o seguro e um processo do proprio addon; o Startup.xml NAO
+                # troca de janela (era o que deixava tela preta na v7)
+                self.assertIn('RunScript(script.smartedtv.welcome,seguro=1)',
+                              acoes[1])
+                self.assertEqual(texto.count('ReplaceWindow'), 0)
                 # o comando original sumiu: nao ha salto direto para a Home
                 self.assertNotIn(
                     '<onload>ReplaceWindow($INFO[System.StartupWindow])</onload>',
                     texto)
+
+    def test_voltar_na_home_reabre_a_tela(self):
+        self._injetar()
+        with zipfile.ZipFile(self.saida) as z:
+            self.assertIn(KEYMAP, z.namelist())
+            raiz = ET.fromstring(z.read(KEYMAP))
+            # so a Home e tocada: video, listas e dialogos continuam iguais
+            self.assertEqual([e.tag for e in raiz], ['Home'])
+            casa = raiz.find('Home')
+            acoes = {(e.text or '').strip() for e in casa.iter()
+                     if e is not casa and e.tag not in ('keyboard', 'remote')}
+            self.assertEqual(acoes,
+                             {'RunScript(script.smartedtv.welcome,voltar)'})
+            teclas = [e.tag for e in casa.find('keyboard')]
+            # KEYCODE_BACK do Android chega ao Kodi como XBMCK_BACKSPACE
+            self.assertIn('backspace', teclas)
+            self.assertIn('escape', teclas)
+            self.assertEqual([e.tag for e in casa.find('remote')], ['back'])
+            # os keymaps do app nao foram alterados
+            with zipfile.ZipFile(self.base) as antes:
+                do_app = [n for n in antes.namelist()
+                          if n.startswith('assets/system/keymaps/')]
+                for nome in do_app:
+                    self.assertEqual(antes.read(nome), z.read(nome), nome)
+            # e o nosso entra por ultimo na ordem alfabetica (o ultimo vence)
+            do_sistema = sorted(n for n in z.namelist()
+                                if re.fullmatch(r'assets/system/keymaps/[^/]+\.xml', n))
+            self.assertEqual(do_sistema[-1], KEYMAP)
+
+    def test_keymap_com_outra_janela_e_recusado(self):
+        modulo = carregar()
+        quebrado = (b'<keymap><Home><keyboard><backspace>RunScript('
+                    b'script.smartedtv.welcome,voltar)</backspace></keyboard>'
+                    b'</Home><Videos><keyboard><backspace>Back</backspace>'
+                    b'</keyboard></Videos></keymap>')
+        with self.assertRaises(SystemExit):
+            modulo.validar_keymap(quebrado)
+
+    def test_keymap_sem_backspace_e_recusado(self):
+        modulo = carregar()
+        quebrado = (b'<keymap><Home><keyboard><escape>RunScript('
+                    b'script.smartedtv.welcome,voltar)</escape></keyboard>'
+                    b'</Home></keymap>')
+        with self.assertRaises(SystemExit):
+            modulo.validar_keymap(quebrado)
 
     def test_addon_registrado_como_optional_igual_aos_outros(self):
         self._injetar()
