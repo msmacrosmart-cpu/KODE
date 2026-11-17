@@ -4,9 +4,9 @@
      Motivo: quem escolhe "Assistir com anúncios" só para ver como é fica sem
      caminho de volta para a tela inicial — e nela estão o campo do código de
      ativação, o checkout, o QR do APK e a indicação. Com este keymap, VOLTAR
-     na Home chama a MESMA tela do boot (script.smartedtv.welcome): o que o
-     usuário digitou continua valendo (a licença fica em vip.json) e ele
-     retoma de onde parou.
+     na Home chama a MESMA tela do boot (script.smartedtv.welcome): o campo do
+     código abre vazio e a licença já ativada continua valendo (vip.json), então
+     quem entrou só para experimentar retoma de onde parou.
 
      Este arquivo vai para assets/system/keymaps/ dentro do APK (o
      special://xbmc/system/keymaps/ do Kodi Android). O nome começa com "zzz-"
