@@ -6,6 +6,9 @@
 # originais), faz o Startup.xml de cada skin abrir essa tela NO LUGAR da Home
 # (WINDOW_STARTUP_ANIM, janela que o CApplication::Initialize carrega antes da
 # Home), declara as fontes que faltavam, realinha e reassina com a MESMA chave.
+# v8: Home garantida no boot (sem ReplaceWindow no Startup.xml) + VOLTAR na Home
+# reabrindo a tela de entrada. Este comentario existe para que o push reative o
+# workflow (o gatilho de push e por caminho).
 name: SMARTEDTV - APK atual + tela inicial do pacote (horizontal)
 
 on:
