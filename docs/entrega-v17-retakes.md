@@ -1,8 +1,8 @@
 # SMARTEDTV v17 — retoques finais (foco, anúncios, Home e saída)
 
 **Versão:** 1.0.87 / 2103073 (`v1.0.87-responsivo-v17`)
-**Commit desta rodada:** `03975e0`
-**Pipeline rápido:** `build-v17-responsivo.yml`, execução **44152714663**
+**Commit do código desta rodada:** `070cc08`
+**Pipeline rápido:** `build-v17-responsivo.yml`, execução **44154344425** (sucesso)
 **APK:** `SMARTEDTV-atual-v17-responsivo-universal.apk` (release `v1.0.87-responsivo-v17`)
 
 > Este documento separa o que foi **validado em teste automatizado/simulador** do
@@ -213,8 +213,9 @@ nesta sessão, não há prova visual de ausência de tela preta no relançamento
 | `test_menu_brazuca_bingie` | 14 OK |
 | `test_home_navegacao` | 5 OK |
 | `test_ads_compatibilidade` | 4 OK |
-| `test_saida_limpa` | 2 OK |
-| Pipeline `build-v17-responsivo.yml` | execução **44152714663** (ver seção 6) |
+| `test_saida_limpa` | 2 OK (confere `DialogButtonMenu.xml` e `ShutdownMenu.xml`) |
+| `test_atualizar_apk` | 1 OK (XMLs de skin não somem do APK) |
+| Pipeline `build-v17-responsivo.yml` | execução **44154344425**, success (ver seção 6) |
 
 ---
 
@@ -231,11 +232,11 @@ Pipeline rápido existente, sem compilar Kodi e sem trocar o APK base:
 - assinatura com a mesma chave (`dropbox/smarted-tv-test.jks`);
 - release `v1.0.87-responsivo-v17`.
 
-**Execução:** 44152714663 — `STATUS_AQUI`
+**Execução:** [44154344425](https://github.com/msmacrosmart-cpu/KODE/actions/runs/44154344425) — `success` (todos os passos, inclusive assinatura e release)
 
-**APK:** `URL_AQUI`
+**APK:** https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.87-responsivo-v17/SMARTEDTV-atual-v17-responsivo-universal.apk
 
-**Tamanho / SHA-256:** `HASH_AQUI`
+**Tamanho / SHA-256:** 285.488.387 bytes / `a90b324c57dd125a51043df7cb8d61a0ca8fa74ded9c7d6792db7cc7184bc885`
 
 ---
 
