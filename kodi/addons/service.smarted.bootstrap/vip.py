@@ -155,24 +155,43 @@ def _gravar_licenca(codigo, expira=None):
 
 
 def abrir_checkout():
-    """Abre o checkout de pagamento (pay.cakto.com.br) no navegador externo."""
+    """ID 120 - Abre o checkout da Cakto no navegador externo do Android (sai do app)."""
     log('abrindo checkout: %s' % CHECKOUT)
-    return _abrir_navegador(CHECKOUT, 'checkout')
+    try:
+        xbmc.executebuiltin(
+            'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % CHECKOUT)
+        return True
+    except Exception as erro:
+        log('StartAndroidActivity checkout falhou: %s' % erro, xbmc.LOGWARNING)
+    return False
 
 
 def compartilhar(texto=None):
-    """Compartilha o link do APK (Dropbox) para outros apps do Android."""
-    msg = texto or ('Baixe o SMARTED-TV: %s' % APK)
-    return _compartilhar_texto(msg, 'Compartilhar')
+    """ID 121 - Abre o link de download do APK do Dropbox no navegador externo do Android (sai do app)."""
+    url_download = APK + '?dl=1'
+    log('abrindo download do APK: %s' % url_download)
+    try:
+        xbmc.executebuiltin(
+            'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % url_download)
+        return True
+    except Exception as erro:
+        log('StartAndroidActivity download falhou: %s' % erro, xbmc.LOGWARNING)
+    return False
 
 
 def abrir_url(url, rotulo='link'):
     """Abre uma URL no navegador externo do Android."""
     log('abrindo %s: %s' % (rotulo, url))
-    return _abrir_navegador(url, rotulo)
+    try:
+        xbmc.executebuiltin(
+            'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % url)
+        return True
+    except Exception as erro:
+        log('StartAndroidActivity abrir_url falhou: %s' % erro, xbmc.LOGWARNING)
+    return False
 
 
 def procurar_atualizacao():
-    """Checa se há atualização disponível (abre a release do GitHub)."""
+    """Checa se há atualização disponível (abre a release do GitHub no navegador externo)."""
     log('checando atualização')
-    return _abrir_navegador(APK_GITHUB, 'atualização')
+    return abrir_url(APK_GITHUB, 'atualização')
