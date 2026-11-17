@@ -13,75 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 1. Download base APK
+      - name: Executar build de reempacotamento
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/base"
-          gh release download v1.0.83-tela-inicial-v9 -R "$GITHUB_REPOSITORY" \
-            --pattern "SMARTEDTV-atual-com-tela-inicial-v9.apk" --dir "$RUNNER_TEMP/base"
-          APK_FILE=$(find "$RUNNER_TEMP/base" -name '*.apk' | head -1)
-          echo "APK base: $APK_FILE"
-          echo "BASE_APK_PATH=$APK_FILE" >> "$GITHUB_ENV"
-
-      - name: 2. Inject video screen changes
-        run: |
-          set -euo pipefail
-          python3 tools/kodi/injetar-videos.py \
-            --apk "$BASE_APK_PATH" \
-            --saida "$RUNNER_TEMP/bruto.apk"
-          ls -lh "$RUNNER_TEMP/bruto.apk"
-
-      - name: 3. Copy bruto to alinhado (skip align)
-        run: |
-          cp "$RUNNER_TEMP/bruto.apk" "$RUNNER_TEMP/alinhado.apk"
-          ls -lh "$RUNNER_TEMP/alinhado.apk"
-
-      - name: 4. Instalar apksigner (Python)
-        run: |
-          python3 -m pip install --quiet --break-system-packages apksigner 2>/dev/null || true
-          which apksigner || python3 -m pip install --quiet --user apksigner || true
-          python3 -c "from apksigner import ApkSigner; print('apksigner Python OK')" || echo "apksigner Python nao disponivel"
-
-      - name: 5. Sign APK com apksigner Python
-        run: |
-          set -euo pipefail
-          python3 -c "
-from apksigner import ApkSigner
-import sys
-signer = ApkSigner(
-    keystore='dropbox/smarted-tv-test.jks',
-    keystore_pass='android',
-    key_pass='android',
-    key_alias='smarted-tv-test',
-)
-signer.sign('$RUNNER_TEMP/alinhado.apk', '$RUNNER_TEMP/assinado.apk')
-print('APK assinado com sucesso')
-" || {
-            echo "::error::falha ao assinar com apksigner Python"
-            exit 1
-          }
-          ls -lh "$RUNNER_TEMP/assinado.apk"
-
-      - name: 6. Publish release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          cp "$RUNNER_TEMP/assinado.apk" "SMARTEDTV-21.4.1-arm64-v8a.apk"
-          sha256sum "SMARTEDTV-21.4.1-arm64-v8a.apk" > "SMARTEDTV-21.4.1-arm64-v8a.apk.sha256"
-          TAG_SAIDA="smartedtv-videos-21.4.1-arm64"
-          if gh release view "$TAG_SAIDA" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG_SAIDA" "SMARTEDTV-21.4.1-arm64-v8a.apk" "SMARTEDTV-21.4.1-arm64-v8a.apk.sha256" -R "$GITHUB_REPOSITORY" --clobber
-          else
-            gh release create "$TAG_SAIDA" \
-              "SMARTEDTV-21.4.1-arm64-v8a.apk" \
-              "SMARTEDTV-21.4.1-arm64-v8a.apk.sha256" \
-              -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title "SMARTEDTV 21.4.1 (arm64-v8a) - Video Screen"
-          fi
-
-      - name: 7. Save artifact
-        run: |
-          ls -lh SMARTEDTV-21.4.1-arm64-v8a.apk SMARTEDTV-21.4.1-arm64-v8a.apk.sha256
+          bash tools/kodi/build-repackage-video.sh
