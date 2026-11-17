@@ -85,8 +85,15 @@ jobs:
           nomes = z.namelist()
           for n in ('lib/arm64-v8a/libkodi.so', 'lib/armeabi-v7a/libkodi.so'):
               assert n in nomes, n
-          assert z.read('assets/addons/script.smartedtv.welcome/default.py') == \
-              open('kodi/addons/script.smartedtv.welcome/default.py', 'rb').read()
+          def conferir(nome, origem):
+              atual = z.read(nome)
+              esperado = open(origem, 'rb').read()
+              if atual != esperado:
+                  print('::error title=APK diverge::%s (%d B) != %s (%d B)'
+                        % (nome, len(atual), origem, len(esperado)))
+                  raise SystemExit(1)
+          conferir('assets/addons/script.smartedtv.welcome/default.py',
+                   'kodi/addons/script.smartedtv.welcome/default.py')
           assert z.read('assets/addons/service.smarted.bootstrap/menu_smarted.py') == \
               open('kodi/addons/service.smarted.bootstrap/menu_smarted.py', 'rb').read()
           assert z.read('assets/addons/service.smarted.bootstrap/performance.py') == \
@@ -97,10 +104,10 @@ jobs:
               open('kodi/addons/service.smarted.bootstrap/smart_ads.py', 'rb').read()
           assert z.read('assets/addons/service.smarted.bootstrap/service.py') == \
               open('kodi/addons/service.smarted.bootstrap/service.py', 'rb').read()
-          assert z.read('assets/addons/skin.novatv/xml/Home.xml') == \
-              open('kodi/skin.novatv/xml/Home.xml', 'rb').read()
-          assert z.read('assets/addons/skin.novatv/xml/ShutdownMenu.xml') == \
-              open('kodi/skin.novatv/xml/ShutdownMenu.xml', 'rb').read()
+          conferir('assets/addons/skin.novatv/xml/Home.xml',
+                   'kodi/skin.novatv/xml/Home.xml')
+          conferir('assets/addons/skin.novatv/xml/ShutdownMenu.xml',
+                   'kodi/skin.novatv/xml/ShutdownMenu.xml')
           print('OK: duas ABIs + tela/servico/anuncios/skin do repositorio')
           PY
 
