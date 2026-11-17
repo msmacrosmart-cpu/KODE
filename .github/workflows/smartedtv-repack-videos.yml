@@ -10,6 +10,10 @@ permissions:
 jobs:
   repackage:
     runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      NOVA_VERSAO: '21.4.1'
+      TAG_SAIDA: smartedtv-videos-21.4.1-arm64
     steps:
       - uses: actions/checkout@v4
 
@@ -32,3 +36,61 @@ jobs:
             --apk "$BASE_APK_PATH" \
             --saida "$RUNNER_TEMP/bruto.apk"
           ls -lh "$RUNNER_TEMP/bruto.apk"
+
+      - name: 3. Align APK
+        run: |
+          python3 tools/kodi/align-apk.py "$RUNNER_TEMP/bruto.apk" "$RUNNER_TEMP/alinhado.apk"
+          ls -lh "$RUNNER_TEMP/alinhado.apk"
+
+      - name: 4. Download apksigner.jar
+        run: |
+          mkdir -p "$HOME/.cache/kode-build/tools"
+          if [ ! -f "$HOME/.cache/kode-build/tools/apksigner.jar" ]; then
+            curl -fsSL -o "$HOME/.cache/kode-build/tools/apksigner.jar" \
+              "https://repo1.maven.org/maven2/com/google/android/apksigner/33.0.1/apksigner-33.0.1.jar" || true
+          fi
+          ls -la "$HOME/.cache/kode-build/tools/" 2>/dev/null || true
+
+      - name: 5. Sign APK
+        run: |
+          set -euo pipefail
+          SIGNER="$HOME/.cache/kode-build/tools/apksigner.jar"
+          if [ ! -f "$SIGNER" ]; then
+            echo "::error::apksigner.jar not found"
+            exit 1
+          fi
+          java -jar "$SIGNER" sign \
+            --ks dropbox/smarted-tv-test.jks \
+            --ks-pass pass:android \
+            --key-pass pass:android \
+            --ks-key-alias smarted-tv-test \
+            --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
+            --v4-signing-enabled false \
+            --out "$RUNNER_TEMP/assinado.apk" "$RUNNER_TEMP/alinhado.apk"
+          ls -lh "$RUNNER_TEMP/assinado.apk"
+
+      - name: 6. Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cp "$RUNNER_TEMP/assinado.apk" "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk"
+          sha256sum "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk" > "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk.sha256"
+          if gh release view "$TAG_SAIDA" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG_SAIDA" "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk" "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk.sha256" -R "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG_SAIDA" \
+              "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk" \
+              "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk.sha256" \
+              -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "SMARTEDTV ${NOVA_VERSAO} (arm64-v8a) - Video Screen"
+          fi
+
+      - name: 7. Save artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartedtv-apk-repackage-video
+          path: |
+            SMARTEDTV-*-arm64-v8a.apk
+            SMARTEDTV-*.sha256
+        retention-days: 30
