@@ -19,8 +19,18 @@ with zipfile.ZipFile(args.source) as src,zipfile.ZipFile(args.target,'w',allowZi
         if name in names or name.startswith('/') or '..' in name.split('/'): raise ValueError(f'Nome inválido: {name}')
         names.add(name)
         if item.compress_type not in (zipfile.ZIP_STORED,zipfile.ZIP_DEFLATED): raise ValueError(f'Compressão não suportada: {name}')
-        out=zipfile.ZipInfo(name,date_time=item.date_time);out.compress_type=item.compress_type;out.external_attr=item.external_attr
-        if name=='resources.arsc' and out.compress_type!=zipfile.ZIP_STORED: raise ValueError('resources.arsc precisa estar sem compressão')
+        out=zipfile.ZipInfo(name,date_time=item.date_time);out.external_attr=item.external_attr
+        if name=='resources.arsc':
+            # resources.arsc deve estar sem comprimicao para o Android ler corretamente
+            out.compress_type=zipfile.ZIP_STORED
+            data=src.read(item)
+            dst.writestr(out, data)
+            if out.compress_type==zipfile.ZIP_STORED:
+                padding=(-(dst.fp.tell()+30+len(name.encode('utf-8'))+4))%4
+                out.extra=struct.pack('<HH',0xD935,padding)+b'\0'*padding
+            continue
+        if item.compress_type not in (zipfile.ZIP_STORED,zipfile.ZIP_DEFLATED): raise ValueError(f'Compressão não suportada: {name}')
+        out.compress_type=item.compress_type
         if out.compress_type==zipfile.ZIP_STORED:
             padding=(-(dst.fp.tell()+30+len(name.encode('utf-8'))+4))%4
             out.extra=struct.pack('<HH',0xD935,padding)+b'\0'*padding
