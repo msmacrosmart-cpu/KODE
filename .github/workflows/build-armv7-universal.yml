@@ -19,7 +19,7 @@ permissions:
 
 concurrency:
   group: smartedtv-armv7-universal
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   KODI_TAG: 21.3-Omega
