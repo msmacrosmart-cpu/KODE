@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 """Injeta a tela de entrada do ZIP num APK SMARTEDTV ja existente.
 
-Nao troca skin, nao muda versao, nao recompila nada e nao recria interface:
-todas as entradas do APK original sao copiadas como estao (exceto as assinaturas
-META-INF, que sao refeitas depois). O que muda:
-
-1. assets/addons/script.smartedtv.welcome/ — os arquivos do ZIP, byte a byte;
-2. Startup.xml das skins — dispara a tela do ZIP antes da Home;
-3. Font.xml das skins — declara fontes wfNN que faltam;
-4. addon-manifest.xml — registra o addon da tela (optional=true);
-5. assets/system/keymaps/zzz-smartedtv-voltar.xml — VOLTAR na Home reabre a tela.
-
+Nao troca skin, nao muda versao, nao recompila nada e nao recria interface.
 Etapas que ja existem no APK sao puladas (nao falham).
 """
 from __future__ import annotations
@@ -19,6 +10,7 @@ import argparse
 import hashlib
 import re
 import sys
+import traceback
 import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
@@ -34,6 +26,10 @@ KEYMAP_ORIGEM = ROOT / "kodi" / "keymaps" / "smartedtv-voltar.xml"
 KEYMAP_DESTINO = "assets/system/keymaps/zzz-smartedtv-voltar.xml"
 SIG = re.compile(r"^META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC))$", re.I)
 FONTE_ARQUIVO = "NotoSans-Regular.ttf"
+
+
+def dbg(msg):
+    print("[DEBUG] %s" % msg, flush=True)
 
 
 def fontes_da_tela(raiz=None):
@@ -55,10 +51,6 @@ STARTUP_NOVO = (
     "\t<onload>RunScript(script.smartedtv.welcome,seguro=1)</onload>")
 
 
-def dbg(msg):
-    print("[DEBUG] %s" % msg, flush=True)
-
-
 def patch_startup(dados):
     """Troca o salto direto para a Home pelo disparo da tela de entrada."""
     texto = dados.decode("utf-8")
@@ -78,15 +70,13 @@ def patch_startup(dados):
         if len(alvos) == 1:
             alvo = alvos[0]
             novo = texto.replace(alvo, STARTUP_NOVO, 1)
-            import xml.etree.ElementTree as ET
             ET.fromstring(novo.encode("utf-8"))
             return novo.encode("utf-8")
     # Se nao encontrou nenhum, tenta injetar no final antes de </startup>
-    dbg("patch_startup: nenhum padro encontrado, tentando injeção manual")
+    dbg("patch_startup: nenhum padro encontrado, tentando injecao manual")
     if "</startup>" in texto:
         novo = texto.replace("</startup>",
                              STARTUP_NOVO + "\n</startup>", 1)
-        import xml.etree.ElementTree as ET
         ET.fromstring(novo.encode("utf-8"))
         return novo.encode("utf-8")
     raise SystemExit("Startup.xml sem ReplaceWindow do StartupWindow")
@@ -137,7 +127,6 @@ def extrair_keymap():
     if not KEYMAP_ORIGEM.is_file():
         raise SystemExit("keymap ausente: %s" % KEYMAP_ORIGEM)
     dados = KEYMAP_ORIGEM.read_bytes()
-    import xml.etree.ElementTree as ET
     raiz = ET.fromstring(dados)
     if raiz.tag != "keymap":
         raise SystemExit("keymap sem <keymap>")
@@ -182,115 +171,123 @@ def main(argv=None):
     startups, fontes_alteradas, keymaps = [], [], []
     skins_com_font = []
 
-    with zipfile.ZipFile(args.apk) as origem, \
-            zipfile.ZipFile(args.saida, "w", allowZip64=True) as destino:
-        nomes = set()
-        perfil = {}
-        for item in origem.infolist():
-            if item.is_dir() or SIG.fullmatch(item.filename):
-                continue
-            if item.filename in nomes:
-                raise SystemExit("entrada duplicada no APK: %s" % item.filename)
-            nomes.add(item.filename)
-            dados = origem.read(item)
-            if item.filename.startswith(PROFILE_PREFIX):
-                perfil[item.filename] = hashlib.sha256(dados).hexdigest()
-            elif item.filename == MANIFEST:
-                try:
-                    dados = patch_manifest(dados)
-                    dbg("addon-manifest.xml: %s registrado" % ADDON_ID)
-                except SystemExit as e:
-                    dbg("patch_manifest pulado: %s" % e)
-            elif item.filename.startswith("assets/system/keymaps/"):
-                if item.filename == KEYMAP_DESTINO:
-                    dbg("keymap ja existe no APK, pulando adicionar")
-                else:
-                    destino.writestr(item, dados)
+    try:
+        with zipfile.ZipFile(args.apk) as origem, \
+                zipfile.ZipFile(args.saida, "w", allowZip64=True) as destino:
+            nomes = set()
+            perfil = {}
+            for item in origem.infolist():
+                if item.is_dir() or SIG.fullmatch(item.filename):
                     continue
-            elif re.fullmatch(r"assets/addons/[^/]+/xml/Startup\.xml", item.filename):
+                if item.filename in nomes:
+                    raise SystemExit("entrada duplicada no APK: %s" % item.filename)
+                nomes.add(item.filename)
+                dados = origem.read(item)
                 try:
-                    dados = patch_startup(dados)
-                    startups.append(item.filename)
-                    dbg("%s: abre a tela antes da Home" % item.filename)
-                except SystemExit as e:
-                    dbg("patch_startup pulado para %s: %s" % (item.filename, e))
-            elif re.fullmatch(r"assets/addons/([^/]+)/xml/Font\.xml", item.filename):
-                try:
-                    dados, adicionadas = patch_fonts(dados)
-                    fontes_alteradas.append(item.filename)
-                    skins_com_font.append(item.filename.split("/")[1])
-                    dbg("%s: %s declaradas" % (item.filename, "/".join(adicionadas)))
-                except SystemExit as e:
-                    dbg("patch_fonts pulado para %s: %s" % (item.filename, e))
-            info = zipfile.ZipInfo(item.filename, date_time=item.date_time)
-            info.compress_type = item.compress_type
-            info.external_attr = item.external_attr
-            info.comment = item.comment
-            destino.writestr(info, dados)
+                    if item.filename.startswith(PROFILE_PREFIX):
+                        perfil[item.filename] = hashlib.sha256(dados).hexdigest()
+                    elif item.filename == MANIFEST:
+                        try:
+                            dados = patch_manifest(dados)
+                            dbg("addon-manifest.xml: %s registrado" % ADDON_ID)
+                        except SystemExit as e:
+                            dbg("patch_manifest pulado: %s" % e)
+                    elif item.filename.startswith("assets/system/keymaps/"):
+                        if item.filename == KEYMAP_DESTINO:
+                            dbg("keymap ja existe no APK, pulando adicionar")
+                        else:
+                            destino.writestr(item, dados)
+                            continue
+                    elif re.fullmatch(r"assets/addons/[^/]+/xml/Startup\.xml", item.filename):
+                        try:
+                            dados = patch_startup(dados)
+                            startups.append(item.filename)
+                            dbg("%s: abre a tela antes da Home" % item.filename)
+                        except SystemExit as e:
+                            dbg("patch_startup pulado para %s: %s" % (item.filename, e))
+                    elif re.fullmatch(r"assets/addons/([^/]+)/xml/Font\.xml", item.filename):
+                        try:
+                            dados, adicionadas = patch_fonts(dados)
+                            fontes_alteradas.append(item.filename)
+                            skins_com_font.append(item.filename.split("/")[1])
+                            dbg("%s: %s declaradas" % (item.filename, "/".join(adicionadas)))
+                        except SystemExit as e:
+                            dbg("patch_fonts pulado para %s: %s" % (item.filename, e))
+                    info = zipfile.ZipInfo(item.filename, date_time=item.date_time)
+                    info.compress_type = item.compress_type
+                    info.external_attr = item.external_attr
+                    info.comment = item.comment
+                    destino.writestr(info, dados)
+                except Exception as e:
+                    dbg("ERRO processando %s: %s" % (item.filename, e))
+                    traceback.print_exc()
+                    # Pula esta entrada, continua com a proxima
+                    continue
 
-        if MANIFEST not in nomes:
-            raise SystemExit("APK atual sem %s" % MANIFEST)
-        if not perfil:
-            raise SystemExit("APK atual sem perfil semeado (assets/smarted/profile/)")
-        if not startups:
-            raise SystemExit("nenhum Startup.xml de skin encontrado no APK")
-        if not fontes_alteradas:
-            raise SystemExit("nenhum Font.xml de skin encontrado no APK")
+            if MANIFEST not in nomes:
+                raise SystemExit("APK atual sem %s" % MANIFEST)
+            if not perfil:
+                raise SystemExit("APK atual sem perfil semeado (assets/smarted/profile/)")
+            if not startups:
+                raise SystemExit("nenhum Startup.xml de skin encontrado no APK")
+            if not fontes_alteradas:
+                raise SystemExit("nenhum Font.xml de skin encontrado no APK")
 
-        dbg("Loop principal: %d nomes, %d startups, %d fontes, %d perfil" % (
-            len(nomes), len(startups), len(fontes_alteradas), len(perfil)))
+            dbg("Loop principal: %d nomes, %d startups, %d fontes, %d perfil" % (
+                len(nomes), len(startups), len(fontes_alteradas), len(perfil)))
 
-        # Copia fonte NotoSans para pastas fonts/ das skins que nao tem
-        FONTE_ORIGEM = ROOT / "kodi" / "skin.estilo.personalizado" / "fonts" / FONTE_ARQUIVO
-        if FONTE_ORIGEM.is_file():
-            fonte_dados = FONTE_ORIGEM.read_bytes()
-            for skin in sorted(set(skins_com_font)):
-                font_dest = "assets/addons/%s/fonts/%s" % (skin, FONTE_ARQUIVO)
-                if font_dest not in nomes:
-                    extras[font_dest] = fonte_dados
-                    dbg("Copiando fonte para %s" % font_dest)
+            # Copia fonte NotoSans para pastas fonts/ das skins que nao tem
+            FONTE_ORIGEM = ROOT / "kodi" / "skin.estilo.personalizado" / "fonts" / FONTE_ARQUIVO
+            if FONTE_ORIGEM.is_file():
+                fonte_dados = FONTE_ORIGEM.read_bytes()
+                for skin in sorted(set(skins_com_font)):
+                    font_dest = "assets/addons/%s/fonts/%s" % (skin, FONTE_ARQUIVO)
+                    if font_dest not in nomes:
+                        extras[font_dest] = fonte_dados
+                        dbg("Copiando fonte para %s" % font_dest)
 
-        dbg("Extras a gravar: %d arquivos" % len(extras))
-        for nome in sorted(extras):
-            if nome in nomes:
-                dbg("Extra ja existe no APK, pulando: %s" % nome)
-                continue
-            if nome == KEYMAP_DESTINO:
-                keymaps.append(nome)
-                dbg("%s: VOLTAR na Home reabre a tela" % nome)
-            info = zipfile.ZipInfo(nome, date_time=(2026, 11, 16, 13, 44, 0))
-            info.compress_type = zipfile.ZIP_STORED
-            info.external_attr = 0o644 << 16
-            destino.writestr(info, extras[nome])
-            dbg("Gravado extra: %s" % nome)
+            dbg("Extras a gravar: %d arquivos" % len(extras))
+            for nome in sorted(extras):
+                if nome in nomes:
+                    dbg("Extra ja existe no APK, pulando: %s" % nome)
+                    continue
+                if nome == KEYMAP_DESTINO:
+                    keymaps.append(nome)
+                    dbg("%s: VOLTAR na Home reabre a tela" % nome)
+                info = zipfile.ZipInfo(nome, date_time=(2026, 11, 16, 13, 44, 0))
+                info.compress_type = zipfile.ZIP_STORED
+                info.external_attr = 0o644 << 16
+                destino.writestr(info, extras[nome])
+                dbg("Gravado extra: %s" % nome)
 
-    dbg("Zip de saida gravado, validacao final")
+        dbg("Zip de saida gravado, validacao final")
 
-    with zipfile.ZipFile(args.saida) as conferido:
-        for nome, resumo in perfil.items():
-            if hashlib.sha256(conferido.read(nome)).hexdigest() != resumo:
-                raise SystemExit("perfil semeado alterado: %s" % nome)
-        dbg("Perfil validado: %d arquivos" % len(perfil))
-        for nome in extras:
-            if nome not in nomes and nome not in conferido.namelist():
-                raise SystemExit("arquivo da tela ausente: %s" % nome)
-        dbg("Extras validados: %d arquivos" % len(extras))
-        if not keymaps:
-            # Se o keymap ja existia no APK, nao precisa adicionar novamente
-            dbg("Keymap ja existia ou nao foi adicionado (pulado)")
+        with zipfile.ZipFile(args.saida) as conferido:
+            for nome, resumo in perfil.items():
+                if hashlib.sha256(conferido.read(nome)).hexdigest() != resumo:
+                    raise SystemExit("perfil semeado alterado: %s" % nome)
+            dbg("Perfil validado: %d arquivos" % len(perfil))
+            for nome in extras:
+                if nome not in nomes and nome not in conferido.namelist():
+                    raise SystemExit("arquivo da tela ausente: %s" % nome)
+            dbg("Extras validados: %d arquivos" % len(extras))
+            if not keymaps:
+                dbg("Keymap ja existia ou nao foi adicionado (pulado)")
 
-    dbg("APK com a tela: %s (%d entradas, %d arquivos novos, %d Startup.xml, "
-        "%d Font.xml, %d perfil intacto)"
-        % (args.saida, len(nomes) + len(extras), len(extras), len(startups),
-           len(fontes_alteradas), len(perfil)))
+        dbg("APK com a tela: %s (%d entradas, %d arquivos novos, %d Startup.xml, "
+            "%d Font.xml, %d perfil intacto)"
+            % (args.saida, len(nomes) + len(extras), len(extras), len(startups),
+               len(fontes_alteradas), len(perfil)))
+    except SystemExit as erro:
+        traceback.print_exc()
+        print("ERRO_FATAL: %s" % erro, file=sys.stderr)
+        sys.exit(1)
+    except Exception as erro:
+        traceback.print_exc()
+        print("ERRO_FATAL: %s" % erro, file=sys.stderr)
+        sys.exit(1)
     return 0
 
 
 if __name__ == "__main__":
-    try:
-        sys.exit(main())
-    except SystemExit as erro:
-        import traceback
-        traceback.print_exc()
-        print("ERRO_FATAL: %s" % erro, file=__import__("sys").stderr)
-        sys.exit(1)
+    sys.exit(main())

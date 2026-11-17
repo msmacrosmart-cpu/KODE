@@ -118,6 +118,7 @@ jobs:
 
       - name: 5. Injetar SOMENTE a tela inicial
         run: |
+          set +e
           echo "=== PASSO 5 INICIO ==="
           ls -lh build/atual.apk
           echo "--- rodando injetor ---"
@@ -128,7 +129,6 @@ jobs:
           echo "RC_INJETOR=$RC"
           if [ "$RC" -ne 0 ]; then
             echo "::error::injetor falhou com codigo $RC"
-            exit 1
           fi
           echo '--- simulacao do carregamento da tela ---'
           OUTPUT2=$(python3 -u tools/kodi/simular-boot-tela-entrada.py --apk build/bruto.apk 2>&1)
@@ -138,9 +138,11 @@ jobs:
           echo "RC_SIMULADOR=$RC2"
           if [ "$RC2" -ne 0 ]; then
             echo "::error::simulador falhou com codigo $RC2"
+          fi
+          echo "=== PASSO 5 FIM (RC=$RC, RC2=$RC2) ==="
+          if [ "$RC" -ne 0 ] || [ "$RC2" -ne 0 ]; then
             exit 1
           fi
-          echo "=== PASSO 5 OK ==="
 
       - name: 6. Conferir que nada mais mudou
         run: |
