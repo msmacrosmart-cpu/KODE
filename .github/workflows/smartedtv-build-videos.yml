@@ -160,26 +160,26 @@ jobs:
           KODI="$RUNNER_TEMP/kodi"
           MANIFEST="$KODI/system/addon-manifest.xml"
           ADDONS_TXT="$KODI/cmake/installdata/common/addons.txt"
-          python3 - "$MANIFEST" "$ADDONS_TXT" <<'PY'
+          python3 -c '
 import sys
-manifest_path, addons_txt_path = sys.argv[1], sys.argv[2]
+manifest_path = sys.argv[1]
+addons_txt_path = sys.argv[2]
 addons = ["skin.novatv", "plugin.video.smarted", "service.smarted.bootstrap"]
 
 # --- addon-manifest.xml ---
 with open(manifest_path, encoding="utf-8") as f:
     text = f.read()
 for addon in addons:
-    tag = f"  <addon>{addon}</addon>"
+    tag = "  <addon>" + addon + "</addon>"
     if tag not in text:
-        # insere depois da linha de skin.estuary
         anchor = "  <addon>skin.estuary</addon>"
         if anchor in text:
             text = text.replace(anchor, anchor + "\n" + tag, 1)
         else:
             text = text.replace("</addons>", tag + "\n</addons>", 1)
-        print(f"  ok manifest: {addon} registrado")
+        print("  ok manifest: " + addon + " registrado")
     else:
-        print(f"  -- manifest: {addon} já presente")
+        print("  -- manifest: " + addon + " já presente")
 with open(manifest_path, "w", encoding="utf-8") as f:
     f.write(text)
 
@@ -187,9 +187,8 @@ with open(manifest_path, "w", encoding="utf-8") as f:
 with open(addons_txt_path, encoding="utf-8") as f:
     lines = f.readlines()
 for addon in addons:
-    entry = f"addons/{addon}/*"
+    entry = "addons/" + addon + "/*"
     if not any(entry in line for line in lines):
-        # insere antes da primeira linha que começa com "addons/skin.estuary/"
         insert_at = None
         for i, line in enumerate(lines):
             if line.startswith("addons/skin.estuary/"):
@@ -199,9 +198,9 @@ for addon in addons:
             lines.insert(insert_at, entry + "\n")
         else:
             lines.append(entry + "\n")
-        print(f"  ok addons.txt: {entry} adicionado")
+        print("  ok addons.txt: " + entry + " adicionado")
     else:
-        print(f"  -- addons.txt: {entry} já presente")
+        print("  -- addons.txt: " + entry + " já presente")
 with open(addons_txt_path, "w", encoding="utf-8") as f:
     f.writelines(lines)
 
@@ -213,7 +212,7 @@ with open(addons_txt_path, encoding="utf-8") as f:
     for line in f:
         if "addons/skin" in line or "addons/plugin.video.smarted" in line or "addons/service.smarted.bootstrap" in line:
             print(line.rstrip())
-PY
+' "$MANIFEST" "$ADDONS_TXT"
 
       - name: 7a. Cache das dependências
         id: cache-deps
