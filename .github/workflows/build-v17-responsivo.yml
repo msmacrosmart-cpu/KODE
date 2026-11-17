@@ -83,10 +83,21 @@ jobs:
           import zipfile
           z = zipfile.ZipFile('build/bruto.apk')
           nomes = z.namelist()
+          with open('build/diag.txt', 'w') as diag:
+              diag.write('total=%d\n' % len(nomes))
+              diag.write('\n'.join(n for n in nomes
+                                     if 'smartedtv.welcome' in n or
+                                     'skin.novatv/xml/Home' in n))
+              diag.write('\n')
           for n in ('lib/arm64-v8a/libkodi.so', 'lib/armeabi-v7a/libkodi.so'):
               assert n in nomes, n
           def conferir(nome, origem):
-              atual = z.read(nome)
+              try:
+                  atual = z.read(nome)
+              except Exception as erro:
+                  with open('build/diag.txt', 'a') as diag:
+                      diag.write('ERRO %s: %r\n' % (nome, erro))
+                  raise
               esperado = open(origem, 'rb').read()
               if atual != esperado:
                   with open('build/diag.txt', 'a') as diag:
