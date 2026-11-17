@@ -42,7 +42,7 @@ jobs:
         run: |
           python3 -m pip install --quiet --break-system-packages apksigner 2>/dev/null || true
           which apksigner || python3 -m pip install --quiet --user apksigner || true
-          python3 -c "from apksigner import ApkSigner; print('apksigner Python OK')" || echo "apksigner Python nao disponível"
+          python3 -c "from apksigner import ApkSigner; print('apksigner Python OK')" || echo "apksigner Python nao disponivel"
 
       - name: 5. Sign APK com apksigner Python
         run: |
