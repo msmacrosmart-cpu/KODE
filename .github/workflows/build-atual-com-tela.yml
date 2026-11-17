@@ -312,4 +312,4 @@ jobs:
           subprocess.run(['gh', 'release', 'edit', os.environ['TAG_SAIDA'],
                           '--repo', repo, '--notes', notas], check=True)
           PY
-# build acionado: tentativa de reexecucao do build com StartAndroidActivity direto para checkout e download
+# build acionado: nova tentativa - checkout ID 120 (Cakto) e download ID 121 (Dropbox ?dl=1) via StartAndroidActivity
