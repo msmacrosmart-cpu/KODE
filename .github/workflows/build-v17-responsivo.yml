@@ -94,8 +94,19 @@ jobs:
 
       - name: 4. Simular o boot (sem tela preta e com foco)
         run: |
-          set -euo pipefail
-          python3 tools/kodi/simular-boot-tela-entrada.py --apk build/bruto.apk
+          set +e
+          python3 -u tools/kodi/simular-boot-tela-entrada.py --apk build/bruto.apk \
+            > build/boot.log 2>&1
+          RC=$?
+          cat build/boot.log
+          if [ "$RC" -ne 0 ]; then
+            git config user.name 'github-actions[bot]'
+            git config user.email 'github-actions[bot]@users.noreply.github.com'
+            git add -f build/boot.log
+            git commit -m "[v17][skip ci] log do simulador de boot"
+            git push origin HEAD:arena/39a14845-kode
+          fi
+          exit "$RC"
 
       - name: 5. Subir versao 1.0.87 / 2103073
         run: |
