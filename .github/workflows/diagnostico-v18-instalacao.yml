@@ -35,7 +35,12 @@ jobs:
         run: |
           set -uo pipefail
           python3 -m pip install --disable-pip-version-check pyaxmlparser==0.3.31
-          python3 - <<'PY' | tee docs/diagnostico-v18-instalacao.txt
+          {
+            echo '--- unzip -t ---'; cat build/unzip.txt || true
+            echo '--- zipalign ---'; BT=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1); "$BT/zipalign" -c -v 4 build/v18.apk 2>&1 | tail -5 || true
+            echo '--- apksigner ---'; cat build/certs.txt || true
+            echo '--- manifesto ---'
+            python3 - <<'PY'
           import struct, zipfile, hashlib
           from pyaxmlparser import APK
           p = 'build/v18.apk'
@@ -101,6 +106,7 @@ jobs:
           except Exception as e:
               print('providers/features:', e)
           PY
+          } | tee docs/diagnostico-v18-instalacao.txt
       - name: Publicar o laudo no repositorio
         if: always()
         run: |
