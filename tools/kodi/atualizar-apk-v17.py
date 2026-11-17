@@ -174,7 +174,7 @@ def main(argv=None):
                         skins += 1
                         dbg('%s: XML da skin atualizado' % item.filename)
                     substituidos.add(item.filename)
-                    continue
+                    # sem continue: o arquivo precisa ser gravado abaixo
                 alvo_startup = STARTUP.fullmatch(item.filename)
                 if alvo_startup:
                     novo = patch_startup(dados)

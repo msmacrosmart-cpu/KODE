@@ -60,7 +60,8 @@ jobs:
             tests.test_menu_brazuca_bingie -v
           python3 -m unittest tests.test_home_navegacao \
             tests.test_saida_limpa -v
-          python3 -m unittest tests.test_ads_compatibilidade -v
+          python3 -m unittest tests.test_ads_compatibilidade \
+            tests.test_atualizar_apk -v
 
       - name: 2. Baixar o APK universal v16
         run: |
