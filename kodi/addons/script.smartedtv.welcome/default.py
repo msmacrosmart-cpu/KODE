@@ -211,34 +211,46 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
 
     # --- acoes ligadas ao que ja existe no projeto -----------------------
     def _abrir_checkout(self):
-        vip = _vip()
-        if vip is not None and vip.abrir_checkout():
-            _log('checkout aberto pelo fluxo existente (vip.abrir_checkout)')
+        """Abre o checkout da Cakto no navegador externo do Android (sai do app)."""
+        url_cakto = 'https://pay.cakto.com.br/nkvbegd_1323120'
+        try:
+            xbmc.executebuiltin(
+                'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % url_cakto)
+            _log('checkout aberto no navegador externo: %s' % url_cakto)
             return
+        except Exception as erro:
+            _log('nao foi possivel abrir checkout externo: %s' % erro, xbmc.LOGWARNING)
         self._dialogo('Checkout indisponível',
-                      'Não consegui abrir o checkout neste aparelho. '
+                      'Não consegui abrir o pagamento neste aparelho. '
                       'Aponte a câmera para o QR Code ao lado.')
 
     def _compartilhar(self):
-        vip = _vip()
-        if vip is not None and vip.compartilhar():
-            _log('compartilhamento aberto (vip.compartilhar)')
+        """Abre o link de download do APK no Dropbox no navegador externo (sai do app)."""
+        url_dropbox = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
+                       'SMARTEDTV-atual.apk')
+        try:
+            xbmc.executebuiltin(
+                'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % url_dropbox)
+            _log('download do APK aberto no navegador externo: %s' % url_dropbox)
             return
-        self._dialogo('Compartilhamento indisponível',
-                      'Não consegui abrir o compartilhamento neste aparelho.')
+        except Exception as erro:
+            _log('nao foi possivel abrir download externo: %s' % erro, xbmc.LOGWARNING)
+        self._dialogo('Download indisponível',
+                      'Não consegui abrir o link de download neste aparelho.')
 
     def _baixar_apk(self):
-        vip = _vip()
-        if vip is None:
-            self._dialogo('Download indisponível',
-                          'Não consegui abrir o link do aplicativo neste aparelho.')
+        """Abre o link de download do APK no Dropbox no navegador externo (sai do app)."""
+        url_dropbox = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
+                       'SMARTEDTV-atual.apk')
+        try:
+            xbmc.executebuiltin(
+                'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % url_dropbox)
+            _log('download do APK aberto no navegador externo: %s' % url_dropbox)
             return
-        url = getattr(vip, 'APK', None) or getattr(vip, 'APK_GITHUB', None)
-        if url and vip.abrir_url(url, 'download do APK'):
-            _log('download do APK aberto')
-            return
+        except Exception as erro:
+            _log('nao foi possivel abrir download externo: %s' % erro, xbmc.LOGWARNING)
         self._dialogo('Download indisponível',
-                      'Não consegui abrir o link do aplicativo neste aparelho.')
+                      'Não consegui abrir o link de download neste aparelho.')
 
     def _atualizar(self):
         """ATUALIZAR APLICATIVO: fluxo de atualizacao que ja existe no app."""
