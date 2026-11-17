@@ -337,4 +337,4 @@ jobs:
           subprocess.run(['gh', 'release', 'edit', os.environ['TAG_SAIDA'],
                           '--repo', repo, '--notes', notas], check=True)
           PY
-# build acionado: Compartilhar com amigos e qr_plate bordas uniformes
+# build acionado: qr_plate sem moldura, bordas uniformes em 4 lados, cantos quadrados
