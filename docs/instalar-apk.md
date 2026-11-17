@@ -1,5 +1,9 @@
 # Instalar o SMARTEDTV (celular, TV, box, projetor e stick)
 
+**Versão atual: v14 (1.0.84 / 2103070)**  
+https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.84-tela-inicial-v14/SMARTEDTV-atual-com-tela-inicial-v14.apk  
+SHA-256: `3e32c3712b62bb799f57c1b017daad001db7d70a99f6df3a3cad8238fd1da421`
+
 O APK é grande (~250 MB) e é instalado **fora da Play Store**. A mensagem
 genérica **“Aplicativo não instalado”** quase sempre é uma destas cinco coisas —
 nenhuma delas é vírus ou APK corrompido:
