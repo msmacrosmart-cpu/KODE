@@ -237,19 +237,21 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
                       'Aponte a câmera para o QR Code ao lado.')
 
     def _compartilhar(self):
-        """ID 121 - Abre o link de download do APK no navegador externo (sai do app)."""
-        url = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
-               'SMARTEDTV-atual.apk?dl=1')
-        _log('abrindo download do APK: %s' % url)
-        try:
-            xbmc.executebuiltin(
-                'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % url)
+        """ID 121 - Compartilhamento nativo Android (ACTION_SEND).
+
+        Abre o menu nativo do Android (WhatsApp, Telegram, Gmail, etc.)
+        com o link de download do APK do Dropbox.
+        """
+        vip = _vip()
+        if vip is None:
+            self._dialogo('Compartilhamento indisponível',
+                          'Não consegui abrir o compartilhamento neste aparelho.')
             return
-        except Exception as erro:
-            _log('StartAndroidActivity download falhou: %s' % erro,
-                 xbmc.LOGWARNING)
+        if vip.share_download_link():
+            _log('compartilhamento nativo aberto (vip.share_download_link)')
+            return
         self._dialogo('Compartilhamento indisponível',
-                      'Não consegui abrir o link de download neste aparelho.')
+                      'Não consegui abrir o compartilhamento neste aparelho.')
 
     def _baixar_apk(self):
         """ID 122 - Abre o download do APK no Dropbox (vip.abrir_url faz StartAndroidActivity para sair do app)."""
