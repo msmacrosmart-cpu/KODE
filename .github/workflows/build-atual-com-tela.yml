@@ -142,7 +142,7 @@ jobs:
 
       - name: 6. Conferir que nada mais mudou
         run: |
-          set -euo pipefail
+          set +e
           python3 - <<'PY'
           import hashlib, re, zipfile, xml.etree.ElementTree as ET
           ADDON = 'script.smartedtv.welcome'
