@@ -1,0 +1,31 @@
+name: Test download APK base
+
+on:
+  push:
+    branches: [arena/28b146c9-kode]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download APK base via gh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/test-download
+          gh release download v1.0.83-tela-inicial-v9 -R "$GITHUB_REPOSITORY" \
+            --pattern "SMARTEDTV-atual-com-tela-inicial-v9.apk" --dir /tmp/test-download
+          ls -lh /tmp/test-download/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-apk-download
+          path: /tmp/test-download/*.apk
+        retention-days: 1
