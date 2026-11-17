@@ -12,18 +12,35 @@ log() { echo "[$(date +%H:%M:%S)] $*"; }
 
 log "=== 1. Download APK base ==="
 mkdir -p "$RUNNER_TEMP/base"
-if ! gh release download "$BASE_TAG" -R "$GITHUB_REPOSITORY" \
+
+# Tentar via gh CLI primeiro
+if gh release download "$BASE_TAG" -R "$GITHUB_REPOSITORY" \
   --pattern "$BASE_APK" --dir "$RUNNER_TEMP/base" 2>&1; then
-  log "ERRO: falha ao baixar APK base da release $BASE_TAG"
-  exit 1
+  log "Download via gh CLI OK"
+else
+  log "gh CLI falhou, tentando via curl + API do GitHub..."
+  # Obter ID do release
+  RELEASE_JSON=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$BASE_TAG" 2>/dev/null || echo "{}")
+  RELEASE_ID=$(echo "$RELEASE_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null || echo "")
+  if [ -z "$RELEASE_ID" ]; then
+    log "ERRO: nao conseguiu obter ID do release $BASE_TAG"
+    exit 1
+  fi
+  log "Release ID: $RELEASE_ID"
+  # Baixar o asset
+  curl -sSL -H "Authorization: token $GH_TOKEN" \
+    -H "Accept: application/octet-stream" \
+    -o "$RUNNER_TEMP/base/$BASE_APK" \
+    "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/assets/$RELEASE_ID" 2>&1 || true
 fi
+
 APK_FILE=$(find "$RUNNER_TEMP/base" -name '*.apk' | head -1)
 if [ -z "$APK_FILE" ]; then
   log "ERRO: nenhum APK encontrado apos download"
-  ls -la "$RUNNER_TEMP/base/"
+  ls -la "$RUNNER_TEMP/base/" 2>/dev/null || true
   exit 1
 fi
-log "APK base: $APK_FILE"
+log "APK base: $APK_FILE ($(stat -c%s "$APK_FILE") bytes)"
 
 log "=== 2. Instalar ferramentas ==="
 sudo apt-get update -qq 2>/dev/null || true
@@ -37,11 +54,8 @@ mkdir -p "$CACHE/tools"
 SIGNER="$CACHE/tools/apksigner.jar"
 if [ ! -f "$SIGNER" ]; then
   log "Baixando apksigner.jar do Maven Central..."
-  if ! curl -fsSL -o "$SIGNER" \
-    "https://repo1.maven.org/maven2/com/google/android/apksigner/33.0.1/apksigner-33.0.1.jar" 2>&1; then
-    log "ERRO: falha ao baixar apksigner.jar"
-    exit 1
-  fi
+  curl -fsSL -o "$SIGNER" \
+    "https://repo1.maven.org/maven2/com/google/android/apksigner/33.0.1/apksigner-33.0.1.jar" || true
 fi
 if [ ! -f "$SIGNER" ]; then
   log "ERRO: apksigner.jar nao existe apos download"
