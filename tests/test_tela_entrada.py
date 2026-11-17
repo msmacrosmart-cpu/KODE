@@ -380,6 +380,9 @@ class JanelaFake(object):
     def setFocusId(self, controle):
         self.foco.append(controle)
 
+    def getFocusId(self):
+        return self.foco[-1] if self.foco else None
+
     def getControl(self, controle):
         if controle != 310:
             raise KeyError(controle)
@@ -404,8 +407,10 @@ class VipFake(object):
     # constantes reais do vip.py do APK
     CHECKOUT = 'https://pay.cakto.com.br/nkvbegd_1323120'
     SITE = 'https://smartedtv-vip.lovable.app/'
-    APK = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
-           'SMARTEDTV-atual.apk')
+    DROPBOX_URL = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
+                   'SMARTEDTV-atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
+                   '&st=p1m6ebvg&dl=0')
+    APK = DROPBOX_URL.replace('&dl=0', '&dl=1')
     APK_GITHUB = ('https://github.com/msmacrosmart-cpu/KODE/releases/latest/'
                   'download/SMARTEDTV-atual.apk')
 
@@ -424,12 +429,20 @@ class VipFake(object):
         self.chamadas.append('checkout')
         return True
 
+    def abrir_dropbox(self):
+        self.chamadas.append('dropbox')
+        return True
+
     def compartilhar(self, texto=None):
         self.chamadas.append('compartilhar')
         return True
 
     def abrir_url(self, url, rotulo='link'):
-        self.chamadas.append('url:%s' % (rotulo or ''))
+        self.chamadas.append('url:%s:%s' % (rotulo or '', url))
+        return True
+
+    def open_apk_download(self):
+        self.chamadas.append('url:download do APK:%s' % self.APK)
         return True
 
     def procurar_atualizacao(self):
@@ -630,16 +643,33 @@ class CicloDeVidaTest(unittest.TestCase):
                 janela.onClick(controle)
         self._com_interacao(acoes)
         self.assertEqual(self.vip.chamadas[0], 'checkout')
-        self.assertEqual(self.vip.chamadas[1], 'compartilhar')
-        self.assertTrue(self.vip.chamadas[2].startswith('url:'))
+        self.assertEqual(self.vip.chamadas[1], 'dropbox')
+        self.assertTrue(self.vip.chamadas[2].startswith('url:download do APK:'))
         self.assertEqual(self.vip.chamadas[3], 'atualizar')
+
+    def test_121_abre_o_dropbox_verdadeiro_do_qr(self):
+        def acoes(janela):
+            janela.onClick(121)
+        self._com_interacao(acoes)
+        self.assertEqual(self.vip.chamadas, ['dropbox'])
 
     def test_122_e_123_nao_quebram_sem_ponte_android(self):
         """Fora do Android abrir_url devolve False: a tela avisa e segue."""
         def falhar(url, rotulo='link'):
             return False
         self.vip.abrir_url = falhar
+        self.vip.open_apk_download = lambda: False
+        self.vip.abrir_dropbox = lambda: False
         self.vip.procurar_atualizacao = lambda: False
+        # sem ponte Android o proprio builtin levanta erro: a tela avisa
+        executar = self.xbmc.executebuiltin
+
+        def sem_bridge(comando, wait=False):
+            if comando.startswith('StartAndroidActivity('):
+                raise RuntimeError('Android bridge ausente')
+            return executar(comando, wait)
+
+        self.xbmc.executebuiltin = sem_bridge
 
         def acoes(janela):
             janela.onClick(122)
@@ -813,3 +843,78 @@ class FontesDaTelaTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class BotoesAndroidTest(unittest.TestCase):
+    """IDs 120 e 121 tem de SAIR do Kodi pelo navegador do Android.
+
+    Quando o vip.py responde False (sem ponte Android, por exemplo), a tela
+    usa o builtin direto. Aqui conferimos a ordem REAL dos parametros:
+    StartAndroidActivity(package,intent,dataType,dataURI). A versao anterior
+    mandava a action no campo do pacote e nenhum navegador abria.
+    """
+
+    CHECKOUT = ('StartAndroidActivity(,android.intent.action.VIEW,,'
+                'https://pay.cakto.com.br/nkvbegd_1323120)')
+    DROPBOX = ('StartAndroidActivity(,android.intent.action.VIEW,,'
+               'https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
+               'SMARTEDTV-atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
+               '&st=p1m6ebvg&dl=0)')
+    APK = ('StartAndroidActivity(,android.intent.action.VIEW,,'
+           'https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
+           'SMARTEDTV-atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
+           '&st=p1m6ebvg&dl=1)')
+
+    def setUp(self):
+        JanelaFake.ultima = None
+        JanelaFake.falhar_modal = False
+        JanelaFake.interacao = None
+        self.vip = VipFake()
+        # forca o caminho de fallback (builtin direto da tela)
+        self.vip.abrir_checkout = lambda: False
+        self.vip.abrir_dropbox = lambda: False
+        self.vip.compartilhar = lambda *a, **k: False
+        self.vip.open_apk_download = lambda: False
+        self.vip.abrir_url = lambda *a, **k: False
+        self.vip.procurar_atualizacao = lambda: False
+        self.modulo, self.xbmc, self.xbmcgui = carregar_default(self.vip)
+        self.addCleanup(sys.modules.pop, '_smarted_vip_stub', None)
+        self.addCleanup(sys.modules.pop, 'vip', None)
+
+    def _clique(self, controle):
+        def interacao(janela):
+            janela.onInit()
+            janela.onClick(controle)
+        JanelaFake.interacao = interacao
+        self.modulo.abrir_tela_entrada()
+        return JanelaFake.ultima
+
+    def test_120_checkout_abre_o_navegador_com_a_ordem_certa(self):
+        janela = self._clique(120)
+        self.assertIn(self.CHECKOUT, self.xbmc.BUILTINS)
+        self.assertFalse([b for b in self.xbmc.BUILTINS
+                          if b.startswith('StartAndroidActivity(android.')])
+        self.assertFalse([b for b in self.xbmc.BUILTINS
+                          if b.startswith('PlayMedia(')], self.xbmc.BUILTINS)
+        self.assertEqual(janela.getProperty('welcome_dialog'), '')
+
+    def test_121_dropbox_abre_o_navegador_com_o_link_verdadeiro(self):
+        self._clique(121)
+        self.assertIn(self.DROPBOX, self.xbmc.BUILTINS)
+        self.assertFalse([b for b in self.xbmc.BUILTINS
+                          if b.startswith('PlayMedia(')], self.xbmc.BUILTINS)
+
+    def test_122_baixa_o_apk_pelo_navegador(self):
+        self._clique(122)
+        self.assertIn(self.APK, self.xbmc.BUILTINS)
+
+    def test_toque_longo_no_121_preserva_o_compartilhamento(self):
+        def acoes(janela):
+            janela.setFocusId(121)
+            janela.onAction(117)          # ACTION_CONTEXT_MENU (toque longo)
+        JanelaFake.interacao = lambda j: (j.onInit(), acoes(j))
+        self.modulo.abrir_tela_entrada()
+        envios = [b for b in self.xbmc.BUILTINS
+                  if b.startswith('StartAndroidActivity(,android.intent.action.SEND,')]
+        self.assertEqual(len(envios), 1, self.xbmc.BUILTINS)
+        self.assertIn('android.intent.extra.TEXT', envios[0])

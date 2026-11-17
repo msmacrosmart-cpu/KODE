@@ -85,8 +85,11 @@ Delta exato sobre o APK da release `v1.0.83-unificado` (nada mais muda):
    do `Startup.xml` resolver.
 
 Nada mais: mesma skin, mesma versão (`1.0.83`), mesmo motor, mesma chave de
-assinatura, perfil semeado intacto (2731 arquivos com SHA-256 conferido),
-`service.smarted.bootstrap` sem uma linha alterada.
+assinatura, perfil semeado intacto (2731 arquivos com SHA-256 conferido) e o
+`service.py` do `service.smarted.bootstrap` sem uma linha alterada. O único
+arquivo desse addon que entra no APK é `vip.py` (o módulo de licença que a tela
+usa e que o APK base ainda não tinha; ele vai como arquivo novo, sem tocar no
+serviço de boot).
 
 ## 3. O que a tela faz
 
@@ -97,10 +100,10 @@ existe** no app:
 | controle | ação | implementação reutilizada |
 |---|---|---|
 | 311 (Ativar) + 310 (campo) | valida o código de ativação no servidor | `service.smarted.bootstrap/vip.py` → `validar()` (rotas `/api/validar`, `/api/codigos/validar`, `/functions/v1/validar-codigo`, …) gravando `vip.json` |
-| 120 (Abrir checkout) | abre a compra do plano sem anúncios | `vip.abrir_checkout()` → `https://pay.cakto.com.br/nkvbegd_1323120` (o mesmo destino do QR `qr_checkout.png`) |
-| 121 (Compartilhar link) | compartilha o app | `vip.compartilhar()` (ponte `smartedtv.full.CompartilharActivity`) |
-| 122 (Baixar APK) | abre o download do app | `vip.abrir_url(vip.APK)` — o link que o próprio módulo VIP usa |
-| 123 (ATUALIZAR APLICATIVO) | abre a checagem de versão (OTA) | `vip.procurar_atualizacao()` (ponte `smartedtv.full.AtualizaActivity`); sem essa ponte, cai no download do APK |
+| 120 (Abrir checkout) | sai do Kodi e abre o checkout da Cakto no navegador padrão do Android | `vip.abrir_checkout()` → `StartAndroidActivity(,android.intent.action.VIEW,,https://pay.cakto.com.br/nkvbegd_1323120)` (o mesmo destino do QR `qr_checkout.png`) |
+| 121 (Compartilhar link) | sai do Kodi e abre a página do Dropbox com o APK no navegador padrão do Android | `vip.abrir_dropbox()` → `vip.DROPBOX_URL`, que é o endereço verdadeiro gravado no QR `qr_apk.png` (com `rlkey`, `dl=0`). Toque longo no mesmo botão continua abrindo o `ACTION_SEND` (`vip.compartilhar()`) |
+| 122 (Baixar APK) | sai do Kodi e baixa o APK pelo navegador | `vip.open_apk_download()` → `vip.APK` (o mesmo link do QR, com `dl=1`) |
+| 123 (ATUALIZAR APLICATIVO) | checa versão (OTA) ou abre a página do Dropbox | `vip.procurar_atualizacao()`; sem manifesto configurado, abre `vip.DROPBOX_URL` no navegador |
 | 140/141 (10 min / 1 mês) | escolhe o plano que acompanha o código | o plano é só rótulo: quem decide validade é o servidor de ativação |
 | 312 → 905/906 | confirma "continuar com anúncios" | fecha o modal e libera a Home (versão com anúncios, como hoje) |
 | Voltar / menu anterior | volta do modal ou conclui a tela | `_sair()` → `_abrir_home()` (ActivateWindow(Home) com confirmação e rede de segurança) |
@@ -110,6 +113,20 @@ existe** no app:
 Nenhuma API, endpoint ou credencial nova: o módulo VIP é importado da pasta do
 `service.smarted.bootstrap` que já vem no APK, e o "ir para a Home" usa o mesmo
 comando que o `Startup.xml` original usava.
+
+### 3.1 Por que os botões 120/121 não abriam nada
+
+O builtin do Kodi tem a assinatura `StartAndroidActivity(package,intent,dataType,dataURI)`
+(`xbmc/interfaces/builtins/AndroidBuiltins.cpp` no Omega). O primeiro parâmetro
+é o **pacote Android**, não a action. A versão anterior chamava
+`StartAndroidActivity(android.intent.action.VIEW,URL,,)`: o Kodi procurava um
+pacote chamado `android.intent.action.VIEW` e o intent morria ali. Agora o
+pacote vai vazio — no Android ele vira `null` (jstring NULL em libandroidjni),
+ou seja, intent implícito — e o navegador padrão do aparelho abre por cima do
+Kodi. O mesmo erro foi corrigido em `vip.py` e no fallback do `default.py`.
+Os endereços são exatamente os do projeto: Cakto
+`https://pay.cakto.com.br/nkvbegd_1323120` (conteúdo do `qr_checkout.png`) e
+Dropbox com `rlkey` (conteúdo do `qr_apk.png`).
 
 ## 4. Robustez: o app nunca fica preso
 

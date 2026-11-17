@@ -26,8 +26,8 @@ DEFAULT_PY = ADDON / "default.py"
 
 # Acoes que o app suporta hoje (o que o default.py sabe executar).
 ACOES_CONHECIDAS = (
-    "abrir_checkout", "compartilhar", "baixar_apk", "atualizar",
-    "ativar_codigo", "continuar com anuncios", "fechar_dialogo",
+    "abrir_checkout", "abrir_dropbox", "compartilhar", "baixar_apk",
+    "atualizar", "ativar_codigo", "continuar com anuncios", "fechar_dialogo",
 )
 
 

@@ -2,14 +2,25 @@
 """Modulo de licenca VIP do SMARTED-TV.
 
 Implementa as rotas que a tela de entrada (script.smartedtv.welcome) chama:
-abrir checkout, compartilhar link, baixar APK, checar atualizacao e validar
-codigo de ativacao. Tudo reutiliza o que ja existe no app (xbmc/xbmcgui) e nao
-inventa endpoint: checkout aponta para o pay.cakto.com.br do pacote, o APK para
-o link do Dropbox/GitHub ja constante no VipFake dos testes, e a validacao de
-codigo usa /api/validar e /functions/v1/validar-codigo (rotas reais do projeto).
+abrir checkout, abrir o Dropbox, compartilhar link, baixar APK, checar
+atualizacao e validar codigo de ativacao. Tudo reutiliza o que ja existe no app
+(xbmc/xbmcgui) e nao inventa endpoint: checkout aponta para o
+pay.cakto.com.br do pacote, o Dropbox e o link verdadeiro gravado no QR Code
+qr_apk.png do pacote, e a validacao de codigo usa /api/validar e
+/functions/v1/validar-codigo (rotas reais do projeto).
 
-Os botoes de checkout, compartilhar, baixar APK e atualizar SAEM do app
-(abrem o navegador/intent do Android) em vez de ficar dentro do Kodi.
+Os botoes de checkout, Dropbox, compartilhar, baixar APK e atualizar SAEM do
+app (abrem o navegador/intent do Android) em vez de ficar dentro do Kodi.
+
+Assinatura real do builtin no Kodi (confirmada no fonte do Omega,
+xbmc/interfaces/builtins/AndroidBuiltins.cpp):
+
+    StartAndroidActivity(package,intent,dataType,dataURI[,flags,extras,...])
+
+O primeiro parametro e o PACOTE Android, nao a action. Package vazio vira
+``null`` no intent (jstring NULL em libandroidjni), ou seja, intent implicito:
+o Android escolhe o navegador padrao. Era esse o erro que impedia os botoes
+120/121 de abrir qualquer coisa.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -22,14 +33,24 @@ import xbmcaddon
 import xbmcgui
 import xbmcvfs
 
-ADDON = xbmcaddon.Addon()
+try:
+    ADDON = xbmcaddon.Addon('service.smarted.bootstrap')
+except Exception:
+    ADDON = xbmcaddon.Addon()
 ADDON_ID = ADDON.getAddonInfo('id')
 
-# URLs reais do pacote (mesmas do VipFake nos testes).
+# URLs reais do pacote.
 CHECKOUT = 'https://pay.cakto.com.br/nkvbegd_1323120'
 SITE = 'https://smartedtv-vip.lovable.app/'
-APK = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
-       'SMARTEDTV-atual.apk')
+
+# Link verdadeiro do Dropbox: e o mesmo conteudo gravado no QR Code
+# qr_apk.png que acompanha a tela (lido do proprio PNG do pacote). Tem o
+# rlkey; sem ele o link /scl/fi/ nao abre. dl=0 mostra a pagina do Dropbox
+# (com o botao de download); dl=1 baixa o APK direto.
+DROPBOX_URL = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
+               'SMARTEDTV-atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
+               '&st=p1m6ebvg&dl=0')
+APK = DROPBOX_URL.replace('&dl=0', '&dl=1')
 APK_GITHUB = ('https://github.com/msmacrosmart-cpu/KODE/releases/latest/'
               'download/SMARTEDTV-atual.apk')
 
@@ -63,15 +84,44 @@ def log(mensagem, nivel=xbmc.LOGINFO):
     xbmc.log('[%s] %s' % (ADDON_ID, mensagem), nivel)
 
 
-def _start_android_activity(action, uri='', mime_type='', extras=''):
+def _urlopen_request():
+    """Request/urlopen do Python da vez (Kodi 21 usa Python 3)."""
+    try:
+        from urllib.request import Request, urlopen  # Python 3
+    except ImportError:                              # pragma: no cover
+        from urllib2 import Request, urlopen          # Python 2
+    return (Request, urlopen)
+
+
+def _aspas_builtin(valor):
+    """Coloca um parametro entre aspas para o parser de builtins do Kodi.
+
+    O parser (CExecString/SplitParams) separa parametros por virgula e so
+    respeita virgula dentro de aspas. Extras de intent sao JSON (tem virgula e
+    aspas), entao vao entre aspas com as aspas internas escapadas.
+    """
+    return '"%s"' % valor.replace('\\', '\\\\').replace('"', '\\"')
+
+
+def _start_android_activity(intent, data_uri='', data_type='', extras='',
+                            package='', flags=''):
     """Dispara um intent do Android (sai do Kodi para outro app).
 
-    Sintaxe do Kodi: StartAndroidActivity(action,uri,mime_type,extras)
+    Ordem real do Kodi:
+    ``StartAndroidActivity(package,intent,dataType,dataURI,flags,extras)``.
+
+    ``package`` fica vazio de proposito: no Android vira ``null`` e o intent
+    e implicito (o sistema escolhe o navegador padrao). Passar a action no
+    primeiro campo, como fazia a versao anterior, fazia o Kodi procurar um
+    pacote chamado ``android.intent.action.VIEW`` e nada abria.
     """
-    comando = 'StartAndroidActivity(%s,%s,%s,%s)' % (
-        action, uri, mime_type, extras)
+    campos = [package, intent, data_type, data_uri]
+    if extras or flags:
+        campos.extend([flags, _aspas_builtin(extras) if extras else ''])
+    comando = 'StartAndroidActivity(%s)' % ','.join(campos)
     try:
         xbmc.executebuiltin(comando)
+        log('intent disparado: %s' % comando)
         return True
     except Exception as erro:
         log('StartAndroidActivity falhou (%s): %s' % (comando, erro),
@@ -82,12 +132,14 @@ def _start_android_activity(action, uri='', mime_type='', extras=''):
 def _abrir_navegador(url, rotulo='link'):
     """Abre uma URL no navegador externo do Android (sai do app)."""
     log('abrindo navegador externo %s: %s' % (rotulo, url))
-    if _start_android_activity('android.intent.action.VIEW', url, '', ''):
+    if _start_android_activity('android.intent.action.VIEW', url):
         return True
-    # fallback para nao-Android: abre dentro do Kodi
+    # fallback apenas fora do Android: no Android o PlayMedia abriria o link
+    # DENTRO do Kodi, que e justamente o que o usuario nao quer.
     try:
-        xbmc.executebuiltin('PlayMedia(%s)' % url)
-        return True
+        if not xbmc.getCondVisibility('System.Platform.Android'):
+            xbmc.executebuiltin('PlayMedia(%s)' % url)
+            return True
     except Exception as erro:
         log('nao foi possivel abrir %s (%s): %s' % (rotulo, url, erro),
             xbmc.LOGWARNING)
@@ -100,10 +152,20 @@ def _abrir_navegador(url, rotulo='link'):
 
 
 def _compartilhar_texto(texto, rotulo='compartilhamento'):
-    """Compartilha um texto para outro app do Android (sai do app)."""
+    """Compartilha um texto para outro app do Android (ACTION_SEND).
+
+    O tipo do intent so e aplicado pelo Kodi junto com um dataURI, por isso o
+    link do APK vai como dado e o texto como EXTRA_TEXT. O menu nativo do
+    Android (WhatsApp, Telegram, Gmail) abre por cima do Kodi.
+    """
     log('compartilhando: %s' % texto)
-    if _start_android_activity('android.intent.action.SEND', '',
-                               'text/plain', texto):
+    extras = json.dumps([
+        {'type': 'string', 'key': 'android.intent.extra.TEXT', 'value': texto},
+        {'type': 'string', 'key': 'android.intent.extra.SUBJECT',
+         'value': 'SMARTEDTV'},
+    ])
+    if _start_android_activity('android.intent.action.SEND', APK, 'text/plain',
+                               extras):
         return True
     # fallback: mostra o texto num dialog para copiar
     try:
@@ -136,7 +198,7 @@ def validar(codigo):
     {ativo, codigo, expira} e devolve (True, mensagem). Em falha, devolve
     (False, mensagem).
     """
-    import urllib2  # Python 2 (Kodi 21 Omega usa Python 2.7 no Android)
+    Request, urlopen = _urlopen_request()
 
     urls = [
         'https://smartedtv-vip.lovable.app/api/validar',
@@ -144,9 +206,9 @@ def validar(codigo):
     ]
     for url in urls:
         try:
-            req = urllib2.Request(url, data=json.dumps({'codigo': codigo}),
-                                  headers={'Content-Type': 'application/json'})
-            resposta = urllib2.urlopen(req, timeout=10)
+            req = Request(url, data=json.dumps({'codigo': codigo}).encode('utf-8'),
+                          headers={'Content-Type': 'application/json'})
+            resposta = urlopen(req, timeout=10)
             corpo = json.loads(resposta.read().decode('utf-8'))
             if corpo.get('ativo') or corpo.get('sucesso') or corpo.get('ok'):
                 _gravar_licenca(codigo, corpo.get('expira'))
@@ -177,35 +239,38 @@ def _gravar_licenca(codigo, expira=None):
 
 
 def abrir_checkout():
-    """ID 120 - Abre o checkout da Cakto no navegador externo do Android (sai do app)."""
+    """ID 120 - Abre o checkout da Cakto no navegador externo do Android.
+
+    Sai da interface do Kodi: o intent ACTION_VIEW implicito (package vazio)
+    entrega a URL ao navegador padrao do aparelho.
+    """
     log('abrindo checkout: %s' % CHECKOUT)
-    try:
-        xbmc.executebuiltin(
-            'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % CHECKOUT)
-        return True
-    except Exception as erro:
-        log('StartAndroidActivity checkout falhou: %s' % erro, xbmc.LOGWARNING)
-    return False
+    return _start_android_activity('android.intent.action.VIEW', CHECKOUT)
+
+
+def abrir_dropbox():
+    """ID 121 - Abre o link verdadeiro do Dropbox no navegador externo.
+
+    Mostra a pagina do Dropbox (dl=0), de onde o APK pode ser baixado. O
+    endereco e o mesmo do QR Code do pacote; nada e inventado aqui.
+    """
+    log('abrindo Dropbox: %s' % DROPBOX_URL)
+    return abrir_url(DROPBOX_URL, 'Dropbox')
 
 
 def compartilhar(texto=None):
-    """ID 121 - Compartilhamento nativo Android (ACTION_SEND).
+    """Compartilhamento nativo Android (ACTION_SEND).
 
     Abre o menu nativo de compartilhamento do Android (WhatsApp, Telegram,
-    Gmail, etc.) com o link de download do APK do Dropbox.
+    Gmail, etc.) com o link de download do APK do Dropbox. Continua
+    disponivel (pressionar e segurar o botao 121 na tela de entrada).
     """
-    url_download = APK + '?dl=1'
-    mensagem = 'Baixe o SMARTEDTV aqui: %s' % url_download
-    log('compartilhando link de download: %s' % url_download)
-    try:
-        xbmc.executebuiltin(
-            'StartAndroidActivity(android.intent.action.SEND,,text/plain,%s)'
-            % mensagem)
+    mensagem = texto or 'Baixe o SMARTEDTV aqui: %s' % APK
+    log('compartilhando link de download: %s' % mensagem)
+    if _compartilhar_texto(mensagem):
         return True
-    except Exception as erro:
-        log('StartAndroidActivity SEND falhou: %s' % erro, xbmc.LOGWARNING)
-    # Fallback: abre o link no navegador externo
-    return abrir_url(url_download, 'download do APK')
+    # Fallback: abre a pagina do Dropbox no navegador externo
+    return abrir_dropbox()
 
 
 def share_download_link():
@@ -214,20 +279,14 @@ def share_download_link():
 
 
 def open_apk_download():
-    """Abre o download do APK no navegador externo do Android."""
-    return abrir_url(APK + '?dl=1', 'download do APK')
+    """Abre o download direto do APK no navegador externo do Android."""
+    return abrir_url(APK, 'download do APK')
 
 
 def abrir_url(url, rotulo='link'):
     """Abre uma URL no navegador externo do Android."""
     log('abrindo %s: %s' % (rotulo, url))
-    try:
-        xbmc.executebuiltin(
-            'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % url)
-        return True
-    except Exception as erro:
-        log('StartAndroidActivity abrir_url falhou: %s' % erro, xbmc.LOGWARNING)
-    return False
+    return _start_android_activity('android.intent.action.VIEW', url)
 
 
 def check_for_updates():
@@ -241,10 +300,10 @@ def check_for_updates():
         log('MANIFEST_URL nao configurado; pule a verificacao de atualizacao',
             xbmc.LOGWARNING)
         return (False, None)
-    import urllib2
+    Request, urlopen = _urlopen_request()
     try:
-        req = urllib2.Request(MANIFEST_URL, headers={'User-Agent': 'SMARTEDTV'})
-        resposta = urllib2.urlopen(req, timeout=10)
+        req = Request(MANIFEST_URL, headers={'User-Agent': 'SMARTEDTV'})
+        resposta = urlopen(req, timeout=10)
         manifesto = json.loads(resposta.read().decode('utf-8'))
         version_code = int(manifesto.get('versionCode', 0))
         if version_code > CURRENT_VERSION_CODE:
@@ -264,12 +323,12 @@ def download_update(apk_url):
 
     Devolve o caminho local do arquivo ou None em caso de falha.
     """
-    import urllib2
+    Request, urlopen = _urlopen_request()
     try:
         if not xbmcvfs.exists(DOWNLOADS_DIR):
             xbmcvfs.mkdir(DOWNLOADS_DIR)
-        req = urllib2.Request(apk_url, headers={'User-Agent': 'SMARTEDTV'})
-        resposta = urllib2.urlopen(req, timeout=30)
+        req = Request(apk_url, headers={'User-Agent': 'SMARTEDTV'})
+        resposta = urlopen(req, timeout=30)
         dados = resposta.read()
         with xbmcvfs.File(APK_DOWNLOAD_PATH, 'w') as handle:
             handle.write(dados)
@@ -318,15 +377,13 @@ def install_update(caminho_apk):
         log('arquivo nao encontrado para instalacao: %s' % caminho_apk,
             xbmc.LOGWARNING)
         return False
-    comando = ('StartAndroidActivity(android.intent.action.VIEW,%s,'
-               'application/vnd.android.package-archive,)' % caminho_apk)
-    try:
-        xbmc.executebuiltin(comando)
+    uri = 'file://' + caminho_apk.replace(' ', '%20')
+    if _start_android_activity('android.intent.action.VIEW', uri,
+                               'application/vnd.android.package-archive'):
         log('instalador do Android aberto para: %s' % caminho_apk)
         return True
-    except Exception as erro:
-        log('falha ao abrir instalador: %s' % erro, xbmc.LOGWARNING)
-        return False
+    log('falha ao abrir instalador: %s' % caminho_apk, xbmc.LOGWARNING)
+    return False
 
 
 def procurar_atualizacao():
@@ -335,7 +392,7 @@ def procurar_atualizacao():
     Dropbox no navegador (comportamento anterior)."""
     if not MANIFEST_URL:
         log('MANIFEST_URL nao configurado; abrindo link do Dropbox')
-        return abrir_url(APK + '?dl=1', 'atualização')
+        return abrir_url(DROPBOX_URL, 'atualização')
     tem, manifesto = check_for_updates()
     if not tem:
         xbmcgui.Dialog().notification(
@@ -351,7 +408,7 @@ def procurar_atualizacao():
     if not xbmcgui.Dialog().yesno('Atualizacao disponível', msg,
                                   'Baixar agora', 'Depois'):
         return False
-    apk_url = manifesto.get('apkUrl') or APK + '?dl=1'
+    apk_url = manifesto.get('apkUrl') or APK
     caminho = download_update(apk_url)
     if not caminho:
         xbmcgui.Dialog().notification(

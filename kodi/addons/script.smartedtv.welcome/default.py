@@ -47,9 +47,24 @@ Argumentos (`sys.argv`)
 
 Controles desta tela:
     310 campo do codigo   311 ativar
-    120 checkout          121 compartilhar link      122 baixar APK
+    120 checkout          121 abrir Dropbox        122 baixar APK
     123 atualizar aplicativo                       312 assistir com anuncios
     905/906/955 dialogos
+
+IDs 120 e 121 (correcao)
+------------------------
+Os dois botoes SAEM do Kodi e abrem o navegador padrao do Android:
+
+* 120 -> checkout da Cakto (https://pay.cakto.com.br/nkvbegd_1323120)
+* 121 -> pagina do Dropbox com o APK (link verdadeiro do QR qr_apk.png)
+
+O comando usado e ``StartAndroidActivity(package,intent,dataType,dataURI)``.
+A versao anterior passava a action no campo do pacote
+(``StartAndroidActivity(android.intent.action.VIEW,URL,,)``), o Kodi tentava
+abrir um pacote chamado ``android.intent.action.VIEW`` e nada acontecia. Agora
+o pacote vai vazio (intent implicito) e o Android escolhe o navegador padrao.
+Pressionar e segurar o 121 continua abrindo o compartilhamento nativo
+(ACTION_SEND), para nao perder a funcao que ja existia.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -72,6 +87,15 @@ MARCA_HOME = 'smartedtv.welcome.home'      # abrindo|ok|restart
 MARCA_VOLTAR = 'smartedtv.welcome.voltar'
 # Comando usado pelo proprio Startup.xml das skins para ir a Home.
 FLUXO_INTERFACE_PRINCIPAL = 'ReplaceWindow($INFO[System.StartupWindow])'
+
+# Fallbacks usados so quando o vip.py nao puder ser importado. Os valores sao
+# os mesmos de vip.py: checkout do pacote e o link verdadeiro gravado no QR
+# Code qr_apk.png (com rlkey; sem ele o link /scl/fi/ do Dropbox nao abre).
+CHECKOUT = 'https://pay.cakto.com.br/nkvbegd_1323120'
+DROPBOX_URL = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
+               'SMARTEDTV-atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
+               '&st=p1m6ebvg&dl=0')
+APK_DOWNLOAD = DROPBOX_URL.replace('&dl=0', '&dl=1')
 
 HOME_ID = 10000                 # janela da Home (winnames.xml)
 # Quanto o vigia espera a tela avisar que desenhou antes de abrir a Home.
@@ -221,88 +245,129 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
             pass
 
     # --- acoes ligadas ao que ja existe no projeto -----------------------
+    def _intent_navegador(self,url):
+        """Sai do Kodi e entrega a URL ao navegador padrao do Android.
+
+        Assinatura real: StartAndroidActivity(package,intent,dataType,dataURI).
+        O pacote vai vazio (intent implicito). No Android isso vira
+        ``setPackage(null)``, e o navegador padrao do aparelho abre por cima
+        do Kodi. Devolve True quando o builtin foi aceito pelo Kodi.
+        """
+        comando = 'StartAndroidActivity(,android.intent.action.VIEW,,%s)' % url
+        _log('[SMARTEDTV] Abrindo no navegador do Android: %s' % url)
+        try:
+            xbmc.executebuiltin(comando)
+            _log('[SMARTEDTV] Intent entregue ao Android: %s' % comando)
+            return True
+        except Exception as erro:
+            _log('[SMARTEDTV] StartAndroidActivity falhou (%s): %s'
+                 % (comando, erro), xbmc.LOGERROR)
+            return False
+
     def _abrir_checkout(self):
         """ID 120 - Abre o checkout da Cakto no navegador externo do Android."""
-        url = 'https://pay.cakto.com.br/nkvbegd_1323120'
-        _log('[SMARTEDTV] Botao checkout acionado. URL: %s' % url)
-        try:
-            xbmc.executebuiltin(
-                'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % url)
-            _log('[SMARTEDTV] Checkout aberto com sucesso no navegador.')
+        url = CHECKOUT
+        vip = _vip()
+        if vip is not None:
+            url = getattr(vip, 'CHECKOUT', CHECKOUT) or CHECKOUT
+            try:
+                if vip.abrir_checkout():
+                    _log('[SMARTEDTV] Checkout aberto via vip.abrir_checkout(): %s'
+                         % url)
+                    return
+            except Exception as erro:
+                _log('[SMARTEDTV] vip.abrir_checkout falhou: %s' % erro,
+                     xbmc.LOGWARNING)
+        _log('[SMARTEDTV] Botao 120 (checkout) acionado. URL: %s' % url)
+        if self._intent_navegador(url):
             return
-        except Exception as erro:
-            _log('[SMARTEDTV] Falha ao abrir checkout: %s' % erro,
-                 xbmc.LOGERROR)
         self._dialogo('Checkout indisponível',
                       'Não consegui abrir o pagamento neste aparelho. '
                       'Aponte a câmera para o QR Code ao lado.')
 
-    def _compartilhar(self):
-        """ID 121 - Compartilhamento nativo Android (ACTION_SEND).
+    def _abrir_dropbox(self):
+        """ID 121 - Abre o Dropbox verdadeiro no navegador externo.
 
-        Abre o menu nativo do Android (WhatsApp, Telegram, Gmail, etc.)
+        Reutiliza a configuracao existente (vip.DROPBOX_URL), que e o mesmo
+        endereco gravado no QR Code qr_apk.png. A pagina do Dropbox abre no
+        navegador padrao do Android e permite baixar o APK.
+        """
+        url = DROPBOX_URL
+        vip = _vip()
+        if vip is not None:
+            url = getattr(vip, 'DROPBOX_URL', DROPBOX_URL) or DROPBOX_URL
+            try:
+                if hasattr(vip, 'abrir_dropbox') and vip.abrir_dropbox():
+                    _log('[SMARTEDTV] Dropbox aberto via vip.abrir_dropbox(): %s'
+                         % url)
+                    return
+                if vip.abrir_url(url, 'Dropbox'):
+                    _log('[SMARTEDTV] Dropbox aberto via vip.abrir_url(): %s' % url)
+                    return
+            except Exception as erro:
+                _log('[SMARTEDTV] vip.abrir_url(Dropbox) falhou: %s' % erro,
+                     xbmc.LOGWARNING)
+        _log('[SMARTEDTV] Botao 121 (Dropbox) acionado. URL: %s' % url)
+        if self._intent_navegador(url):
+            return
+        self._dialogo('Dropbox indisponível',
+                      'Não consegui abrir o link do Dropbox neste aparelho. '
+                      'Aponte a câmera para o QR Code ao lado.')
+
+    def _compartilhar(self):
+        """Compartilhamento nativo Android (ACTION_SEND).
+
+        Continua disponivel em 121 por toque longo, para nao perder a funcao
+        que ja existia: abre o menu do Android (WhatsApp, Telegram, Gmail)
         com o link de download do APK do Dropbox.
         """
-        url_download = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
-                        'SMARTEDTV-atual.apk?dl=1')
-        mensagem = 'Baixe o SMARTEDTV aqui: %s' % url_download
-        _log('[SMARTEDTV] Botao compartilhar acionado. Link: %s' % url_download)
-        # Tenta ACTION_SEND nativo via vip.py
+        mensagem = 'Baixe o SMARTEDTV aqui: %s' % APK_DOWNLOAD
+        _log('[SMARTEDTV] Compartilhamento nativo acionado. Link: %s'
+             % APK_DOWNLOAD)
         vip = _vip()
         if vip is not None:
             try:
-                if vip.share_download_link():
-                    _log('[SMARTEDTV] Compartilhamento nativo aberto (ACTION_SEND).')
+                if vip.compartilhar():
+                    _log('[SMARTEDTV] Compartilhamento nativo aberto via vip.')
                     return
             except Exception as erro:
-                _log('[SMARTEDTV] vip.share_download_link falhou: %s' % erro,
+                _log('[SMARTEDTV] vip.compartilhar falhou: %s' % erro,
                      xbmc.LOGWARNING)
-        # Fallback: StartAndroidActivity direto com ACTION_SEND
+        # Fallback: ACTION_SEND direto (mesma ordem package,intent,type,data;
+        # o texto vai em extras JSON, entre aspas, para o parser do Kodi).
+        extras = ('[{"type":"string","key":"android.intent.extra.TEXT",'
+                  '"value":"%s"}]' % mensagem)
+        comando = ('StartAndroidActivity(,android.intent.action.SEND,text/plain,'
+                   '%s,,"%s")' % (APK_DOWNLOAD, extras.replace('"', '\\"')))
         try:
-            xbmc.executebuiltin(
-                'StartAndroidActivity(android.intent.action.SEND,,text/plain,%s)'
-                % mensagem)
-            _log('[SMARTEDTV] Compartilhamento aberto via StartAndroidActivity (ACTION_SEND).')
+            xbmc.executebuiltin(comando)
+            _log('[SMARTEDTV] Compartilhamento aberto via StartAndroidActivity.')
             return
         except Exception as erro:
             _log('[SMARTEDTV] StartAndroidActivity SEND falhou: %s' % erro,
-                 xbmc.LOGERROR)
-        # Fallback final: abre o link no navegador
-        try:
-            xbmc.executebuiltin(
-                'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % url_download)
-            _log('[SMARTEDTV] Link de download aberto no navegador.')
-            return
-        except Exception as erro:
-            _log('[SMARTEDTV] Falha ao abrir link de download: %s' % erro,
                  xbmc.LOGERROR)
         self._dialogo('Compartilhamento indisponível',
                       'Não consegui abrir o compartilhamento neste aparelho.')
 
     def _baixar_apk(self):
-        """ID 122 - Abre o download do APK no navegador externo do Android."""
-        url_download = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
-                        'SMARTEDTV-atual.apk?dl=1')
-        _log('[SMARTEDTV] Botao baixar APK acionado. URL: %s' % url_download)
-        # Tenta via vip.py primeiro
+        """ID 122 - Abre o download direto do APK no navegador do Android."""
+        url = APK_DOWNLOAD
         vip = _vip()
         if vip is not None:
+            url = getattr(vip, 'APK', APK_DOWNLOAD) or APK_DOWNLOAD
             try:
-                if vip.open_apk_download():
-                    _log('[SMARTEDTV] Download do APK aberto via vip.open_apk_download().')
+                if hasattr(vip, 'open_apk_download') and vip.open_apk_download():
+                    _log('[SMARTEDTV] Download do APK aberto via vip.')
+                    return
+                if vip.abrir_url(url, 'download do APK'):
+                    _log('[SMARTEDTV] Download do APK aberto: %s' % url)
                     return
             except Exception as erro:
                 _log('[SMARTEDTV] vip.open_apk_download falhou: %s' % erro,
                      xbmc.LOGWARNING)
-        # Fallback: StartAndroidActivity direto
-        try:
-            xbmc.executebuiltin(
-                'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % url_download)
-            _log('[SMARTEDTV] Download do APK aberto no navegador.')
+        _log('[SMARTEDTV] Botao 122 (baixar APK) acionado. URL: %s' % url)
+        if self._intent_navegador(url):
             return
-        except Exception as erro:
-            _log('[SMARTEDTV] Falha ao abrir download do APK: %s' % erro,
-                 xbmc.LOGERROR)
         self._dialogo('Download indisponível',
                       'Não consegui abrir o link de download neste aparelho.')
 
@@ -318,18 +383,10 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
             except Exception as erro:
                 _log('[SMARTEDTV] vip.procurar_atualizacao falhou: %s' % erro,
                      xbmc.LOGWARNING)
-        # Fallback: abre o link do Dropbox no navegador
-        url_download = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
-                        'SMARTEDTV-atual.apk?dl=1')
-        _log('[SMARTEDTV] Fallback: abrindo link do Dropbox no navegador.')
-        try:
-            xbmc.executebuiltin(
-                'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % url_download)
-            _log('[SMARTEDTV] Link de atualizacao aberto no navegador.')
+        # Fallback: abre a pagina do Dropbox no navegador
+        _log('[SMARTEDTV] Fallback: abrindo a pagina do Dropbox no navegador.')
+        if self._intent_navegador(DROPBOX_URL):
             return
-        except Exception as erro:
-            _log('[SMARTEDTV] Falha ao abrir link de atualizacao: %s' % erro,
-                 xbmc.LOGERROR)
         self._dialogo('Atualizacao indisponível',
                       'Não consegui verificar atualizacoes neste aparelho.')
 
@@ -449,7 +506,7 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         elif control_id == 120:
             self._abrir_checkout()
         elif control_id == 121:
-            self._compartilhar()
+            self._abrir_dropbox()
         elif control_id == 122:
             self._baixar_apk()
         elif control_id == 123:
@@ -463,6 +520,16 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         # Clique nesses ids nao faz nada (ver tests).
 
     def onAction(self, action):
+        # Toque longo no 121 preserva o compartilhamento nativo que existia
+        # antes de o botao virar o atalho do Dropbox (o visual nao muda).
+        if action == getattr(xbmcgui, 'ACTION_CONTEXT_MENU', 117):
+            try:
+                foco = self.getFocusId()
+            except Exception:
+                foco = None
+            if foco == 121:
+                self._compartilhar()
+                return
         if action in (xbmcgui.ACTION_NAV_BACK, xbmcgui.ACTION_PREVIOUS_MENU):
             if self.getProperty(PROP_DIALOGO) == 'ads':
                 self._fechar_dialogo(312)
