@@ -72,7 +72,7 @@ Delta exato sobre o APK da release `v1.0.83-unificado` (nada mais muda):
    comando executado numa janela morta, Home (10000) nunca carregada e **tela
    preta** depois de "Assistir com anúncios". Quem abre a Home agora é o próprio
    addon, depois que a modal sai de cena: `ActivateWindow(Home,return)` →
-   `ReplaceWindow(Home)` → espera de 5 s → `RestartApp` (último recurso,
+   `ReplaceWindow(Home)` → espera de 5 s → nova tentativa/aviso (nunca `RestartApp`,
    marcando `smartedtv.welcome.saiu` para a tela não reaparecer).
 3. **`xml/Font.xml`** das skins — declaradas as fontes `wfNN` do layout (o
    número é a altura em px medida do CSS: `wf11`, `wf13`, `wf15`, `wf17`,
@@ -99,7 +99,7 @@ existe** no app:
 
 | controle | ação | implementação reutilizada |
 |---|---|---|
-| 311 (Ativar) + 310 (campo) | valida o código de ativação no servidor | `service.smarted.bootstrap/vip.py` → `validar()` (rotas `/api/validar`, `/api/codigos/validar`, `/functions/v1/validar-codigo`, …) gravando `vip.json` |
+| 311 (Ativar) + 310 (campo) | valida o código de ativação no servidor | `service.smarted.bootstrap/vip.py` → `validar()` (`POST /api/public/validar-codigo`, corpo `{"code":"..."}`; grava `addon_data/service.smarted.bootstrap/vip.json`) |
 | 120 (Abrir checkout) | sai do Kodi e abre o checkout da Cakto no navegador padrão do Android | `vip.abrir_checkout()` → `StartAndroidActivity(,android.intent.action.VIEW,,https://pay.cakto.com.br/nkvbegd_1323120)` (o mesmo destino do QR `qr_checkout.png`) |
 | 121 (Compartilhar link) | sai do Kodi e abre a página do Dropbox com o APK no navegador padrão do Android | `vip.abrir_dropbox()` → `vip.DROPBOX_URL`, que é o endereço verdadeiro gravado no QR `qr_apk.png` (com `rlkey`, `dl=0`). Toque longo no mesmo botão continua abrindo o `ACTION_SEND` (`vip.compartilhar()`) |
 | 122 (Baixar APK) | sai do Kodi e baixa o APK pelo navegador | `vip.open_apk_download()` → `vip.APK` (o mesmo link do QR, com `dl=1`) |

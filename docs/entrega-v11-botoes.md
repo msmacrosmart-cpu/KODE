@@ -68,7 +68,7 @@ APK e grava o do repositório (uma única entrada, conferida byte a byte).
 | 121 (toque longo) | — | `_compartilhar()` → `vip.compartilhar()` | `ACTION_SEND` nativo (WhatsApp/Telegram/Gmail) com o link do APK |
 | 122 | Baixar APK (Android) | `_baixar_apk()` → `vip.open_apk_download()` | mesmo link do QR com `dl=1` — navegador externo |
 | 123 | ATUALIZAR APLICATIVO | `_atualizar()` → `vip.procurar_atualizacao()` | OTA ou página do Dropbox |
-| 310/311 | campo/Ativar | `vip.validar()` | `/api/validar` e `/functions/v1/validar-codigo` |
+| 310/311 | campo/Ativar | `vip.validar()` | `POST /api/public/validar-codigo` (`{"code":"..."}`) |
 | 312/905/906/955 | anúncios/status | fecha diálogo / libera Home | — |
 
 O endereço do Dropbox **não foi inventado**: foi decodificado do próprio QR

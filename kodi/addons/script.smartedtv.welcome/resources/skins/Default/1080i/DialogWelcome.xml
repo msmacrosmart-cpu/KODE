@@ -577,33 +577,5 @@
       <aligny>center</aligny>
     </control>
     </control>
-    <control type="group" id="960">
-      <visible>String.IsEqual(Window.Property(welcome_teclado),1)</visible>
-      <control type="image" id="961">
-        <left>0</left>
-        <top>0</top>
-        <width>1920</width>
-        <height>1080</height>
-        <texture>overlay.png</texture>
-      </control>
-      <control type="label" id="962">
-        <left>644</left>
-        <top>480</top>
-        <width>632</width>
-        <height>40</height>
-        <label>Teclado nativo ativado</label>
-        <font>wf26</font>
-        <textcolor>FFF7F7F7</textcolor>
-      </control>
-      <control type="label" id="963">
-        <left>644</left>
-        <top>520</top>
-        <width>632</width>
-        <height>28</height>
-        <label>Use o teclado do aparelho para digitar o código.</label>
-        <font>wf17</font>
-        <textcolor>FFBCBCBC</textcolor>
-      </control>
-    </control>
   </controls>
 </window>

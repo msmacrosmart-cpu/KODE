@@ -125,7 +125,7 @@ O que já está mapeado hoje (e funciona de verdade no APK):
 
 | id | rótulo na tela | ação real |
 |---|---|---|
-| 310 | campo do código | `vip.validar(codigo)` → rotas `/api/validar`, `/functions/v1/validar-codigo`, `/api/codigos/validar` (grava `vip.json`) |
+| 310 | campo do código | `vip.validar(codigo)` → `POST /api/public/validar-codigo` com `{"code":"..."}` (grava `addon_data/service.smarted.bootstrap/vip.json`) |
 | 311 | Ativar | dispara a validação do campo 310 |
 | 120 | Abrir checkout | `vip.abrir_checkout()` → `https://pay.cakto.com.br/nkvbegd_1323120` |
 | 121 | Compartilhar link | `vip.compartilhar()` → `smartedtv.full.CompartilharActivity` |

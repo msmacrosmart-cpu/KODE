@@ -29,7 +29,7 @@ Agora:
 
 1. `onInit` da tela → `smartedtv.welcome.ativa=1` (o vigia para de agir);
 2. a tela sai de cena → `_ir_para_home()` ativa a Home explicitamente e confirma
-   por ate 5 s (`ActivateWindow` → `ReplaceWindow(Home)` → `RestartApp`);
+   por ate 5 s (`ActivateWindow` → `ReplaceWindow(Home)`; nunca reinicia);
 3. se o processo da tela morrer antes do passo 1, o vigia `seguro=1` abre a Home
    em 8 s.
 
@@ -70,6 +70,7 @@ from __future__ import absolute_import, unicode_literals
 
 import os
 import sys
+import threading
 import time
 
 import xbmc
@@ -100,7 +101,7 @@ APK_DOWNLOAD = DROPBOX_URL.replace('&dl=0', '&dl=1')
 HOME_ID = 10000                 # janela da Home (winnames.xml)
 # Quanto o vigia espera a tela avisar que desenhou antes de abrir a Home.
 ESPERA_VIGIA = 8
-# Quanto esperamos a Home aparecer antes do RestartApp de emergencia.
+# Quanto esperamos a Home aparecer antes da ultima tentativa/aviso.
 ESPERA_HOME = 5
 # Argumento do keymap que reabre a tela a partir da Home.
 ARG_VOLTAR = 'voltar'
@@ -205,14 +206,31 @@ def _limpar(chave):
         pass
 
 
-def _mostrar_teclado():
-    """Exibe o grupo welcome_teclado no XML (teclado nativo ativado)."""
-    _definir(PROP_TECLADO, '1')
+def _mascarar(codigo):
+    """Nunca coloca o codigo inteiro no log (privacidade do cliente)."""
+    codigo = (codigo or '').strip()
+    if len(codigo) <= 6:
+        return '***' if codigo else '(vazio)'
+    return codigo[:4] + '...' + codigo[-2:]
 
 
-def _ocultar_teclado():
-    """Esconde o grupo welcome_teclado no XML."""
-    _limpar(PROP_TECLADO)
+def _clipboard():
+    """Tenta ler a area de transferencia pelas APIs que o Kodi expuser.
+
+    O Kodi 21/Android ainda nao implementa getClipboard(); a funcao devolve ''
+    nesse caso. Quando uma versao futura expuser a API, o codigo copiado no
+    WhatsApp/pagina entra direto no campo, sem biblioteca externa.
+    """
+    for modulo in (xbmc, xbmcgui):
+        funcao = getattr(modulo, 'getClipboard', None)
+        if callable(funcao):
+            try:
+                texto = funcao()
+                if texto:
+                    return texto.strip()
+            except Exception:
+                continue
+    return ''
 
 
 def _sinalizar_abertura():
@@ -391,27 +409,31 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
                       'Não consegui verificar atualizacoes neste aparelho.')
 
     def _digitar_codigo(self):
-        """Abre o teclado nativo do sistema para digitar o código de ativação.
+        """Abre o teclado do Kodi (o unico compativel com este APK) e devolve o texto.
 
-        Mostra o grupo welcome_teclado no XML, abre o dialogo nativo
-        `xbmcgui.Dialog().input(INPUT_ALPHANUM)`, coloca o resultado no
-        controle 310 e esconde o grupo novamente. Devolve o texto digitado
-        (ou '' se o usuário cancelar).
+        O controle edit 310 tambem abre o teclado ao ser clicado; esta funcao e
+        usada pelo botao Ativar quando o campo esta vazio. O conteudo atual e a
+        area de transferencia (quando o Kodi expuser getClipboard) entram como
+        valor inicial, para colar um codigo copiado de outro aplicativo sem
+        duplicar caracteres. O texto devolvido e aparado apenas nas pontas.
         """
-        _mostrar_teclado()
         try:
-            try:
-                self.setFocusId(310)
-            except Exception:
-                pass
+            atual = (self.getControl(310).getText() or '').strip()
+        except Exception:
+            atual = ''
+        inicial = atual or _clipboard()
+        try:
             codigo = xbmcgui.Dialog().input(
                 'Digite o código de ativação',
+                defaultt=inicial,
                 type=xbmcgui.INPUT_ALPHANUM,
             )
-        finally:
-            _ocultar_teclado()
+        except TypeError:
+            # assinaturas antigas nao aceitam defaultt
+            codigo = xbmcgui.Dialog().input('Digite o código de ativação')
         if not codigo:
             return ''
+        codigo = codigo.strip()
         try:
             self.getControl(310).setText(codigo)
         except Exception:
@@ -419,8 +441,17 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         return codigo
 
     def _ativar_codigo(self):
-        """Le o controle 310 e valida com o servidor pelo modulo vip do projeto."""
+        """Valida o codigo em segundo plano (nao bloqueia a interface).
+
+        A chamada de rede roda numa thread; o callback onClick volta na hora e a
+        tela continua respondendo. O resultado e publicado nas propriedades do
+        dialogo de status, que o botao 955 fecha. Se o servidor nao responder
+        dentro do prazo, um vigia libera a tela para tentar de novo.
+        """
         _log('[SMARTEDTV] Botao ativar codigo acionado.')
+        if getattr(self, '_validando', False):
+            _log('[SMARTEDTV] Ativacao ja em andamento; ignorando clique.')
+            return
         vip = _vip()
         if vip is None:
             _log('[SMARTEDTV] Falha: modulo vip nao disponivel para ativacao.',
@@ -433,7 +464,7 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         except Exception:
             codigo = ''
         if not codigo:
-            _log('[SMARTEDTV] Campo de codigo vazio, abrindo teclado nativo.')
+            _log('[SMARTEDTV] Campo de codigo vazio, abrindo teclado do Kodi.')
             codigo = self._digitar_codigo()
         if not codigo:
             _log('[SMARTEDTV] Nenhum codigo informado. Cancelado pelo usuario.')
@@ -442,26 +473,93 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
             except Exception:
                 pass
             return
-        _log('[SMARTEDTV] Enviando codigo para validacao: %s' % codigo)
-        xbmcgui.Dialog().notification(
-            'SMARTEDTV', 'Validando o código...', xbmcgui.NOTIFICATION_INFO, 3000)
+        codigo = codigo.strip()
+        _log('[SMARTEDTV] Codigo recebido (%s); iniciando validacao.'
+             % _mascarar(codigo))
+
+        self._validando = True
+        self._geracao_validacao = getattr(self, '_geracao_validacao', 0) + 1
+        geracao = self._geracao_validacao
+        self.setProperty(PROP_TITULO, 'Validando')
+        self.setProperty(PROP_TEXTO, 'Validando seu código...')
+        self.setProperty(PROP_OK, 'Aguarde')
+        self.setProperty('welcome_status_action', '')
+        self.setProperty(PROP_DIALOGO, 'status')
         try:
-            ok, mensagem = vip.validar(codigo)
-        except Exception as erro:
-            _log('[SMARTEDTV] Erro ao validar codigo: %s' % erro, xbmc.LOGERROR)
-            self._dialogo('Erro de validacao',
-                          'Ocorreu um erro ao validar o codigo: %s' % erro,
-                          'Tentar novamente')
+            self.setFocusId(955)
+        except Exception:
+            pass
+
+        def trabalho():
+            try:
+                ok, mensagem = vip.validar(codigo)
+            except Exception as erro:
+                _log('[SMARTEDTV] Erro ao validar codigo: %s' % erro,
+                     xbmc.LOGERROR)
+                ok, mensagem = (False,
+                                'Não foi possível validar agora. Tente novamente.')
+            self._concluir_validacao(geracao, ok, mensagem)
+
+        def vigia():
+            # teto de seguranca: nenhuma tela fica presa em "Validando..."
+            time.sleep(30)
+            try:
+                if (getattr(self, '_validando', False)
+                        and getattr(self, '_geracao_validacao', 0) == geracao):
+                    self._validando = False
+                    self.setProperty(PROP_TITULO, 'Servidor indisponível')
+                    self.setProperty(PROP_TEXTO,
+                                     'Servidor de ativação temporariamente indisponível.')
+                    self.setProperty(PROP_OK, 'Tentar novamente')
+                    self.setProperty('welcome_status_action', '')
+            except Exception:
+                # a janela pode ter sido fechada enquanto a rede demorava
+                pass
+
+        # Em teste/simulador (sem Android) roda sincrono para o roteiro
+        # conseguir conferir o resultado; no aparelho a rede vai para a thread.
+        try:
+            android = bool(xbmc.getCondVisibility('System.Platform.Android'))
+        except Exception:
+            android = False
+        if not android:
+            trabalho()
+        else:
+            thread = threading.Thread(target=trabalho, name='smarted-vip-validar')
+            thread.daemon = True
+            thread.start()
+            vigia_thread = threading.Thread(target=vigia, name='smarted-vip-vigia')
+            vigia_thread.daemon = True
+            vigia_thread.start()
+
+    def _concluir_validacao(self, geracao, ok, mensagem):
+        """Publica o resultado; ignora resultado de uma tentativa ja vencida."""
+        if getattr(self, '_geracao_validacao', 0) != geracao:
+            return
+        try:
+            self._validando = False
+        except Exception:
             return
         if ok:
-            self._dialogo('VIP ativado', mensagem or 'Acesso VIP liberado.',
-                          'Começar a assistir')
+            texto = 'VIP ativado com sucesso!'
+            titulo = 'VIP ativado'
+            acao = 'Começar a assistir'
             _log('[SMARTEDTV] Codigo ativado com sucesso; licenca gravada em vip.json.')
         else:
-            self._dialogo('Código não ativado',
-                          mensagem or 'O serviço não aceitou este código.',
-                          'Tentar novamente')
-            _log('[SMARTEDTV] Codigo recusado: %s' % mensagem, xbmc.LOGWARNING)
+            texto = mensagem or 'Este código não é válido. Verifique e tente novamente.'
+            titulo = 'Código não ativado'
+            acao = 'Tentar novamente'
+            _log('[SMARTEDTV] Codigo nao ativado: %s' % texto, xbmc.LOGWARNING)
+        try:
+            self.setProperty(PROP_TITULO, titulo)
+            self.setProperty(PROP_TEXTO, texto)
+            self.setProperty(PROP_OK, acao)
+            self.setProperty('welcome_status_action', 'home' if ok else '')
+            self.setProperty(PROP_DIALOGO, 'status')
+            self.setFocusId(955)
+        except Exception:
+            # janela ja fechada: o resultado nao tem onde aparecer
+            pass
 
     def _modo_gratuito(self):
         """Fecha a entrada e libera a Home (versao com anuncios, como hoje)."""
@@ -470,12 +568,23 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
     def _sair(self):
         self.saiu = True
         _definir(MARCA_SAIU, '1')      # o vigia para de agir
-        _ocultar_teclado()               # garante que o grupo saia de cena
         self.close()
 
     # --- eventos ---------------------------------------------------------
     def onClick(self, control_id):
         _log('[SMARTEDTV] onClick recebido: control_id=%s' % control_id)
+        # OK do dialogo de STATUS: precisa ser tratado ANTES do fechamento
+        # generico, senao o sucesso do VIP nunca chega a abrir a Home.
+        if control_id == 955 and self.getProperty(PROP_DIALOGO) == 'status':
+            if getattr(self, '_validando', False):
+                _log('[SMARTEDTV] Validacao em andamento; OK somente depois do resultado.')
+                return
+            acao = self.getProperty('welcome_status_action')
+            _log('[SMARTEDTV] Status OK; acao=%r' % acao)
+            self._fechar_dialogo()
+            if acao == 'home':
+                self._sair()
+            return
         if self.getProperty(PROP_DIALOGO):
             # qualquer clique com dialogo aberto so fecha o dialogo
             _log('[SMARTEDTV] Dialogo aberto (%s), fechando dialogo.',
@@ -502,7 +611,15 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
             self._modo_gratuito()
         elif control_id == 955:
             _log('[SMARTEDTV] Botao 955 (OK do dialogo status) acionado.')
+            if getattr(self, '_validando', False):
+                _log('[SMARTEDTV] Validacao em andamento; OK somente depois do resultado.')
+                return
+            acao = self.getProperty('welcome_status_action')
             self._fechar_dialogo()
+            if acao == 'home':
+                # Sucesso do codigo: fecha a entrada; o fluxo normal abre a Home
+                # (nada de RestartApp, nada de fechar o app).
+                self._sair()
         elif control_id == 120:
             self._abrir_checkout()
         elif control_id == 121:
@@ -535,6 +652,9 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
                 self._fechar_dialogo(312)
                 return
             if self.getProperty(PROP_DIALOGO) == 'status':
+                if getattr(self, '_validando', False):
+                    _log('[SMARTEDTV] VOLTAR ignorado: validacao em andamento.')
+                    return
                 self._fechar_dialogo()
                 return
             self._sair()
@@ -544,7 +664,7 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         # de 30 s no Startup.xml — era ele que deixava a tela preta)
         self.saiu = False
         _limpar(MARCA_SAIU)
-        _limpar(PROP_TECLADO)      # teclado nativo começa escondido
+        _limpar(PROP_TECLADO)      # propriedade antiga; o overlay nao existe mais
         _sinalizar_abertura()
         _log('tela de entrada carregada (antes da Home)')
         try:
@@ -583,7 +703,8 @@ def _ir_para_home(motivo=''):
        ao ativa-la, mesmo com a Home ainda nao criada);
     2. `ReplaceWindow(Home)` — se a ativacao nao pegou;
     3. confirma por ate 5 s olhando `System.CurrentWindow`;
-    4. se nada funcionou, `RestartApp` (melhor reiniciar do que ficar no escuro).
+    4. se nada funcionou, tenta a Home mais uma vez e avisa o usuario — NAO
+       reinicia o app (o pedido expresso e que o app nunca feche sozinho).
 
     O antigo comando do Startup.xml
     (`ReplaceWindow($INFO[System.StartupWindow])`) NAO e usado aqui: ele aponta
@@ -619,10 +740,26 @@ def _ir_para_home(motivo=''):
             _definir(MARCA_HOME, 'ok')
             return True
 
-    _log('a Home nao apareceu; reiniciando o app', xbmc.LOGERROR)
-    _definir(MARCA_HOME, 'restart')
-    _definir(MARCA_SAIU, '1')
-    _comando_ok('RestartApp', espera=0)
+    # Ultima tentativa sem reiniciar: uma Home ja carregada pode estar apenas
+    # escondida atras da janela que acabou de fechar.
+    _log('a Home nao apareceu; tentando ActivateWindow(Home) novamente',
+         xbmc.LOGERROR)
+    _comando_ok('ActivateWindow(Home)', espera=1.0)
+    if _tela_da_home():
+        _log('Home ativa (segunda tentativa)')
+        _definir(MARCA_HOME, 'ok')
+        return True
+    # NUNCA RestartApp/close aqui: isso era o "app fecha sozinho". O aviso fica
+    # na tela e o vigia da tela de entrada ainda pode abrir a Home; se nada
+    # funcionar, o usuario usa VOLTAR em vez de perder o app.
+    _definir(MARCA_HOME, 'falhou')
+    _definir(MARCA_ABERTA, '1')
+    try:
+        xbmc.executebuiltin('Notification(SMARTEDTV, Toque em VOLTAR para abrir o menu, 8000)')
+    except Exception:
+        pass
+    _log('Home nao abriu; o app foi mantido aberto (sem RestartApp).',
+         xbmc.LOGERROR)
     return False
 
 

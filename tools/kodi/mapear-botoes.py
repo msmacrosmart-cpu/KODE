@@ -61,6 +61,8 @@ def acoes_do_python():
             if not isinstance(no, ast.Constant):
                 continue
             valor = no.value
+            if isinstance(valor, bool):
+                continue          # `if ativo:`/`getattr(..., False)` nao e id
             if isinstance(valor, int) or (isinstance(valor, str) and valor.isdigit()):
                 achados.append(str(valor))
         return achados

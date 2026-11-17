@@ -6,8 +6,8 @@ abrir checkout, abrir o Dropbox, compartilhar link, baixar APK, checar
 atualizacao e validar codigo de ativacao. Tudo reutiliza o que ja existe no app
 (xbmc/xbmcgui) e nao inventa endpoint: checkout aponta para o
 pay.cakto.com.br do pacote, o Dropbox e o link verdadeiro gravado no QR Code
-qr_apk.png do pacote, e a validacao de codigo usa /api/validar e
-/functions/v1/validar-codigo (rotas reais do projeto).
+qr_apk.png do pacote, e a validacao de codigo usa
+/api/public/validar-codigo (rota real do site, campo JSON "code").
 
 Os botoes de checkout, Dropbox, compartilhar, baixar APK e atualizar SAEM do
 app (abrem o navegador/intent do Android) em vez de ficar dentro do Kodi.
@@ -27,6 +27,9 @@ from __future__ import absolute_import, unicode_literals
 import hashlib
 import json
 import os
+import re
+import threading
+import time
 
 import xbmc
 import xbmcaddon
@@ -72,8 +75,13 @@ CURRENT_VERSION_NAME = '1.0.83'
 CURRENT_VERSION_CODE = 83
 
 # Caminho da licenca ativada (gravada por validar() quando OK).
+# O Java Licenca/SmartAds le exatamente addon_data/service.smarted.bootstrap/
+# vip.json; o antigo userdata/vip.json era ignorado pelo app.
 HOME = xbmcvfs.translatePath('special://home')
-VIP_JSON = os.path.join(HOME, 'userdata', 'vip.json')
+PERFIL = xbmcvfs.translatePath('special://profile')
+ADDON_DATA = os.path.join(PERFIL, 'addon_data', ADDON_ID)
+VIP_JSON = os.path.join(ADDON_DATA, 'vip.json')
+VIP_JSON_ANTIGO = os.path.join(HOME, 'userdata', 'vip.json')
 
 # Pasta de downloads do app (dentro do userdata do Kodi).
 DOWNLOADS_DIR = os.path.join(HOME, 'userdata', 'smartedtv-downloads')
@@ -177,65 +185,408 @@ def _compartilhar_texto(texto, rotulo='compartilhamento'):
     return False
 
 
-def ativa():
-    """Devolve True quando ja existe uma licenca VIP valida em vip.json."""
+# --- licenca VIP: validacao real do backend --------------------------------
+# Rota confirmada em 2026-11-17 contra o site de producao:
+#   POST https://smartedtv-vip.lovable.app/api/public/validar-codigo
+#   corpo {"code": "<codigo>"}  (o campo e "code", nao "codigo")
+#   200 {"status":"success","active":true} + Set-Cookie smartedtv_device=...
+#   403 {"status":"error","active":false,"message":"Codigo invalido..."}
+# A rota /public/api/cakto NAO valida codigo: com JSON ela responde 406
+# ("Only HTML requests are supported here") e com HTML devolve a SPA. Ela fica
+# como segunda tentativa apenas quando a primeira falha por rede/servidor; so
+# ativa se o JSON disser active=true. Uma recusa definitiva nunca vai para a
+# segunda rota (evita dupla ativacao).
+VALIDAR_URL = 'https://smartedtv-vip.lovable.app/api/public/validar-codigo'
+VALIDAR_FALLBACK = 'https://smartedtv-vip.lovable.app/public/api/cakto'
+TIMEOUT = 10
+PRAZO_TOTAL = 18
+
+_ROTA_BOA = os.path.join(ADDON_DATA, 'vip-endpoint-ok.txt')
+_COOKIE = os.path.join(ADDON_DATA, 'device-cookie.txt')
+_EM_ANDAMENTO = [0.0]   # timestamp da validacao em curso (0 = livre)
+_COOKIE_RE = re.compile(r'smartedtv_device=([^;,\s]+)')
+
+
+def _garantir_pasta():
     try:
-        if not xbmcvfs.exists(VIP_JSON):
-            return False
-        with xbmcvfs.File(VIP_JSON, 'r') as handle:
-            dados = json.loads(handle.read())
-        return bool(dados.get('ativo'))
-    except Exception as erro:
-        log('nao foi possivel ler vip.json: %s' % erro, xbmc.LOGWARNING)
+        if not os.path.isdir(ADDON_DATA):
+            os.makedirs(ADDON_DATA)
+        return True
+    except Exception:
         return False
 
 
-def validar(codigo):
-    """Valida o codigo de ativacao com o servidor.
-
-    Tenta as rotas reais do projeto (/api/validar e
-    /functions/v1/validar-codigo). Em caso de sucesso, grava vip.json com
-    {ativo, codigo, expira} e devolve (True, mensagem). Em falha, devolve
-    (False, mensagem).
-    """
-    Request, urlopen = _urlopen_request()
-
-    urls = [
-        'https://smartedtv-vip.lovable.app/api/validar',
-        'https://smartedtv-vip.lovable.app/functions/v1/validar-codigo',
-    ]
-    for url in urls:
-        try:
-            req = Request(url, data=json.dumps({'codigo': codigo}).encode('utf-8'),
-                          headers={'Content-Type': 'application/json'})
-            resposta = urlopen(req, timeout=10)
-            corpo = json.loads(resposta.read().decode('utf-8'))
-            if corpo.get('ativo') or corpo.get('sucesso') or corpo.get('ok'):
-                _gravar_licenca(codigo, corpo.get('expira'))
-                log('codigo validado: %s' % codigo)
-                return (True, corpo.get('mensagem') or 'Acesso VIP liberado.')
-            return (False, corpo.get('mensagem') or
-                    'O serviço não aceitou este código.')
-        except Exception as erro:
-            log('validar(%s) falhou em %s: %s' % (codigo, url, erro),
-                xbmc.LOGWARNING)
-            continue
-    return (False, 'Não foi possível conectar ao servidor de ativação.')
-
-
-def _gravar_licenca(codigo, expira=None):
-    """Grava vip.json com a licenca ativada."""
+def _ler_texto(caminho):
     try:
-        dados = {'ativo': True, 'codigo': codigo}
-        if expira:
-            dados['expira'] = expira
-        pasta = os.path.dirname(VIP_JSON)
-        if not xbmcvfs.exists(pasta):
-            xbmcvfs.mkdir(pasta)
-        with xbmcvfs.File(VIP_JSON, 'w') as handle:
-            handle.write(json.dumps(dados))
+        with open(caminho, 'r', encoding='utf-8') as handle:
+            return handle.read()
+    except Exception:
+        return ''
+
+
+def _gravar_json(caminho, dados):
+    """Grava JSON de forma atomica; nunca guarda o codigo inteiro."""
+    try:
+        _garantir_pasta()
+        temporario = caminho + '.tmp'
+        with open(temporario, 'w', encoding='utf-8') as handle:
+            json.dump(dados, handle, ensure_ascii=False, indent=2)
+        try:
+            os.replace(temporario, caminho)
+        except AttributeError:                 # Python 2 (nao usado no Kodi 21)
+            os.rename(temporario, caminho)
+        try:
+            os.chmod(caminho, 0o600)
+        except Exception:
+            pass
+        return True
     except Exception as erro:
-        log('nao foi possivel gravar vip.json: %s' % erro, xbmc.LOGWARNING)
+        log('nao consegui gravar %s: %s' % (os.path.basename(caminho), erro),
+            xbmc.LOGWARNING)
+        return False
+
+
+def _ler_json(caminho):
+    texto = _ler_texto(caminho)
+    if not texto.strip():
+        return {}
+    try:
+        dados = json.loads(texto)
+        return dados if isinstance(dados, dict) else {}
+    except Exception:
+        return {}
+
+
+def _hash_codigo(codigo):
+    return hashlib.sha256(codigo.encode('utf-8')).hexdigest()[:16]
+
+
+def _mascarar(codigo):
+    if not codigo:
+        return '(vazio)'
+    if len(codigo) <= 6:
+        return codigo[:1] + '***'
+    return codigo[:4] + '...' + codigo[-2:]
+
+
+def normalizar_codigo(codigo):
+    """Apara espacos externos e usa MAIUSCULAS (como o app/Java fazem).
+
+    Nao remove hifens e nao corta caracteres: o codigo enviado ao servidor e o
+    mesmo que o usuario digitou/colou, apenas sem espacos nas pontas e em
+    maiusculas. Assim digitar em caixa baixa (teclado do Kodi) nao invalida um
+    codigo que o site entrega em caixa alta.
+    """
+    if codigo is None:
+        return ''
+    try:
+        return codigo.strip().upper()
+    except Exception:
+        return str(codigo).strip().upper()
+
+
+def estado():
+    """Conteudo do vip.json (dict vazio quando nao existe ou esta ilegivel)."""
+    dados = _ler_json(VIP_JSON)
+    if dados:
+        return dados
+    # compatibilidade com a versao antiga, que gravava em userdata/vip.json
+    antigo = _ler_json(VIP_JSON_ANTIGO)
+    if not antigo:
+        return {}
+    codigo = normalizar_codigo(antigo.get('codigo') or '')
+    migrado = dict(antigo)
+    migrado.pop('codigo', None)
+    if codigo:
+        migrado['codigo_hash'] = _hash_codigo(codigo)
+    _gravar_json(VIP_JSON, migrado)
+    return migrado
+
+
+def dentro_do_prazo(expira):
+    """Aceita AAAA-MM-DD (fim do dia UTC) e ISO ...T...Z."""
+    expira = (expira or '').strip()
+    if not expira:
+        return True
+    import calendar
+    try:
+        if len(expira) == 10:
+            limite = calendar.timegm(time.strptime(expira, '%Y-%m-%d')) + 86399
+        else:
+            texto = expira.replace(' ', 'T').rstrip('Z')
+            if '.' in texto:
+                texto = texto.split('.', 1)[0]
+            limite = calendar.timegm(time.strptime(texto, '%Y-%m-%dT%H:%M:%S'))
+    except Exception:
+        log('prazo invalido: %r' % expira, xbmc.LOGWARNING)
+        return False
+    return time.time() <= limite
+
+
+def ativa():
+    """True somente com licenca gravada e ainda dentro do prazo."""
+    dados = estado()
+    if not dados.get('ativo'):
+        return False
+    return dentro_do_prazo(dados.get('expira'))
+
+
+def em_instantes(segundos):
+    return time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(time.time() + segundos))
+
+
+def _expira_de(resposta, codigo):
+    if isinstance(resposta, dict):
+        for chave in ('expiresAt', 'expira', 'expires', 'expires_at',
+                      'validade', 'data_expiracao', 'expiration'):
+            valor = resposta.get(chave)
+            if valor:
+                texto = str(valor).strip().replace(' ', 'T')
+                if len(texto) == 10:
+                    return texto + 'T23:59:59Z'
+                if not texto.endswith('Z') and '+' not in texto[10:]:
+                    texto += 'Z'
+                return texto
+        for chave, fator in (('dias', 86400), ('durationDays', 86400),
+                             ('minutos', 60), ('durationMinutes', 60)):
+            try:
+                quantidade = float(resposta.get(chave))
+            except (TypeError, ValueError):
+                continue
+            if quantidade > 0:
+                return em_instantes(quantidade * fator)
+    # O backend nao devolve prazo na ativacao. O plano e mensal (30 dias); o
+    # codigo de teste do painel e TESTE-... e vale 10 minutos.
+    if codigo.upper().startswith('TESTE-'):
+        return em_instantes(10 * 60)
+    return em_instantes(30 * 86400)
+
+
+def _ler_cookie():
+    valor = _ler_texto(_COOKIE).strip()
+    return valor if re.match(r'^[0-9a-fA-F-]{8,64}$', valor) else ''
+
+
+def _gravar_cookie(valor):
+    if not valor:
+        return
+    try:
+        _garantir_pasta()
+        with open(_COOKIE, 'w', encoding='utf-8') as handle:
+            handle.write(valor + '\n')
+        try:
+            os.chmod(_COOKIE, 0o600)
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+
+def _cookie_da_resposta(headers):
+    """Guarda o smartedtv_device que o servidor manda (identidade do aparelho)."""
+    valores = []
+    try:
+        if hasattr(headers, 'get_all'):
+            valores = headers.get_all('Set-Cookie') or []
+    except Exception:
+        valores = []
+    if not valores:
+        try:
+            valores = [headers.get('Set-Cookie') or '']
+        except Exception:
+            valores = []
+    for texto in valores:
+        achado = _COOKIE_RE.search(texto or '')
+        if achado:
+            _gravar_cookie(achado.group(1))
+            return achado.group(1)
+    return ''
+
+
+def _post_json(url, corpo, timeout, cookie=''):
+    """POST JSON. Devolve (status, headers, texto, tipo_de_erro)."""
+    Request, urlopen = _urlopen_request()
+    pedido = Request(url, data=json.dumps(corpo).encode('utf-8'), method='POST')
+    pedido.add_header('Content-Type', 'application/json; charset=utf-8')
+    pedido.add_header('Accept', 'application/json')
+    try:
+        versao = xbmcaddon.Addon().getAddonInfo('version')
+    except Exception:
+        versao = '1.0'
+    pedido.add_header('User-Agent', 'SMARTEDTV/%s' % versao)
+    if cookie:
+        pedido.add_header('Cookie', 'smartedtv_device=%s' % cookie)
+    try:
+        with urlopen(pedido, timeout=timeout) as resposta:
+            status = getattr(resposta, 'status', 200) or 200
+            return status, getattr(resposta, 'headers', {}), \
+                resposta.read(200000).decode('utf-8', 'replace'), None
+    except Exception as erro:
+        status = getattr(erro, 'code', 0) or 0
+        if status:
+            try:
+                texto = erro.read(200000).decode('utf-8', 'replace')
+            except Exception:
+                texto = ''
+            return status, getattr(erro, 'headers', {}), texto, 'http'
+        return 0, {}, '', 'conexao'
+
+
+def _mensagem_recusa(mensagem, status):
+    baixo = (mensagem or '').lower()
+    if 'já' in baixo and ('utiliz' in baixo or 'usad' in baixo):
+        return 'Este código já foi utilizado.'
+    if 'expir' in baixo or 'vencid' in baixo:
+        return 'Este código expirou. Solicite um novo código.'
+    if 'informe' in baixo and 'código' in baixo:
+        return 'Digite o código de ativação.'
+    if any(palavra in baixo for palavra in
+           ('inválid', 'invalid', 'não encontrado', 'nao encontrado', 'inativa')):
+        return 'Este código não é válido. Verifique e tente novamente.'
+    if mensagem and len(mensagem) <= 160:
+        return mensagem
+    if status == 409:
+        return 'Este código já foi utilizado.'
+    return 'Este código não é válido. Verifique e tente novamente.'
+
+
+def _classificar(status, texto):
+    """(categoria, mensagem, json) — sucesso exige active=true de verdade."""
+    dados = None
+    if texto and texto.lstrip().startswith(('{', '[')):
+        try:
+            dados = json.loads(texto)
+        except Exception:
+            dados = None
+    if dados is None:
+        if status == 0:
+            return ('conexao',
+                    'Não foi possível conectar ao servidor. Verifique sua internet.',
+                    None)
+        return ('comunicacao',
+                'Servidor de ativação temporariamente indisponível.', None)
+    if isinstance(dados, list):
+        dados = dados[0] if dados else {}
+    if not isinstance(dados, dict):
+        return ('comunicacao',
+                'Servidor de ativação temporariamente indisponível.', None)
+    ativo = dados.get('active')
+    ativo_ok = ativo is True or ativo == 1 or str(ativo).lower() == 'true'
+    estado_txt = str(dados.get('status') or dados.get('estado') or '').lower()
+    mensagem = str(dados.get('message') or dados.get('mensagem')
+                   or dados.get('error') or dados.get('erro') or '').strip()
+    if ativo_ok and estado_txt in ('success', 'ok', 'ativo', 'active',
+                                   'liberado', ''):
+        return ('ok', 'VIP ativado com sucesso!', dados)
+    if status in (400, 401, 403, 404, 409, 410, 422) \
+            or estado_txt in ('error', 'erro', 'invalid', 'invalido',
+                              'expired', 'expirado'):
+        return ('recusa', _mensagem_recusa(mensagem, status), dados)
+    if status in (406, 429) or status >= 500:
+        return ('servidor',
+                'Servidor de ativação temporariamente indisponível.', dados)
+    if status == 200 and ativo is False:
+        return ('recusa', _mensagem_recusa(mensagem, status), dados)
+    return ('comunicacao',
+            'Servidor de ativação temporariamente indisponível.', dados)
+
+
+def _gravar_licenca(codigo, expira, rota):
+    """Grava vip.json no caminho que o Java (Licenca/SmartAds) le.
+
+    Nao guarda o codigo inteiro: apenas o hash e o prazo, suficientes para o
+    app saber que a licenca esta ativa e para conferir o mesmo codigo depois.
+    """
+    # `expira` fica no formato de DATA (AAAA-MM-DD), que e o que o Java
+    # Licenca/SmartAds le; `expira_em` guarda o instante exato para o Python.
+    dados = {'ativo': True,
+             'codigo_hash': _hash_codigo(codigo),
+             'expira': (expira or '')[:10],
+             'expira_em': expira,
+             'origem': 'site',
+             'rota': rota,
+             'salvo_em': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}
+    salvou = _gravar_json(VIP_JSON, dados)
+    if salvou:
+        log('licenca VIP salva (codigo %s, expira %s)' % (_mascarar(codigo), expira))
+    return salvou
+
+
+def lembrar_rota(rota):
+    if not rota or not rota.startswith('http'):
+        return
+    try:
+        _garantir_pasta()
+        with open(_ROTA_BOA, 'w', encoding='utf-8') as handle:
+            handle.write(rota + '\n')
+    except Exception:
+        pass
+
+
+def validar(codigo):
+    """(ok, mensagem). So ativa com confirmacao real do backend.
+
+    Ordem: rota real do site; se e somente se ela falhar por rede/servidor,
+    tenta /public/api/cakto (que nao e API de codigo, mas e a segunda rota
+    pedida). Uma recusa definitiva (codigo invalido/expirado) NAO consulta a
+    segunda rota e nao ativa nada. HTTP 200 sozinho nunca e sucesso.
+    """
+    codigo = normalizar_codigo(codigo)
+    if not codigo:
+        return (False, 'Digite o código de ativação.')
+    agora = time.time()
+    if _EM_ANDAMENTO[0] and agora - _EM_ANDAMENTO[0] < 25:
+        return (False, 'Já existe uma validação em andamento. Aguarde.')
+    _EM_ANDAMENTO[0] = agora
+    try:
+        dados = estado()
+        if (dados.get('ativo') and dentro_do_prazo(dados.get('expira'))
+                and dados.get('codigo_hash') == _hash_codigo(codigo)):
+            return (True, 'VIP já está ativo neste aparelho.')
+
+        inicio = time.time()
+        cookie = _ler_cookie()
+        tipos = []
+        for url, rotulo in ((VALIDAR_URL, 'site'),
+                            (VALIDAR_FALLBACK, 'cakto')):
+            restante = PRAZO_TOTAL - (time.time() - inicio)
+            if restante <= 1:
+                break
+            timeout = max(3, min(TIMEOUT, restante))
+            status, headers, texto, _ = _post_json(
+                url, {'code': codigo}, timeout, cookie)
+            novo_cookie = _cookie_da_resposta(headers)
+            if novo_cookie:
+                cookie = novo_cookie
+            categoria, mensagem, resposta = _classificar(status, texto)
+            tipos.append(categoria)
+            log('validacao %s: HTTP %s -> %s' % (rotulo, status, categoria))
+            if categoria == 'ok':
+                expira = _expira_de(resposta, codigo)
+                if not _gravar_licenca(codigo, expira, url):
+                    return (False, 'VIP confirmado, mas não consegui salvar a '
+                                   'licença neste aparelho. Tente novamente.')
+                lembrar_rota(url)
+                return (True, 'VIP ativado com sucesso!')
+            if categoria == 'recusa':
+                # definitivo: nao consulta a segunda rota, nao duplica ativacao
+                return (False, mensagem)
+            # conexao/servidor/comunicacao: tenta a proxima rota
+        if tipos and all(tipo == 'conexao' for tipo in tipos):
+            return (False, 'Não foi possível conectar ao servidor. '
+                           'Verifique sua internet.')
+        return (False, 'Servidor de ativação temporariamente indisponível.')
+    finally:
+        _EM_ANDAMENTO[0] = 0.0
+
+
+def desativar():
+    for caminho in (VIP_JSON, VIP_JSON_ANTIGO):
+        try:
+            if os.path.exists(caminho):
+                os.remove(caminho)
+        except Exception:
+            pass
 
 
 def abrir_checkout():

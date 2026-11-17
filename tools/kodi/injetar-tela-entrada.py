@@ -21,7 +21,10 @@ ADDON_ID = ADDON_DIR.name
 ADDON_PREFIX = "assets/addons/%s/" % ADDON_ID
 MANIFEST = "assets/system/addon-manifest.xml"
 PROFILE_PREFIX = "assets/smarted/profile/"
+SERVICO_DIR = ROOT / "kodi" / "addons" / "service.smarted.bootstrap"
 VIP_MODULO = "assets/addons/service.smarted.bootstrap/vip.py"
+SMART_ADS_MODULO = "assets/addons/service.smarted.bootstrap/smart_ads.py"
+MODULOS_SUBSTITUIDOS = (VIP_MODULO, SMART_ADS_MODULO)
 KEYMAP_ORIGEM = ROOT / "kodi" / "keymaps" / "smartedtv-voltar.xml"
 KEYMAP_DESTINO = "assets/system/keymaps/zzz-smartedtv-voltar.xml"
 SIG = re.compile(r"^META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC))$", re.I)
@@ -164,9 +167,10 @@ def main(argv=None):
     FONTES_DA_TELA = fontes_da_tela()
     extras = arquivos_do_addon()
     extras.update(extrair_keymap())
-    vip_path = ROOT / "kodi" / "addons" / "service.smarted.bootstrap" / "vip.py"
-    if vip_path.is_file():
-        extras[VIP_MODULO] = vip_path.read_bytes()
+    for modulo in MODULOS_SUBSTITUIDOS:
+        caminho = ROOT / modulo.replace("assets/addons/", "kodi/addons/")
+        if caminho.is_file():
+            extras[modulo] = caminho.read_bytes()
 
     startups, fontes_alteradas, keymaps = [], [], []
     skins_com_font = []
@@ -176,6 +180,12 @@ def main(argv=None):
                 zipfile.ZipFile(args.saida, "w", allowZip64=True) as destino:
             nomes = set()
             perfil = {}
+            _origem = set(origem.namelist())
+            if ADDON_PREFIX + "default.py" in _origem:
+                raise SystemExit("APK base ja tinha a tela: %s" % ADDON_PREFIX)
+            if "assets/addons/service.smarted.bootstrap/service.py" not in _origem:
+                raise SystemExit("APK base sem "
+                                 "assets/addons/service.smarted.bootstrap/service.py")
             for item in origem.infolist():
                 if item.is_dir() or SIG.fullmatch(item.filename):
                     continue
@@ -192,13 +202,13 @@ def main(argv=None):
                             dbg("addon-manifest.xml: %s registrado" % ADDON_ID)
                         except SystemExit as e:
                             dbg("patch_manifest pulado: %s" % e)
-                    elif item.filename == VIP_MODULO:
-                        # O APK base as vezes ja tem um vip.py antigo. Ele NAO
-                        # e copiado: a versao do repositorio entra no fim e
-                        # substitui a antiga (senao os botoes continuariam
-                        # com a ordem errada do StartAndroidActivity).
-                        dbg("vip.py do APK base sera substituido pela versao "
-                            "do repositorio")
+                    elif item.filename in MODULOS_SUBSTITUIDOS:
+                        # O APK base tem copias antigas de vip.py/smart_ads.py
+                        # (com a classe errada do anuncio e a validacao antiga).
+                        # Elas NAO sao copiadas: as versoes do repositorio entram
+                        # no fim e substituem as antigas.
+                        dbg("%s do APK base sera substituido pela versao do "
+                            "repositorio" % item.filename.rsplit("/", 1)[-1])
                         continue
                     elif item.filename.startswith("assets/system/keymaps/"):
                         if item.filename == KEYMAP_DESTINO:
@@ -256,11 +266,12 @@ def main(argv=None):
 
             dbg("Extras a gravar: %d arquivos" % len(extras))
             for nome in sorted(extras):
-                if nome in nomes and nome != VIP_MODULO:
+                if nome in nomes and nome not in MODULOS_SUBSTITUIDOS:
                     dbg("Extra ja existe no APK, pulando: %s" % nome)
                     continue
-                if nome == VIP_MODULO and nome in nomes:
-                    dbg("vip.py: substituindo a versao antiga do APK base")
+                if nome in MODULOS_SUBSTITUIDOS and nome in nomes:
+                    dbg("%s: substituindo a versao antiga do APK base"
+                        % nome.rsplit("/", 1)[-1])
                 if nome == KEYMAP_DESTINO:
                     keymaps.append(nome)
                     dbg("%s: VOLTAR na Home reabre a tela" % nome)
@@ -280,10 +291,12 @@ def main(argv=None):
             for nome in extras:
                 if nome not in nomes and nome not in conferido.namelist():
                     raise SystemExit("arquivo da tela ausente: %s" % nome)
-            if VIP_MODULO in extras:
-                if conferido.read(VIP_MODULO) != extras[VIP_MODULO]:
-                    raise SystemExit("vip.py do APK difere do repositorio")
-                dbg("vip.py validado byte a byte com o repositorio")
+            for modulo in MODULOS_SUBSTITUIDOS:
+                if modulo in extras:
+                    if conferido.read(modulo) != extras[modulo]:
+                        raise SystemExit("%s do APK difere do repositorio" % modulo)
+                    dbg("%s validado byte a byte com o repositorio"
+                        % modulo.rsplit("/", 1)[-1])
             dbg("Extras validados: %d arquivos" % len(extras))
             if not keymaps:
                 dbg("Keymap ja existia ou nao foi adicionado (pulado)")
@@ -295,11 +308,12 @@ def main(argv=None):
     except SystemExit as erro:
         traceback.print_exc()
         print("ERRO_FATAL: %s" % erro, file=sys.stderr)
-        sys.exit(1)
+        # preserva a mensagem para os testes/CI (o codigo de saida continua != 0)
+        sys.exit(str(erro) or 1)
     except Exception as erro:
         traceback.print_exc()
         print("ERRO_FATAL: %s" % erro, file=sys.stderr)
-        sys.exit(1)
+        sys.exit(str(erro) or 1)
     return 0
 
 
