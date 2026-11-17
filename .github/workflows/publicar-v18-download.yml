@@ -37,16 +37,16 @@ jobs:
           ( cd dist && zip -0 -q "$APK.zip" "$APK" )
           ( cd dist && sha256sum "$APK" > "$APK.sha256" )
           ( cd dist && sha256sum "$APK.zip" > "$APK.zip.sha256" )
-          cat > dist/LEIA-ME.txt <<'TXT'
-SMARTEDTV 1.0.88 (v18)
-
-APK: 285.488.380 bytes
-SHA-256 do APK: b09cc6cfd7123a6a94163f92b1c85b0fb5907dce7bfbc486ed1ecb373014924e
-
-Baixe o APK ou o ZIP. Se baixar o ZIP, extraia o APK e instale.
-Confira sempre o tamanho e o SHA-256 antes de instalar.
-Não desinstale nada: é uma atualização/primeira instalação do pacote smartedtv.full.
-TXT
+          printf '%s\n' \
+            'SMARTEDTV 1.0.88 (v18)' \
+            '' \
+            'APK: 285.488.380 bytes' \
+            'SHA-256 do APK: b09cc6cfd7123a6a94163f92b1c85b0fb5907dce7bfbc486ed1ecb373014924e' \
+            '' \
+            'Baixe o APK ou o ZIP. Se baixar o ZIP, extraia o APK e instale.' \
+            'Confira sempre o tamanho e o SHA-256 antes de instalar.' \
+            'Nao desinstale nada: e uma atualizacao/primeira instalacao do pacote smartedtv.full.' \
+            > dist/LEIA-ME.txt
           ls -lh dist
           cat dist/*.sha256
       - name: Publicar release de download
