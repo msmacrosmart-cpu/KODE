@@ -327,4 +327,4 @@ jobs:
           subprocess.run(['gh', 'release', 'edit', os.environ['TAG_SAIDA'],
                           '--repo', repo, '--notes', notas], check=True)
           PY
-# build acionado: botoes 120 e 121 saem do app via StartAndroidActivity direto
+# build acionado: injetor com debug para identificar falha passo 5
