@@ -304,3 +304,31 @@ auditoria tipográfica ou o mapa de botões falharem.
 - Conferido: `Startup.xml` das 3 skins com 2 `onload` e zero `ReplaceWindow`;
   keymap só com a seção `<Home>`; addon `optional="true"`; perfil semeado
   intacto; `service.smarted.bootstrap` sem alteração.
+
+## 8. Variante TV/Box/Projetor/Stick (v13)
+
+A tela não muda para celular. Ao lado de `DialogWelcome.xml` o addon leva
+`DialogWelcomeTV.xml`, **gerado** por `tools/kodi/gerar-tela-tv.py` a partir da
+tela normal (não editar à mão):
+
+- 5% de overscan: logo/título descem 20 px e recuam 62 px da esquerda; a barra
+  do rodapé sobe para 880, a linha do campo/Ativar/Assistir para 892 e os
+  textos do rodapé vão para x=100; a barra vai para x=96 com 1728 de largura;
+- a dica vira “Use as setas e OK do controle.”;
+- fontes e ações dos botões são as mesmas; `defaultcontrol` continua 310.
+
+O `default.py` escolhe a variante em `_xml_da_tela()` usando `_modo_tv()`:
+`plataforma.txt` (Java `Plataforma`) manda; sem ele, resolução 16:9 ≥1280×720 ou
+nome do aparelho com tv/box/stick/fire/aft/shield/chromecast/projetor/leanback.
+A detecção é gravada em `special://home/../plataforma.txt`, o mesmo arquivo que
+o Java `AdTela` lê para focar o “Pular anúncio” no controle remoto.
+
+Regerar depois de qualquer mudança na tela normal:
+
+```bash
+python3 tools/kodi/gerar-tela-tv.py
+python3 tools/kodi/static-check.py
+python3 -m unittest tests.test_tela_entrada.TVBoxStickTest
+```
+
+Teste que garante a área segura: `tests/test_tela_entrada.py::TVBoxStickTest`.
