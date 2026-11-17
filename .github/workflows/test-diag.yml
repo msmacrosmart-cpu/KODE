@@ -1,0 +1,38 @@
+name: Test diagnostic
+
+on:
+  push:
+    branches: [arena/28b146c9-kode]
+
+permissions:
+  contents: write
+
+jobs:
+  diag:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Diagnostico basico
+        run: |
+          echo "=== Diag ==="
+          echo "Runner: $(uname -a)"
+          echo "Java: $(java -version 2>&1 || echo 'sem java')"
+          echo "Python: $(python3 --version)"
+          echo "GH CLI: $(gh --version 2>&1 | head -1)"
+          echo "Token: ${GH_TOKEN:0:10}..."
+          ls -la dropbox/ 2>/dev/null || echo "sem dropbox/"
+          echo "=== Fim Diag ==="
+          echo "=== Teste download APK ==="
+          mkdir -p /tmp/diag-download
+          gh release download v1.0.83-tela-inicial-v9 -R "$GITHUB_REPOSITORY" \
+            --pattern "SMARTEDTV-atual-com-tela-inicial-v9.apk" --dir /tmp/diag-download 2>&1 || echo "DOWNLOAD FALHOU"
+          ls -la /tmp/diag-download/ 2>/dev/null || echo "sem arquivos"
+          echo "=== Fim Download ==="
+
+      - name: Upload diagnostico
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-diag-artifact
+          path: /tmp/diag-download/
+        retention-days: 1
