@@ -3,10 +3,6 @@ name: SMARTEDTV repackage video screen
 on:
   push:
     branches: [arena/28b146c9-kode]
-    paths:
-      - .github/workflows/smartedtv-repack-videos.yml
-      - tools/kodi/injetar-videos.py
-      - kodi/**
 
 permissions:
   contents: write
