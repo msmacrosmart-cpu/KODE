@@ -172,3 +172,31 @@ msgstr "Detalhes"
 msgctxt "#31035"
 msgid "Categories"
 msgstr "Categorias"
+
+msgctxt "#31040"
+msgid "Videos screen"
+msgstr "Tela de Vídeos"
+
+msgctxt "#31041"
+msgid "Subscribe VIP"
+msgstr "Assinar o VIP"
+
+msgctxt "#31042"
+msgid "I have a code"
+msgstr "Já tenho um código"
+
+msgctxt "#31043"
+msgid "Share app QR"
+msgstr "Compartilhar o app (QR no celular)"
+
+msgctxt "#31044"
+msgid "Send app link"
+msgstr "Enviar o link do app"
+
+msgctxt "#31045"
+msgid "Check for update"
+msgstr "Procurar atualização"
+
+msgctxt "#31046"
+msgid "Download APK"
+msgstr "Baixar APK"

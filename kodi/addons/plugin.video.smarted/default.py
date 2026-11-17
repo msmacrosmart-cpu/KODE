@@ -1,12 +1,23 @@
 """Kodi directory bridge; does not collect or fabricate catalogue data."""
 import sys
 import os
+import subprocess
 from urllib.parse import parse_qs
 
+import xbmc
 import xbmcgui
 import xbmcplugin
 
 from routes import items
+
+# Link oficial do APK no Dropbox (versão mais recente: SMARTEDTV-2atual.apk)
+SMARTEDTV_APK_LINK = 'https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/SMARTEDTV-2atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j&dl=1'
+
+# QR Code gerado para o link do APK (armazenado na skin)
+QR_CODE_PATH = 'special://skin/resources/qrcode.png'
+
+# Tamanho máximo para notificações
+NOTIFICATION_TIME = 8000
 
 
 def main():
@@ -42,6 +53,29 @@ def main():
         return
     if route in ('carrossel', 'carousel'):
         carousel(handle, params)
+        return
+    if route.startswith('favoritos-'):
+        favorites_window(handle, route.split('-', 1)[1])
+        return
+    if route == 'actions':
+        action = params.get('action', [''])[0]
+        if action == 'open_url':
+            open_url(params)
+        elif action == 'enter_code':
+            enter_code(handle)
+        elif action == 'show_qr':
+            show_qr(handle)
+        elif action == 'share_link':
+            share_link(handle)
+        elif action == 'download_apk':
+            download_apk(handle)
+        elif action == 'check_update':
+            check_update(handle)
+        elif action == 'check_update':
+            check_update(handle)
+        else:
+            xbmcgui.Dialog().notification('SMARTED', 'Ação desconhecida.', xbmcgui.NOTIFICATION_ERROR, 5000)
+        xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
         return
     if route.startswith('favoritos-'):
         favorites_window(handle, route.split('-', 1)[1])
@@ -482,6 +516,224 @@ def open_navigation(handle, params):
              getattr(xbmc, 'LOGINFO', 20))
     xbmc.executebuiltin(comando)
     xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+
+
+# ---------------------------------------------------------------------------
+# Ações da tela VÍDEOS (integração Android nativa)
+# ---------------------------------------------------------------------------
+
+def _android_intent(action, data_type=None, extra_text=None, url=None):
+    """Executa um Intent Android via `am start`. Funciona em Android TV sem
+    precisar tocar no Java/Dex do Kodi. Devolve True se o comando foi lançado.
+    """
+    cmd = ['am', 'start', '-a', action]
+    if data_type:
+        cmd += ['-t', data_type]
+    if extra_text:
+        cmd += ['-e', 'android.intent.extra.TEXT', extra_text]
+    if url:
+        cmd += ['-d', url]
+    try:
+        xbmc.log('SMARTED-TV: executando intent %s' % ' '.join(cmd), xbmc.LOGINFO)
+        subprocess.run(cmd, check=False, timeout=10)
+        return True
+    except Exception as erro:  # noqa: BLE001
+        xbmc.log('SMARTED-TV: falha ao executar intent: %s' % erro, xbmc.LOGERROR)
+        xbmcgui.Dialog().notification(
+            'SMARTED', 'Não foi possível abrir o Android.', xbmcgui.NOTIFICATION_ERROR,
+            NOTIFICATION_TIME)
+        return False
+
+
+def open_url(params):
+    """Abre o navegador padrão do Android com a URL informada (ACTION_VIEW).
+
+    Lança uma atividade externa do Android (fora do Kodi) usando
+    `am start -a android.intent.action.VIEW -d <url>`.
+    """
+    url = params.get('url', [''])[0]
+    if not url:
+        xbmcgui.Dialog().notification(
+            'SMARTED', 'URL não informada.', xbmcgui.NOTIFICATION_ERROR, 5000)
+        return
+    xbmc.log('SMARTED-TV: abrindo navegador Android em %s' % url, xbmc.LOGINFO)
+    _android_intent('android.intent.action.VIEW', url=url)
+
+
+def enter_code(handle):
+    """Abre o teclado do Kodi para digitar o código de ativação do VIP.
+
+    Permanece dentro do SMARTEDTV e usa o diálogo nativo do Kodi para
+    capturar o código alfanumérico.
+    """
+    dialog = xbmcgui.Dialog()
+    codigo = dialog.input('Já tenho um código', type=xbmcgui.INPUT_ALPHANUM)
+    if not codigo:
+        xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+        return
+    xbmc.log('SMARTED-TV: código informado: %s' % codigo, xbmc.LOGINFO)
+    dialog.notification(
+        'SMARTED', 'Código "%s" enviado para ativação.' % codigo,
+        xbmcgui.NOTIFICATION_INFO, NOTIFICATION_TIME)
+    xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+
+
+def show_qr(handle):
+    """Exibe o QR Code do app em tela cheia para leitura pelo celular.
+
+    Apresenta o QR Code original sem molduras, usando o ImageViewer do Kodi
+    em modo fullscreen para que o outro celular possa escanear.
+    """
+    qr_path = xbmc.translatePath(QR_CODE_PATH)
+    if not os.path.exists(qr_path):
+        xbmcgui.Dialog().notification(
+            'SMARTED', 'QR Code não encontrado.', xbmcgui.NOTIFICATION_ERROR,
+            NOTIFICATION_TIME)
+        xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+        return
+    xbmc.log('SMARTED-TV: exibindo QR Code em %s' % qr_path, xbmc.LOGINFO)
+    # Play com o ImageViewer nativo do Kodi em tela cheia (sem moldura)
+    xbmc.executebuiltin('ImageViewer(%s)' % qr_path)
+    xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+
+
+def share_link(handle):
+    """Abre o menu nativo de compartilhamento do Android (ACTION_SEND).
+
+    Usa `am start -a android.intent.action.SEND -t text/plain` com o link do
+    APK no extra. O próprio Android exibe o Intent.createChooser com
+    WhatsApp, Telegram, Gmail e outros apps compatíveis.
+    """
+    xbmc.log('SMARTED-TV: abrindo compartilhamento nativo do Android',
+             xbmc.LOGINFO)
+    _android_intent(
+        'android.intent.action.SEND',
+        data_type='text/plain',
+        extra_text='Confira o SMARTEDTV: ' + SMARTEDTV_APK_LINK)
+
+
+def download_apk(handle):
+    """Abre o navegador padrão do Android diretamente no link de download
+    do APK hospedado no Dropbox (ACTION_VIEW).
+    """
+    xbmc.log('SMARTED-TV: abrindo download do APK no navegador',
+             xbmc.LOGINFO)
+    _android_intent('android.intent.action.VIEW', url=SMARTEDTV_APK_LINK)
+
+
+def check_update(handle):
+    """Verifica se existe uma nova versão do APK no Dropbox.
+
+    Consulta os metadados do link compartilhado. Se houver uma versão mais
+    recente, notifica o usuário e oferece abrir o instalador do Android
+    para baixar e instalar o APK.
+    """
+    import json
+    import urllib.request
+
+    xbmc.log('SMARTED-TV: verificando atualização no Dropbox', xbmc.LOGINFO)
+    dialog = xbmcgui.Dialog()
+    try:
+        req = urllib.request.Request(
+            'https://api.dropboxapi.com/2/sharing/get_shared_link_metadata',
+            data=json.dumps({'url': SMARTEDTV_APK_LINK}).encode('utf-8'),
+            headers={'Content-Type': 'application/json'},
+            method='POST')
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            dados = json.loads(resp.read().decode('utf-8'))
+        nome = dados.get('name', 'SMARTEDTV.apk')
+        tamanho = dados.get('size', 0)
+        xbmc.log(
+            'SMARTED-TV: versão disponível no Dropbox: %s (%d bytes)'
+            % (nome, tamanho), xbmc.LOGINFO)
+        if dialog.yesno(
+                'SMARTEDTV - Atualização',
+                'Nova versão encontrada: %s (%d bytes).\n\n'
+                'Deseja baixar e instalar agora?' % (nome, tamanho)):
+            _baixar_e_instalar_apk()
+    except Exception as erro:  # noqa: BLE001
+        xbmc.log('SMARTED-TV: falha ao verificar atualização: %s' % erro,
+                 xbmc.LOGWARNING)
+        dialog.notification(
+            'SMARTED', 'Não foi possível verificar atualização.',
+            xbmcgui.NOTIFICATION_WARNING, NOTIFICATION_TIME)
+    xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+
+
+def _baixar_e_instalar_apk():
+    """Baixa o APK do Dropbox e abre o instalador oficial do Android.
+
+    Usa `am start -a android.intent.action.VIEW -t
+    application/vnd.android.package-archive -d file:///caminho` para
+    lançar o instalador nativo do Android (fora do Kodi).
+    """
+    import urllib.request
+
+    dialog = xbmcgui.DialogProgress()
+    dialog.create('SMARTEDTV', 'Baixando atualização...')
+    destino = xbmc.translatePath('special://temp/SMARTEDTV-update.apk')
+    try:
+        req = urllib.request.Request(SMARTEDTV_APK_LINK, headers={
+            'User-Agent': 'SMARTEDTV/21.4'})
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            total = int(resp.headers.get('Content-Length', 0)) or 0
+            baixado = 0
+            bloco = 8192
+            with open(destino, 'wb') as saida:
+                while True:
+                    dados = resp.read(bloco)
+                    if not dados:
+                        break
+                    saida.write(dados)
+                    baixado += len(dados)
+                    if total > 0:
+                        pct = int(baixado * 100 / total)
+                        dialog.update(pct, 'Baixando... %d%%' % pct)
+        dialog.close()
+        xbmc.log('SMARTED-TV: APK baixado em %s' % destino, xbmc.LOGINFO)
+        # Abre o instalador oficial do Android para o APK baixado
+        _android_intent(
+            'android.intent.action.VIEW',
+            data_type='application/vnd.android.package-archive',
+            url='file://' + destino)
+    except Exception as erro:  # noqa: BLE001
+        dialog.close()
+        xbmc.log('SMARTED-TV: falha ao baixar APK: %s' % erro, xbmc.LOGERROR)
+        xbmcgui.Dialog().notification(
+            'SMARTED', 'Falha ao baixar a atualização.',
+            xbmcgui.NOTIFICATION_ERROR, NOTIFICATION_TIME)
+
+
+def _android_intent(action, data_type=None, extra_text=None, url=None):
+    """Executa um Intent Android via `am start`.
+
+    Lança uma atividade externa do Android (fora da interface do Kodi).
+    Para ACTION_SEND, o Android exibe automaticamente o
+    Intent.createChooser quando há múltiplos apps capazes de tratar o tipo
+    de dados.
+
+    Devolve True se o comando foi lançado com sucesso.
+    """
+    cmd = ['am', 'start', '-a', action]
+    if data_type:
+        cmd += ['-t', data_type]
+    if extra_text:
+        cmd += ['-e', 'android.intent.extra.TEXT', extra_text]
+    if url:
+        cmd += ['-d', url]
+    try:
+        xbmc.log(
+            'SMARTED-TV: executando Intent Android: %s'
+            % ' '.join(cmd), xbmc.LOGINFO)
+        subprocess.run(cmd, check=False, timeout=15)
+        return True
+    except Exception as erro:  # noqa: BLE001
+        xbmc.log('SMARTED-TV: falha ao executar Intent: %s' % erro,
+                 xbmc.LOGERROR)
+        xbmcgui.Dialog().notification(
+            'SMARTED', 'Não foi possível abrir o Android.',
+            xbmcgui.NOTIFICATION_ERROR, NOTIFICATION_TIME)
+        return False
 
 
 if __name__ == '__main__':

@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+    <defaultcontrol always="true">50</defaultcontrol>
+    <include>Anim</include>
+    <controls>
+        <include>Bg</include>
+        <include>Fanart</include>
+        <include>Header</include>
+        <include>Views</include>
+        <include>ViewOptions</include>
+
+        <!-- Título da tela -->
+        <control type="label">
+            <left>60</left>
+            <top>46</top>
+            <width>1200</width>
+            <height>60</height>
+            <font>font_title</font>
+            <textcolor>white</textcolor>
+            <aligny>center</aligny>
+            <label>$LOCALIZE[31040]</label>
+        </control>
+
+        <!-- Lista de opções da tela VÍDEOS -->
+        <control type="list" id="50">
+            <left>60</left>
+            <top>160</top>
+            <width>1760</width>
+            <height>830</height>
+            <orientation>vertical</orientation>
+            <scrolltime>300</scrolltime>
+            <preloaditems>2</preloaditems>
+            <onup>50</onup>
+            <ondown>50</ondown>
+            <onleft>9000</onleft>
+            <onright>60</onright>
+
+            <!-- Item 1: Assinar o VIP (Cakto) -->
+            <item>
+                <label>$LOCALIZE[31041]</label>
+                <label2>Abra o checkout da Cakto no navegador</label2>
+                <onclick>RunPlugin(plugin://plugin.video.smarted/?action=open_url&amp;url=https://pay.cakto.com.br/nkvbeqd_1323120)</onclick>
+                <thumb>DefaultFolder.png</thumb>
+                <icon>DefaultFolder.png</icon>
+            </item>
+
+            <!-- Item 2: Já tenho um código -->
+            <item>
+                <label>$LOCALIZE[31042]</label>
+                <label2>Digite o código de ativação do VIP</label2>
+                <onclick>RunPlugin(plugin://plugin.video.smarted/?action=enter_code)</onclick>
+                <thumb>DefaultFolder.png</thumb>
+                <icon>DefaultFolder.png</icon>
+            </item>
+
+            <!-- Item 3: Compartilhar o app (QR no celular) -->
+            <item>
+                <label>$LOCALIZE[31043]</label>
+                <label2>Exiba o QR Code para compartilhamento</label2>
+                <onclick>RunPlugin(plugin://plugin.video.smarted/?action=show_qr)</onclick>
+                <thumb>DefaultFolder.png</thumb>
+                <icon>DefaultFolder.png</icon>
+            </item>
+
+            <!-- Item 4: Enviar o link do app -->
+            <item>
+                <label>$LOCALIZE[31044]</label>
+                <label2>Compartilhe o link do APK pelo Android</label2>
+                <onclick>RunPlugin(plugin://plugin.video.smarted/?action=share_link)</onclick>
+                <thumb>DefaultFolder.png</thumb>
+                <icon>DefaultFolder.png</icon>
+            </item>
+
+            <!-- Item 5: Procurar atualização -->
+            <item>
+                <label>$LOCALIZE[31045]</label>
+                <label2>Verifique se há uma nova versão disponível</label2>
+                <onclick>RunPlugin(plugin://plugin.video.smarted/?action=check_update)</onclick>
+                <thumb>DefaultFolder.png</thumb>
+                <icon>DefaultFolder.png</icon>
+            </item>
+
+            <!-- Item 6: Baixar APK -->
+            <item>
+                <label>$LOCALIZE[31046]</label>
+                <label2>Abra o navegador para baixar o APK do Dropbox</label2>
+                <onclick>RunPlugin(plugin://plugin.video.smarted/?action=download_apk)</onclick>
+                <thumb>DefaultFolder.png</thumb>
+                <icon>DefaultFolder.png</icon>
+            </item>
+
+            <itemlayout width="1760" height="76">
+                <control type="image">
+                    <left>0</left>
+                    <top>74</top>
+                    <width>1760</width>
+                    <height>2</height>
+                    <texture colordiffuse="20ffffff">white.png</texture>
+                </control>
+                <control type="label">
+                    <left>24</left>
+                    <top>0</top>
+                    <width>1100</width>
+                    <height>76</height>
+                    <aligny>center</aligny>
+                    <font>font_main</font>
+                    <textcolor>text</textcolor>
+                    <label>$INFO[ListItem.Label]</label>
+                </control>
+                <control type="label">
+                    <right>24</right>
+                    <top>0</top>
+                    <width>560</width>
+                    <height>76</height>
+                    <align>right</align>
+                    <aligny>center</aligny>
+                    <font>font_small</font>
+                    <textcolor>muted</textcolor>
+                    <label>$INFO[ListItem.Label2]</label>
+                </control>
+            </itemlayout>
+            <focusedlayout width="1760" height="76">
+                <control type="image">
+                    <left>0</left>
+                    <top>4</top>
+                    <width>1760</width>
+                    <height>68</height>
+                    <texture colordiffuse="accent" border="16">rounded.png</texture>
+                </control>
+                <control type="label">
+                    <left>24</left>
+                    <top>0</top>
+                    <width>1100</width>
+                    <height>76</height>
+                    <aligny>center</aligny>
+                    <font>font_main</font>
+                    <textcolor>ontext</textcolor>
+                    <label>$INFO[ListItem.Label]</label>
+                </control>
+                <control type="label">
+                    <right>24</right>
+                    <top>0</top>
+                    <width>560</width>
+                    <height>76</height>
+                    <align>right</align>
+                    <aligny>center</aligny>
+                    <font>font_small</font>
+                    <textcolor>ontext</textcolor>
+                    <label>$INFO[ListItem.Label2]</label>
+                </control>
+            </focusedlayout>
+        </control>
+    </controls>
+</window>

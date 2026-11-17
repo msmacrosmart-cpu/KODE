@@ -246,6 +246,12 @@
           <visible>System.HasAddon(plugin.video.BrazucaPlay.Matrix) + System.HasAddon(plugin.video.smarted)</visible>
         </item>
         <item>
+          <label>$LOCALIZE[31040]</label>
+          <label2>Opções do app: VIP, código, QR, compartilhar, atualização</label2>
+          <onclick>ActivateWindow(MyVideos)</onclick>
+          <visible>System.HasAddon(plugin.video.smarted)</visible>
+        </item>
+        <item>
           <label>$LOCALIZE[31015]</label>
           <onclick>ActivateWindow(Settings)</onclick>
         </item>
