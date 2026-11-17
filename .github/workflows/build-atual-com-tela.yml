@@ -337,4 +337,4 @@ jobs:
           subprocess.run(['gh', 'release', 'edit', os.environ['TAG_SAIDA'],
                           '--repo', repo, '--notes', notas], check=True)
           PY
-# build acionado: simulador com debug para falha passo 5
+# build acionado: Compartilhar com amigos e qr_plate bordas uniformes
