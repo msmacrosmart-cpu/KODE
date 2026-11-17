@@ -327,4 +327,4 @@ jobs:
           subprocess.run(['gh', 'release', 'edit', os.environ['TAG_SAIDA'],
                           '--repo', repo, '--notes', notas], check=True)
           PY
-# build acionado: injetor com debug para identificar falha passo 5
+# build acionado: injetor modo defensivo para passo 5
