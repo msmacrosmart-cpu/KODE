@@ -192,6 +192,14 @@ def main(argv=None):
                             dbg("addon-manifest.xml: %s registrado" % ADDON_ID)
                         except SystemExit as e:
                             dbg("patch_manifest pulado: %s" % e)
+                    elif item.filename == VIP_MODULO:
+                        # O APK base as vezes ja tem um vip.py antigo. Ele NAO
+                        # e copiado: a versao do repositorio entra no fim e
+                        # substitui a antiga (senao os botoes continuariam
+                        # com a ordem errada do StartAndroidActivity).
+                        dbg("vip.py do APK base sera substituido pela versao "
+                            "do repositorio")
+                        continue
                     elif item.filename.startswith("assets/system/keymaps/"):
                         if item.filename == KEYMAP_DESTINO:
                             dbg("keymap ja existe no APK, pulando adicionar")
@@ -248,9 +256,11 @@ def main(argv=None):
 
             dbg("Extras a gravar: %d arquivos" % len(extras))
             for nome in sorted(extras):
-                if nome in nomes:
+                if nome in nomes and nome != VIP_MODULO:
                     dbg("Extra ja existe no APK, pulando: %s" % nome)
                     continue
+                if nome == VIP_MODULO and nome in nomes:
+                    dbg("vip.py: substituindo a versao antiga do APK base")
                 if nome == KEYMAP_DESTINO:
                     keymaps.append(nome)
                     dbg("%s: VOLTAR na Home reabre a tela" % nome)
@@ -270,6 +280,10 @@ def main(argv=None):
             for nome in extras:
                 if nome not in nomes and nome not in conferido.namelist():
                     raise SystemExit("arquivo da tela ausente: %s" % nome)
+            if VIP_MODULO in extras:
+                if conferido.read(VIP_MODULO) != extras[VIP_MODULO]:
+                    raise SystemExit("vip.py do APK difere do repositorio")
+                dbg("vip.py validado byte a byte com o repositorio")
             dbg("Extras validados: %d arquivos" % len(extras))
             if not keymaps:
                 dbg("Keymap ja existia ou nao foi adicionado (pulado)")

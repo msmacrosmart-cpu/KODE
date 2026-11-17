@@ -30,8 +30,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       BASE_RELEASE: v1.0.83-unificado
       BASE_ASSET: SMARTEDTV-atual.apk
-      TAG_SAIDA: v1.0.83-tela-inicial-v10
-      FINAL: SMARTEDTV-atual-com-tela-inicial-v10.apk
+      TAG_SAIDA: v1.0.83-tela-inicial-v11
+      FINAL: SMARTEDTV-atual-com-tela-inicial-v11.apk
     steps:
       - uses: actions/checkout@v4
 
@@ -133,7 +133,8 @@ jobs:
           RC2=${PIPESTATUS[0]}
           echo "RC_SIMULADOR=$RC2"
           if [ "$RC2" -ne 0 ]; then
-            echo "::warning::simulador falhou com codigo $RC2"
+            echo "::error::simulador falhou com codigo $RC2"
+            exit 1
           fi
           echo "=== PASSO 5 FIM (RC=$RC, RC2=$RC2) ==="
           # Nao falha aqui: deixa o passo 6 verificar se o APK bruto esta valido
@@ -169,7 +170,7 @@ jobs:
               VIP = 'assets/addons/service.smarted.bootstrap/vip.py'
               nao_addon = sorted(n for n in novos if not n.startswith(PREFIX))
               fontes_novas = sorted(n for n in nao_addon if n.endswith('/fonts/NotoSans-Regular.ttf'))
-              esperados = [KEYMAP, VIP] + fontes_novas
+              esperados = [KEYMAP] + fontes_novas + ([VIP] if VIP in novos else [])
               assert sorted(nao_addon) == esperados, (nao_addon, esperados)
               raiz_km = ET.fromstring(depois.read(KEYMAP))
               assert [e.tag for e in raiz_km] == ['Home'], [e.tag for e in raiz_km]
@@ -187,8 +188,16 @@ jobs:
                   ['assets/addons/%s/xml/Startup.xml' % s for s in SKINS
                    if 'assets/addons/%s/xml/Startup.xml' % s in a] +
                   ['assets/addons/%s/xml/Font.xml' % s for s in SKINS
-                   if 'assets/addons/%s/xml/Font.xml' % s in a])
+                   if 'assets/addons/%s/xml/Font.xml' % s in a] +
+                  ([VIP] if VIP in alterados else []))
               assert alterados == esperado, alterados
+              assert VIP in novos or VIP in alterados, 'vip.py nao entrou no APK'
+              assert depois.read(VIP) == open(
+                  'kodi/addons/service.smarted.bootstrap/vip.py', 'rb').read(), \
+                  'vip.py do APK difere do repositorio'
+              assert depois.read(PREFIX + 'default.py') == open(
+                  'kodi/addons/script.smartedtv.welcome/default.py', 'rb').read(), \
+                  'default.py do APK difere do repositorio
               perfil = [n for n in a if n.startswith('assets/smarted/profile/')]
               assert perfil and all(antes.read(n) == depois.read(n) for n in perfil)
               for n in a:
@@ -247,6 +256,42 @@ jobs:
           print('OK: %d arquivos do perfil intactos; demais entradas iguais' % len(perfil))
           PY
 
+      - name: 6b. Conferir os botoes 120/121 no APK (bloqueante)
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import zipfile
+          ADDON = 'script.smartedtv.welcome'
+          PREFIX = 'assets/addons/' + ADDON + '/'
+          VIP = 'assets/addons/service.smarted.bootstrap/vip.py'
+          with zipfile.ZipFile('build/bruto.apk') as z:
+              tela = z.read(PREFIX + 'default.py')
+              vip = z.read(VIP)
+              tela_txt = tela.decode('utf-8')
+              vip_txt = vip.decode('utf-8')
+          assert tela == open('kodi/addons/' + ADDON + '/default.py', 'rb').read()
+          assert vip == open('kodi/addons/service.smarted.bootstrap/vip.py', 'rb').read()
+          # IDs 120/121 chegam nas funcoes certas
+          assert 'elif control_id == 120:' in tela_txt
+          assert 'self._abrir_checkout()' in tela_txt
+          assert 'elif control_id == 121:' in tela_txt
+          assert 'self._abrir_dropbox()' in tela_txt
+          # navegador externo: package vazio + action VIEW + URL
+          assert 'StartAndroidActivity(,android.intent.action.VIEW,,' in tela_txt
+          # no vip.py o comando e montado como
+          # StartAndroidActivity(package,intent,dataType,dataURI)
+          assert "campos = [package, intent, data_type, data_uri]" in vip_txt
+          assert "StartAndroidActivity(%s)' % ','.join(campos)" in vip_txt
+          # nenhum comando volta a colocar a action no campo do pacote
+          assert 'StartAndroidActivity(android.intent.action.VIEW' not in vip_txt
+          assert "StartAndroidActivity(android.intent.action.VIEW,%s,,)" not in tela_txt
+          # os enderecos do projeto
+          assert 'https://pay.cakto.com.br/nkvbegd_1323120' in vip_txt
+          assert 'rlkey=yp1ijxk6fdtcqm93gzi24ig5j' in vip_txt
+          assert 'DROPBOX_URL' in vip_txt
+          print('OK: 120 -> checkout; 121 -> Dropbox; ordem do StartAndroidActivity correta')
+          PY
+
       - name: 7. Alinhar e assinar com a mesma chave
         run: |
           set -euo pipefail
@@ -297,8 +342,8 @@ jobs:
               "build/tela-entrada-prova.png" "build/tela-entrada-dialogo.png" \
               "build/tela-entrada-status.png" \
               --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title 'SMARTEDTV 1.0.83 + tela inicial (v10: IDs 120/121 abrem o navegador do Android)' \
-              --notes 'v10 (correcao dos botoes 120/121): o builtin do Kodi e StartAndroidActivity(package,intent,dataType,dataURI). A versao anterior passava a action no campo do pacote (StartAndroidActivity(android.intent.action.VIEW,URL,,)), entao o Kodi procurava um pacote chamado android.intent.action.VIEW e nada abria. Agora o pacote vai vazio (intent implicito; no Android vira setPackage(null)) e o navegador padrao do aparelho abre por cima do Kodi. ID 120 -> checkout Cakto https://pay.cakto.com.br/nkvbegd_1323120 (mesmo destino do QR qr_checkout.png). ID 121 -> pagina do Dropbox com o APK, no endereco verdadeiro do QR qr_apk.png (com rlkey, dl=0); toque longo no 121 preserva o ACTION_SEND de compartilhar. 122 baixa o APK (dl=1) e 123 abre a pagina do Dropbox quando nao ha manifesto OTA. Nada de visual, layout, skin, motor ou assinatura foi alterado.\n\nAPK atual (release v1.0.83-unificado) preservado integralmente: mesma versao, mesmo motor, mesma assinatura. A tela inicial e agora a do pacote smartedtv-src (Dropbox), substituindo por completo a tela anterior: layout HORIZONTAL 1920x1080 traduzido do HTML/CSS do pacote (o modo retrato do CSS nao e usado), texturas geradas a partir do proprio styles.css (gradiente radial do fundo, cartoes de vidro, botoes, pilulas de plano, placa do QR) e os DOIS QR Codes copiados byte a byte (qr-checkout.png e qr-apk.png). O addon script.smartedtv.welcome e injetado no APK e o Startup.xml de cada skin abre a tela NO LUGAR da Home (WINDOW_STARTUP_ANIM, a janela que o CApplication::Initialize do Kodi 21 carrega antes de criar a Home 10000). A Home so e carregada quando o usuario conclui a tela (continuar com anuncios, apos confirmacao, ou Voltar); enquanto a tela esta no ar nenhum comando vai para a Home. CORRECAO DA TELA PRETA (v8): o Startup.xml nao tem mais ReplaceWindow nenhum. A v7 usava AlarmClock(smartedtv_entrada_seguro,ReplaceWindow($INFO[System.StartupWindow]),00:00:30), e esse alarme dispara em torno da janela de startup (12999), que ja saiu de cena quando o prazo termina, apontando para ela mesma: depois de "Assistir com anuncios" nenhuma janela era ativada e a tela ficava preta. Agora o Startup.xml tem dois onload (dispara a tela + RunScript(script.smartedtv.welcome,seguro=1)) e quem abre a Home e o proprio addon, depois que a modal sai de cena: ActivateWindow(Home,return), ReplaceWindow(Home), confirmacao por ate 5 s e, em ultimo caso, RestartApp. O vigia seguro=1 abre a Home em 8 s se a tela nao desenhar. VOLTAR NA HOME (pedido do usuario): o APK passa a levar assets/system/keymaps/zzz-smartedtv-voltar.xml, que liga o VOLTAR da Home (KEYCODE_BACK do Android = XBMCK_BACKSPACE, alem de browser_back, escape e o back do controle) a RunScript(script.smartedtv.welcome,voltar): a tela de entrada reabre por cima da Home, com o campo do codigo vazio, para quem entrou em "Assistir com anuncios" so para ver e depois tem um codigo VIP. A licenca (vip.json) fica intacta e a Home continua carregada, sem restart. As acoes reutilizam o que ja existe no app: codigo de ativacao -> vip.validar (rotas reais /api/validar e /functions/v1/validar-codigo), checkout -> vip.abrir_checkout (pay.cakto.com.br), Dropbox -> vip.abrir_dropbox (link do QR), compartilhar (toque longo) -> vip.compartilhar, baixar APK -> vip.open_apk_download e atualizar -> vip.procurar_atualizacao. O service.smarted.bootstrap nao foi alterado. As skins do app ganharam as fontes wfNN que a tela usa (sem elas o Kodi cairia em font13). A revisao tipografica (v5) foi medida letra a letra com a fonte real: nenhum texto estoura o controle, encosta em icone, e cortado no topo/base ou usa glifo ausente (o auditor roda na CI e reprova o build se algo voltar). Os dois dialogos ganharam fundo solido proprio, e a mensagem de status usa textbox com quebra, porque o texto vem do servidor e pode ser longo. A prova visual (tela-entrada-prova.png, tela-entrada-dialogo.png e tela-entrada-status.png) e desenhada a partir do proprio DialogWelcome.xml + media do addon; nao houve execucao em Kodi real neste ambiente.'
+              --title 'SMARTEDTV 1.0.83 + tela inicial (v11: IDs 120/121 abrem o navegador (vip.py correto dentro do APK))' \
+              --notes 'v11 (correcao dos botoes 120/121, agora com o vip.py do repositorio DENTRO do APK): o builtin do Kodi e StartAndroidActivity(package,intent,dataType,dataURI). A versao anterior passava a action no campo do pacote (StartAndroidActivity(android.intent.action.VIEW,URL,,)), entao o Kodi procurava um pacote chamado android.intent.action.VIEW e nada abria. Agora o pacote vai vazio (intent implicito; no Android vira setPackage(null)) e o navegador padrao do aparelho abre por cima do Kodi. ID 120 -> checkout Cakto https://pay.cakto.com.br/nkvbegd_1323120 (mesmo destino do QR qr_checkout.png). ID 121 -> pagina do Dropbox com o APK, no endereco verdadeiro do QR qr_apk.png (com rlkey, dl=0); toque longo no 121 preserva o ACTION_SEND de compartilhar. 122 baixa o APK (dl=1) e 123 abre a pagina do Dropbox quando nao ha manifesto OTA. Nada de visual, layout, skin, motor ou assinatura foi alterado.\n\nAPK atual (release v1.0.83-unificado) preservado integralmente: mesma versao, mesmo motor, mesma assinatura. A tela inicial e agora a do pacote smartedtv-src (Dropbox), substituindo por completo a tela anterior: layout HORIZONTAL 1920x1080 traduzido do HTML/CSS do pacote (o modo retrato do CSS nao e usado), texturas geradas a partir do proprio styles.css (gradiente radial do fundo, cartoes de vidro, botoes, pilulas de plano, placa do QR) e os DOIS QR Codes copiados byte a byte (qr-checkout.png e qr-apk.png). O addon script.smartedtv.welcome e injetado no APK e o Startup.xml de cada skin abre a tela NO LUGAR da Home (WINDOW_STARTUP_ANIM, a janela que o CApplication::Initialize do Kodi 21 carrega antes de criar a Home 10000). A Home so e carregada quando o usuario conclui a tela (continuar com anuncios, apos confirmacao, ou Voltar); enquanto a tela esta no ar nenhum comando vai para a Home. CORRECAO DA TELA PRETA (v8): o Startup.xml nao tem mais ReplaceWindow nenhum. A v7 usava AlarmClock(smartedtv_entrada_seguro,ReplaceWindow($INFO[System.StartupWindow]),00:00:30), e esse alarme dispara em torno da janela de startup (12999), que ja saiu de cena quando o prazo termina, apontando para ela mesma: depois de "Assistir com anuncios" nenhuma janela era ativada e a tela ficava preta. Agora o Startup.xml tem dois onload (dispara a tela + RunScript(script.smartedtv.welcome,seguro=1)) e quem abre a Home e o proprio addon, depois que a modal sai de cena: ActivateWindow(Home,return), ReplaceWindow(Home), confirmacao por ate 5 s e, em ultimo caso, RestartApp. O vigia seguro=1 abre a Home em 8 s se a tela nao desenhar. VOLTAR NA HOME (pedido do usuario): o APK passa a levar assets/system/keymaps/zzz-smartedtv-voltar.xml, que liga o VOLTAR da Home (KEYCODE_BACK do Android = XBMCK_BACKSPACE, alem de browser_back, escape e o back do controle) a RunScript(script.smartedtv.welcome,voltar): a tela de entrada reabre por cima da Home, com o campo do codigo vazio, para quem entrou em "Assistir com anuncios" so para ver e depois tem um codigo VIP. A licenca (vip.json) fica intacta e a Home continua carregada, sem restart. As acoes reutilizam o que ja existe no app: codigo de ativacao -> vip.validar (rotas reais /api/validar e /functions/v1/validar-codigo), checkout -> vip.abrir_checkout (pay.cakto.com.br), Dropbox -> vip.abrir_dropbox (link do QR), compartilhar (toque longo) -> vip.compartilhar, baixar APK -> vip.open_apk_download e atualizar -> vip.procurar_atualizacao. O service.smarted.bootstrap nao foi alterado. As skins do app ganharam as fontes wfNN que a tela usa (sem elas o Kodi cairia em font13). A revisao tipografica (v5) foi medida letra a letra com a fonte real: nenhum texto estoura o controle, encosta em icone, e cortado no topo/base ou usa glifo ausente (o auditor roda na CI e reprova o build se algo voltar). Os dois dialogos ganharam fundo solido proprio, e a mensagem de status usa textbox com quebra, porque o texto vem do servidor e pode ser longo. A prova visual (tela-entrada-prova.png, tela-entrada-dialogo.png e tela-entrada-status.png) e desenhada a partir do proprio DialogWelcome.xml + media do addon; nao houve execucao em Kodi real neste ambiente.'
           fi
           echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_SAIDA/$FINAL"
 

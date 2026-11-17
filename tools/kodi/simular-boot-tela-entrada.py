@@ -203,7 +203,10 @@ class Simulacao(object):
 
 class VipFalso(object):
     CHECKOUT = "https://pay.cakto.com.br/nkvbegd_1323120"
-    APK = "https://www.dropbox.com/scl/fi/.../SMARTEDTV-atual.apk"
+    DROPBOX_URL = ("https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/"
+                   "SMARTEDTV-atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j"
+                   "&st=p1m6ebvg&dl=0")
+    APK = DROPBOX_URL.replace("&dl=0", "&dl=1")
     APK_GITHUB = ("https://github.com/msmacrosmart-cpu/KODE/releases/latest/"
                   "download/SMARTEDTV-atual.apk")
 
@@ -226,8 +229,16 @@ class VipFalso(object):
         self.chamadas.append("checkout")
         return True
 
+    def abrir_dropbox(self):
+        self.chamadas.append("dropbox")
+        return True
+
     def compartilhar(self, texto=None):
         self.chamadas.append("compartilhar")
+        return True
+
+    def open_apk_download(self):
+        self.chamadas.append("apk")
         return True
 
     def abrir_url(self, url, rotulo=None):
@@ -408,10 +419,10 @@ def conferir_execucao(sim, modulo, codigo_vip="SMARTED-1234"):
         janela.onClick(121)
         janela.onClick(122)
         janela.onClick(123)
-        esperado = ["checkout", "compartilhar", "apk", "atualizar"]
+        esperado = ["checkout", "dropbox", "apk", "atualizar"]
         if sim.vip.chamadas != esperado:
             raise SystemExit("chamadas inesperadas: %r" % sim.vip.chamadas)
-        dbg("   120 -> checkout; 121 -> compartilhar; 122 -> baixar APK; "
+        dbg("   120 -> checkout; 121 -> Dropbox; 122 -> baixar APK; "
             "123 -> atualizar OK")
 
         antes = list(sim.vip.chamadas)
