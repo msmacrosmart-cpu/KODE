@@ -86,6 +86,7 @@ PROP_DIALOGO = 'welcome_dialog'
 PROP_TITULO = 'welcome_status_title'
 PROP_TEXTO = 'welcome_status_text'
 PROP_OK = 'welcome_status_ok'
+PROP_TECLADO = 'welcome_teclado'
 
 
 def _log(mensagem, nivel=None):
@@ -180,6 +181,16 @@ def _limpar(chave):
         pass
 
 
+def _mostrar_teclado():
+    """Exibe o grupo welcome_teclado no XML (teclado nativo ativado)."""
+    _definir(PROP_TECLADO, '1')
+
+
+def _ocultar_teclado():
+    """Esconde o grupo welcome_teclado no XML."""
+    _limpar(PROP_TECLADO)
+
+
 def _sinalizar_abertura():
     _definir(MARCA_ABERTA, '1')
 
@@ -251,6 +262,34 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
             return
         self._baixar_apk()
 
+    def _digitar_codigo(self):
+        """Abre o teclado nativo do sistema para digitar o código de ativação.
+
+        Mostra o grupo welcome_teclado no XML, abre o dialogo nativo
+        `xbmcgui.Dialog().input(INPUT_ALPHANUM)`, coloca o resultado no
+        controle 310 e esconde o grupo novamente. Devolve o texto digitado
+        (ou '' se o usuário cancelar).
+        """
+        _mostrar_teclado()
+        try:
+            try:
+                self.setFocusId(310)
+            except Exception:
+                pass
+            codigo = xbmcgui.Dialog().input(
+                'Digite o código de ativação',
+                type=xbmcgui.INPUT_ALPHANUM,
+            )
+        finally:
+            _ocultar_teclado()
+        if not codigo:
+            return ''
+        try:
+            self.getControl(310).setText(codigo)
+        except Exception:
+            pass
+        return codigo
+
     def _ativar_codigo(self):
         """Le o controle 310 e valida com o servidor pelo modulo vip do projeto."""
         vip = _vip()
@@ -263,8 +302,7 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         except Exception:
             codigo = ''
         if not codigo:
-            codigo = xbmcgui.Dialog().input(
-                'Digite o código de ativação', type=xbmcgui.INPUT_ALPHANUM)
+            codigo = self._digitar_codigo()
         if not codigo:
             try:
                 self.setFocusId(310)
@@ -291,6 +329,7 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
     def _sair(self):
         self.saiu = True
         _definir(MARCA_SAIU, '1')      # o vigia para de agir
+        _ocultar_teclado()               # garante que o grupo saia de cena
         self.close()
 
     # --- eventos ---------------------------------------------------------
@@ -345,6 +384,7 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         # de 30 s no Startup.xml — era ele que deixava a tela preta)
         self.saiu = False
         _limpar(MARCA_SAIU)
+        _limpar(PROP_TECLADO)      # teclado nativo começa escondido
         _sinalizar_abertura()
         _log('tela de entrada carregada (antes da Home)')
         try:

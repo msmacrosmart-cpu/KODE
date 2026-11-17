@@ -176,6 +176,9 @@
       <texturenofocus border="11">btn_ghost.png</texturenofocus>
       <align>center</align>
       <aligny>center</aligny>
+      <onright>120</onright>
+      <onup>310</onup>
+      <ondown>310</ondown>
     </control>
     <control type="label" id="40">
       <left>674</left>
@@ -253,6 +256,9 @@
       <texturenofocus border="11">btn_ghost.png</texturenofocus>
       <align>center</align>
       <aligny>center</aligny>
+      <onleft>123</onleft>
+      <onright>121</onright>
+      <ondown>310</ondown>
     </control>
     <control type="label" id="50">
       <left>1297</left>
@@ -330,6 +336,9 @@
       <texturenofocus border="11">btn_ghost.png</texturenofocus>
       <align>center</align>
       <aligny>center</aligny>
+      <onleft>120</onleft>
+      <onright>122</onright>
+      <ondown>311</ondown>
     </control>
     <control type="button" id="122">
       <left>1589</left>
@@ -338,12 +347,14 @@
       <height>57</height>
       <label>Baixar APK (Android)</label>
       <font>wf17</font>
-      <textcolor>FFD6D6D6</textcolor>
+      <textcolor>FFF7F7F7</textcolor>
       <focusedcolor>FF080808</focusedcolor>
-      <texturefocus border="11">btn_quiet_focus.png</texturefocus>
-      <texturenofocus border="11">btn_quiet.png</texturenofocus>
+      <texturefocus border="11">btn_ghost_focus.png</texturefocus>
+      <texturenofocus border="11">btn_ghost.png</texturenofocus>
       <align>center</align>
       <aligny>center</aligny>
+      <onleft>121</onleft>
+      <ondown>312</ondown>
     </control>
     <control type="image" id="6">
       <left>38</left>
@@ -392,6 +403,8 @@
       <texturenofocus border="11">btn_ghost.png</texturenofocus>
       <align>center</align>
       <aligny>center</aligny>
+      <onleft>311</onleft>
+      <onup>122</onup>
     </control>
     <control type="edit" id="310">
       <left>753</left>
@@ -404,6 +417,9 @@
       <disabledcolor>FF747474</disabledcolor>
       <texturefocus border="11">field_focus.png</texturefocus>
       <texturenofocus border="11">field.png</texturenofocus>
+      <onleft>123</onleft>
+      <onright>311</onright>
+      <onup>120</onup>
     </control>
     <control type="button" id="311">
       <left>1474</left>
@@ -418,6 +434,9 @@
       <texturenofocus border="11">btn_primary.png</texturenofocus>
       <align>center</align>
       <aligny>center</aligny>
+      <onleft>310</onleft>
+      <onright>312</onright>
+      <onup>121</onup>
     </control>
     <control type="group" id="900">
       <visible>String.IsEqual(Window.Property(welcome_dialog),ads)</visible>
@@ -557,6 +576,34 @@
         <align>center</align>
       <aligny>center</aligny>
     </control>
+    </control>
+    <control type="group" id="960">
+      <visible>String.IsEqual(Window.Property(welcome_teclado),1)</visible>
+      <control type="image" id="961">
+        <left>0</left>
+        <top>0</top>
+        <width>1920</width>
+        <height>1080</height>
+        <texture>overlay.png</texture>
+      </control>
+      <control type="label" id="962">
+        <left>644</left>
+        <top>480</top>
+        <width>632</width>
+        <height>40</height>
+        <label>Teclado nativo ativado</label>
+        <font>wf26</font>
+        <textcolor>FFF7F7F7</textcolor>
+      </control>
+      <control type="label" id="963">
+        <left>644</left>
+        <top>520</top>
+        <width>632</width>
+        <height>28</height>
+        <label>Use o teclado do aparelho para digitar o código.</label>
+        <font>wf17</font>
+        <textcolor>FFBCBCBC</textcolor>
+      </control>
     </control>
   </controls>
 </window>

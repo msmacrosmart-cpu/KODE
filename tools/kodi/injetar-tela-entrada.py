@@ -178,7 +178,8 @@ def patch_fonts(dados: bytes) -> bytes:
     faltando = [(nome, tamanho) for nome, tamanho in fontes
                 if "<name>%s</name>" % nome not in texto]
     if not faltando:
-        raise SystemExit("a skin ja declara as fontes do layout; nada a corrigir")
+        # as fontes ja estao declaradas nesta skin: nada a corrigir
+        return texto.encode("utf-8"), []
     blocos = []
     for nome, tamanho in faltando:
         blocos.append(
@@ -235,6 +236,7 @@ def main(argv=None):
     if vip_path.is_file():
         extras[VIP_MODULO] = vip_path.read_bytes()
     startups, fontes_alteradas, keymaps = [], [], []
+    skins_com_font = []  # skins que tiveram Font.xml processado
 
     with zipfile.ZipFile(args.apk) as origem, \
             zipfile.ZipFile(args.saida, "w", allowZip64=True) as destino:
@@ -266,6 +268,7 @@ def main(argv=None):
                 if m:
                     dados, adicionadas = patch_fonts(dados)
                     fontes_alteradas.append(item.filename)
+                    skins_com_font.append(m.group(1))
                     print("  %s: %s declaradas"
                           % (item.filename, "/".join(adicionadas)))
             info = zipfile.ZipInfo(item.filename, date_time=item.date_time)
@@ -282,6 +285,18 @@ def main(argv=None):
             raise SystemExit("nenhum Startup.xml de skin encontrado no APK")
         if not fontes_alteradas:
             raise SystemExit("nenhum Font.xml de skin encontrado no APK")
+
+        # Garante que o arquivo de fonte referenciado pelo Font.xml (NotoSans-
+        # Regular.ttf) exista na pasta fonts/ de cada skin. O simulador confere
+        # que o .ttf declarado realmente esta no APK; sem ele o Kodi cai em
+        # font13 e a tela fica fora de escala.
+        FONTE_ORIGEM = ROOT / "kodi" / "skin.estilo.personalizado" / "fonts" / FONTE_ARQUIVO
+        if FONTE_ORIGEM.is_file():
+            fonte_dados = FONTE_ORIGEM.read_bytes()
+            for skin in sorted(set(skins_com_font)):
+                font_dest = "assets/addons/%s/fonts/%s" % (skin, FONTE_ARQUIVO)
+                if font_dest not in nomes:
+                    extras[font_dest] = fonte_dados
 
         for nome, dados in extras.items():
             if nome in nomes:
