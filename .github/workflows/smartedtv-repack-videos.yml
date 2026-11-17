@@ -38,24 +38,37 @@ jobs:
           cp "$RUNNER_TEMP/bruto.apk" "$RUNNER_TEMP/alinhado.apk"
           ls -lh "$RUNNER_TEMP/alinhado.apk"
 
-      - name: 4. Download apksigner.jar
+      - name: 4. Instalar Android SDK build-tools (apksigner, zipalign)
         run: |
-          mkdir -p "$HOME/.cache/kode-build/tools"
-          if [ ! -f "$HOME/.cache/kode-build/tools/apksigner.jar" ]; then
-            curl -fsSL -o "$HOME/.cache/kode-build/tools/apksigner.jar" \
-              "https://repo1.maven.org/maven2/com/google/android/apksigner/33.0.1/apksigner-33.0.1.jar" || true
+          set -euo pipefail
+          mkdir -p "$HOME/android-sdk/cmdline-tools"
+          cd "$HOME/android-sdk/cmdline-tools"
+          curl -fsSL -o tools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip" || true
+          if [ -f tools.zip ]; then
+            unzip -q tools.zip -d latest || true
+            mv latest/cmdline-tools latest/cmdline-tools-bin 2>/dev/null || true
+            mv latest/cmdline-tools-bin latest/cmdline-tools 2>/dev/null || true
           fi
-          ls -la "$HOME/.cache/kode-build/tools/" 2>/dev/null || true
+          export ANDROID_SDK_ROOT="$HOME/android-sdk"
+          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager --install "build-tools;33.0.1" >/dev/null 2>&1 || true
+          which apksigner || echo "apksigner nao encontrado via sdkmanager"
+          which zipalign || echo "zipalign nao encontrado via sdkmanager"
+          ls "$ANDROID_SDK_ROOT/build-tools/" 2>/dev/null || true
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
 
       - name: 5. Sign APK
         run: |
           set -euo pipefail
-          SIGNER="$HOME/.cache/kode-build/tools/apksigner.jar"
-          if [ ! -f "$SIGNER" ]; then
-            echo "::error::apksigner.jar not found"
+          export ANDROID_SDK_ROOT="$HOME/android-sdk"
+          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
+          APKSIGNER=$(find "$ANDROID_SDK_ROOT/build-tools" -name apksigner -type f 2>/dev/null | head -1)
+          if [ -z "$APKSIGNER" ]; then
+            echo "::error::apksigner nao encontrado"
             exit 1
           fi
-          java -jar "$SIGNER" sign \
+          "$APKSIGNER" sign \
             --ks dropbox/smarted-tv-test.jks \
             --ks-pass pass:android \
             --key-pass pass:android \
