@@ -1,0 +1,15 @@
+name: Teste build mínimo
+
+on:
+  push:
+    branches: [arena/28b146c9-kode]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Olá do workflow de teste"
