@@ -38,10 +38,15 @@ jobs:
           cp "$RUNNER_TEMP/bruto.apk" "$RUNNER_TEMP/alinhado.apk"
           ls -lh "$RUNNER_TEMP/alinhado.apk"
 
-      - name: 4. Sign APK com jarsigner (JDK 17)
+      - name: 4. Instalar JDK 17 (para jarsigner)
+        run: |
+          sudo apt-get update -qq 2>/dev/null || true
+          sudo apt-get install -y -qq --no-install-recommends openjdk-17-jdk-headless 2>/dev/null || true
+          which jarsigner || { echo "::error::jarsigner nao encontrado apos instalar JDK"; exit 1; }
+
+      - name: 5. Sign APK com jarsigner (JDK 17)
         run: |
           set -euo pipefail
-          which jarsigner || { echo "::error::jarsigner nao encontrado"; exit 1; }
           jarsigner -verbose \
             -keystore dropbox/smarted-tv-test.jks \
             -storepass android \
