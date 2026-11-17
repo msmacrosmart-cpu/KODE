@@ -681,6 +681,31 @@ class CicloDeVidaTest(unittest.TestCase):
         self._com_interacao(acoes)
         self.assertEqual(self.modulo._log.__module__, self.modulo.__name__)
 
+    def test_foco_dos_dois_botoes_de_anuncio_e_visualmente_exclusivo(self):
+        """O botao da direita nao pode parecer selecionado sem estar.
+
+        btn_primary.png e btn_primary_focus.png eram o MESMO arquivo: o
+        "Continuar com anuncios" (textura primaria) ficava branco sempre e
+        parecia focado junto com o Voltar. Agora o normal e escuro e somente o
+        foco fica branco.
+        """
+        media = ADDON / 'resources' / 'skins' / 'Default' / 'media'
+        normal = (media / 'btn_primary.png').read_bytes()
+        foco = (media / 'btn_primary_focus.png').read_bytes()
+        self.assertNotEqual(normal, foco)
+        raiz = ET.parse(LAYOUT).getroot()
+        for ident in ('905', '906'):
+            c = raiz.find(".//control[@id='%s']" % ident)
+            self.assertTrue((c.findtext('texturefocus') or '').strip())
+            self.assertTrue((c.findtext('texturenofocus') or '').strip())
+        b906 = raiz.find(".//control[@id='906']")
+        self.assertIn('btn_primary.png', b906.findtext('texturenofocus'))
+        self.assertIn('btn_primary_focus.png', b906.findtext('texturefocus'))
+        self.assertEqual((b906.findtext('textcolor') or '').strip().upper(),
+                         'FFF7F7F7')
+        self.assertEqual((b906.findtext('focusedcolor') or '').strip().upper(),
+                         'FF080808')
+
     def test_dpad_continua_depois_de_abrir_o_dialogo_de_anuncios(self):
         """O foco nao pode ficar no controle coberto pelo overlay."""
         vistos = []
@@ -734,6 +759,19 @@ class CicloDeVidaTest(unittest.TestCase):
             for tag in ('onleft', 'onright', 'onup', 'ondown'):
                 self.assertTrue((controle.findtext(tag) or '').strip(),
                                 '%s sem %s' % (ident, tag))
+
+    def test_sair_usa_quit_nativo_e_limpa_as_marcas(self):
+        modulo, xbmc, _ = carregar_default()
+        xbmc.BUILTINS.clear()
+        xbmc.PROPS.update({'smartedtv.welcome.saiu': '1',
+                           'smartedtv.welcome.home': 'ok',
+                           'smartedtv.welcome.voltar': '1'})
+        self.assertTrue(modulo.sair_do_aplicativo())
+        self.assertEqual(xbmc.BUILTINS[-1], 'Quit')
+        self.assertNotIn('RestartApp', xbmc.BUILTINS)
+        self.assertFalse([b for b in xbmc.BUILTINS
+                          if b.startswith(('Shutdown', 'Kill'))])
+        self.assertEqual(xbmc.PROPS, {})
 
     def test_controles_removidos_nao_existem_mais(self):
         """Seletor de aparelho e pilulas de plano sairam do layout e do codigo."""
@@ -815,8 +853,11 @@ class CicloDeVidaTest(unittest.TestCase):
         chamadas = []
         modulo.__dict__['sys'] = sys
         modulo.__dict__['ARG_VOLTAR'] = 'voltar'
+        modulo.__dict__['ARG_SAIR'] = 'sair'
         modulo.__dict__['voltar_para_a_tela'] = \
             lambda: chamadas.append('voltar')
+        modulo.__dict__['sair_do_aplicativo'] = \
+            lambda: chamadas.append('sair')
         modulo.__dict__['vigiar_inicializacao'] = \
             lambda: chamadas.append('vigia')
         modulo.__dict__['abrir_tela_entrada'] = \

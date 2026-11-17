@@ -189,16 +189,23 @@ def tocar_anuncio(atividade, log=None):
 
 
 def tocar_anuncio_com_aviso(atividade, log=None):
-    """Igual a tocar_anuncio, mas avisa na tela do Kodi (fica no log e na TV)."""
+    """Igual a tocar_anuncio, mas avisa na tela do Kodi (fica no log e na TV).
+
+    A notificacao so aparece quando o builtin realmente foi enviado. Antes ela
+    aparecia tambem quando o Android recusava o componente e o usuario via
+    "Abrindo anuncio" sem anuncio nenhum (tela vazia) no projetor.
+    """
     disparou = tocar_anuncio(atividade, log)
     if log:
         log('[SmartAds] aviso na tela: %s (%s)'
             % ('enviado' if disparou else 'nao enviado', atividade))
-    try:
-        xbmc.executebuiltin('Notification(SMARTEDTV Anuncios, Abrindo anuncio (%s), 2500)'
-                            % ('video' if atividade == ATIVIDADE_PREROLL else 'abertura'))
-    except Exception:
-        pass
+    if disparou:
+        try:
+            xbmc.executebuiltin(
+                'Notification(SMARTEDTV Anuncios, Abrindo anuncio (%s), 2500)'
+                % ('video' if atividade == ATIVIDADE_PREROLL else 'abertura'))
+        except Exception:
+            pass
     return disparou
 
 
@@ -237,10 +244,11 @@ def esquecer():
     globals()['_ultimo_momento'] = 0.0
     globals()['_ultimo_caminho_preroll'] = None
     globals()['_ultimo_caminho_base'] = None
+    globals()['_ultima_sessao'] = None
 
 
 def mostrar_preroll(log=None, intervalo=None, agora=None, caminho=None,
-                    chave=None):
+                    chave=None, sessao=None):
     """Intersticial em TODA troca de conteudo (exceto VIP).
 
     ``intervalo`` e so a janela anti-duplicidade do MESMO inicio: o Kodi avisa
@@ -256,12 +264,19 @@ def mostrar_preroll(log=None, intervalo=None, agora=None, caminho=None,
             log('[SmartAds] VIP ativo: nenhum anuncio')
         return False
     chave = chave or _chave_conteudo(caminho)
+    # Sessao de reproducao: o Kodi chama onPlayBackStarted E onAVStarted para
+    # o mesmo inicio. Sem caminho/canal (alguns projetores/PVR nao entregam
+    # metadados) a chave era '?' e o anuncio NUNCA era pedido. A sessao resolve
+    # o mesmo inicio sem depender dos metadados.
+    if sessao is not None:
+        if sessao == globals().get('_ultima_sessao'):
+            if log:
+                log('[SmartAds] mesmo inicio de reproducao (sessao %s), sem anuncio'
+                    % sessao)
+            return False
     if chave == '?':
-        # sem caminho/canal/titulo nao da para saber se e outro conteudo; nao
-        # arrisca dois anuncios no mesmo inicio (o Kodi chama dois callbacks).
         if log:
-            log('[SmartAds] sem metadados do stream; aguardando o proximo callback')
-        return False
+            log('[SmartAds] stream sem metadados; usando a sessao de reproducao')
     anterior = globals().get('_ultimo_momento', 0.0)
     ultima_chave = globals().get('_ultimo_caminho_preroll')
     ultimo_caminho = globals().get('_ultimo_caminho_base')
@@ -295,6 +310,7 @@ def mostrar_preroll(log=None, intervalo=None, agora=None, caminho=None,
     globals()['_ultimo_momento'] = agora
     globals()['_ultimo_caminho_preroll'] = chave
     globals()['_ultimo_caminho_base'] = caminho
+    globals()['_ultima_sessao'] = sessao
     if log:
         log('[SmartAds] intersticial pedido na troca de conteudo (%s): %s'
             % (chave, 'disparado' if disparou else 'nao disparado'))
@@ -319,20 +335,47 @@ def mostrar_abertura(log=None):
     return True
 
 
-def abertura_depois_do_boot(monitor, log=None):
-    """Espera a Home aparecer e mostra o pop-up (roda em thread propria)."""
+def abertura_depois_do_boot(monitor, log=None, espera_home=90):
+    """Espera a Home aparecer e mostra o pop-up (roda em thread propria).
+
+    Nao abre o app-open por cima da tela de entrada: primeiro espera a Home
+    ficar ativa. Se o usuario demorar mais que ``espera_home`` ou ja estiver
+    reproduzindo video, este inicio pula o pop-up (a proxima abertura tenta).
+    """
     try:
         if monitor.waitForAbort(ABERTURA_DELAY):
             return False
     except Exception:
         time.sleep(ABERTURA_DELAY)
-    try:
-        if xbmc.Player().isPlayingVideo():
-            if log:
-                log('[SmartAds] abertura adiada (video ja em reproducao)')
-            return False
-    except Exception:
-        pass
+    limite = time.time() + max(6, int(espera_home))
+    while time.time() < limite:
+        try:
+            if monitor.abortRequested():
+                return False
+        except Exception:
+            pass
+        try:
+            if xbmc.Player().isPlayingVideo():
+                if log:
+                    log('[SmartAds] abertura adiada (video ja em reproducao)')
+                return False
+        except Exception:
+            pass
+        try:
+            if xbmc.getCondVisibility('Window.IsActive(Home)'):
+                break
+        except Exception:
+            break
+        try:
+            if monitor.waitForAbort(1):
+                return False
+        except Exception:
+            time.sleep(1)
+    else:
+        if log:
+            log('[SmartAds] abertura nao exibida: Home nao ficou ativa em %d s'
+                % espera_home)
+        return False
     return mostrar_abertura(log)
 
 
@@ -366,6 +409,7 @@ class MonitorPreRoll(_BasePlayer):
         self.log = log
         self.intervalo = intervalo
         self.ultimo_caminho = None
+        self.sessao = 0
 
     def _caminho(self):
         try:
@@ -391,7 +435,7 @@ class MonitorPreRoll(_BasePlayer):
             chave = _chave_conteudo(caminho)
             self.ultimo_caminho = caminho
             mostrar_preroll(self.log, self.intervalo, caminho=caminho,
-                            chave=chave)
+                            chave=chave, sessao=self.sessao)
         except Exception as erro:  # nunca derrubar o servico por causa do anuncio
             if self.log:
                 self.log('[SmartAds] pre-roll falhou (%s)' % erro, xbmc.LOGWARNING)
@@ -399,9 +443,11 @@ class MonitorPreRoll(_BasePlayer):
     # Kodi 21 chama onPlayBackStarted; onAVStarted vem em seguida para o mesmo
     # stream. Os dois passam pela mesma janela anti-duplicidade.
     def onPlayBackStarted(self):
+        self.sessao += 1
         self._talvez_mostrar()
 
     def onAVStarted(self):
+        # Mesma sessao de onPlayBackStarted: nao pede o segundo anuncio.
         self._talvez_mostrar()
 
     # Compatibilidade com versoes que ainda chamam onPlay.
@@ -410,10 +456,12 @@ class MonitorPreRoll(_BasePlayer):
 
     def onPlayBackStopped(self):
         self.ultimo_caminho = None
+        self.sessao += 1
         esquecer()
 
     def onPlayBackEnded(self):
         self.ultimo_caminho = None
+        self.sessao += 1
         esquecer()
 
 

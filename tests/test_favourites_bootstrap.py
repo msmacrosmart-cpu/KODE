@@ -271,3 +271,9 @@ class PerformanceTest(unittest.TestCase):
         self.assertIn('apply_performance()', main)
         self.assertIn('ensure_performance', source)
         self.assertIn('System.FriendlyName', source)
+
+    def test_servico_liga_os_anuncios_e_limpa_marcas_no_boot(self):
+        source = (BOOTSTRAP / 'service.py').read_text()
+        self.assertIn('smart_ads.iniciar_monitor(log)', source)
+        self.assertIn('smart_ads.abertura_depois_do_boot', source)
+        self.assertIn('limpar_estado_interface()', source)

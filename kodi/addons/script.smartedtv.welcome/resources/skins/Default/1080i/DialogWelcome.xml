@@ -428,7 +428,7 @@
       <height>57</height>
       <label>Ativar</label>
       <font>wf17</font>
-      <textcolor>FF080808</textcolor>
+      <textcolor>FFF7F7F7</textcolor>
       <focusedcolor>FF080808</focusedcolor>
       <texturefocus border="11">btn_primary_focus.png</texturefocus>
       <texturenofocus border="11">btn_primary.png</texturenofocus>
@@ -516,7 +516,7 @@
         <height>57</height>
         <label>Continuar com anúncios</label>
         <font>wf15</font>
-        <textcolor>FF080808</textcolor>
+        <textcolor>FFF7F7F7</textcolor>
         <focusedcolor>FF080808</focusedcolor>
         <texturefocus border="11">btn_primary_focus.png</texturefocus>
         <texturenofocus border="11">btn_primary.png</texturenofocus>
@@ -579,7 +579,7 @@
         <height>57</height>
         <label>$INFO[Window.Property(welcome_status_ok)]</label>
         <font>wf15</font>
-        <textcolor>FF080808</textcolor>
+        <textcolor>FFF7F7F7</textcolor>
         <focusedcolor>FF080808</focusedcolor>
         <texturefocus border="11">btn_primary_focus.png</texturefocus>
         <texturenofocus border="11">btn_primary.png</texturenofocus>

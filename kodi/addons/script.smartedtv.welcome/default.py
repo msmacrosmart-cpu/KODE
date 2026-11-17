@@ -111,6 +111,8 @@ ESPERA_VIGIA = 8
 ESPERA_HOME = 5
 # Argumento do keymap que reabre a tela a partir da Home.
 ARG_VOLTAR = 'voltar'
+# Argumento do menu Energia: encerra o Kodi de forma limpa.
+ARG_SAIR = 'sair'
 
 # Propriedades da janela usadas pelos grupos do XML (dialogos).
 PROP_DIALOGO = 'welcome_dialog'
@@ -381,16 +383,36 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         self._foco_anterior = 310
 
     # --- foco / D-pad -----------------------------------------------------
-    def _focar(self, controle, tentativas=5):
+    def _grupo_visivel(self, grupo=900):
+        """O grupo do dialogo ja foi desenhado pelo Kodi?"""
+        try:
+            controle = self.getControl(grupo)
+            return bool(controle.isVisible())
+        except Exception:
+            # Em teste (stub) nao existe isVisible; o comportamento antigo vale.
+            return True
+
+    def _focar(self, controle, tentativas=8):
         """Coloca o foco DEPOIS que o Kodi desenhou a visibilidade.
 
         O ``setFocusId`` antigo era chamado no mesmo clique que ligava a
         condicao ``welcome_dialog=ads``. Nesse instante o grupo 900 ainda
         estava invisivel e o Kodi recusava o foco em silencio: o controle
         ficava sem destino e o D-pad so voltava depois de um toque na tela.
-        Aqui esperamos alguns quadros e confirmamos por ``getFocusId``.
+        Aqui esperamos o grupo aparecer e confirmamos por ``getFocusId``. O
+        segundo ``setFocusId`` vence a memoria de foco do Kodi, que podia
+        restaurar o 906 (botao da direita) ao reabrir o dialogo.
         """
         destino = int(controle)
+        dialogo = self.getProperty(PROP_DIALOGO)
+        if dialogo == 'ads':
+            for _ in range(12):
+                if self._grupo_visivel(900):
+                    break
+                try:
+                    xbmc.sleep(40)
+                except Exception:
+                    break
         # A validacao VIP roda numa thread: nesse caso o foco vai pelo builtin
         # (fila da thread de interface), nunca por setFocusId direto.
         na_thread = threading.current_thread() is not threading.main_thread()
@@ -402,13 +424,22 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
                     self.setFocusId(destino)
                 atual = int(self.getFocusId() or 0)
                 if atual == destino:
+                    if dialogo == 'ads' and tentativa == 0:
+                        # Deixa o Kodi aplicar a visibilidade do grupo; se ele
+                        # restaurar a memoria (906), a proxima volta corrige.
+                        try:
+                            xbmc.sleep(80)
+                        except Exception:
+                            pass
+                        if int(self.getFocusId() or 0) != destino:
+                            continue
                     self._ultimo_foco = destino
                     return True
             except Exception:
                 pass
             if tentativa + 1 < tentativas:
                 try:
-                    xbmc.sleep(40)
+                    xbmc.sleep(50)
                 except Exception:
                     pass
         _log('nao consegui confirmar o foco no controle %d' % destino,
@@ -1077,6 +1108,40 @@ def voltar_para_a_tela():
     return True
 
 
+def sair_do_aplicativo():
+    """Encerra o SMARTEDTV/Kodi de forma limpa (menu Energia -> Sair).
+
+    Fecha dialogos, para a reproducao e limpa as marcas de estado da tela antes
+    do ``Quit`` nativo. Nao usa Kill/RestartApp/Shutdown: o Android encerra o
+    processo pela via normal do Kodi. Na proxima abertura o Startup.xml abre a
+    tela de entrada de novo, sem herdar foco preso ou janela invisivel.
+    """
+    _log('saindo do aplicativo: fechando dialogos e liberando a reproducao')
+    try:
+        xbmc.executebuiltin('Dialog.Close(all,true)')
+    except Exception:
+        pass
+    try:
+        player = xbmc.Player()
+        if player.isPlaying():
+            player.stop()
+    except Exception:
+        pass
+    for chave in (MARCA_VOLTAR, MARCA_ABERTA, MARCA_SAIU, MARCA_HOME):
+        _limpar(chave)
+    try:
+        xbmc.sleep(250)       # deixa o Kodi processar o stop/close
+    except Exception:
+        pass
+    try:
+        _log('saindo do aplicativo: Quit() do Kodi')
+        xbmc.executebuiltin('Quit')
+        return True
+    except Exception as erro:
+        _log('falha ao encerrar pelo Quit: %s' % erro, xbmc.LOGERROR)
+        return False
+
+
 def abrir_tela_entrada():
     """Abre a tela do pacote no lugar da Home. Devolve True quando abriu."""
     # Quem salva o boot se o Python travar antes de desenhar e o vigia
@@ -1111,6 +1176,8 @@ if __name__ == '__main__':
     argumentos = [a.lower() for a in sys.argv[1:]]
     if any('seguro' in a for a in argumentos):
         vigiar_inicializacao()
+    elif any(ARG_SAIR in a for a in argumentos):
+        sair_do_aplicativo()
     elif any(ARG_VOLTAR in a for a in argumentos):
         voltar_para_a_tela()
     else:

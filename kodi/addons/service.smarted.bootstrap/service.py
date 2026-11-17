@@ -18,6 +18,7 @@ import repair
 from favourites import ensure_favourites
 from performance import ensure_performance
 from menu_smarted import garantir_menu, rodar_validacao_navegacao, silenciar_avisos_brazuca
+import smart_ads
 from skin_setup import ensure_home_nodes, ensure_skin, home_xml_candidates
 
 ADDON = xbmcaddon.Addon()
@@ -85,6 +86,31 @@ def apply_silencio():
         return False
     log('silencio: navegacao sem sons (%s)' % UISOUNDS_SILENCIO)
     return True
+
+
+def limpar_estado_interface():
+    """Remove marcas de uma sessao anterior da tela de entrada.
+
+    Quit/reabertura nao podem herdar ``saiu``/``home=ok``/``voltar`` presos na
+    janela 10000; a tela nova precisa decidir o boot do zero. Nao limpa
+    ``smartedtv.welcome.ativa``: o vigia do Startup.xml conta com ela.
+    """
+    try:
+        import xbmcgui
+        janela = xbmcgui.Window(10000)
+        for chave in ('smartedtv.welcome.saiu', 'smartedtv.welcome.home',
+                      'smartedtv.welcome.voltar',
+                      'smartedtv.welcome.saindo'):
+            try:
+                janela.clearProperty(chave)
+            except Exception:
+                pass
+        log('interface: marcas antigas da tela de entrada limpas')
+        return True
+    except Exception as erro:
+        log('interface: nao foi possivel limpar marcas (%s)' % erro,
+            xbmc.LOGWARNING)
+        return False
 
 
 def write_report(home, report):
@@ -259,6 +285,7 @@ def repair_until_ready(monitor):
 
 def main():
     monitor = xbmc.Monitor()
+    limpar_estado_interface()
     log('startup: preparando o Brazuca Play')
     xbmc.executebuiltin('Notification(SMARTED, Preparando o conteudo..., 4000)')
 
@@ -288,6 +315,19 @@ def main():
         falhas = [linha for linha in navegacao if linha.startswith('FALHA')]
         log('nav-check: %d destinos testados, %d falha(s)' % (len(navegacao), len(falhas)))
     performance = apply_performance()
+
+    # Anuncios: o gancho de pre-roll precisa existir ANTES de qualquer video
+    # (canal/filme/serie). Sem esta chamada o MonitorPreRoll nunca era criado e
+    # nenhum anuncio era pedido, em nenhum aparelho. O app-open espera a Home.
+    try:
+        smart_ads.iniciar_monitor(log)
+        abertura = threading.Thread(target=smart_ads.abertura_depois_do_boot,
+                                    args=(monitor, log), name='ads-abertura')
+        abertura.daemon = True
+        abertura.start()
+    except Exception as erro:  # nunca derrubar o boot por causa de anuncio
+        log('ads: nao foi possivel iniciar os gatilhos (%s)' % erro,
+            xbmc.LOGWARNING)
 
     # 1º arranque: skin SMARTEDTV ativa + nós da Home ligados às rotas do addon
     home = xbmcvfs.translatePath('special://home')

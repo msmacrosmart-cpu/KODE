@@ -36,6 +36,15 @@ MODULOS = ('service.py', 'menu_smarted.py', 'performance.py', 'vip.py',
            'smart_ads.py')
 KEYMAP_ORIGEM = ROOT / 'kodi' / 'keymaps' / 'smartedtv-voltar.xml'
 KEYMAP_DESTINO = 'assets/system/keymaps/zzz-smartedtv-voltar.xml'
+# XMLs da skin ativa que fazem parte das correcoes desta versao. A Home e o
+# menu Energia sao do skin.novatv; se a base nao tiver o arquivo, ele fica
+# intocado (nada e inventado).
+SKIN_ARQUIVOS = {
+    'assets/addons/skin.novatv/xml/Home.xml':
+        ROOT / 'kodi' / 'skin.novatv' / 'xml' / 'Home.xml',
+    'assets/addons/skin.novatv/xml/ShutdownMenu.xml':
+        ROOT / 'kodi' / 'skin.novatv' / 'xml' / 'ShutdownMenu.xml',
+}
 SIG = re.compile(r'^META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC))$', re.I)
 STARTUP = re.compile(r'assets/addons/([^/]+)/xml/Startup\.xml$')
 EXIGIDOS = (
@@ -130,6 +139,7 @@ def main(argv=None):
     perfil = {}
     substituidos = set()
     startups = 0
+    skins = 0
     with zipfile.ZipFile(args.apk) as origem:
         nomes = set(origem.namelist())
         for exigido in EXIGIDOS:
@@ -157,6 +167,14 @@ def main(argv=None):
                 if item.filename == KEYMAP_DESTINO:
                     substituidos.add(item.filename)
                     continue
+                if item.filename in SKIN_ARQUIVOS:
+                    novo_skin = SKIN_ARQUIVOS[item.filename].read_bytes()
+                    if novo_skin != dados:
+                        dados = novo_skin
+                        skins += 1
+                        dbg('%s: XML da skin atualizado' % item.filename)
+                    substituidos.add(item.filename)
+                    continue
                 alvo_startup = STARTUP.fullmatch(item.filename)
                 if alvo_startup:
                     novo = patch_startup(dados)
@@ -178,8 +196,9 @@ def main(argv=None):
                 info.external_attr = 0o644 << 16
                 destino.writestr(info, extras[nome])
                 dbg('gravado: %s' % nome)
-            dbg('substituidos no APK base: %d; Startups atualizados: %d'
-                % (len(substituidos), startups))
+            dbg('substituidos no APK base: %d; Startups atualizados: %d; '
+                'XMLs de skin atualizados: %d'
+                % (len(substituidos), startups, skins))
 
     with zipfile.ZipFile(args.saida) as z:
         for nome, resumo in perfil.items():
@@ -188,6 +207,9 @@ def main(argv=None):
         for nome in extras:
             if nome not in z.namelist() or z.read(nome) != extras[nome]:
                 raise SystemExit('arquivo nao entrou igual: %s' % nome)
+        for nome, origem in SKIN_ARQUIVOS.items():
+            if nome in z.namelist() and z.read(nome) != origem.read_bytes():
+                raise SystemExit('XML da skin nao entrou igual: %s' % nome)
         for aba in ('lib/arm64-v8a/libkodi.so', 'lib/armeabi-v7a/libkodi.so'):
             if aba not in z.namelist():
                 raise SystemExit('ABI perdida: %s' % aba)
