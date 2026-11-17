@@ -144,6 +144,15 @@ jobs:
           fi
           echo "=== PASSO 5 OK ==="
 
+      - name: 5b. Upload do log do passo 5 (diagnostico)
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: step5-log
+          path: build/step5.log
+          retention-days: 1
+
       - name: 6. Conferir que nada mais mudou
         run: |
           set -euo pipefail
