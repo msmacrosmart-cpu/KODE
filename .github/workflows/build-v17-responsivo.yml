@@ -89,6 +89,13 @@ jobs:
               atual = z.read(nome)
               esperado = open(origem, 'rb').read()
               if atual != esperado:
+                  with open('build/diag.txt', 'a') as diag:
+                      diag.write('%s: apk=%d repo=%d\n' % (nome, len(atual), len(esperado)))
+                      diag.write('sha apk=%s repo=%s\n' % (
+                          __import__('hashlib').sha256(atual).hexdigest(),
+                          __import__('hashlib').sha256(esperado).hexdigest()))
+                      diag.write('entradas iguais no zip=%r\n' % [
+                          n for n in z.namelist() if n.endswith(nome.rsplit('/', 1)[-1])])
                   print('::error title=APK diverge::%s (%d B) != %s (%d B)'
                         % (nome, len(atual), origem, len(esperado)))
                   raise SystemExit(1)
@@ -110,6 +117,17 @@ jobs:
                    'kodi/skin.novatv/xml/ShutdownMenu.xml')
           print('OK: duas ABIs + tela/servico/anuncios/skin do repositorio')
           PY
+
+      - name: 3b. Publicar diagnostico da divergencia
+        if: failure()
+        run: |
+          set -uo pipefail
+          if [ ! -f build/diag.txt ]; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -f build/diag.txt
+          git commit -m "[v17][skip ci] diagnostico do APK" || true
+          git push origin HEAD:arena/39a14845-kode || true
 
       - name: 4. Simular o boot (sem tela preta e com foco)
         run: |
