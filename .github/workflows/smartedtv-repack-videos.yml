@@ -1,0 +1,21 @@
+name: SMARTEDTV repackage video screen
+
+on:
+  push:
+    branches: [arena/28b146c9-kode]
+
+permissions:
+  contents: write
+
+jobs:
+  repackage:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Executar reempacotamento da tela VIDEOS
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          bash tools/kodi/build-repackage-video.sh
