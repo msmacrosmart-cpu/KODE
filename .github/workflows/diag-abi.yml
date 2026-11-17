@@ -20,19 +20,35 @@ jobs:
           ref: arena/39a14845-kode
       - name: Baixar SMARTEDTV v15 e Kodi 21.3 arm64/armv7
         run: |
-          set -euo pipefail
+          set -uo pipefail
           mkdir -p build
           gh release download v1.0.85-tela-inicial-v15 \
             --pattern 'SMARTEDTV-atual-com-tela-inicial-v15.apk' --dir build
-          curl -L --fail --retry 3 -o build/kodi-arm64.apk \
-            https://mirrors.kodi.tv/releases/android/arm64-v8a/kodi-21.3-Omega-arm64-v8a.apk
-          curl -L --fail --retry 3 -o build/kodi-armv7.apk \
-            https://mirrors.kodi.tv/releases/android/arm/kodi-21.3-Omega-armeabi-v7a.apk
+          : > build/download.log
+          for url in \
+            'https://mirrors.kodi.tv/releases/android/arm/kodi-21.3-Omega-armeabi-v7a.apk' \
+            'https://mirrors.kodi.tv/releases/android/arm/kodi-21.3-Omega-armeabi-v7a.apk?https=1' \
+            'https://mirrors.kodi.tv/releases/android/arm64-v8a/kodi-21.3-Omega-arm64-v8a.apk'; do
+            echo "== $url" >> build/download.log
+            if curl -L --fail --retry 2 --max-time 300 -o build/baixado.apk "$url" >>build/download.log 2>&1; then
+              echo "OK $url" >> build/download.log
+              case "$url" in
+                *armeabi-v7a*) mv build/baixado.apk build/kodi-armv7.apk ;;
+                *) mv build/baixado.apk build/kodi-arm64.apk ;;
+              esac
+            else
+              echo "FALHOU $url ($?)" >> build/download.log
+            fi
+          done
           ls -lh build
+          cat build/download.log
       - name: Comparar libs e classes
         run: |
           set -euo pipefail
           {
+            echo "== downloads"
+            cat build/download.log 2>/dev/null || true
+            echo
             echo "== SMARTEDTV v15"
             python3 -m pip install --quiet --disable-pip-version-check pyaxmlparser==0.3.31
             python3 - build/SMARTEDTV-atual-com-tela-inicial-v15.apk <<'PY'
@@ -48,6 +64,7 @@ jobs:
           PY
             echo
             echo "== Kodi oficial armv7"
+            if [ -f build/kodi-armv7.apk ]; then
             python3 - build/kodi-armv7.apk <<'PY'
           import sys
           from pyaxmlparser import APK
@@ -59,10 +76,14 @@ jobs:
           except Exception as erro:
               print('abi ?', erro)
           PY
+            else
+              echo "armv7 NAO baixou"
+            fi
             echo
             echo "== libs arm64: SMARTEDTV x Kodi oficial (md5)"
             mkdir -p build/base64 build/kodi64
             unzip -q build/SMARTEDTV-atual-com-tela-inicial-v15.apk 'lib/arm64-v8a/*' -d build/base64
+            if [ -f build/kodi-arm64.apk ]; then
             unzip -q build/kodi-arm64.apk 'lib/arm64-v8a/*' -d build/kodi64
             (cd build/base64 && find lib/arm64-v8a -type f -printf '%P\n' | sort | xargs -r md5sum) > build/base64.md5
             (cd build/kodi64 && find lib/arm64-v8a -type f -printf '%P\n' | sort | xargs -r md5sum) > build/kodi64.md5
@@ -71,14 +92,24 @@ jobs:
             echo "-- só no oficial:"; comm -13 <(cut -d' ' -f3- build/base64.md5 | sort) <(cut -d' ' -f3- build/kodi64.md5 | sort)
             echo "-- hashes diferentes:"
             join -j 2 <(sort -k2 build/base64.md5) <(sort -k2 build/kodi64.md5) | awk '$2!=$3{print $1}' | head -30
+            else
+              echo "arm64 oficial NAO baixou"
+            fi
             echo
             echo "== libs armv7 do Kodi oficial (que faltam no APK)"
-            unzip -l build/kodi-armv7.apk | awk '$4 ~ /^lib\/armeabi-v7a\// {print $4}' | sort | sed 's/^/  /'
+            if [ -f build/kodi-armv7.apk ]; then
+              unzip -l build/kodi-armv7.apk | awk '$4 ~ /^lib\/armeabi-v7a\// {print $4}' | sort | sed 's/^/  /'
+            else
+              echo "sem armv7"
+            fi
             echo
             echo "== JNI/classes no libkodi.so"
             unzip -p build/SMARTEDTV-atual-com-tela-inicial-v15.apk lib/arm64-v8a/libkodi.so > build/libkodi-base.so
-            unzip -p build/kodi-armv7.apk lib/armeabi-v7a/libkodi.so > build/libkodi-v7.so
+            if [ -f build/kodi-armv7.apk ]; then
+              unzip -p build/kodi-armv7.apk lib/armeabi-v7a/libkodi.so > build/libkodi-v7.so
+            fi
             for f in build/libkodi-base.so build/libkodi-v7.so; do
+              [ -f "$f" ] || continue
               echo "-- $f"
               strings "$f" | grep -E 'org/xbmc/kodi|smartedtv/full' | sort -u | head -20
             done
