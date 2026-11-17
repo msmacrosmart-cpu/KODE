@@ -20,6 +20,7 @@ jobs:
           set +e
           python3 - <<'PY' > /tmp/report.txt 2>&1
           import json, re, urllib.error, urllib.request
+          from urllib.parse import urljoin
 
           BASE = 'https://smartedtv-vip.lovable.app'
           UA = 'Mozilla/5.0 (Linux; Android 11) SMARTEDTV-diag'
@@ -30,7 +31,7 @@ jobs:
               print(linha, flush=True)
 
           def req(url, method='GET', data=None, headers=None, timeout=25):
-              h = {'User-Agent': UA, 'Accept': 'application/json,text/html,*/*'}
+              h = {'User-Agent': UA, 'Accept': '*/*'}
               h.update(headers or {})
               corpo = None
               if data is not None:
@@ -39,117 +40,88 @@ jobs:
               pedido = urllib.request.Request(url, data=corpo, headers=h, method=method)
               try:
                   with urllib.request.urlopen(pedido, timeout=timeout) as r:
-                      return r.status, dict(r.headers), r.read(3_000_000).decode('utf-8', 'replace')
+                      return r.status, dict(r.headers), r.read(4_000_000).decode('utf-8', 'replace')
               except urllib.error.HTTPError as e:
-                  return e.code, dict(e.headers), e.read(300_000).decode('utf-8', 'replace')
+                  return e.code, dict(e.headers), e.read(400_000).decode('utf-8', 'replace')
               except Exception as e:
                   return 'ERR', {}, repr(e)
 
-          p('== 1. HTML ==')
           st, hd, html = req(BASE + '/')
-          p('GET / ->', st, hd.get('content-type'), 'len', len(html))
-          m = re.search(r'<title[^>]*>(.*?)</title>', html, re.S | re.I)
-          p('title:', (m.group(1).strip() if m else '?')[:200])
-          scripts = re.findall(r'<script[^>]+src=["\']([^"\']+)["\']', html)
-          p('scripts:', len(scripts))
-          for s in scripts[:20]:
-              p('  script', s[:300])
+          p('HTML', st, 'len', len(html))
+          for k in ('server','x-vercel-id','x-powered-by','cf-ray','x-lovable','x-deployment-id','cache-control'):
+              if k in hd: p('header', k, '=', hd[k])
+          p('scripts:', re.findall(r'<script[^>]+src=["\']([^"\']+)', html))
+          p('links js:', sorted(set(re.findall(r'["\']([^"\']+\.js[^"\']*)["\']', html)))[:30])
+          p('form action:', re.findall(r'<form[^>]*action=["\']([^"\']*)', html))
 
-          supa = set(re.findall(r'https://[a-z0-9]{6,}\.supabase\.co', html))
-          chaves = set(re.findall(r'eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}', html))
-          p('supabase no HTML:', sorted(supa))
-          p('chaves no HTML:', [(k[:12] + '...', len(k)) for k in chaves])
+          vistos = set()
+          fila = []
+          def enfileirar(u):
+              u = urljoin(BASE + '/', u).split('#')[0]
+              if u not in vistos and u.startswith(BASE) and ('.js' in u or '/assets/' in u):
+                  vistos.add(u); fila.append(u)
+          for u in re.findall(r'<script[^>]+src=["\']([^"\']+)', html):
+              enfileirar(u)
+          textos = {'HTML': html}
+          while fila and len(textos) < 40:
+              u = fila.pop(0)
+              st, hd, txt = req(u)
+              p('CHUNK', u.replace(BASE,''), st, len(txt))
+              if st != 200: continue
+              textos[u] = txt
+              for imp in re.findall(r'["\']((?:\.{0,2}/)?assets/[A-Za-z0-9_.-]+\.js)["\']', txt):
+                  enfileirar(imp)
+              for imp in re.findall(r'import\(["\']([^"\']+\.js[^"\']*)["\']\)', txt):
+                  enfileirar(imp)
 
+          urls = set()
+          for nome, txt in textos.items():
+              for u in re.findall(r'https?://[^"\'`\s<>\\)]+', txt):
+                  u = u.rstrip('.,;:')
+                  if any(x in u for x in ('w3.org','schema.org','fonts.googleapis','fonts.gstatic','lovable.dev','github.com','reactjs.org','mozilla.org','google.com','youtube.com','instagram.com')):
+                      continue
+                  urls.add(u)
           p('')
-          p('== 2. BUNDLES JS ==')
-          js_texto = ''
-          for s in scripts[:25]:
-              url = s if s.startswith('http') else BASE + '/' + s.lstrip('/')
-              st, hd, txt = req(url)
-              p('JS', url[:220], '->', st, 'len', len(txt))
-              if st == 200:
-                  js_texto += '\n' + txt
-          supa |= set(re.findall(r'https://[a-z0-9]{6,}\.supabase\.co', js_texto))
-          chaves |= set(re.findall(r'eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}', js_texto))
-          p('supabase total:', sorted(supa))
-          p('chaves total:', [(k[:12] + '...', len(k)) for k in chaves])
+          p('== URLS EXTERNAS ==')
+          for u in sorted(urls):
+              p(' ', u[:300])
 
-          def trechos(texto, padrao, largura=140, limite=12):
+          def trechos(texto, padrao, largura=180, limite=25):
               vistos = []
               for m in re.finditer(padrao, texto, re.I):
-                  ini = max(0, m.start() - largura // 2)
-                  fim = min(len(texto), m.end() + largura // 2)
-                  t = texto[ini:fim].replace('\n', ' ')
+                  ini = max(0, m.start() - largura // 2); fim = min(len(texto), m.end() + largura // 2)
+                  t = texto[ini:fim].replace('\n',' ')
                   t = re.sub(r'eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}', '<CHAVE>', t)
-                  if t not in vistos:
-                      vistos.append(t)
-                  if len(vistos) >= limite:
-                      break
+                  if t not in vistos: vistos.append(t)
+                  if len(vistos) >= limite: break
               return vistos
 
+          todo = '\n'.join(textos.values())
           for rotulo, padrao in (
-              ('functions/v1', r'functions/v1/[a-zA-Z0-9_\-]+'),
-              ('rest/v1', r'rest/v1/[a-zA-Z0-9_\-]+'),
-              ('rpc', r'\brpc\s*\(\s*["\']([a-zA-Z0-9_\-]+)'),
-              ('public/api', r'/public/api/[a-zA-Z0-9_\-/]+'),
-              ('validar', r'validar[a-zA-Z0-9_\-]*'),
-              ('codigo', r'codigo[a-zA-Z0-9_\-]*'),
-              ('ativar', r'ativar[a-zA-Z0-9_\-]*'),
-              ('cakto', r'cakto[a-zA-Z0-9_\-]*'),
+              ('fetch', r'fetch\s*\('),
+              ('axios', r'axios'),
+              ('api path', r'["\'][^"\']*/(?:api|functions|rest|rpc|public)/[^"\']*["\']'),
+              ('supabase', r'supabase'),
+              ('codigo/ativ', r'(?:codigo|código|ativar|validar|validate|activate|license|licen[cç]a)'),
+              ('cakto', r'cakto'),
+              ('webhook/payment', r'(?:webhook|payment|pagamento|checkout|pix|obrigado)'),
+              ('function invoke', r'(?:\.functions|functions/v1|invoke\s*\()'),
           ):
               p('')
-              p('--', rotulo, '--')
-              for t in trechos(js_texto, padrao, limite=8):
-                  p('  ', t[:320])
+              p('== TRECHOS', rotulo, '==')
+              for t in trechos(todo, padrao, limite=15):
+                  p('  ', t[:420])
 
           p('')
-          p('== 3. ROTAS DO SITE (GET/OPTIONS/POST com codigo FALSO) ==')
-          falso = {'codigo': 'DIAG-0000-XXXX', 'app': 'smartedtv', 'device': 'diag', 'versao': 'diag'}
-          for rota in ('/api/validar', '/api/validate', '/api/ativar',
-                       '/api/codigos/validar', '/functions/v1/validar-codigo',
-                       '/public/api/cakto'):
-              url = BASE + rota
-              for metodo, corpo in (('GET', None), ('OPTIONS', None), ('POST', falso if rota != '/public/api/cakto' else {})):
-                  st, hd, txt = req(url, method=metodo, data=corpo)
-                  p('%s %s -> %s %s' % (metodo, rota, st, hd.get('content-type')))
-                  p('   body:', txt[:500].replace('\n', ' '))
-
-          p('')
-          p('== 4. SUPABASE (somente leitura e codigo FALSO; sem imprimir valores reais) ==')
-          for base in sorted(supa):
-              for chave in sorted(chaves):
-                  cab = {'apikey': chave, 'Authorization': 'Bearer ' + chave}
-                  for caminho in ('/rest/v1/codigos?select=*&limit=1',
-                                  '/rest/v1/codigos?codigo=eq.DIAG-0000-XXXX&select=*'):
-                      st, hd, txt = req(base + caminho, headers=cab)
-                      p('%s%s -> %s' % (base, caminho, st))
-                      try:
-                          dados = json.loads(txt)
-                          if isinstance(dados, list):
-                              p('   linhas:', len(dados), 'chaves:', sorted(dados[0].keys()) if dados else [])
-                          else:
-                              p('   json:', sorted(dados.keys()) if isinstance(dados, dict) else type(dados).__name__)
-                      except Exception:
-                          p('   body:', txt[:400].replace('\n', ' '))
-                  break
-
-          p('')
-          p('== 5. FUNCOES EDGE descobertas ==')
-          nomes = sorted(set(re.findall(r'functions/v1/([a-zA-Z0-9_\-]+)', js_texto)))
-          p('nomes:', nomes)
-          for base in sorted(supa):
-              for nome in nomes:
-                  url = base + '/functions/v1/' + nome
-                  st, hd, txt = req(url, method='OPTIONS')
-                  p('OPTIONS', nome, '->', st)
-                  st, hd, txt = req(url, method='POST', data=falso)
-                  p('POST', nome, '->', st, hd.get('content-type'), txt[:300].replace('\n', ' '))
+          p('== ARQUIVOS DE ROTA ==')
+          for rota in ('/ativar','/obrigado','/retorno','/api','/api/','/public/api/cakto'):
+              st, hd, txt = req(BASE + rota)
+              p(rota, '->', st, hd.get('content-type'), 'len', len(txt), 'json' if txt.lstrip().startswith(('{','[')) else 'html')
 
           relatorio = '\n'.join(out)
           if len(relatorio) > 120000:
               relatorio = relatorio[:120000] + '\n[...truncado...]'
-          with open('/tmp/report.txt', 'w', encoding='utf-8') as f:
-              f.write(relatorio)
+          open('/tmp/report.txt','w',encoding='utf-8').write(relatorio)
           PY
           gh release view diag-vip-api --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
             || gh release create diag-vip-api --repo "$GITHUB_REPOSITORY" \
