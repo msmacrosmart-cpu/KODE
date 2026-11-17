@@ -7,6 +7,9 @@ codigo de ativacao. Tudo reutiliza o que ja existe no app (xbmc/xbmcgui) e nao
 inventa endpoint: checkout aponta para o pay.cakto.com.br do pacote, o APK para
 o link do Dropbox/GitHub ja constante no VipFake dos testes, e a validacao de
 codigo usa /api/validar e /functions/v1/validar-codigo (rotas reais do projeto).
+
+Os botoes de checkout, compartilhar, baixar APK e atualizar SAEM do app
+(abrem o navegador/intent do Android) em vez de ficar dentro do Kodi.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -38,19 +41,55 @@ def log(mensagem, nivel=xbmc.LOGINFO):
     xbmc.log('[%s] %s' % (ADDON_ID, mensagem), nivel)
 
 
-def _abrir_url_externa(url, rotulo='link'):
-    """Abre uma URL externa no Kodi (tenta PlayMedia; fallback: notificacao)."""
+def _start_android_activity(action, uri='', mime_type='', extras=''):
+    """Dispara um intent do Android (sai do Kodi para outro app).
+
+    Sintaxe do Kodi: StartAndroidActivity(action,uri,mime_type,extras)
+    """
+    comando = 'StartAndroidActivity(%s,%s,%s,%s)' % (
+        action, uri, mime_type, extras)
+    try:
+        xbmc.executebuiltin(comando)
+        return True
+    except Exception as erro:
+        log('StartAndroidActivity falhou (%s): %s' % (comando, erro),
+            xbmc.LOGWARNING)
+        return False
+
+
+def _abrir_navegador(url, rotulo='link'):
+    """Abre uma URL no navegador externo do Android (sai do app)."""
+    log('abrindo navegador externo %s: %s' % (rotulo, url))
+    if _start_android_activity('android.intent.action.VIEW', url, '', ''):
+        return True
+    # fallback para nao-Android: abre dentro do Kodi
     try:
         xbmc.executebuiltin('PlayMedia(%s)' % url)
         return True
     except Exception as erro:
-        log('nao foi possível abrir %s (%s): %s' % (rotulo, url, erro),
+        log('nao foi possivel abrir %s (%s): %s' % (rotulo, url, erro),
             xbmc.LOGWARNING)
     try:
         xbmcgui.Dialog().notification(
             'SMARTEDTV', rotulo, xbmcgui.NOTIFICATION_INFO, 4000)
     except Exception:
         pass
+    return False
+
+
+def _compartilhar_texto(texto, rotulo='compartilhamento'):
+    """Compartilha um texto para outro app do Android (sai do app)."""
+    log('compartilhando: %s' % texto)
+    if _start_android_activity('android.intent.action.SEND', '',
+                               'text/plain', texto):
+        return True
+    # fallback: mostra o texto num dialog para copiar
+    try:
+        xbmcgui.Dialog().ok(rotulo, texto, 'Copiar')
+        return True
+    except Exception as erro:
+        log('nao foi possivel abrir o compartilhamento: %s' % erro,
+            xbmc.LOGWARNING)
     return False
 
 
@@ -116,31 +155,24 @@ def _gravar_licenca(codigo, expira=None):
 
 
 def abrir_checkout():
-    """Abre o checkout de pagamento (pay.cakto.com.br)."""
+    """Abre o checkout de pagamento (pay.cakto.com.br) no navegador externo."""
     log('abrindo checkout: %s' % CHECKOUT)
-    return _abrir_url_externa(CHECKOUT, 'checkout')
+    return _abrir_navegador(CHECKOUT, 'checkout')
 
 
 def compartilhar(texto=None):
-    """Compartilha o link do app (mostra o link para copiar/encaminhar)."""
+    """Compartilha o link do APK (Dropbox) para outros apps do Android."""
     msg = texto or ('Baixe o SMARTED-TV: %s' % APK)
-    log('compartilhando link do app')
-    try:
-        xbmcgui.Dialog().ok('Compartilhar', msg, 'Copiar')
-    except Exception as erro:
-        log('nao foi possível abrir o compartilhamento: %s' % erro,
-            xbmc.LOGWARNING)
-        return False
-    return True
+    return _compartilhar_texto(msg, 'Compartilhar')
 
 
 def abrir_url(url, rotulo='link'):
-    """Abre uma URL (download do APK, site, etc.)."""
+    """Abre uma URL no navegador externo do Android."""
     log('abrindo %s: %s' % (rotulo, url))
-    return _abrir_url_externa(url, rotulo)
+    return _abrir_navegador(url, rotulo)
 
 
 def procurar_atualizacao():
     """Checa se há atualização disponível (abre a release do GitHub)."""
     log('checando atualização')
-    return _abrir_url_externa(APK_GITHUB, 'atualização')
+    return _abrir_navegador(APK_GITHUB, 'atualização')
