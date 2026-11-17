@@ -186,10 +186,25 @@ jobs:
           set -euo pipefail
           test -d "$RUNNER_TEMP/xbmc-depends" || { echo "::error::prefixo de dependências ausente"; exit 1; }
           echo "cache hit: ${{ steps.cache-deps.outputs.cache-hit }}"
-          test -d "$RUNNER_TEMP/xbmc-depends/lib" || { echo "::error::falta lib no prefixo"; exit 1; }
-          ls "$RUNNER_TEMP/xbmc-depends/lib" | grep -q '\.so\|\.a' || \
-            { echo "::error::prefixo sem bibliotecas compiladas"; exit 1; }
-          echo "libs: $(ls "$RUNNER_TEMP/xbmc-depends/lib" | wc -l) entradas"
+          # Procura bibliotecas compiladas em possíveis locais do prefixo
+          LIB_DIR=""
+          for cand in \
+            "$RUNNER_TEMP/xbmc-depends/lib" \
+            "$RUNNER_TEMP/xbmc-depends/target/lib" \
+            "$RUNNER_TEMP/kodi/tools/depends/target/lib"; do
+            if [ -d "$cand" ] && ls "$cand" | grep -q '\.so\|\.a' 2>/dev/null; then
+              LIB_DIR="$cand"
+              break
+            fi
+          done
+          if [ -z "$LIB_DIR" ]; then
+            echo "::error::nenhuma biblioteca compilada encontrada em nenhum prefixo"
+            echo "--- conteúdo de xbmc-depends ---"
+            find "$RUNNER_TEMP/xbmc-depends" -maxdepth 3 -type d 2>/dev/null | head -30
+            exit 1
+          fi
+          echo "libs encontradas em: $LIB_DIR"
+          echo "libs: $(ls "$LIB_DIR" | wc -l) entradas"
 
       - name: 8. Compilar o Kodi para Android
         run: |
