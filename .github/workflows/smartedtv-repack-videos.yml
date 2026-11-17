@@ -23,3 +23,12 @@ jobs:
             --pattern "SMARTEDTV-atual-com-tela-inicial-v9.apk" --dir "$RUNNER_TEMP/base"
           APK_FILE=$(find "$RUNNER_TEMP/base" -name '*.apk' | head -1)
           echo "APK base: $APK_FILE"
+          echo "BASE_APK_PATH=$APK_FILE" >> "$GITHUB_ENV"
+
+      - name: 2. Inject video screen changes
+        run: |
+          set -euo pipefail
+          python3 tools/kodi/injetar-videos.py \
+            --apk "$BASE_APK_PATH" \
+            --saida "$RUNNER_TEMP/bruto.apk"
+          ls -lh "$RUNNER_TEMP/bruto.apk"
