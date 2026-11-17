@@ -11,22 +11,12 @@ name: SMARTEDTV - reempacotar tela VÍDEOS (rápido)
 #   2. plugin.video.smarted/ entra em assets/addons/ (default.py com as 5 ações)
 #   3. service.smarted.bootstrap/ entra em assets/addons/
 #   4. addon-manifest.xml registra os 3 addons
-#   5. versionName/versionCode sobem para permitir atualizar por cima do 1.0.83
-#   6. Assinatura com chave smarted-tv-test do Dropbox
+#   5. Assinatura com chave smarted-tv-test do Dropbox
 #
 # Tempo tipico: 2-5 min (vs 60+ min de compilação do zero).
 
 on:
   workflow_dispatch:
-    inputs:
-      versao:
-        description: 'versionName novo'
-        type: string
-        default: '21.4.1'
-      codigo:
-        description: 'versionCode novo'
-        type: number
-        default: 2104001
   push:
     branches: [arena/28b146c9-kode]
     paths:
@@ -48,8 +38,8 @@ jobs:
     env:
       BASE_TAG: v1.0.83-tela-inicial-v9
       BASE_APK: SMARTEDTV-atual-com-tela-inicial-v9.apk
-      NOVA_VERSAO: ${{ inputs.versao || '21.4.1' }}
-      NOVO_CODIGO: ${{ inputs.codigo || 2104001 }}
+      NOVA_VERSAO: '21.4.1'
+      NOVO_CODIGO: '2104001'
       TAG_SAIDA: smartedtv-videos-21.4.1-arm64
     steps:
       - uses: actions/checkout@v4
@@ -61,7 +51,7 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/base"
           gh release download "$BASE_TAG" -R "$GITHUB_REPOSITORY" \
-            --pattern '*.apk' --dir "$RUNNER_TEMP/base"
+            --pattern "$BASE_APK" --dir "$RUNNER_TEMP/base"
           ls -lh "$RUNNER_TEMP/base/"
           APK_FILE=$(find "$RUNNER_TEMP/base" -name '*.apk' | head -1)
           echo "APK base: $APK_FILE"
@@ -77,7 +67,35 @@ jobs:
             || python3 -m pip install --quiet --user Pillow==11.3.0 pyaxmlparser==0.3.31
           python3 -c 'import PIL, pyaxmlparser; print("Pillow", PIL.__version__, "| pyaxmlparser OK")'
 
-      - name: 3. Injetar modificações da tela VÍDEOS no APK base
+      - name: 3. Baixar apksigner.jar (assinatura Android)
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.cache/kode-build/tools"
+          if [ ! -f "$HOME/.cache/kode-build/tools/apksigner.jar" ]; then
+            curl -fsSL -o "$HOME/.cache/kode-build/tools/apksigner.jar" \
+              "https://repo1.maven.org/maven2/com/google/android/apksigner/33.0.1/apksigner-33.0.1.jar" 2>/dev/null || true
+          fi
+          if [ ! -f "$HOME/.cache/kode-build/tools/apksigner.jar" ]; then
+            echo "::warning::apksigner.jar não encontrado via Maven, tentando SDK build-tools..."
+            curl -fsSL -o "$HOME/.cache/kode-build/tools/build-tools.zip" \
+              "https://dl.google.com/android/repository/build-tools_r33-0.1-linux.zip" 2>/dev/null || true
+            if [ -f "$HOME/.cache/kode-build/tools/build-tools.zip" ]; then
+              unzip -o -q "$HOME/.cache/kode-build/tools/build-tools.zip" -d "$HOME/.cache/kode-build/tools/"
+              cp "$HOME/.cache/kode-build/tools/apksigner" "$HOME/.cache/kode-build/tools/apksigner.jar" 2>/dev/null || true
+            fi
+          fi
+          ls -la "$HOME/.cache/kode-build/tools/" 2>/dev/null || true
+
+      - name: 3b. Java para apksigner
+        run: |
+          set -euo pipefail
+          if ! command -v java >/dev/null 2>&1; then
+            sudo apt-get update -qq 2>/dev/null || true
+            sudo apt-get install -y -qq --no-install-recommends openjdk-17-jdk-headless 2>/dev/null || true
+          fi
+          java -version 2>&1 | head -1
+
+      - name: 4. Injetar modificações da tela VÍDEOS no APK base
         run: |
           set -euo pipefail
           python3 tools/kodi/injetar-videos.py \
@@ -85,19 +103,21 @@ jobs:
             --saida "$RUNNER_TEMP/bruto.apk"
           ls -lh "$RUNNER_TEMP/bruto.apk"
 
-      - name: 4. Alinhar e assinar com a chave do projeto
+      - name: 5. Alinhar o APK
         run: |
           set -euo pipefail
           python3 tools/kodi/align-apk.py "$RUNNER_TEMP/bruto.apk" "$RUNNER_TEMP/alinhado.apk"
           ls -lh "$RUNNER_TEMP/alinhado.apk"
 
-          # Chave de assinatura do repositório
-          JAVA=$(find /usr -name java -type f 2>/dev/null | head -1)
-          if [ -z "$JAVA" ]; then
-            sudo apt-get install -y -qq openjdk-17-jdk-headless 2>/dev/null || true
-            JAVA=/usr/bin/java
+      - name: 6. Assinar com a chave do projeto
+        run: |
+          set -euo pipefail
+          SIGNER="$HOME/.cache/kode-build/tools/apksigner.jar"
+          if [ ! -f "$SIGNER" ]; then
+            echo "::error::apksigner.jar não encontrado em $SIGNER"
+            exit 1
           fi
-          "$JAVA" -jar "$HOME/.cache/kode-build/tools/apksigner.jar" sign \
+          java -jar "$SIGNER" sign \
             --ks dropbox/smarted-tv-test.jks \
             --ks-pass pass:android \
             --key-pass pass:android \
@@ -109,22 +129,22 @@ jobs:
             --out "$RUNNER_TEMP/assinado.apk" "$RUNNER_TEMP/alinhado.apk"
           ls -lh "$RUNNER_TEMP/assinado.apk"
 
-      - name: 5. Verificar assinatura e identidade
+      - name: 7. Verificar assinatura
         run: |
           set -euo pipefail
-          JAVA=$(find /usr -name java -type f 2>/dev/null | head -1)
-          "$JAVA" -jar "$HOME/.cache/kode-build/tools/apksigner.jar" verify \
+          SIGNER="$HOME/.cache/kode-build/tools/apksigner.jar"
+          java -jar "$SIGNER" verify \
             --verbose --print-certs "$RUNNER_TEMP/assinado.apk" \
             | tee "$RUNNER_TEMP/verify.txt"
-          grep -qi "SMARTED\|smarted-tv-test" "$RUNNER_TEMP/verify.txt" && echo "Assinatura OK" || echo "::warning::verifique o certificado"
+          grep -qi "smarted-tv-test\|855de171" "$RUNNER_TEMP/verify.txt" && echo "Assinatura OK" || echo "::warning::verifique o certificado"
 
-      - name: 6. Preparar APK final
+      - name: 8. Preparar APK final
         run: |
           set -euo pipefail
           cp "$RUNNER_TEMP/assinado.apk" "$RUNNER_TEMP/final.apk"
           ls -lh "$RUNNER_TEMP/final.apk"
 
-      - name: 7. Publicar release
+      - name: 9. Publicar release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -156,7 +176,7 @@ jobs:
           fi
           echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG_SAIDA"
 
-      - name: 8. Guardar artefato
+      - name: 10. Guardar artefato
         uses: actions/upload-artifact@v4
         with:
           name: smartedtv-apk-repack-videos
