@@ -1,8 +1,8 @@
 # Instalar o SMARTEDTV (celular, TV, box, projetor e stick)
 
-**Versão atual: v14 (1.0.84 / 2103070)**  
-https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.84-tela-inicial-v14/SMARTEDTV-atual-com-tela-inicial-v14.apk  
-SHA-256: `3e32c3712b62bb799f57c1b017daad001db7d70a99f6df3a3cad8238fd1da421`
+**Versão atual: v15 (1.0.85 / 2103071)**  
+https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.85-tela-inicial-v15/SMARTEDTV-atual-com-tela-inicial-v15.apk  
+SHA-256: `860edc71067547e87c6e6671984977699d9c1a5c74857b3c87e01c78eaa15fe3`
 
 O APK é grande (~250 MB) e é instalado **fora da Play Store**. A mensagem
 genérica **“Aplicativo não instalado”** quase sempre é uma destas cinco coisas —
@@ -10,13 +10,13 @@ nenhuma delas é vírus ou APK corrompido:
 
 | Causa | Como resolver |
 |---|---|
-| **Mesmo `versionCode` da versão instalada** | Use a v14 (1.0.84 / 2103070) ou desinstale a anterior antes. |
+| **Mesmo `versionCode` da versão instalada** | Use a v15 (1.0.85 / 2103071) ou desinstale a anterior antes. |
 | **Assinatura diferente da versão instalada** | Desinstale a versão antiga (perde dados e VIP) e instale de novo. |
 | **“Instalar apps desconhecidos” desligado** | Autorize o navegador/gerenciador/Downloader que está abrindo o APK. |
 | **Play Protect bloqueando** | Toque em **“Mais detalhes” → “Instalar mesmo assim”** (ou desligue a verificação temporariamente). |
 | **Pouco espaço** | Libere pelo menos **700 MB**; o APK + instalação do Kodi ocupam bastante. |
 
-> A v14 foi assinada com a **mesma chave** da v12/v13
+> A v15 foi assinada com a **mesma chave** da v12/v13
 > (`855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`), então
 > instalar por cima da v12/v13 **preserva perfil, addons e VIP**. Só desinstale
 > se a versão que está no aparelho veio de outra chave (por exemplo, um APK
@@ -80,6 +80,9 @@ GitHub**, sem passar por WhatsApp/Telegram (eles comprimem/truncam arquivos).
 
 - O APK é **assinado** e a assinatura foi conferida no build
   (`apksigner verify --print-certs`) com o mesmo certificado da v12.
+- Na v15 o `android:debuggable` foi **desligado** no manifesto (o APK base do
+  Kodi vinha `debuggable=true`, e o Play Protect costuma cancelar build de
+  desenvolvedor com a mensagem genérica “Aplicativo não instalado”).
 - O app **não pede root**, não instala serviço escondido e não altera o sistema.
 - “Aplicativo não instalado” **não** é o app fechando: ele nem chegou a ser
   instalado; é o instalador do Android recusando o pacote.
