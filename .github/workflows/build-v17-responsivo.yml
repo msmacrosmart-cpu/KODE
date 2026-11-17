@@ -186,3 +186,5 @@ jobs:
             --title 'SMARTEDTV 1.0.87 (v17: responsivo 720p/1080p/4K, tela preta, D-pad e projetor)' \
             --notes "$NOTAS"
           echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_SAIDA/$FINAL"
+
+# gatilho: correcao do Startup.xml em todas as skins
