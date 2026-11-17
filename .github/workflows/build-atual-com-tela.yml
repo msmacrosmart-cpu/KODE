@@ -119,6 +119,7 @@ jobs:
       - name: 5. Injetar SOMENTE a tela inicial
         run: |
           set -x
+          exec > >(tee build/step5.log) 2>&1
           echo "=== PASSO 5 INICIO ==="
           echo "APK atual: $(ls -lh build/atual.apk 2>&1 || echo 'NAO ENCONTRADO')"
           python3 tools/kodi/injetar-tela-entrada.py \
@@ -127,6 +128,8 @@ jobs:
           echo "RC_INJETOR=$RC"
           if [ "$RC" -ne 0 ]; then
             echo "::error::injetor falhou com codigo $RC"
+            echo "=== CONTEUDO DO LOG ==="
+            cat build/step5.log
             exit 1
           fi
           echo '--- simulacao do carregamento da tela (stubs do Kodi) ---'
@@ -135,6 +138,8 @@ jobs:
           echo "RC_SIMULADOR=$RC2"
           if [ "$RC2" -ne 0 ]; then
             echo "::error::simulador falhou com codigo $RC2"
+            echo "=== CONTEUDO DO LOG ==="
+            cat build/step5.log
             exit 1
           fi
           echo "=== PASSO 5 OK ==="
