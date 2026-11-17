@@ -122,19 +122,15 @@ jobs:
           echo "=== PASSO 5 INICIO ==="
           ls -lh build/atual.apk
           echo "--- rodando injetor ---"
-          OUTPUT=$(python3 -u tools/kodi/injetar-tela-entrada.py --apk build/atual.apk --saida build/bruto.apk 2>&1)
+          python3 -u tools/kodi/injetar-tela-entrada.py --apk build/atual.apk --saida build/bruto.apk
           RC=$?
-          echo "OUTPUT_DO_INJETOR:"
-          echo "$OUTPUT"
           echo "RC_INJETOR=$RC"
           if [ "$RC" -ne 0 ]; then
             echo "::error::injetor falhou com codigo $RC"
           fi
           echo '--- simulacao do carregamento da tela ---'
-          OUTPUT2=$(python3 -u tools/kodi/simular-boot-tela-entrada.py --apk build/bruto.apk 2>&1)
+          python3 -u tools/kodi/simular-boot-tela-entrada.py --apk build/bruto.apk
           RC2=$?
-          echo "OUTPUT_DO_SIMULADOR:"
-          echo "$OUTPUT2"
           echo "RC_SIMULADOR=$RC2"
           if [ "$RC2" -ne 0 ]; then
             echo "::error::simulador falhou com codigo $RC2"
