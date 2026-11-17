@@ -1,7 +1,6 @@
 name: SMARTEDTV - reempacotar tela VÍDEOS (rápido)
 
 on:
-  workflow_dispatch:
   push:
     branches: [arena/28b146c9-kode]
     paths:
