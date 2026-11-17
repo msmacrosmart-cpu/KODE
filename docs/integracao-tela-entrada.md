@@ -154,6 +154,25 @@ código-fonte do Kodi 21 (`xbmc/platform/android/activity/AndroidKey.cpp`) e no
 testes e na simulação — a confirmação final é no aparelho (o mesmo vale para a
 fila de ativação por código, que depende de rede até o servidor VIP).
 
+## 4a-0b. Base visual: a tela da v5 (a última aprovada)
+
+A tela entregue é **a da v5, byte a byte** (extraída do APK publicado), e sobre
+ela foram aplicados só estes ajustes — os que já estavam pedidos:
+
+| o que | onde |
+|---|---|
+| Fora o seletor "Android TV / Celular" e as pílulas "10 min / 1 mês" | controles 130/131/140/141 e a placa 13 saíram do XML; ids no `default.py` não fazem nada |
+| Fora os ícones dentro dos botões | controles 124/125 saíram |
+| Todo rótulo de botão centralizado nos dois eixos | `<align>center</align>` + `<aligny>center</aligny>` em todos os `<button>` |
+| "Continuar com anúncios" → **"Assistir com anúncios"** | controle 312 (o diálogo mantém "Continuar com anúncios") |
+| QR no tamanho natural do pacote, moldura branca reta de 1 px | controles 43/44 e 53/54: 270×270 + 1 px, `qr_plate.png` desenhado no tamanho final |
+| Chip do card 3 dizia "Compartilhar" (igual ao botão) → "Indique" | controle 52, para casar com o card 2 ("Plano mensal") |
+| Barra inferior harmonizada | 121 "Compartilhar link" e 122 "Baixar APK" voltaram para a linha de ação dos cards 2 e 3 |
+
+A geometria, as texturas e o resto dos textos são os da v5 — não foram
+redesenhados. As únicas alterações fora do layout são as duas correções
+funcionais (Home garantida no boot e VOLTAR na Home reabrindo a tela).
+
 ## 4a. O que mudou na revisão de layout (v6)
 
 - **Cabeçalho:** só a marca, à esquerda. O seletor "Android TV / Celular" saiu
@@ -254,41 +273,14 @@ auditoria tipográfica ou o mapa de botões falharem.
 
 ## 7. Resultado deste build
 
-- Release: `v1.0.83-tela-inicial-v8`
-- APK: `SMARTEDTV-atual-com-tela-inicial-v8.apk`, 249.855.984 bytes,
-  SHA-256 `8b0c02c80609dbd7f2d3c5475fe521ae955a252927a34706e7dfb8b0bb3e03e0`
+- Release: `v1.0.83-tela-inicial-v9` (base visual = tela da v5 + os ajustes
+  lista dos em 4a-0b)
+- APK: `SMARTEDTV-atual-com-tela-inicial-v9.apk` (tamanho e SHA-256 no corpo da
+  release, junto com os blocos `APK_BLOBS`)
 - Assinatura: `855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`
-  (a mesma do app; v1/v2/v3 verificados pelo `apksigner`)
-- Delta sobre o APK atual: +33 arquivos do addon da tela, +1 keymap
+- Delta sobre o APK atual: +26 arquivos do addon da tela, +1 keymap
   (`assets/system/keymaps/zzz-smartedtv-voltar.xml`), 0 removidos e 7 arquivos
-  alterados (`Startup.xml` e `Font.xml` das 3 skins + `addon-manifest.xml`).
-- Conferido no arquivo final: `Startup.xml` das 3 skins com 2 `onload` e
-  **zero** `ReplaceWindow`; keymap só com a seção `<Home>`; addon registrado
-  como `<addon optional="true">`; 2731 arquivos do perfil semeado intactos;
-  `service.smarted.bootstrap` sem alteração.
-- Antes de publicar: teste estático (214 XML), auditoria tipográfica (31
-  textos), mapa de botões, 283 testes, injeção num APK base e a simulação de
-  boot (incluindo o caminho "VOLTAR na Home").
-- Workflow `43988458322` (todos os passos verdes). O APK foi reconstruído a
-  partir de `APK_BLOBS` e o SHA-256 bateu; os 25 arquivos do addon e o keymap
-  são idênticos, byte a byte, aos do repositório.
-
-### 7a. Correção do bug reportado (tela preta) e o pedido novo (VOLTAR na Home)
-
-| defeito | causa | correção |
-|---|---|---|
-| tela preta depois de "Assistir com anúncios" | `AlarmClock(smartedtv_entrada_seguro,ReplaceWindow($INFO[System.StartupWindow]),00:00:30,silent)` dispara em torno da janela de startup 12999, que já morreu, e aponta para ela mesma; nenhuma janela era ativada | `Startup.xml` sem `ReplaceWindow`; Home aberta pelo addon (`ActivateWindow` → `ReplaceWindow(Home)` → espera 5 s → `RestartApp`), com vigia `seguro=1` de 8 s |
-| preso na Home sem caminho de volta para o código | a tela só existia no boot | keymap `<Home><keyboard><backspace>` → `RunScript(script.smartedtv.welcome,voltar)`; a tela reabre por cima da Home com o campo vazio, sem restart e sem tocar na licença |
-
-**O que ainda precisa de aparelho** (declarado, não maquiado):
-
-1. a ligação `KEYCODE_BACK → <Home><backspace>` foi conferida no código-fonte do
-   Kodi 21 e nos keymaps da Omega, e a lógica do modo `voltar` é exercitada por
-   testes e pela simulação — mas o toque real no controle precisa ser validado
-   no aparelho;
-2. a ativação por código depende de rede até `smartedtv-vip.lovable.app`. **Este
-   ambiente não tem rota até esse host** (`curl` retorna `000`; `github.com` e
-   `pypi.org` respondem 200), então o código `TESTE-CF9CB49C05EA` (validade de
-   10 minutos) não pôde ser validado aqui. Ele precisa ser testado no aparelho,
-   com o relógio do servidor, dentro da janela de validade.
-
+  alterados (`Startup.xml` e `Font.xml` das 3 skins + `addon-manifest.xml`)
+- Conferido: `Startup.xml` das 3 skins com 2 `onload` e zero `ReplaceWindow`;
+  keymap só com a seção `<Home>`; addon `optional="true"`; perfil semeado
+  intacto; `service.smarted.bootstrap` sem alteração.

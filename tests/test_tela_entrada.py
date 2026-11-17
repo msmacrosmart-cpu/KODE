@@ -295,9 +295,10 @@ class GeradorTest(unittest.TestCase):
         gerador = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(gerador)
         med = gerador.Medidas()
-        # Grade de 8 px: margem 56, respiro 32, entre cartoes 28.
-        # (O CSS do pacote pedia 2%/1.3%, mas o desenho foi revisado para dar
-        #  respiro de Smart TV; os testes travam a grade nova.)
+        # Grade de 8 px: margem 56, respiro 32, entre cartoes 28. O CSS do
+        # pacote pedia 2%/1.3%, mas a tela publicada (v5) usa a grade de Smart
+        # TV; o XML entregue vem da v5 (medido no APK) e o gerador desenha a
+        # mesma linguagem para as proximas mudancas.
         self.assertEqual(med.pad, 56)
         self.assertEqual(med.gap, 32)
         self.assertEqual(med.col_gap, 28)
