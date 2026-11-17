@@ -160,9 +160,13 @@ jobs:
                               'resources/skins/Default/media/qr_apk.png')
               for relativo in obrigatorios:
                   assert PREFIX + relativo in novos, relativo
-              # alem do addon da tela, entra SO o keymap de VOLTAR na Home
+              # alem do addon da tela, entra o keymap de VOLTAR na Home,
+              # o modulo vip.py (licenca, usado pelos botoes) e os arquivos
+              # de fonte NotoSans copiados para as pastas fonts/ das skins.
               KEYMAP = 'assets/system/keymaps/zzz-smartedtv-voltar.xml'
-              assert [n for n in novos if not n.startswith(PREFIX)] == [KEYMAP], novos
+              VIP = 'assets/addons/service.smarted.bootstrap/vip.py'
+              nao_addon = sorted(n for n in novos if not n.startswith(PREFIX))
+              assert set(nao_addon) == {KEYMAP, VIP}, nao_addon
               raiz_km = ET.fromstring(depois.read(KEYMAP))
               assert [e.tag for e in raiz_km] == ['Home'], [e.tag for e in raiz_km]
               casa = raiz_km.find('Home')
