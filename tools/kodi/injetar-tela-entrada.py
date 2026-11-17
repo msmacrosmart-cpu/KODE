@@ -169,6 +169,7 @@ def patch_startup(dados: bytes) -> bytes:
     texto = dados.decode("utf-8")
     if "smartedtv_entrada" in texto:
         raise SystemExit("Startup.xml do APK ja abre a tela de entrada")
+    print("  [DEBUG] patch_startup: texto=%r" % texto[:500])
     # Busca o elemento <onload> inteiro que contem o ReplaceWindow do
     # StartupWindow, tolerando espacos e atributos na tag de abertura.
     padrao = re.compile(
@@ -176,6 +177,7 @@ def patch_startup(dados: bytes) -> bytes:
         re.DOTALL,
     )
     alvos = padrao.findall(texto)
+    print("  [DEBUG] patch_startup: alvos encontrados=%d" % len(alvos))
     if len(alvos) != 1:
         raise SystemExit(
             "Startup.xml inesperado (onload com ReplaceWindow StartupWindow achados=%d)"
@@ -194,6 +196,7 @@ def patch_fonts(dados: bytes) -> bytes:
     fontes = FONTES_DA_TELA if FONTES_DA_TELA is not None else fontes_da_tela()
     faltando = [(nome, tamanho) for nome, tamanho in fontes
                 if "<name>%s</name>" % nome not in texto]
+    print("  [DEBUG] patch_fonts: fontes=%s faltando=%s" % ([n for n,_ in fontes], [n for n,_ in faltando]))
     if not faltando:
         # as fontes ja estao declaradas nesta skin: nada a corrigir
         return texto.encode("utf-8"), []
@@ -303,6 +306,8 @@ def main(argv=None):
         if not fontes_alteradas:
             raise SystemExit("nenhum Font.xml de skin encontrado no APK")
 
+        print("  [DEBUG] Loop principal concluido: %d nomes, %d startups, %d fontes, %d perfil" % (len(nomes), len(startups), len(fontes_alteradas), len(perfil)))
+
         # Garante que o arquivo de fonte referenciado pelo Font.xml (NotoSans-
         # Regular.ttf) exista na pasta fonts/ de cada skin. O simulador confere
         # que o .ttf declarado realmente esta no APK; sem ele o Kodi cai em
@@ -314,6 +319,11 @@ def main(argv=None):
                 font_dest = "assets/addons/%s/fonts/%s" % (skin, FONTE_ARQUIVO)
                 if font_dest not in nomes:
                     extras[font_dest] = fonte_dados
+                    print("  [DEBUG] Copiando fonte para %s" % font_dest)
+
+        print("  [DEBUG] Extras a gravar: %d arquivos" % len(extras))
+        for nome in sorted(extras):
+            print("  [DEBUG] Extra: %s (%d bytes)" % (nome, len(extras[nome])))
 
         for nome, dados in extras.items():
             if nome in nomes:
@@ -328,17 +338,23 @@ def main(argv=None):
             info.compress_type = zipfile.ZIP_STORED
             info.external_attr = 0o644 << 16
             destino.writestr(info, dados)
+            print("  [DEBUG] Gravado extra: %s" % nome)
+
+    print("  [DEBUG] Zip de saida gravado, iniciando validacao final")
 
     with zipfile.ZipFile(args.saida) as conferido:
         for nome, resumo in perfil.items():
             if hashlib.sha256(conferido.read(nome)).hexdigest() != resumo:
                 raise SystemExit("perfil semeado alterado: %s" % nome)
+        print("  [DEBUG] Perfil validado: %d arquivos" % len(perfil))
         for nome in extras:
             if nome not in conferido.namelist():
                 raise SystemExit("arquivo da tela ausente: %s" % nome)
+        print("  [DEBUG] Extras validados: %d arquivos encontrados no zip de saida" % len(extras))
         if not keymaps:
             raise SystemExit("keymap de VOLTAR na Home nao entrou no APK")
         validar_keymap(conferido.read(KEYMAP_DESTINO))
+        print("  [DEBUG] Keymap validado")
 
     print("APK com a tela: %s (%d entradas, %d arquivos novos, %d Startup.xml, "
           "%d Font.xml, %d keymap, perfil intacto)"
