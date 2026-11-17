@@ -1,4 +1,4 @@
-name: SMARTEDTV - reempacotar tela VÍDEOS (rápido)
+name: SMARTEDTV repackage video screen
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 jobs:
-  reempacotar:
+  repackage:
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     env:
@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 1. Baixar APK base
+      - name: 1. Download base APK
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -35,13 +35,13 @@ jobs:
           echo "APK base: $APK_FILE"
           echo "BASE_APK_PATH=$APK_FILE" >> "$GITHUB_ENV"
 
-      - name: 2. Ferramentas
+      - name: 2. System tools
         run: |
           sudo apt-get update -qq 2>/dev/null || true
           sudo apt-get install -y -qq --no-install-recommends python3 python3-pip unzip zip curl openjdk-17-jdk-headless 2>/dev/null || true
           python3 -m pip install --quiet --break-system-packages Pillow==11.3.0 pyaxmlparser==0.3.31 2>/dev/null || true
 
-      - name: 3. Baixar apksigner.jar
+      - name: 3. Download apksigner.jar
         run: |
           mkdir -p "$HOME/.cache/kode-build/tools"
           if [ ! -f "$HOME/.cache/kode-build/tools/apksigner.jar" ]; then
@@ -50,7 +50,7 @@ jobs:
           fi
           ls -la "$HOME/.cache/kode-build/tools/" 2>/dev/null || true
 
-      - name: 4. Injetar modificações da tela VÍDEOS
+      - name: 4. Inject video screen changes
         run: |
           set -euo pipefail
           python3 tools/kodi/injetar-videos.py \
@@ -58,17 +58,17 @@ jobs:
             --saida "$RUNNER_TEMP/bruto.apk"
           ls -lh "$RUNNER_TEMP/bruto.apk"
 
-      - name: 5. Alinhar APK
+      - name: 5. Align APK
         run: |
           python3 tools/kodi/align-apk.py "$RUNNER_TEMP/bruto.apk" "$RUNNER_TEMP/alinhado.apk"
           ls -lh "$RUNNER_TEMP/alinhado.apk"
 
-      - name: 6. Assinar APK
+      - name: 6. Sign APK
         run: |
           set -euo pipefail
           SIGNER="$HOME/.cache/kode-build/tools/apksigner.jar"
           if [ ! -f "$SIGNER" ]; then
-            echo "::error::apksigner.jar não encontrado"
+            echo "::error::apksigner.jar not found"
             exit 1
           fi
           java -jar "$SIGNER" sign \
@@ -81,7 +81,7 @@ jobs:
             --out "$RUNNER_TEMP/assinado.apk" "$RUNNER_TEMP/alinhado.apk"
           ls -lh "$RUNNER_TEMP/assinado.apk"
 
-      - name: 7. Publicar release
+      - name: 7. Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -95,13 +95,13 @@ jobs:
               "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk" \
               "SMARTEDTV-${NOVA_VERSAO}-arm64-v8a.apk.sha256" \
               -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title "SMARTEDTV ${NOVA_VERSAO} (arm64-v8a) — Tela VÍDEOS"
+              --title "SMARTEDTV ${NOVA_VERSAO} (arm64-v8a) - Video Screen"
           fi
 
-      - name: 8. Guardar artefato
+      - name: 8. Save artifact
         uses: actions/upload-artifact@v4
         with:
-          name: smartedtv-apk-repack-videos
+          name: smartedtv-apk-repackage-video
           path: |
             SMARTEDTV-*-arm64-v8a.apk
             SMARTEDTV-*.sha256
