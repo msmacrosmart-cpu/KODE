@@ -388,8 +388,8 @@
       <font>wf15</font>
       <textcolor>FFD6D6D6</textcolor>
       <focusedcolor>FF080808</focusedcolor>
-      <texturefocus border="11">btn_quiet_focus.png</texturefocus>
-      <texturenofocus border="11">btn_quiet.png</texturenofocus>
+      <texturefocus border="11">btn_ghost_focus.png</texturefocus>
+      <texturenofocus border="11">btn_ghost.png</texturenofocus>
       <align>center</align>
       <aligny>center</aligny>
     </control>
