@@ -10,7 +10,8 @@ Usado pelo pipeline rapido da v17: pega o APK universal da v16 (as duas ABIs
   -> correcoes de tela preta, foco, projetor e update;
 * ``assets/system/keymaps/zzz-smartedtv-voltar.xml`` -> keymap do repositorio
   (se existir);
-* ``Startup.xml`` das skins -> o do repositorio, quando o nome da skin existe.
+* ``Startup.xml`` de TODAS as skins -> disparo da tela de entrada (o APK da
+  v16 ainda tinha ``skin.novatv`` com o ``ReplaceWindow`` antigo).
 
 Perfil semeado, banco de addons, natives libs (as duas ABIs), manifesto, fontes e
 demais arquivos ficam byte a byte iguais. Assinatura antiga e removida; o
@@ -22,6 +23,7 @@ import argparse
 import hashlib
 import re
 import sys
+import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
 
@@ -77,9 +79,40 @@ def arquivos_do_servico():
     return extras
 
 
-def startup_do_repositorio(skin):
-    caminho = ROOT / 'kodi' / skin / 'xml' / 'Startup.xml'
-    return caminho.read_bytes() if caminho.is_file() else None
+STARTUP_ONLOAD = ('<onload>AlarmClock(smartedtv_entrada,'
+                  'RunScript(script.smartedtv.welcome),00:00:00,silent)</onload>'
+                  '\n\t<onload>RunScript(script.smartedtv.welcome,seguro=1)'
+                  '</onload>')
+
+
+def patch_startup(dados):
+    """Troca o salto direto para a Home pelo disparo da tela, em qualquer skin.
+
+    O APK da v16 tinha skin.estuary ja corrigida, mas skin.novatv ainda com o
+    ``ReplaceWindow($INFO[System.StartupWindow])`` antigo. O simulador (e o
+    Kodi) abre a tela por todas as skins de Startup; por isso a correcao e
+    aplicada em TODAS, nao so na skin ativa.
+    """
+    texto = dados.decode('utf-8')
+    if 'smartedtv_entrada' in texto:
+        return dados
+    padroes = (
+        r'<onload[^>]*>\s*ReplaceWindow\(\$INFO\[System\.StartupWindow\]\)\s*</onload>',
+        r'<onload\s*/>\s*ReplaceWindow\(\$INFO\[System\.StartupWindow\]\)',
+        r'ReplaceWindow\(\$INFO\[System\.StartupWindow\]\)',
+    )
+    for padrao in padroes:
+        alvos = re.findall(padrao, texto, re.DOTALL)
+        if len(alvos) == 1:
+            novo = texto.replace(alvos[0], STARTUP_ONLOAD, 1)
+            ET.fromstring(novo.encode('utf-8'))
+            return novo.encode('utf-8')
+    # Skin sem o ReplaceWindow antigo: injeta as duas acoes no inicio da janela.
+    novo = re.sub(r'(<window[^>]*>)', r'\1' + STARTUP_ONLOAD, texto, count=1)
+    if novo == texto:
+        raise SystemExit('Startup.xml sem <window> para injetar a tela')
+    ET.fromstring(novo.encode('utf-8'))
+    return novo.encode('utf-8')
 
 
 def main(argv=None):
@@ -126,8 +159,8 @@ def main(argv=None):
                     continue
                 alvo_startup = STARTUP.fullmatch(item.filename)
                 if alvo_startup:
-                    novo = startup_do_repositorio(alvo_startup.group(1))
-                    if novo is not None and novo != dados:
+                    novo = patch_startup(dados)
+                    if novo != dados:
                         dados = novo
                         startups += 1
                         dbg('%s: Startup.xml atualizado' % alvo_startup.group(1))

@@ -14,6 +14,7 @@ import re
 import sqlite3
 import sys
 import tempfile
+import traceback
 import types
 import xml.etree.ElementTree as ET
 import zipfile
