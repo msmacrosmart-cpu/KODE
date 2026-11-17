@@ -312,4 +312,4 @@ jobs:
           subprocess.run(['gh', 'release', 'edit', os.environ['TAG_SAIDA'],
                           '--repo', repo, '--notes', notas], check=True)
           PY
-# build acionado: vip.py adicionado ao service.smarted.bootstrap para todos os botoes funcionarem (checkout, compartilhar, baixar APK, atualizar, ativar codigo)
+# build acionado: checkout/compartilhar saem do app via StartAndroidActivity (navegador externo e intent de compartilhamento)
