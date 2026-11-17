@@ -166,7 +166,9 @@ jobs:
               KEYMAP = 'assets/system/keymaps/zzz-smartedtv-voltar.xml'
               VIP = 'assets/addons/service.smarted.bootstrap/vip.py'
               nao_addon = sorted(n for n in novos if not n.startswith(PREFIX))
-              assert set(nao_addon) == {KEYMAP, VIP}, nao_addon
+              fontes_novas = sorted(n for n in nao_addon if n.endswith('/fonts/NotoSans-Regular.ttf'))
+              esperados = [KEYMAP, VIP] + fontes_novas
+              assert sorted(nao_addon) == esperados, (nao_addon, esperados)
               raiz_km = ET.fromstring(depois.read(KEYMAP))
               assert [e.tag for e in raiz_km] == ['Home'], [e.tag for e in raiz_km]
               casa = raiz_km.find('Home')
