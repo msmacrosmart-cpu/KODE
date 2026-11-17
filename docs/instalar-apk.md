@@ -1,9 +1,19 @@
 # Instalar o SMARTEDTV (celular, TV, box, projetor e stick)
 
-**Versão atual: v18 universal (1.0.88 / 2103074, 32 e 64 bits)**  
-https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.88-reabertura-v18/SMARTEDTV-atual-v18-reabertura-universal.apk  
-SHA-256: `b09cc6cfd7123a6a94163f92b1c85b0fb5907dce7bfbc486ed1ecb373014924e`  
-Tamanho: 285.488.380 bytes.
+**Versão atual: v18 universal (1.0.88 / 2103074, 32 e 64 bits)**
+
+**Pacote de download limpo (recomendado):**  
+https://github.com/msmacrosmart-cpu/KODE/releases/tag/v1.0.88-reabertura-v18-download
+
+- APK direto: https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.88-reabertura-v18-download/SMARTEDTV-atual-v18-reabertura-universal.apk
+- ZIP com CRC: https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.88-reabertura-v18-download/SMARTEDTV-atual-v18-reabertura-universal.apk.zip
+
+APK: **285.488.380 bytes** · SHA-256 `b09cc6cfd7123a6a94163f92b1c85b0fb5907dce7bfbc486ed1ecb373014924e`  
+ZIP: **285.488.618 bytes** · SHA-256 `d987140f5689412b97d8aa153a1d0a0f0bab4cf835a2e2b4c37c5d6b6aaf3b0b`
+
+O APK e o ZIP foram baixados de volta do GitHub e verificados no CI: ZIP íntegro,
+`zipalign` OK, assinatura v1/v2/v3 válida, pacote `smartedtv.full`, minSdk 21,
+targetSdk 34, ABIs `arm64-v8a` e `armeabi-v7a`.
 
 O APK é grande (~250 MB) e é instalado **fora da Play Store**. A mensagem
 genérica **“Aplicativo não instalado”** quase sempre é uma destas causas —
