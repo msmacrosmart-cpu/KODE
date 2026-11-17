@@ -38,22 +38,30 @@ jobs:
           cp "$RUNNER_TEMP/bruto.apk" "$RUNNER_TEMP/alinhado.apk"
           ls -lh "$RUNNER_TEMP/alinhado.apk"
 
-      - name: 4. Instalar JDK 17 (para jarsigner)
+      - name: 4. Instalar apksigner (Python)
         run: |
-          sudo apt-get update -qq 2>/dev/null || true
-          sudo apt-get install -y -qq --no-install-recommends openjdk-17-jdk-headless 2>/dev/null || true
-          which jarsigner || { echo "::error::jarsigner nao encontrado apos instalar JDK"; exit 1; }
+          python3 -m pip install --quiet --break-system-packages apksigner 2>/dev/null || true
+          which apksigner || python3 -m pip install --quiet --user apksigner || true
+          python3 -c "from apksigner import ApkSigner; print('apksigner Python OK')" || echo "apksigner Python nao disponível"
 
-      - name: 5. Sign APK com jarsigner (JDK 17)
+      - name: 5. Sign APK com apksigner Python
         run: |
           set -euo pipefail
-          jarsigner -verbose \
-            -keystore dropbox/smarted-tv-test.jks \
-            -storepass android \
-            -keypass android \
-            -signedjar "$RUNNER_TEMP/assinado.apk" \
-            "$RUNNER_TEMP/alinhado.apk" \
-            smarted-tv-test
+          python3 -c "
+from apksigner import ApkSigner
+import sys
+signer = ApkSigner(
+    keystore='dropbox/smarted-tv-test.jks',
+    keystore_pass='android',
+    key_pass='android',
+    key_alias='smarted-tv-test',
+)
+signer.sign('$RUNNER_TEMP/alinhado.apk', '$RUNNER_TEMP/assinado.apk')
+print('APK assinado com sucesso')
+" || {
+            echo "::error::falha ao assinar com apksigner Python"
+            exit 1
+          }
           ls -lh "$RUNNER_TEMP/assinado.apk"
 
       - name: 6. Publish release
