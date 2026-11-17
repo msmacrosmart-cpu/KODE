@@ -312,4 +312,4 @@ jobs:
           subprocess.run(['gh', 'release', 'edit', os.environ['TAG_SAIDA'],
                           '--repo', repo, '--notes', notas], check=True)
           PY
-# build acionado: teclado nativo, navegacao D-pad e injetor robusto (v9 final)
+# build acionado: patch_startup aceita formatos variados do Startup.xml
