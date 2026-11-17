@@ -228,14 +228,23 @@ jobs:
       - name: 8. Publicar release v17
         run: |
           set -euo pipefail
-          NOTAS='v17 (1.0.87, versionCode 2103073). Mantem as duas ABIs da v16 (arm64-v8a + armeabi-v7a), a mesma assinatura (855de171...) e o perfil/VIP. Correcoes: (1) tela preta no boot: o servico chamava ReloadSkin() no meio da inicializacao, derrubando a tela de entrada/Home; o reload foi removido e a troca para a Home passou a ter um unico dono (ActivateWindow(Home) valido, sem comando concorrente). (2) D-pad: o foco era pedido no mesmo quadro em que o dialogo de anuncios ficava visivel e o Kodi recusava; agora o foco e confirmado com getFocusId/retry, os botoes 905/906/955 tem navegacao explicita e qualquer seta recupera o foco se ele cair. (3) responsividade: um unico desenho 1920x1080 escalado pelo Kodi para 720p/1080p/4K, QR com aspectratio keep, barra inferior sem sobrepor os cartoes, variante TV/box/projetor com area segura; auditado nas tres resolucoes. (4) canais sem imagem em projetor: o boot forcava MediaCodec (Surface); em projetor (System.FriendlyName) agora usa MediaCodec sem Surface e desliga o ajuste automatico de taxa de quadros. Nao testado em projetor/aparelho real neste ambiente; validacao estatica e simulacao de boot.'
-          gh release create "$TAG_SAIDA" \
-            "build/$FINAL" "build/$FINAL.sha256" \
-            build/tela-720p.png build/tela-1080p.png build/tela-4k.png \
-            build/tela-dialogo-720p.png build/tela-status-720p.png \
-            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --title 'SMARTEDTV 1.0.87 (v17: responsivo 720p/1080p/4K, tela preta, D-pad e projetor)' \
-            --notes "$NOTAS"
+          NOTAS='v17 (1.0.87, versionCode 2103073), atualizacao dos retoques finais. Mantem as duas ABIs da v16 (arm64-v8a + armeabi-v7a), a mesma assinatura (855de171...) e o perfil/VIP. Correcoes desta rodada: (1) aviso de anuncio com UM unico foco visivel: btn_primary normal escuro e foco branco (eram o mesmo PNG), _focar espera o grupo 900, tenta 8x e confirma; 905/906 so respondem quando focados e o Back devolve o foco. (2) Home: HERO desce para a primeira grade 9500 e as grades sobem para o HERO 9100/9000, com fallback quando nao ha widget; sem mudar layout. (3) anuncios: o monitor de pre-roll nunca era iniciado pelo service.py; agora e iniciado no boot e a abertura espera a Home. Sessao de reproducao evita dois anuncios no mesmo inicio e libera anuncios mesmo sem metadados (PVR/projetor). Aviso na tela so quando o builtin foi enviado. VIP continua sem anuncio. (4) saida limpa: menu Energia->Sair do SMARTEDTV chama RunScript(...,sair), fecha dialogos, para o player e usa Quit nativo; o service limpa marcas antigas no boot. Sem Kill nem matar outros apps. Validacao: testes automatizados e simulacao de boot; nao testado em aparelho fisico nesta rodada (Android 8/box/TV/projetor pendentes).'
+          ASSETS=(
+            "build/$FINAL" "build/$FINAL.sha256"
+            build/tela-720p.png build/tela-1080p.png build/tela-4k.png
+            build/tela-dialogo-720p.png build/tela-status-720p.png
+          )
+          TITULO='SMARTEDTV 1.0.87 (v17: retoques finais de foco, anuncios, Home e saida)'
+          if gh release view "$TAG_SAIDA" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG_SAIDA" "${ASSETS[@]}" \
+              --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit "$TAG_SAIDA" --repo "$GITHUB_REPOSITORY" \
+              --title "$TITULO" --notes "$NOTAS"
+          else
+            gh release create "$TAG_SAIDA" "${ASSETS[@]}" \
+              --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "$TITULO" --notes "$NOTAS"
+          fi
           echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_SAIDA/$FINAL"
 
 # gatilho: correcao do Startup.xml em todas as skins
