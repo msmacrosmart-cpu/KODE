@@ -87,7 +87,7 @@ jobs:
         id: cache-deps
         uses: actions/cache@v4
         with:
-          path: ${{ runner.temp }}/xbmc-depends-armv7
+          path: ${{ runner.temp }}/xbmc-depends
           key: depends-armv7-${{ env.KODI_TAG }}-ndk21.4.7075529-v1
 
       - name: 7. Dependencias Android armv7
@@ -100,14 +100,14 @@ jobs:
             --host=arm-linux-androideabi \
             --with-sdk-path="$ANDROID_HOME" \
             --with-ndk-path="$ANDROID_HOME/ndk/21.4.7075529" \
-            --prefix="$RUNNER_TEMP/xbmc-depends-armv7"
+            --prefix="$RUNNER_TEMP/xbmc-depends"
           make -j2
           echo "livre apos depends: $(df -h --output=avail / | tail -1)"
 
       - name: 8. Compilar Kodi armv7
         run: |
           set -euo pipefail
-          test -d "$RUNNER_TEMP/xbmc-depends-armv7/lib"
+          test -d "$RUNNER_TEMP/xbmc-depends/lib"
           mkdir -p "$RUNNER_TEMP/kodi-build-armv7"
           make -C "$RUNNER_TEMP/kodi/tools/depends/target/cmakebuildsys" \
             BUILD_DIR="$RUNNER_TEMP/kodi-build-armv7"
