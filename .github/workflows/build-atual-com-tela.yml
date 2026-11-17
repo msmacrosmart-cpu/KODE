@@ -118,26 +118,18 @@ jobs:
 
       - name: 5. Injetar SOMENTE a tela inicial
         run: |
-          set -x
+          bash -x <<'EOF'
+          set -e
           echo "=== PASSO 5 INICIO ==="
-          echo "APK atual: $(ls -lh build/atual.apk 2>&1 || echo 'NAO ENCONTRADO')"
-          python3 -u tools/kodi/injetar-tela-entrada.py \
-            --apk build/atual.apk --saida build/bruto.apk
-          RC=$?
-          echo "RC_INJETOR=$RC"
-          if [ "$RC" -ne 0 ]; then
-            echo "::error::injetor falhou com codigo $RC"
-            exit 1
-          fi
-          echo '--- simulacao do carregamento da tela (stubs do Kodi) ---'
+          ls -lh build/atual.apk
+          echo "--- rodando injetor ---"
+          python3 -u tools/kodi/injetar-tela-entrada.py --apk build/atual.apk --saida build/bruto.apk
+          echo "RC_INJETOR=$?"
+          echo '--- simulacao do carregamento da tela ---'
           python3 -u tools/kodi/simular-boot-tela-entrada.py --apk build/bruto.apk
-          RC2=$?
-          echo "RC_SIMULADOR=$RC2"
-          if [ "$RC2" -ne 0 ]; then
-            echo "::error::simulador falhou com codigo $RC2"
-            exit 1
-          fi
+          echo "RC_SIMULADOR=$?"
           echo "=== PASSO 5 OK ==="
+          EOF
 
       - name: 6. Conferir que nada mais mudou
         run: |
