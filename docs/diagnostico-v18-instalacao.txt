@@ -1,0 +1,38 @@
+arquivo: build/v18.apk
+bytes: 285488380
+sha256: b09cc6cfd7123a6a94163f92b1c85b0fb5907dce7bfbc486ed1ecb373014924e
+pacote: smartedtv.full
+nome: SMARTEDTV
+versionName: 1.0.88
+versionCode: 2103074
+minSdk: 21
+targetSdk: 34
+extractNativeLibs: true
+debuggable: false
+testOnly: None
+isSplitRequired: None
+app attrs: ['{http://schemas.android.com/apk/res/android}appComponentFactory', '{http://schemas.android.com/apk/res/android}banner', '{http://schemas.android.com/apk/res/android}debuggable', '{http://schemas.android.com/apk/res/android}extractNativeLibs', '{http://schemas.android.com/apk/res/android}hasCode', '{http://schemas.android.com/apk/res/android}icon', '{http://schemas.android.com/apk/res/android}label', '{http://schemas.android.com/apk/res/android}logo', '{http://schemas.android.com/apk/res/android}requestLegacyExternalStorage']
+entradas: 7925
+ABIs: ['arm64-v8a', 'armeabi-v7a']
+  arm64-v8a: 45 .so, 96.3 MB descomprimido
+  armeabi-v7a: 45 .so, 85.0 MB descomprimido
+libkodi arm64: True
+libkodi armv7: True
+offset .so mod 4096: {1: 1, 129: 1, 171: 1, 185: 1, 307: 1, 350: 1, 371: 1, 399: 1, 518: 1, 528: 1, 568: 1, 687: 1, 708: 1, 809: 1, 866: 1, 896: 1, 906: 1, 1016: 1, 1071: 1, 1076: 1, 1083: 1, 1086: 1, 1092: 1, 1093: 1, 1095: 1, 1110: 1, 1246: 1, 1252: 1, 1263: 1, 1357: 1, 1364: 1, 1546: 1, 1551: 1, 1561: 1, 1605: 1, 1647: 1, 1655: 1, 1665: 1, 1701: 1, 1708: 1, 1715: 1, 1950: 1, 1957: 1, 2031: 1, 2108: 1, 2141: 1, 2178: 1, 2196: 1, 2227: 1, 2229: 1, 2270: 1, 2347: 1, 2448: 1, 2452: 1, 2471: 1, 2497: 1, 2505: 1, 2581: 1, 2599: 1, 2632: 1, 2662: 1, 2695: 1, 2735: 1, 2749: 1, 2756: 1, 2813: 1, 2871: 1, 2919: 1, 2950: 1, 2989: 1, 3018: 1, 3134: 1, 3212: 1, 3285: 1, 3306: 1, 3328: 1, 3507: 1, 3513: 1, 3541: 1, 3572: 1, 3581: 1, 3588: 1, 3621: 1, 3642: 1, 3696: 1, 3709: 1, 3724: 1, 3774: 1, 3840: 1, 3889: 1, 3999: 1, 4025: 1}
+resources.arsc comprimido: 0
+tamanho descomprimido total: 456.7 MB
+libs por ABI:
+  arm64-v8a (45): libCryptodome_Cipher__ARC4.so, libCryptodome_Cipher__Salsa20.so, libCryptodome_Cipher__chacha20.so, libCryptodome_Cipher__pkcs1_decode.so, libCryptodome_Cipher__raw_aes.so, libCryptodome_Cipher__raw_arc2.so, libCryptodome_Cipher__raw_blowfish.so, libCryptodome_Cipher__raw_cast.so, libCryptodome_Cipher__raw_cbc.so, libCryptodome_Cipher__raw_cfb.so, libCryptodome_Cipher__raw_ctr.so, libCryptodome_Cipher__raw_des.so, libCryptodome_Cipher__raw_des3.so, libCryptodome_Cipher__raw_ecb.so, libCryptodome_Cipher__raw_eksblowfish.so, libCryptodome_Cipher__raw_ocb.so, libCryptodome_Cipher__raw_ofb.so, libCryptodome_Hash__BLAKE2b.so, libCryptodome_Hash__BLAKE2s.so, libCryptodome_Hash__MD2.so
+  armeabi-v7a (45): libCryptodome_Cipher__ARC4.so, libCryptodome_Cipher__Salsa20.so, libCryptodome_Cipher__chacha20.so, libCryptodome_Cipher__pkcs1_decode.so, libCryptodome_Cipher__raw_aes.so, libCryptodome_Cipher__raw_arc2.so, libCryptodome_Cipher__raw_blowfish.so, libCryptodome_Cipher__raw_cast.so, libCryptodome_Cipher__raw_cbc.so, libCryptodome_Cipher__raw_cfb.so, libCryptodome_Cipher__raw_ctr.so, libCryptodome_Cipher__raw_des.so, libCryptodome_Cipher__raw_des3.so, libCryptodome_Cipher__raw_ecb.so, libCryptodome_Cipher__raw_eksblowfish.so, libCryptodome_Cipher__raw_ocb.so, libCryptodome_Cipher__raw_ofb.so, libCryptodome_Hash__BLAKE2b.so, libCryptodome_Hash__BLAKE2s.so, libCryptodome_Hash__MD2.so
+assinaturas: ['META-INF/SMARTED-.SF', 'META-INF/SMARTED-.RSA', 'META-INF/MANIFEST.MF']
+addon default: b'# -*- coding: utf-8 -*-\n"""Tela de entra'
+providers:
+  smartedtv.full.content.XBMCMediaContentProvider -> smartedtv.full.media
+  smartedtv.full.content.XBMCFileContentProvider -> smartedtv.full.file
+  smartedtv.full.content.XBMCYTDLContentProvider -> smartedtv.full.ytdl
+  smartedtv.full.OtaProvider -> smartedtv.full.ota
+  com.google.android.gms.ads.MobileAdsInitProvider -> smartedtv.full.mobileadsinitprovider
+  androidx.startup.InitializationProvider -> smartedtv.full.androidx-startup
+features exigidas:
+  android.hardware.screen.landscape
+activities exported: [('smartedtv.full.Splash', 'true'), ('smartedtv.full.Main', 'true'), ('smartedtv.full.XBMCSearchableActivity', 'true'), ('smartedtv.full.AppOpenActivity', 'true'), ('smartedtv.full.PreRollActivity', 'true'), ('smartedtv.full.AbrirUrlActivity', 'true'), ('smartedtv.full.CompartilharActivity', 'true'), ('smartedtv.full.AtualizaActivity', 'true')]
