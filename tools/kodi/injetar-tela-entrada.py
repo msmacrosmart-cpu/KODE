@@ -159,13 +159,30 @@ def arquivos_do_addon():
 
 
 def patch_startup(dados: bytes) -> bytes:
-    """Troca o salto direto para a Home pelo disparo da tela de entrada."""
+    """Troca o salto direto para a Home pelo disparo da tela de entrada.
+
+    Aceita o <onload> com ou sem atributos e com ou sem espacos ao redor do
+    ReplaceWindow. O importante e trocar o unico salto para a Home pelo
+    disparo da tela mais o seguro de inicializacao.
+    """
+    import re
     texto = dados.decode("utf-8")
     if "smartedtv_entrada" in texto:
         raise SystemExit("Startup.xml do APK ja abre a tela de entrada")
-    if texto.count(STARTUP_ANTIGO) != 1:
-        raise SystemExit("Startup.xml inesperado (sem o ReplaceWindow original)")
-    novo = texto.replace(STARTUP_ANTIGO, STARTUP_NOVO, 1)
+    # Busca o elemento <onload> inteiro que contem o ReplaceWindow do
+    # StartupWindow, tolerando espacos e atributos na tag de abertura.
+    padrao = re.compile(
+        r"<onload[^>]*>\s*ReplaceWindow\(\$INFO\[System\.StartupWindow\]\)\s*</onload>",
+        re.DOTALL,
+    )
+    alvos = padrao.findall(texto)
+    if len(alvos) != 1:
+        raise SystemExit(
+            "Startup.xml inesperado (onload com ReplaceWindow StartupWindow achados=%d)"
+            % len(alvos)
+        )
+    alvo = alvos[0]
+    novo = texto.replace(alvo, STARTUP_NOVO, 1)
     dados_novos = novo.encode("utf-8")
     validar_publicacao(dados_novos)
     return dados_novos
