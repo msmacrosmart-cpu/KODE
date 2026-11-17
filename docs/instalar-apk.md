@@ -5,7 +5,7 @@ https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.85-tela-inicial-
 SHA-256: `860edc71067547e87c6e6671984977699d9c1a5c74857b3c87e01c78eaa15fe3`
 
 O APK é grande (~250 MB) e é instalado **fora da Play Store**. A mensagem
-genérica **“Aplicativo não instalado”** quase sempre é uma destas cinco coisas —
+genérica **“Aplicativo não instalado”** quase sempre é uma destas causas —
 nenhuma delas é vírus ou APK corrompido:
 
 | Causa | Como resolver |
@@ -14,7 +14,8 @@ nenhuma delas é vírus ou APK corrompido:
 | **Assinatura diferente da versão instalada** | Desinstale a versão antiga (perde dados e VIP) e instale de novo. |
 | **“Instalar apps desconhecidos” desligado** | Autorize o navegador/gerenciador/Downloader que está abrindo o APK. |
 | **Play Protect bloqueando** | Toque em **“Mais detalhes” → “Instalar mesmo assim”** (ou desligue a verificação temporariamente). |
-| **Pouco espaço** | Libere pelo menos **700 MB**; o APK + instalação do Kodi ocupam bastante. |
+| **Pouco espaço** | Libere pelo menos **1 GB**; o APK + instalação do Kodi ocupam bastante. |
+| **Aparelho 32-bit (armeabi-v7a)** | Esta base do Kodi é **arm64-v8a**: não instala em Android 32-bit. Veja a seção 6. |
 
 > A v15 foi assinada com a **mesma chave** da v12/v13
 > (`855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`), então
@@ -76,7 +77,28 @@ GitHub**, sem passar por WhatsApp/Telegram (eles comprimem/truncam arquivos).
 4. O Fire OS não tem Google Play: os anúncios do AdMob podem não preencher; a
    tela de anúncio fecha sozinha e o app continua. O VIP funciona normalmente.
 
-## 5. O que **não** é o problema
+## 5. Compatibilidade do APK
+
+Conferido no APK v15 (`docs/apk-info-v15.txt`):
+
+- **minSdk 21** (Android 5.0) — instala em **Android 8, 9, 10, 11, 12, 13, 14 e 15**;
+- **targetSdk 34**;
+- **ABI: somente `arm64-v8a`** (64-bit ARM);
+- `debuggable: false`, `testOnly` ausente;
+- assinado com o certificado `855de171...`.
+
+Ou seja: **Android 8+ funciona em aparelho 64-bit**. Em aparelho **32-bit**
+(`armeabi-v7a`), o Android mostra “Aplicativo não instalado” porque não há
+bibliotecas nativas armv7 neste APK. Para conferir:
+
+- app **AIDA64** ou **Device Info**: procure “ABI”/“CPU”;
+- ou no PC com adb: `adb shell getprop ro.product.cpu.abilist`.
+
+Se aparecer **`arm64-v8a`** (sozinho ou junto de `armeabi-v7a`), instala. Se
+aparecer **somente `armeabi-v7a`**, o aparelho é 32-bit e esta build não roda —
+seria preciso uma build separada com base Kodi armv7.
+
+## 6. O que **não** é o problema
 
 - O APK é **assinado** e a assinatura foi conferida no build
   (`apksigner verify --print-certs`) com o mesmo certificado da v12.
