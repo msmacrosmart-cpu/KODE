@@ -72,7 +72,7 @@ jobs:
             ls -l build/kodi64.so build/kodiv7.so
             for f in build/kodi64.so build/kodiv7.so; do
               echo "-- $f"
-              strings -a "$f" 2>/dev/null | grep -E 'org/xbmc|smartedtv|kodi/Main' | sort -u | head -20
+              strings -a "$f" 2>/dev/null | grep -Ei 'org[./]xbmc|smartedtv|kodi|Main' | sort -u | head -40
             done
             echo
             echo "== classes*.dex: nomes de classe"
@@ -81,14 +81,14 @@ jobs:
               unzip -p build/SMARTEDTV-atual-com-tela-inicial-v15.apk "$dex" > build/um.dex
               strings -a build/um.dex 2>/dev/null | grep -E 'org/xbmc|smartedtv/full|smartedtv' | sort -u | head -20
             done
-          } > docs/abi-merge-info2.txt 2>&1
-          cat docs/abi-merge-info2.txt
-          test -s docs/abi-merge-info2.txt
+          } > docs/abi-merge-info3.txt 2>&1
+          cat docs/abi-merge-info3.txt
+          test -s docs/abi-merge-info3.txt
       - name: Commitar relatorio
         run: |
           set -euo pipefail
           git config user.name 'diag-abi'
           git config user.email 'diag-abi@users.noreply.github.com'
-          git add docs/abi-merge-info2.txt
-          git diff --cached --quiet || git commit -m "diag: nomes de libs e classes JNI do APK x Kodi armv7"
+          git add docs/abi-merge-info3.txt
+          git diff --cached --quiet || git commit -m "diag: strings de JNI no libkodi arm64 e armv7"
           git push origin HEAD:arena/39a14845-kode
