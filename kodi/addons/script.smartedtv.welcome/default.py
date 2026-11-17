@@ -222,16 +222,17 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
 
     # --- acoes ligadas ao que ja existe no projeto -----------------------
     def _abrir_checkout(self):
-        """ID 120 - Abre o checkout da Cakto no navegador externo (sai do app)."""
+        """ID 120 - Abre o checkout da Cakto no navegador externo do Android."""
         url = 'https://pay.cakto.com.br/nkvbegd_1323120'
-        _log('abrindo checkout: %s' % url)
+        _log('[SMARTEDTV] Botao checkout acionado. URL: %s' % url)
         try:
             xbmc.executebuiltin(
                 'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % url)
+            _log('[SMARTEDTV] Checkout aberto com sucesso no navegador.')
             return
         except Exception as erro:
-            _log('StartAndroidActivity checkout falhou: %s' % erro,
-                 xbmc.LOGWARNING)
+            _log('[SMARTEDTV] Falha ao abrir checkout: %s' % erro,
+                 xbmc.LOGERROR)
         self._dialogo('Checkout indisponível',
                       'Não consegui abrir o pagamento neste aparelho. '
                       'Aponte a câmera para o QR Code ao lado.')
@@ -242,38 +243,95 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         Abre o menu nativo do Android (WhatsApp, Telegram, Gmail, etc.)
         com o link de download do APK do Dropbox.
         """
+        url_download = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
+                        'SMARTEDTV-atual.apk?dl=1')
+        mensagem = 'Baixe o SMARTEDTV aqui: %s' % url_download
+        _log('[SMARTEDTV] Botao compartilhar acionado. Link: %s' % url_download)
+        # Tenta ACTION_SEND nativo via vip.py
         vip = _vip()
-        if vip is None:
-            self._dialogo('Compartilhamento indisponível',
-                          'Não consegui abrir o compartilhamento neste aparelho.')
+        if vip is not None:
+            try:
+                if vip.share_download_link():
+                    _log('[SMARTEDTV] Compartilhamento nativo aberto (ACTION_SEND).')
+                    return
+            except Exception as erro:
+                _log('[SMARTEDTV] vip.share_download_link falhou: %s' % erro,
+                     xbmc.LOGWARNING)
+        # Fallback: StartAndroidActivity direto com ACTION_SEND
+        try:
+            xbmc.executebuiltin(
+                'StartAndroidActivity(android.intent.action.SEND,,text/plain,%s)'
+                % mensagem)
+            _log('[SMARTEDTV] Compartilhamento aberto via StartAndroidActivity (ACTION_SEND).')
             return
-        if vip.share_download_link():
-            _log('compartilhamento nativo aberto (vip.share_download_link)')
+        except Exception as erro:
+            _log('[SMARTEDTV] StartAndroidActivity SEND falhou: %s' % erro,
+                 xbmc.LOGERROR)
+        # Fallback final: abre o link no navegador
+        try:
+            xbmc.executebuiltin(
+                'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % url_download)
+            _log('[SMARTEDTV] Link de download aberto no navegador.')
             return
+        except Exception as erro:
+            _log('[SMARTEDTV] Falha ao abrir link de download: %s' % erro,
+                 xbmc.LOGERROR)
         self._dialogo('Compartilhamento indisponível',
                       'Não consegui abrir o compartilhamento neste aparelho.')
 
     def _baixar_apk(self):
-        """ID 122 - Abre o download do APK no Dropbox (vip.abrir_url faz StartAndroidActivity para sair do app)."""
+        """ID 122 - Abre o download do APK no navegador externo do Android."""
+        url_download = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
+                        'SMARTEDTV-atual.apk?dl=1')
+        _log('[SMARTEDTV] Botao baixar APK acionado. URL: %s' % url_download)
+        # Tenta via vip.py primeiro
         vip = _vip()
-        if vip is None:
-            self._dialogo('Download indisponível',
-                          'Não consegui abrir o link do aplicativo neste aparelho.')
+        if vip is not None:
+            try:
+                if vip.open_apk_download():
+                    _log('[SMARTEDTV] Download do APK aberto via vip.open_apk_download().')
+                    return
+            except Exception as erro:
+                _log('[SMARTEDTV] vip.open_apk_download falhou: %s' % erro,
+                     xbmc.LOGWARNING)
+        # Fallback: StartAndroidActivity direto
+        try:
+            xbmc.executebuiltin(
+                'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % url_download)
+            _log('[SMARTEDTV] Download do APK aberto no navegador.')
             return
-        url = getattr(vip, 'APK', None) or getattr(vip, 'APK_GITHUB', None)
-        if url and vip.abrir_url(url, 'download do APK'):
-            _log('download do APK aberto pelo fluxo existente (vip.abrir_url)')
-            return
+        except Exception as erro:
+            _log('[SMARTEDTV] Falha ao abrir download do APK: %s' % erro,
+                 xbmc.LOGERROR)
         self._dialogo('Download indisponível',
                       'Não consegui abrir o link de download neste aparelho.')
 
     def _atualizar(self):
-        """ATUALIZAR APLICATIVO: fluxo de atualizacao que ja existe no app."""
+        """ATUALIZAR APLICATIVO: consulta manifesto, baixa, verifica e instala."""
+        _log('[SMARTEDTV] Botao atualizar aplicativo acionado.')
         vip = _vip()
-        if vip is not None and vip.procurar_atualizacao():
-            _log('checagem de atualizacao aberta (vip.procurar_atualizacao)')
+        if vip is not None:
+            try:
+                if vip.procurar_atualizacao():
+                    _log('[SMARTEDTV] Fluxo de atualizacao iniciado via vip.procurar_atualizacao().')
+                    return
+            except Exception as erro:
+                _log('[SMARTEDTV] vip.procurar_atualizacao falhou: %s' % erro,
+                     xbmc.LOGWARNING)
+        # Fallback: abre o link do Dropbox no navegador
+        url_download = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
+                        'SMARTEDTV-atual.apk?dl=1')
+        _log('[SMARTEDTV] Fallback: abrindo link do Dropbox no navegador.')
+        try:
+            xbmc.executebuiltin(
+                'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % url_download)
+            _log('[SMARTEDTV] Link de atualizacao aberto no navegador.')
             return
-        self._baixar_apk()
+        except Exception as erro:
+            _log('[SMARTEDTV] Falha ao abrir link de atualizacao: %s' % erro,
+                 xbmc.LOGERROR)
+        self._dialogo('Atualizacao indisponível',
+                      'Não consegui verificar atualizacoes neste aparelho.')
 
     def _digitar_codigo(self):
         """Abre o teclado nativo do sistema para digitar o código de ativação.
@@ -305,8 +363,11 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
 
     def _ativar_codigo(self):
         """Le o controle 310 e valida com o servidor pelo modulo vip do projeto."""
+        _log('[SMARTEDTV] Botao ativar codigo acionado.')
         vip = _vip()
         if vip is None:
+            _log('[SMARTEDTV] Falha: modulo vip nao disponivel para ativacao.',
+                 xbmc.LOGERROR)
             self._dialogo('Ativação indisponível',
                           'A ativação por código não está disponível neste aparelho.')
             return
@@ -315,25 +376,35 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         except Exception:
             codigo = ''
         if not codigo:
+            _log('[SMARTEDTV] Campo de codigo vazio, abrindo teclado nativo.')
             codigo = self._digitar_codigo()
         if not codigo:
+            _log('[SMARTEDTV] Nenhum codigo informado. Cancelado pelo usuario.')
             try:
                 self.setFocusId(310)
             except Exception:
                 pass
             return
+        _log('[SMARTEDTV] Enviando codigo para validacao: %s' % codigo)
         xbmcgui.Dialog().notification(
             'SMARTEDTV', 'Validando o código...', xbmcgui.NOTIFICATION_INFO, 3000)
-        ok, mensagem = vip.validar(codigo)
+        try:
+            ok, mensagem = vip.validar(codigo)
+        except Exception as erro:
+            _log('[SMARTEDTV] Erro ao validar codigo: %s' % erro, xbmc.LOGERROR)
+            self._dialogo('Erro de validacao',
+                          'Ocorreu um erro ao validar o codigo: %s' % erro,
+                          'Tentar novamente')
+            return
         if ok:
             self._dialogo('VIP ativado', mensagem or 'Acesso VIP liberado.',
                           'Começar a assistir')
-            _log('codigo ativado; licenca gravada em vip.json')
+            _log('[SMARTEDTV] Codigo ativado com sucesso; licenca gravada em vip.json.')
         else:
             self._dialogo('Código não ativado',
                           mensagem or 'O serviço não aceitou este código.',
                           'Tentar novamente')
-            _log('codigo recusado: %s' % mensagem, xbmc.LOGWARNING)
+            _log('[SMARTEDTV] Codigo recusado: %s' % mensagem, xbmc.LOGWARNING)
 
     def _modo_gratuito(self):
         """Fecha a entrada e libera a Home (versao com anuncios, como hoje)."""
@@ -347,8 +418,11 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
 
     # --- eventos ---------------------------------------------------------
     def onClick(self, control_id):
+        _log('[SMARTEDTV] onClick recebido: control_id=%s' % control_id)
         if self.getProperty(PROP_DIALOGO):
             # qualquer clique com dialogo aberto so fecha o dialogo
+            _log('[SMARTEDTV] Dialogo aberto (%s), fechando dialogo.',
+                 self.getProperty(PROP_DIALOGO))
             if control_id in (905, 955):
                 self._fechar_dialogo()
             elif control_id == 906:
@@ -356,17 +430,21 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
                 self._sair()
             return
         if control_id == 312:
+            _log('[SMARTEDTV] Botao 312 (Assistir com anuncios) acionado.')
             self.setProperty(PROP_DIALOGO, 'ads')
             try:
                 self.setFocusId(905)
             except Exception:
                 pass
         elif control_id == 905:
+            _log('[SMARTEDTV] Botao 905 (Voltar do dialogo ads) acionado.')
             self._fechar_dialogo(312)
         elif control_id == 906:
+            _log('[SMARTEDTV] Botao 906 (Continuar com anuncios) acionado.')
             self._fechar_dialogo(312)
             self._modo_gratuito()
         elif control_id == 955:
+            _log('[SMARTEDTV] Botao 955 (OK do dialogo status) acionado.')
             self._fechar_dialogo()
         elif control_id == 120:
             self._abrir_checkout()
@@ -378,6 +456,8 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
             self._atualizar()
         elif control_id == 311:
             self._ativar_codigo()
+        elif control_id == 310:
+            _log('[SMARTEDTV] Campo 310 (codigo) recebeu foco/clique.')
         # 130/131 (seletor de aparelho) e 140/141 (planos) sairam da tela: a
         # tela e 16:9 fixa e quem define a validade do codigo e o servidor.
         # Clique nesses ids nao faz nada (ver tests).
