@@ -222,21 +222,32 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
 
     # --- acoes ligadas ao que ja existe no projeto -----------------------
     def _abrir_checkout(self):
-        """ID 120 - Abre o checkout da Cakto (vip.abrir_checkout faz StartAndroidActivity para sair do app)."""
-        vip = _vip()
-        if vip is not None and vip.abrir_checkout():
-            _log('checkout aberto pelo fluxo existente (vip.abrir_checkout)')
+        """ID 120 - Abre o checkout da Cakto no navegador externo (sai do app)."""
+        url = 'https://pay.cakto.com.br/nkvbegd_1323120'
+        _log('abrindo checkout: %s' % url)
+        try:
+            xbmc.executebuiltin(
+                'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % url)
             return
+        except Exception as erro:
+            _log('StartAndroidActivity checkout falhou: %s' % erro,
+                 xbmc.LOGWARNING)
         self._dialogo('Checkout indisponível',
                       'Não consegui abrir o pagamento neste aparelho. '
                       'Aponte a câmera para o QR Code ao lado.')
 
     def _compartilhar(self):
-        """ID 121 - Abre o download do APK no Dropbox (vip.compartilhar faz StartAndroidActivity para sair do app)."""
-        vip = _vip()
-        if vip is not None and vip.compartilhar():
-            _log('compartilhamento aberto pelo fluxo existente (vip.compartilhar)')
+        """ID 121 - Abre o link de download do APK no navegador externo (sai do app)."""
+        url = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
+               'SMARTEDTV-atual.apk?dl=1')
+        _log('abrindo download do APK: %s' % url)
+        try:
+            xbmc.executebuiltin(
+                'StartAndroidActivity(android.intent.action.VIEW,%s,,)' % url)
             return
+        except Exception as erro:
+            _log('StartAndroidActivity download falhou: %s' % erro,
+                 xbmc.LOGWARNING)
         self._dialogo('Compartilhamento indisponível',
                       'Não consegui abrir o link de download neste aparelho.')
 
