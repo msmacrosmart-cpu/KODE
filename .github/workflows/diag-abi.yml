@@ -1,0 +1,98 @@
+name: diag-abi
+# TEMPORARIO: compara as libs arm64 do APK SMARTEDTV com o Kodi 21.3 oficial
+# e lista as libs armv7 que precisam entrar para o APK rodar em 32 e 64 bits.
+on:
+  push:
+    branches: [arena/39a14845-kode]
+    paths: [.github/workflows/diag-abi.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  abi:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: arena/39a14845-kode
+      - name: Baixar SMARTEDTV v15 e Kodi 21.3 arm64/armv7
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          gh release download v1.0.85-tela-inicial-v15 \
+            --pattern 'SMARTEDTV-atual-com-tela-inicial-v15.apk' --dir build
+          curl -L --fail --retry 3 -o build/kodi-arm64.apk \
+            https://mirrors.kodi.tv/releases/android/arm64-v8a/kodi-21.3-Omega-arm64-v8a.apk
+          curl -L --fail --retry 3 -o build/kodi-armv7.apk \
+            https://mirrors.kodi.tv/releases/android/arm/kodi-21.3-Omega-armeabi-v7a.apk
+          ls -lh build
+      - name: Comparar libs e classes
+        run: |
+          set -euo pipefail
+          {
+            echo "== SMARTEDTV v15"
+            python3 -m pip install --quiet --disable-pip-version-check pyaxmlparser==0.3.31
+            python3 - build/SMARTEDTV-atual-com-tela-inicial-v15.apk <<'PY'
+          import sys
+          from pyaxmlparser import APK
+          a = APK(sys.argv[1])
+          print('package', a.package, 'version', a.version_name, a.version_code)
+          print('minSdk', a.get_min_sdk_version(), 'target', a.get_target_sdk_version())
+          try:
+              print('abi', a.get_android_abis())
+          except Exception as erro:
+              print('abi ?', erro)
+          PY
+            echo
+            echo "== Kodi oficial armv7"
+            python3 - build/kodi-armv7.apk <<'PY'
+          import sys
+          from pyaxmlparser import APK
+          a = APK(sys.argv[1])
+          print('package', a.package, 'version', a.version_name, a.version_code)
+          print('minSdk', a.get_min_sdk_version(), 'target', a.get_target_sdk_version())
+          try:
+              print('abi', a.get_android_abis())
+          except Exception as erro:
+              print('abi ?', erro)
+          PY
+            echo
+            echo "== libs arm64: SMARTEDTV x Kodi oficial (md5)"
+            mkdir -p build/base64 build/kodi64
+            unzip -q build/SMARTEDTV-atual-com-tela-inicial-v15.apk 'lib/arm64-v8a/*' -d build/base64
+            unzip -q build/kodi-arm64.apk 'lib/arm64-v8a/*' -d build/kodi64
+            (cd build/base64 && find lib/arm64-v8a -type f -printf '%P\n' | sort | xargs -r md5sum) > build/base64.md5
+            (cd build/kodi64 && find lib/arm64-v8a -type f -printf '%P\n' | sort | xargs -r md5sum) > build/kodi64.md5
+            echo "base: $(wc -l < build/base64.md5) libs; oficial: $(wc -l < build/kodi64.md5) libs"
+            echo "-- só no SMARTEDTV:"; comm -23 <(cut -d' ' -f3- build/base64.md5 | sort) <(cut -d' ' -f3- build/kodi64.md5 | sort)
+            echo "-- só no oficial:"; comm -13 <(cut -d' ' -f3- build/base64.md5 | sort) <(cut -d' ' -f3- build/kodi64.md5 | sort)
+            echo "-- hashes diferentes:"
+            join -j 2 <(sort -k2 build/base64.md5) <(sort -k2 build/kodi64.md5) | awk '$2!=$3{print $1}' | head -30
+            echo
+            echo "== libs armv7 do Kodi oficial (que faltam no APK)"
+            unzip -l build/kodi-armv7.apk | awk '$4 ~ /^lib\/armeabi-v7a\// {print $4}' | sort | sed 's/^/  /'
+            echo
+            echo "== JNI/classes no libkodi.so"
+            unzip -p build/SMARTEDTV-atual-com-tela-inicial-v15.apk lib/arm64-v8a/libkodi.so > build/libkodi-base.so
+            unzip -p build/kodi-armv7.apk lib/armeabi-v7a/libkodi.so > build/libkodi-v7.so
+            for f in build/libkodi-base.so build/libkodi-v7.so; do
+              echo "-- $f"
+              strings "$f" | grep -E 'org/xbmc/kodi|smartedtv/full' | sort -u | head -20
+            done
+            echo
+            echo "== classes.dex"
+            unzip -p build/SMARTEDTV-atual-com-tela-inicial-v15.apk classes.dex > build/classes.dex
+            strings build/classes.dex | grep -E 'Lorg/xbmc/kodi/Main;|Lsmartedtv/full' | sort -u | head -20
+          } > docs/abi-merge-info.txt 2>&1
+          cat docs/abi-merge-info.txt
+      - name: Commitar relatorio
+        run: |
+          set -euo pipefail
+          git config user.name 'diag-abi'
+          git config user.email 'diag-abi@users.noreply.github.com'
+          git add docs/abi-merge-info.txt
+          git commit -m "diag: comparar libs arm64 do SMARTEDTV com Kodi oficial e listar armv7"
+          git push origin HEAD:arena/39a14845-kode
