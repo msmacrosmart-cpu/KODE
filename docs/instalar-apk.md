@@ -1,8 +1,9 @@
 # Instalar o SMARTEDTV (celular, TV, box, projetor e stick)
 
-**Versão atual: v17 universal (1.0.87 / 2103073, 32 e 64 bits)**  
-https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.87-responsivo-v17/SMARTEDTV-atual-v17-responsivo-universal.apk  
-SHA-256: `864b83047dbe93da7a8b8ec027cb7299a9c1896c02e84246d906767e440248fb`
+**Versão atual: v18 universal (1.0.88 / 2103074, 32 e 64 bits)**  
+https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.88-reabertura-v18/SMARTEDTV-atual-v18-reabertura-universal.apk  
+SHA-256: `b09cc6cfd7123a6a94163f92b1c85b0fb5907dce7bfbc486ed1ecb373014924e`  
+Tamanho: 285.488.380 bytes.
 
 O APK é grande (~250 MB) e é instalado **fora da Play Store**. A mensagem
 genérica **“Aplicativo não instalado”** quase sempre é uma destas causas —
@@ -10,35 +11,65 @@ nenhuma delas é vírus ou APK corrompido:
 
 | Causa | Como resolver |
 |---|---|
-| **Mesmo `versionCode` da versão instalada** | Use a v17 universal (1.0.87 / 2103073) ou desinstale a anterior antes. |
-| **Assinatura diferente da versão instalada** | Desinstale a versão antiga (perde dados e VIP) e instale de novo. |
+| **Mesmo `versionCode` da versão instalada** | A v18 é `2103074`; se o aparelho já tem a v18, o Android pode recusar. |
+| **Assinatura diferente da versão instalada** | Só desinstale **depois de exportar/copiar o perfil**; a desinstalação apaga dados e VIP local. |
+| **ABI incompatível (x86/outra)** | A v18 tem `arm64-v8a` e `armeabi-v7a`; um projetor/box x86 não instala. |
 | **“Instalar apps desconhecidos” desligado** | Autorize o navegador/gerenciador/Downloader que está abrindo o APK. |
 | **Play Protect bloqueando** | Toque em **“Mais detalhes” → “Instalar mesmo assim”** (ou desligue a verificação temporariamente). |
 | **Pouco espaço** | Libere pelo menos **1,5 GB**; o APK + instalação do Kodi ocupam bastante. |
-| **Aparelho 32-bit (armeabi-v7a)** | Use a **v17 universal**: ela tem `lib/armeabi-v7a` e `lib/arm64-v8a`. |
+| **Aparelho 32-bit (armeabi-v7a)** | Use a **v18 universal**: ela tem `lib/armeabi-v7a` e `lib/arm64-v8a`. |
 
-> A v17 foi assinada com a **mesma chave** da v12/v13/v16
+> A v18 foi assinada com a **mesma chave** da v12…v17
 > (`855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`), então
-> instalar por cima da v12/v13 **preserva perfil, addons e VIP**. Só desinstale
-> se a versão que está no aparelho veio de outra chave (por exemplo, um APK
-> antigo do Dropbox ou de outro build).
+> instalar por cima de uma delas **preserva perfil, addons e VIP**. Só desinstale
+> se a versão instalada veio de outra chave (por exemplo, um APK antigo do
+> Dropbox ou um build de teste).
+>
+> **Antes de desinstalar:** copie a pasta de dados do app para pendrive/nuvem
+> (`Android/data/smartedtv.full`, quando acessível) ou use o backup do Kodi.
+> A desinstalação apaga o perfil local; a ativação VIP precisará ser refeita.
 
 ## 1. Conferir o arquivo baixado
 
-Tamanho e SHA-256 da v17 estão na página da release. No Windows (PowerShell):
+Tamanho e SHA-256 da v18 estão na página da release. No Windows (PowerShell):
 
 ```powershell
-Get-FileHash .\SMARTEDTV-atual-v17-responsivo-universal.apk -Algorithm SHA256
+Get-FileHash .\SMARTEDTV-atual-v18-reabertura-universal.apk -Algorithm SHA256
 ```
 
 No Linux/macOS:
 
 ```bash
-sha256sum SMARTEDTV-atual-v17-responsivo-universal.apk
+sha256sum SMARTEDTV-atual-v18-reabertura-universal.apk
 ```
 
-Se o hash não bater, o download veio incompleto: baixe de novo **direto do
-GitHub**, sem passar por WhatsApp/Telegram (eles comprimem/truncam arquivos).
+O resultado tem de ser exatamente
+`b09cc6cfd7123a6a94163f92b1c85b0fb5907dce7bfbc486ed1ecb373014924e`.
+Se não bater, o download veio incompleto ou truncado: baixe de novo **direto do
+GitHub**, sem passar por WhatsApp/Telegram/gerenciadores que comprimem arquivos.
+Em aparelho com pouca memória, use o **Downloader** ou copie por pendrive.
+
+### 1.1. Descobrir o motivo real pelo ADB (quando possível)
+
+No PC com ADB e o aparelho liberado:
+
+```bash
+adb install -r SMARTEDTV-atual-v18-reabertura-universal.apk
+```
+
+O código devolvido pelo Android aponta a causa:
+
+| Código | Significado | Ação |
+|---|---|---|
+| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | assinatura diferente da versão instalada | exportar o perfil e só então desinstalar |
+| `INSTALL_FAILED_VERSION_DOWNGRADE` | `versionCode` menor/igual | confirmar que baixou a v18 (`2103074`) |
+| `INSTALL_FAILED_INSUFFICIENT_STORAGE` | falta espaço | liberar ~1,5 GB |
+| `INSTALL_FAILED_INVALID_APK` | arquivo truncado/corrompido | conferir SHA-256 e baixar de novo |
+| `INSTALL_FAILED_NO_MATCHING_ABIS` | aparelho x86 ou ABI não incluída | informar o modelo/ABI; precisa de build x86 |
+| `INSTALL_PARSE_FAILED_NO_CERTIFICATES` | APK sem assinatura válida | baixar novamente; não rezipar o APK |
+
+Sem ADB, anote o **texto completo** da mensagem (TV/box costuma esconder atrás
+de “Mais detalhes”).
 
 ## 2. Celular / tablet
 
@@ -79,7 +110,7 @@ GitHub**, sem passar por WhatsApp/Telegram (eles comprimem/truncam arquivos).
 
 ## 5. Compatibilidade do APK
 
-A **v17** é universal:
+A **v18** é universal:
 
 - **minSdk 21** (Android 5.0) — instala em **Android 8, 9, 10, 11, 12, 13, 14 e 15**;
 - **targetSdk 34**;
@@ -92,7 +123,7 @@ O Android escolhe a ABI sozinho. Para conferir qual o aparelho usa:
 - app **AIDA64** ou **Device Info**: procure “ABI”/“CPU”;
 - ou no PC com adb: `adb shell getprop ro.product.cpu.abilist`.
 
-Se aparecer `arm64-v8a`, `armeabi-v7a` ou os dois, a v17 instala. As builds
+Se aparecer `arm64-v8a`, `armeabi-v7a` ou os dois, a v18 instala. As builds
 v12–v15 eram somente arm64; por isso falhavam em aparelho 32-bit.
 
 ## 6. O que **não** é o problema
