@@ -348,4 +348,10 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except SystemExit as erro:
+        import traceback
+        traceback.print_exc()
+        print("ERRO_FATAL: %s" % erro, file=__import__("sys").stderr)
+        sys.exit(1)
