@@ -39,6 +39,12 @@ nenhuma delas é vírus ou APK corrompido:
 > (`Android/data/smartedtv.full`, quando acessível) ou use o backup do Kodi.
 > A desinstalação apaga o perfil local; a ativação VIP precisará ser refeita.
 
+> **Instalação no projetor (v19):** se a v18 não instalou, use as variantes
+> `arm64`, `arm32`, `universal` e `v2` da release
+> [v1.0.89-instalacao-v19](https://github.com/msmacrosmart-cpu/KODE/releases/tag/v1.0.89-instalacao-v19).
+> Todas têm o mesmo pacote/assinatura e `versionCode 2103075`; veja
+> `docs/entrega-v19-instalacao.md`.
+
 ## 1. Conferir o arquivo baixado
 
 Tamanho e SHA-256 da v18 estão na página da release. No Windows (PowerShell):
