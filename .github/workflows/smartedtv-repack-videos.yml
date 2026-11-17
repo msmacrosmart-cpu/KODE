@@ -84,10 +84,5 @@ jobs:
           fi
 
       - name: 7. Save artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: smartedtv-apk-repackage-video
-          path: |
-            SMARTEDTV-*-arm64-v8a.apk
-            SMARTEDTV-*.sha256
-        retention-days: 30
+        run: |
+          ls -lh SMARTEDTV-21.4.1-arm64-v8a.apk SMARTEDTV-21.4.1-arm64-v8a.apk.sha256
