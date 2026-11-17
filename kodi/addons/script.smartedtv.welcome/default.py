@@ -73,6 +73,8 @@ XML_RELATIVO = 'resources/skins/Default/1080i/DialogWelcome.xml'
 MARCA_ABERTA = 'smartedtv.welcome.ativa'
 MARCA_SAIU = 'smartedtv.welcome.saiu'
 MARCA_HOME = 'smartedtv.welcome.home'
+# Trava do modo `voltar`: duas teclas seguidas não empilham duas telas.
+MARCA_VOLTAR = 'smartedtv.welcome.voltar'
 PROP_DIALOGO = 'welcome_dialog'
 PROP_TITULO = 'welcome_status_title'
 PROP_TEXTO = 'welcome_status_text'
@@ -475,11 +477,16 @@ def voltar_para_a_tela():
     if not _tela_da_home():
         # ainda dentro do boot (janela de startup): deixa o fluxo normal abrir
         return abrir_tela_entrada()
+    if _propriedade(MARCA_VOLTAR):
+        # a tela de VOLTAR já está no ar (duas teclas seguidas)
+        _log('VOLTAR na Home: a tela ja esta aberta, ignorando')
+        return False
     pasta = _pasta_da_tela()
     if not pasta:
         _log('pasta da tela nao encontrada (voltar na Home)', xbmc.LOGERROR)
         return False
     _log('VOLTAR na Home: reabrindo a tela de entrada')
+    _definir(MARCA_VOLTAR, '1')
     # marca o boot como concluido: o vigia `seguro=1` não deve agir aqui
     _definir(MARCA_ABERTA, '1')
     _definir(MARCA_HOME, 'ok')
@@ -487,12 +494,15 @@ def voltar_para_a_tela():
         janela = WelcomeDialog('DialogWelcome.xml', pasta, 'Default', '1080i')
     except Exception as erro:
         _log('falha ao montar a tela (voltar): %s' % erro, xbmc.LOGERROR)
+        _limpar(MARCA_VOLTAR)
         return False
     try:
         janela.doModal()
     except Exception as erro:
         _log('falha ao exibir a tela (voltar): %s' % erro, xbmc.LOGERROR)
+        _limpar(MARCA_VOLTAR)
         return False
+    _limpar(MARCA_VOLTAR)
     # A Home já estava carregada: basta garantir que continua na tela. Nada de
     # RestartApp (o usuário estaria assistindo) e nada de ReplaceWindow.
     if not _tela_da_home():
@@ -507,6 +517,7 @@ def abrir_tela_entrada():
     A Home é aberta pelo próprio script DEPOIS que a modal sai de cena (é o que
     o Kodi espera: a janela seguinte só é carregada ao fim do modal).
     """
+    _limpar(MARCA_VOLTAR)          # boot novo: nenhuma trava pendente
     pasta = _pasta_da_tela()
     if not pasta:
         _log('pasta da tela nao encontrada', xbmc.LOGERROR)

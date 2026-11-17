@@ -697,6 +697,23 @@ class CicloDeVidaTest(unittest.TestCase):
         self.modulo.voltar_para_a_tela()
         self.assertEqual(vistos, [''])
 
+    def test_voltar_duas_vezes_nao_empilha_telas(self):
+        """Duas teclas seguidas nao abrem duas telas por cima da Home."""
+        self.xbmc.JANELA['atual'] = 'Home'
+        abertas = []
+
+        def segura(janela):
+            abertas.append(1)
+            # enquanto a tela esta no ar, outro VOLTAR chega pelo keymap
+            self.assertFalse(self.modulo.voltar_para_a_tela())
+            janela.onAction(92)
+
+        JanelaFake.interacao = segura
+        self.assertTrue(self.modulo.voltar_para_a_tela())
+        self.assertEqual(len(abertas), 1)
+        # a trava e liberada quando a tela sai de cena
+        self.assertEqual(self.xbmc.PROPS.get('smartedtv.welcome.voltar'), None)
+
     def test_voltar_sem_a_tela_nao_derruba_nada(self):
         """Se a pasta da tela sumir, VOLTAR na Home so registra e a Home fica."""
         self.xbmc.JANELA['atual'] = 'Home'
