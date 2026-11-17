@@ -20,102 +20,74 @@ jobs:
           set +e
           python3 - <<'PY' > /tmp/report.txt 2>&1
           import json, re, urllib.error, urllib.request
-          from urllib.parse import urljoin
-          BASE = 'https://smartedtv-vip.lovable.app'
+          BASE='https://smartedtv-vip.lovable.app'
           out=[]
-          def p(*a):
-              out.append(' '.join(str(x) for x in a))
+          def p(*a): out.append(' '.join(str(x) for x in a))
           def req(url, method='GET', data=None, headers=None, timeout=25):
-              h={'User-Agent':'SMARTEDTV-diag','Accept':'*/*'}; h.update(headers or {})
+              h={'User-Agent':'SMARTEDTV-diag','Accept':'application/json','Origin':BASE}
+              h.update(headers or {})
               corpo=None
               if data is not None:
                   corpo=json.dumps(data).encode(); h['Content-Type']='application/json'
               try:
                   r=urllib.request.urlopen(urllib.request.Request(url,data=corpo,headers=h,method=method),timeout=timeout)
-                  return r.status, dict(r.headers), r.read(3_000_000).decode('utf-8','replace')
+                  return r.status, dict(r.headers), r.read(1_000_000).decode('utf-8','replace')
               except urllib.error.HTTPError as e:
                   return e.code, dict(e.headers), e.read(300_000).decode('utf-8','replace')
               except Exception as e:
                   return 'ERR', {}, repr(e)
 
-          st,hd,html=req(BASE+'/')
-          fila=[]; vistos=set()
-          for u in re.findall(r'<script[^>]+src=["\']([^"\']+)',html): fila.append(u)
-          for u in re.findall(r'<link[^>]+href=["\']([^"\']+)',html):
-              if u.endswith('.js'): fila.append(u)
-          chunks={}
-          while fila and len(chunks)<50:
-              u=urljoin(BASE+'/',fila.pop(0))
-              if u in vistos or not u.startswith(BASE): continue
-              vistos.add(u)
-              st,hd,txt=req(u)
-              if st!=200 or '.js' not in u: continue
-              chunks[u]=txt
-              for imp in re.findall(r'["\']((?:\.{0,2}/)?assets/[A-Za-z0-9_.-]+\.js)["\']',txt):
-                  fila.append(imp)
-              for imp in re.findall(r'import\(["\']([^"\']+\.js[^"\']*)["\']\)',txt):
-                  fila.append(imp)
-          p('CHUNKS', len(chunks))
-          for u in sorted(chunks): p(' ', u.replace(BASE,''), len(chunks[u]))
-          todo='\n'.join(chunks.values())
+          def gerar():
+              st,hd,txt=req(BASE+'/api/public/teste-vip',method='POST',data={})
+              p('GERAR ->',st,txt[:400])
+              try:
+                  d=json.loads(txt); return d.get('code') or ''
+              except Exception: return ''
+
+          def validar(codigo, corpo, rotulo):
+              st,hd,txt=req(BASE+'/api/public/validar-codigo',method='POST',data=corpo)
+              p('')
+              p('== %s ==' % rotulo)
+              p('codigo usado:', (codigo[:4]+'...'+codigo[-2:]) if codigo else '(vazio)')
+              p('payload keys:', sorted(corpo.keys()))
+              p('status:', st, 'content-type:', hd.get('content-type'))
+              for k in ('access-control-allow-origin','set-cookie','www-authenticate','x-request-id'):
+                  if k in hd: p('header',k,'=',hd[k])
+              p('body:', txt[:800])
+              try:
+                  d=json.loads(txt)
+                  p('json keys:', sorted(d.keys()) if isinstance(d,dict) else type(d).__name__)
+                  for k in ('active','status','expiresAt','expires_at','expira','message','sessionId','device','devices','plan','type'):
+                      if isinstance(d,dict) and k in d: p('  ',k,'=',repr(d[k])[:200])
+              except Exception: p('(nao e json)')
+              return st,txt
+
+          c1=gerar()
+          if c1:
+              validar(c1, {'codigo':c1,'device':'diag-aparelho-A','app':'smartedtv','versao':'diag'}, 'teste 1: codigo+device+app')
+              validar(c1, {'codigo':c1,'device':'diag-aparelho-A','app':'smartedtv'}, 'teste 2: MESMO codigo de novo (ja usado?)')
+          c2=gerar()
+          if c2:
+              validar(c2, {'code':c2}, 'teste 3: campo code')
+          c3=gerar()
+          if c3:
+              validar(c3, {'codigo':c3}, 'teste 4: so codigo, sem device')
+          c4=gerar()
+          if c4:
+              validar(c4, {'device':'diag-aparelho-B'}, 'teste 5: sem codigo')
           p('')
-          p('== ROTAS /api/ ==')
-          for r in sorted(set(re.findall(r'["\'`](/api/[A-Za-z0-9_./-]+)["\'`]',todo))):
-              p(' ', r)
+          p('== /public/api/cakto com codigo de teste ==')
+          if c4:
+              st,hd,txt=req(BASE+'/public/api/cakto',method='POST',data={'codigo':c4})
+              p('POST /public/api/cakto ->',st,hd.get('content-type'),'json?',txt.lstrip().startswith(('{','[')))
+              p(txt[:300].replace('\n',' '))
           p('')
-          p('== URLS lovable.cloud / supabase ==')
-          for u in sorted(set(re.findall(r'https://[A-Za-z0-9._-]*(?:lovable\.cloud|supabase\.co)[A-Za-z0-9._/?=&%-]*',todo))):
-              p(' ', u)
-          p('')
-          p('== CHAVES sb_publishable ==')
-          for k in sorted(set(re.findall(r'sb_publishable_[A-Za-z0-9_-]+',todo))):
-              p(' ', k[:16]+'...', 'len', len(k))
-          p('')
-          p('== CONTEXTO lovable.cloud ==')
-          for t in sorted(set(re.findall(r'.{120}c--[A-Za-z0-9-]+\.lovable\.cloud.{200}',todo))):
-              p(' ', re.sub(r'\s+',' ',t)[:500])
-          p('')
-          p('== MODULOS PEQUENOS (conteudo) ==')
-          for u,t in sorted(chunks.items()):
-              if len(t) < 22000 and any(x in u for x in ('admin','teste-vip','obrigado','checkout','_token')):
-                  p('')
-                  p('-----',u.replace(BASE,''),'-----')
-                  p(t)
-          p('')
-          p('== CONTEXTOS fetch com URL ==')
-          for t in sorted(set(re.findall(r'.{100}fetch\(.{250}',todo))):
-              p(' ', re.sub(r'\s+',' ',t)[:450])
-          p('')
-          p('== PROBES ==')
-          falso={'codigo':'DIAG-0000-XXXX','code':'DIAG-0000-XXXX','app':'smartedtv','device':'diag'}
-          for rota in ('/api/public/teste-vip','/api/public/validar-codigo','/api/public/validar',
-                       '/api/public/ativar','/api/validar-codigo','/api/ativar-codigo',
-                       '/api/public/ativar-codigo','/api/public/status-codigo'):
-              for metodo,corpo in (('OPTIONS',None),('POST',falso)):
-                  st,hd,txt=req(BASE+rota,method=metodo,data=corpo)
-                  p('%s %s -> %s %s' % (metodo,rota,st,hd.get('content-type')))
-                  p('  ',txt[:400].replace('\n',' '))
-          for rota in ('/api/admin/listar-codigos','/api/admin/gerar-codigo','/api/admin/criar-codigo'):
-              st,hd,txt=req(BASE+rota,method='POST',data={'limit':1})
-              p('POST',rota,'sem chave ->',st,txt[:300].replace('\n',' '))
-          p('')
-          p('== LOVABLE CLOUD ==')
-          bases=sorted(set(re.findall(r'https://[A-Za-z0-9-]+\.lovable\.cloud',todo)))
-          chaves=sorted(set(re.findall(r'sb_publishable_[A-Za-z0-9_-]+',todo)))
-          p('bases',bases,'chaves',[(k[:12]+'...',len(k)) for k in chaves])
-          for base in bases:
-              for chave in chaves or ['']:
-                  cab={'apikey':chave,'Authorization':'Bearer '+chave} if chave else {}
-                  for caminho in ('/rest/v1/codigos?select=*&limit=1',
-                                  '/rest/v1/codigos?codigo=eq.DIAG-0000-XXXX&select=*',
-                                  '/rest/v1/codes?select=*&limit=1'):
-                      st,hd,txt=req(base+caminho,headers=cab)
-                      p('GET',caminho,'->',st)
-                      try:
-                          d=json.loads(txt)
-                          if isinstance(d,list): p('  linhas',len(d),'chaves',sorted(d[0].keys()) if d else [])
-                          else: p('  json',sorted(d.keys()) if isinstance(d,dict) else type(d).__name__)
-                      except Exception: p('  ',txt[:300].replace('\n',' '))
+          p('== rotas publicas restantes ==')
+          for rota in ('/api/public/entrega','/api/public/confirmar-email'):
+              st,hd,txt=req(BASE+rota,method='OPTIONS')
+              p('OPTIONS',rota,'->',st)
+              st,hd,txt=req(BASE+rota,method='POST',data={})
+              p('POST',rota,'->',st,hd.get('content-type'),txt[:300].replace('\n',' '))
           rel='\n'.join(out)
           if len(rel)>120000: rel=rel[:120000]+'\n[...truncado...]'
           open('/tmp/report.txt','w',encoding='utf-8').write(rel)
