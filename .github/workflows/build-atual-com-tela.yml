@@ -30,12 +30,12 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       BASE_RELEASE: v1.0.83-unificado
       BASE_ASSET: SMARTEDTV-atual.apk
-      TAG_SAIDA: v1.0.84-tela-inicial-v14
-      FINAL: SMARTEDTV-atual-com-tela-inicial-v14.apk
+      TAG_SAIDA: v1.0.85-tela-inicial-v15
+      FINAL: SMARTEDTV-atual-com-tela-inicial-v15.apk
       VERSAO_DE: '1.0.83'
-      VERSAO_PARA: '1.0.84'
+      VERSAO_PARA: '1.0.85'
       CODIGO_DE: '2103069'
-      CODIGO_PARA: '2103070'
+      CODIGO_PARA: '2103071'
     steps:
       - uses: actions/checkout@v4
 
@@ -355,11 +355,20 @@ jobs:
           import struct, zipfile
           with zipfile.ZipFile('build/bruto.apk') as z:
               m = z.read('AndroidManifest.xml')
-          assert '1.0.84'.encode('utf-16-le') in m
-          assert struct.pack('<I', 2103070) in m
+          assert '1.0.85'.encode('utf-16-le') in m
+          assert struct.pack('<I', 2103071) in m
           assert '1.0.83'.encode('utf-16-le') not in m
           assert struct.pack('<I', 2103069) not in m
-          print('OK: APK agora e 1.0.84 (versionCode 2103070), pronto para atualizar')
+          import importlib.util
+          spec = importlib.util.spec_from_file_location(
+              'ajustar', 'tools/kodi/ajustar-versao-apk.py')
+          mod = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(mod)
+          _, alterados, vistos = mod.desligar_debug(m)
+          assert not alterados, alterados
+          assert 'debuggable' in [nome for _elemento, nome in vistos], vistos
+          print('OK: APK agora e 1.0.85 (versionCode 2103071) e debuggable=false')
+          print('OK: atributos vistos: %s' % (vistos,))
           PY
           ls -lh build/bruto.apk
 
@@ -413,8 +422,8 @@ jobs:
               "build/tela-entrada-prova.png" "build/tela-entrada-dialogo.png" \
               "build/tela-entrada-status.png" \
               --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title 'SMARTEDTV 1.0.84 + tela inicial (v14: instala por cima da v12/v13; TV, box, projetor e stick)'  \
-              --notes 'v14 (1.0.84, versionCode 2103070). Esta build existe para resolver o "Aplicativo nao instalado": a v13 tinha o MESMO versionCode 2103069 da v12 e varias instaladoras (MIUI, Samsung, Android TV, Fire OS) recusam atualizar por cima com o mesmo codigo. Agora e uma atualizacao de verdade, assinada com a MESMA chave (855de171...) e com os MESMOS dados/VIP preservados. Mantem tudo da v13: variante DialogWelcomeTV.xml com area segura contra overscan (logo/titulo 20 px abaixo e 62 px para dentro, rodape em 880/892, textos em x=100, dica "Use as setas e OK do controle."), deteccao de TV/box/projetor/stick por plataforma.txt/resolucao/nome, campo 310 como defaultcontrol, teclado real do Kodi, VIP e anuncios como antes. Se a instaladora disser "app nao instalado" mesmo assim: (1) permita "instalar apps desconhecidos" para o navegador/gerenciador usado; (2) no Play Protect, toque em "Instalar mesmo assim"; (3) se houver uma versao antiga assinada com OUTRA chave, desinstale-a antes (perde os dados; reative o VIP); (4) libere pelo menos 700 MB livres; (5) confira o SHA-256 do arquivo baixado. TV/box/stick: instale pelo Downloader com "Apps de fontes desconhecidas" ligado. Nada do visual, botoes 120-123, VIP, tela de entrada ou dados do usuario foi removido. Prova: static-check, testes TVBoxStickTest, manifest conferido (1.0.84/2103070), assinatura conferida com o certificado 855de171..., injecao byte a byte; nao houve execucao em aparelho real neste ambiente.'
+              --title 'SMARTEDTV 1.0.85 + tela inicial (v15: instala por cima da v12/v13/v14, sem debuggable e com TV/box/projetor/stick)'  \
+              --notes 'v15 (1.0.85, versionCode 2103071). Duas correcoes de instalacao: (1) o APK agora tem versionCode MAIOR que v12/v13/v14, entao e uma atualizacao de verdade em MIUI, Samsung, Android TV e Fire OS; (2) android:debuggable foi desligado no manifesto binario (o APK base do Kodi vinha debuggable=true e o Play Protect costuma cancelar build de desenvolvedor com a mensagem generica "Aplicativo nao instalado"). A assinatura e a MESMA (certificado 855de171...), o applicationId e o mesmo e os dados/VIP sao preservados ao atualizar. Mantem a variante DialogWelcomeTV.xml com area segura contra overscan, deteccao de TV/box/projetor/stick por plataforma.txt/resolucao/nome, campo 310 como defaultcontrol, teclado real do Kodi, VIP e anuncios como antes. Se a instaladora ainda recusar: permita "instalar apps desconhecidos" para o navegador/gerenciador/Downloader; no Play Protect toque em "Mais detalhes" > "Instalar mesmo assim"; se houver versao antiga com OUTRA chave, desinstale antes (perde dados; reative o VIP); libere ~1 GB livre; confira o SHA-256. Em TV/box/stick use o Downloader com fontes desconhecidas ligadas. Nada do visual, botoes 120-123, VIP, tela de entrada ou dados do usuario foi removido. Prova: static-check, testes TVBoxStickTest, manifesto conferido (1.0.85/2103071 e debuggable=false), assinatura conferida com o certificado 855de171..., injecao byte a byte; nao houve execucao em aparelho real neste ambiente.'
           fi
           echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_SAIDA/$FINAL"
 
