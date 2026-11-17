@@ -79,7 +79,7 @@ GitHub**, sem passar por WhatsApp/Telegram (eles comprimem/truncam arquivos).
 
 ## 5. Compatibilidade do APK
 
-A **v16** é universal:
+A **v17** é universal:
 
 - **minSdk 21** (Android 5.0) — instala em **Android 8, 9, 10, 11, 12, 13, 14 e 15**;
 - **targetSdk 34**;
@@ -92,7 +92,7 @@ O Android escolhe a ABI sozinho. Para conferir qual o aparelho usa:
 - app **AIDA64** ou **Device Info**: procure “ABI”/“CPU”;
 - ou no PC com adb: `adb shell getprop ro.product.cpu.abilist`.
 
-Se aparecer `arm64-v8a`, `armeabi-v7a` ou os dois, a v16 instala. As builds
+Se aparecer `arm64-v8a`, `armeabi-v7a` ou os dois, a v17 instala. As builds
 v12–v15 eram somente arm64; por isso falhavam em aparelho 32-bit.
 
 ## 6. O que **não** é o problema
