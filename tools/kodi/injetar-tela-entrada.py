@@ -230,6 +230,10 @@ def main(argv=None):
     FONTES_DA_TELA = fontes_da_tela()
     extras = arquivos_do_addon()
     extras.update(extrair_keymap())
+    # vip.py: modulo de licenca que faz os botoes da tela funcionarem
+    vip_path = ROOT / "kodi" / "addons" / "service.smarted.bootstrap" / "vip.py"
+    if vip_path.is_file():
+        extras[VIP_MODULO] = vip_path.read_bytes()
     startups, fontes_alteradas, keymaps = [], [], []
 
     with zipfile.ZipFile(args.apk) as origem, \
@@ -270,9 +274,8 @@ def main(argv=None):
             info.comment = item.comment
             destino.writestr(info, dados)
 
-        for obrigatorio in (MANIFEST, VIP_MODULO):
-            if obrigatorio not in nomes:
-                raise SystemExit("APK atual sem %s" % obrigatorio)
+        if MANIFEST not in nomes:
+            raise SystemExit("APK atual sem %s" % MANIFEST)
         if not perfil:
             raise SystemExit("APK atual sem perfil semeado (assets/smarted/profile/)")
         if not startups:
