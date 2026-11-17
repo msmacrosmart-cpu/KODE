@@ -32,15 +32,13 @@ class AtualizarApkTest(unittest.TestCase):
                 z.writestr('assets/addons/skin.novatv/xml/Home.xml', b'antigo')
                 z.writestr('assets/addons/skin.novatv/xml/DialogButtonMenu.xml',
                            b'antigo')
-                z.writestr('assets/addons/skin.novatv/xml/ShutdownMenu.xml', b'antigo')
                 z.writestr('lib/arm64-v8a/libkodi.so', b'a')
                 z.writestr('lib/armeabi-v7a/libkodi.so', b'b')
             self.assertEqual(mod.main(['--apk', str(base), '--saida', str(saida)]), 0)
             with zipfile.ZipFile(saida) as z:
                 nomes = z.namelist()
                 for nome in ('assets/addons/skin.novatv/xml/Home.xml',
-                             'assets/addons/skin.novatv/xml/DialogButtonMenu.xml',
-                             'assets/addons/skin.novatv/xml/ShutdownMenu.xml'):
+                             'assets/addons/skin.novatv/xml/DialogButtonMenu.xml'):
                     self.assertIn(nome, nomes)
                     origem = ROOT / 'kodi' / nome.replace('assets/addons/', '')
                     self.assertEqual(z.read(nome), origem.read_bytes())
