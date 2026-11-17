@@ -145,45 +145,21 @@ jobs:
           KODI="$RUNNER_TEMP/kodi"
           MANIFEST="$KODI/system/addon-manifest.xml"
           ADDONS_TXT="$KODI/cmake/installdata/common/addons.txt"
-          python3 - "$MANIFEST" "$ADDONS_TXT" <<'PYEOF'
-import sys
-manifest_path, addons_txt_path = sys.argv[1], sys.argv[2]
-addons = ["skin.novatv", "plugin.video.smarted", "service.smarted.bootstrap"]
-with open(manifest_path, encoding="utf-8") as f:
-    text = f.read()
-for addon in addons:
-    tag = "  <addon>" + addon + "</addon>"
-    if tag not in text:
-        anchor = "  <addon>skin.estuary</addon>"
-        if anchor in text:
-            text = text.replace(anchor, anchor + "\n" + tag, 1)
-        else:
-            text = text.replace("</addons>", tag + "\n</addons>", 1)
-        print("  ok manifest: " + addon + " registrado")
-    else:
-        print("  -- manifest: " + addon + " ja presente")
-with open(manifest_path, "w", encoding="utf-8") as f:
-    f.write(text)
-with open(addons_txt_path, encoding="utf-8") as f:
-    lines = f.readlines()
-for addon in addons:
-    entry = "addons/" + addon + "/*"
-    if not any(entry in line for line in lines):
-        insert_at = None
-        for i, line in enumerate(lines):
-            if line.startswith("addons/skin.estuary/"):
-                insert_at = i
-                break
-        if insert_at is not None:
-            lines.insert(insert_at, entry + "\n")
-        else:
-            lines.append(entry + "\n")
-        print("  ok addons.txt: " + entry + " adicionado")
-    else:
-        print("  -- addons.txt: " + entry + " ja presente")
-with open(addons_txt_path, "w", encoding="utf-8") as f:
-    f.writelines(lines)
-PYEOF
+          for addon in skin.novatv plugin.video.smarted service.smarted.bootstrap; do
+            if ! grep -q "<addon>$addon</addon>" "$MANIFEST"; then
+              sed -i "s|  <addon>skin.estuary</addon>|  <addon>skin.estuary</addon>\n  <addon>$addon</addon>|" "$MANIFEST"
+              echo "  ok manifest: $addon registrado"
+            else
+              echo "  -- manifest: $addon ja presente"
+            fi
+            entry="addons/$addon/*"
+            if ! grep -qF "$entry" "$ADDONS_TXT"; then
+              sed -i "\|addons/skin.estuary/|i $entry" "$ADDONS_TXT"
+              echo "  ok addons.txt: $entry adicionado"
+            else
+              echo "  -- addons.txt: $entry ja presente"
+            fi
+          done
 
       - name: 7a. Cache das dependencias
         id: cache-deps
