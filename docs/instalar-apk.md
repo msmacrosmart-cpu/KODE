@@ -1,8 +1,8 @@
 # Instalar o SMARTEDTV (celular, TV, box, projetor e stick)
 
-**Versão atual: v16 universal (1.0.86 / 2103072, 32 e 64 bits)**  
-https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.86-tela-inicial-v16/SMARTEDTV-atual-com-tela-inicial-v16-universal.apk  
-SHA-256: `596a8d020f07f63cbcb8a3674251b656afe226fe53d1d58d6ff0acb9b5ff6360`
+**Versão atual: v17 universal (1.0.87 / 2103073, 32 e 64 bits)**  
+https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.87-responsivo-v17/SMARTEDTV-atual-v17-responsivo-universal.apk  
+SHA-256: `864b83047dbe93da7a8b8ec027cb7299a9c1896c02e84246d906767e440248fb`
 
 O APK é grande (~250 MB) e é instalado **fora da Play Store**. A mensagem
 genérica **“Aplicativo não instalado”** quase sempre é uma destas causas —
@@ -10,14 +10,14 @@ nenhuma delas é vírus ou APK corrompido:
 
 | Causa | Como resolver |
 |---|---|
-| **Mesmo `versionCode` da versão instalada** | Use a v16 universal (1.0.86 / 2103072) ou desinstale a anterior antes. |
+| **Mesmo `versionCode` da versão instalada** | Use a v17 universal (1.0.87 / 2103073) ou desinstale a anterior antes. |
 | **Assinatura diferente da versão instalada** | Desinstale a versão antiga (perde dados e VIP) e instale de novo. |
 | **“Instalar apps desconhecidos” desligado** | Autorize o navegador/gerenciador/Downloader que está abrindo o APK. |
 | **Play Protect bloqueando** | Toque em **“Mais detalhes” → “Instalar mesmo assim”** (ou desligue a verificação temporariamente). |
 | **Pouco espaço** | Libere pelo menos **1,5 GB**; o APK + instalação do Kodi ocupam bastante. |
-| **Aparelho 32-bit (armeabi-v7a)** | Use a **v16 universal**: ela tem `lib/armeabi-v7a` e `lib/arm64-v8a`. |
+| **Aparelho 32-bit (armeabi-v7a)** | Use a **v17 universal**: ela tem `lib/armeabi-v7a` e `lib/arm64-v8a`. |
 
-> A v16 foi assinada com a **mesma chave** da v12/v13
+> A v17 foi assinada com a **mesma chave** da v12/v13/v16
 > (`855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`), então
 > instalar por cima da v12/v13 **preserva perfil, addons e VIP**. Só desinstale
 > se a versão que está no aparelho veio de outra chave (por exemplo, um APK
@@ -25,16 +25,16 @@ nenhuma delas é vírus ou APK corrompido:
 
 ## 1. Conferir o arquivo baixado
 
-Tamanho e SHA-256 da v14 estão na página da release. No Windows (PowerShell):
+Tamanho e SHA-256 da v17 estão na página da release. No Windows (PowerShell):
 
 ```powershell
-Get-FileHash .\SMARTEDTV-atual-com-tela-inicial-v14.apk -Algorithm SHA256
+Get-FileHash .\SMARTEDTV-atual-v17-responsivo-universal.apk -Algorithm SHA256
 ```
 
 No Linux/macOS:
 
 ```bash
-sha256sum SMARTEDTV-atual-com-tela-inicial-v14.apk
+sha256sum SMARTEDTV-atual-v17-responsivo-universal.apk
 ```
 
 Se o hash não bater, o download veio incompleto: baixe de novo **direto do

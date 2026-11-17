@@ -104,10 +104,25 @@ Surface é baseado no código do boot, nos fóruns oficiais do Kodi e no perfil
 por nome; o APK entrega o fallback documentado, mas a confirmação final precisa
 ser feita no projetor do usuário (relatório/log do Kodi).
 
-## Arquivos
+## Arquivos e publicação
 
-- APK: `SMARTEDTV-atual-v17-responsivo-universal.apk`
-- SHA-256: publicado junto do APK na release `v1.0.87-responsivo-v17`.
+- APK: `SMARTEDTV-atual-v17-responsivo-universal.apk` — 285.488.384 bytes.
+- SHA-256: `864b83047dbe93da7a8b8ec027cb7299a9c1896c02e84246d906767e440248fb`.
+- Release: `v1.0.87-responsivo-v17` (tag própria; a v16 permanece).
 - Código: `1.0.87`, versionCode `2103073`.
-- Workflow: `.github/workflows/build-v17-responsivo.yml`.
+- Workflow: `.github/workflows/build-v17-responsivo.yml`, execução `44142702539` (sucesso; o passo de assinatura conferiu a impressão digital
+  `855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`).
 - Ferramenta de atualização: `tools/kodi/atualizar-apk-v17.py`.
+- Commit do código: `7011c6d` (mais os ajustes de Startup/log em `1e62ae6`).
+- Provas visuais na release: `tela-720p.png`, `tela-1080p.png`, `tela-4k.png`,
+  `tela-dialogo-720p.png`, `tela-status-720p.png`.
+
+## Correção adicional encontrada no APK real
+
+O APK base da v16 ainda tinha `skin.novatv/xml/Startup.xml` com o
+`ReplaceWindow($INFO[System.StartupWindow])` antigo (só `skin.estuary` estava
+corrigida). O simulador de boot reprovou exatamente isso. A ferramenta agora
+aplica o disparo `AlarmClock(...RunScript(script.smartedtv.welcome))` +
+`RunScript(...,seguro=1)` em **todas** as skins com `Startup.xml` do APK, e não
+apenas na skin ativa. A execução `44142702539` passou nesse passo, no boot
+simulado e na assinatura.
