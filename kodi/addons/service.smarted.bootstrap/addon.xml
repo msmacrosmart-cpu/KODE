@@ -9,6 +9,9 @@
   <extension point="xbmc.python.script" library="check.py">
     <provides>executable</provides>
   </extension>
+  <extension point="xbmc.python.script" library="vip.py">
+    <provides>executable</provides>
+  </extension>
   <extension point="xbmc.addon.metadata">
     <summary lang="pt_BR">Garante o Brazuca Play registrado no primeiro boot</summary>
     <description lang="pt_BR">Verifica e restaura o plugin.video.BrazucaPlay.Matrix e suas dependências na pasta addons do perfil, cria os dados do addon e habilita os módulos no Kodi. Nenhum conteúdo é inventado: o reparo usa apenas os pacotes oficiais que já acompanham o aplicativo.</description>
