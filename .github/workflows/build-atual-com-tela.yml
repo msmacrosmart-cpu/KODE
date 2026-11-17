@@ -30,8 +30,12 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       BASE_RELEASE: v1.0.83-unificado
       BASE_ASSET: SMARTEDTV-atual.apk
-      TAG_SAIDA: v1.0.83-tela-inicial-v13
-      FINAL: SMARTEDTV-atual-com-tela-inicial-v13.apk
+      TAG_SAIDA: v1.0.84-tela-inicial-v14
+      FINAL: SMARTEDTV-atual-com-tela-inicial-v14.apk
+      VERSAO_DE: '1.0.83'
+      VERSAO_PARA: '1.0.84'
+      CODIGO_DE: '2103069'
+      CODIGO_PARA: '2103070'
     steps:
       - uses: actions/checkout@v4
 
@@ -339,6 +343,26 @@ jobs:
           print('OK: 120 -> checkout; 121 -> Dropbox; ordem do StartAndroidActivity correta')
           PY
 
+      - name: 6c. Subir versionCode/versionName (atualizacao por cima da v12/v13)
+        run: |
+          set -euo pipefail
+          python3 tools/kodi/ajustar-versao-apk.py build/bruto.apk \
+            build/bruto-versao.apk \
+            --de "$VERSAO_DE" --para "$VERSAO_PARA" \
+            --de-codigo "$CODIGO_DE" --para-codigo "$CODIGO_PARA"
+          mv build/bruto-versao.apk build/bruto.apk
+          python3 - <<'PY'
+          import struct, zipfile
+          with zipfile.ZipFile('build/bruto.apk') as z:
+              m = z.read('AndroidManifest.xml')
+          assert '1.0.84'.encode('utf-16-le') in m
+          assert struct.pack('<I', 2103070) in m
+          assert '1.0.83'.encode('utf-16-le') not in m
+          assert struct.pack('<I', 2103069) not in m
+          print('OK: APK agora e 1.0.84 (versionCode 2103070), pronto para atualizar')
+          PY
+          ls -lh build/bruto.apk
+
       - name: 7. Alinhar e assinar com a mesma chave
         run: |
           set -euo pipefail
@@ -389,8 +413,8 @@ jobs:
               "build/tela-entrada-prova.png" "build/tela-entrada-dialogo.png" \
               "build/tela-entrada-status.png" \
               --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title 'SMARTEDTV 1.0.83 + tela inicial (v13: TV, box, projetor e stick com area segura e controle remoto)'  \
-              --notes 'v13 (suporte a TV, Box, Projetor e Stick, mantendo o visual e tudo que ja funcionava). A tela de entrada agora tem uma variante DialogWelcomeTV.xml com area segura contra o overscan de TVs: o logo/titulo descem 20 px e recuam 62 px da esquerda, a barra/textos do rodape recuam para x=96/100, a barra do codigo sobe para 880 e a linha do campo/Ativar/Assistir sobe para 892, entao nada fica cortado nas bordas. A dica muda para "Use as setas e OK do controle.". O default.py detecta TV/box/projetor/stick por plataforma.txt (escolha antiga do app), pela resolucao 16:9 >= 1280x720 e pelo nome do aparelho (AFT/Fire/Shield/Chromecast/box/stick/projetor/leanback); celulares 18:9+ continuam com o layout normal. A deteccao e gravada em plataforma.txt (getFilesDir), que o Java AdTela usa para focar o botao Pular anuncio no controle remoto. O manifest do APK ja traz LEANBACK_LAUNCHER, banner, android.software.leanback required=false, android.hardware.touchscreen required=false e type.television required=false: instala e abre em TV, box, projetor e stick sem mudar a assinatura. D-pad: o campo 310 e o defaultcontrol; OK abre o teclado do Kodi, as setas navegam e VOLTAR funciona pelo keymap. Anuncios continuam em toda troca de conteudo e o VIP continua desligando-os; em aparelhos sem Google Play (Fire OS) o AdMob simplesmente nao preenche e a tela fecha sozinha, sem derrubar o app. Nada do visual original, botoes 120-123, VIP, tela de entrada ou dados do usuario foi removido. Prova: static-check (XML inclui a variante), testes TVBoxStickTest, simulador de boot, injecao byte a byte; nao houve execucao em aparelho real neste ambiente.'
+              --title 'SMARTEDTV 1.0.84 + tela inicial (v14: instala por cima da v12/v13; TV, box, projetor e stick)'  \
+              --notes 'v14 (1.0.84, versionCode 2103070). Esta build existe para resolver o "Aplicativo nao instalado": a v13 tinha o MESMO versionCode 2103069 da v12 e varias instaladoras (MIUI, Samsung, Android TV, Fire OS) recusam atualizar por cima com o mesmo codigo. Agora e uma atualizacao de verdade, assinada com a MESMA chave (855de171...) e com os MESMOS dados/VIP preservados. Mantem tudo da v13: variante DialogWelcomeTV.xml com area segura contra overscan (logo/titulo 20 px abaixo e 62 px para dentro, rodape em 880/892, textos em x=100, dica "Use as setas e OK do controle."), deteccao de TV/box/projetor/stick por plataforma.txt/resolucao/nome, campo 310 como defaultcontrol, teclado real do Kodi, VIP e anuncios como antes. Se a instaladora disser "app nao instalado" mesmo assim: (1) permita "instalar apps desconhecidos" para o navegador/gerenciador usado; (2) no Play Protect, toque em "Instalar mesmo assim"; (3) se houver uma versao antiga assinada com OUTRA chave, desinstale-a antes (perde os dados; reative o VIP); (4) libere pelo menos 700 MB livres; (5) confira o SHA-256 do arquivo baixado. TV/box/stick: instale pelo Downloader com "Apps de fontes desconhecidas" ligado. Nada do visual, botoes 120-123, VIP, tela de entrada ou dados do usuario foi removido. Prova: static-check, testes TVBoxStickTest, manifest conferido (1.0.84/2103070), assinatura conferida com o certificado 855de171..., injecao byte a byte; nao houve execucao em aparelho real neste ambiente.'
           fi
           echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_SAIDA/$FINAL"
 
