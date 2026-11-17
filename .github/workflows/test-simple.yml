@@ -1,0 +1,11 @@
+name: simple-test
+
+on:
+  push:
+    branches: [arena/28b146c9-kode]
+
+jobs:
+  hello:
+    runs-on: ubuntu-22.04
+    steps:
+      - run: echo "hello world"
