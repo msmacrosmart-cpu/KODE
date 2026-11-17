@@ -106,13 +106,33 @@ jobs:
 
       - name: 8. Compilar Kodi armv7
         run: |
-          set -euo pipefail
-          test -d "$RUNNER_TEMP/xbmc-depends/lib"
-          mkdir -p "$RUNNER_TEMP/kodi-build-armv7"
-          make -C "$RUNNER_TEMP/kodi/tools/depends/target/cmakebuildsys" \
-            BUILD_DIR="$RUNNER_TEMP/kodi-build-armv7"
-          make -C "$RUNNER_TEMP/kodi-build-armv7" -j2
-          echo "livre apos kodi: $(df -h --output=avail / | tail -1)"
+          set +e
+          set -uo pipefail
+          mkdir -p build
+          test -d "$RUNNER_TEMP/xbmc-depends/lib" || echo "AVISO: prefixo de depends nao encontrado"
+          {
+            echo "== cmakebuildsys =="
+            make -C "$RUNNER_TEMP/kodi/tools/depends/target/cmakebuildsys" \
+              BUILD_DIR="$RUNNER_TEMP/kodi-build-armv7"
+            RC1=$?
+            echo "RC cmakebuildsys=$RC1"
+            if [ "$RC1" -eq 0 ]; then
+              echo "== make kodi =="
+              make -C "$RUNNER_TEMP/kodi-build-armv7" -j2
+              RC2=$?
+            else
+              RC2=$RC1
+            fi
+            echo "RC make=$RC2"
+          } > build/build-armv7.log 2>&1
+          tail -400 build/build-armv7.log
+          tail -400 build/build-armv7.log > build/erro-armv7.txt
+          git config user.name 'build-armv7'
+          git config user.email 'build-armv7@users.noreply.github.com'
+          git add build/erro-armv7.txt
+          git diff --cached --quiet || git commit -m "diag: fim do log do build armv7"
+          git push origin HEAD:arena/39a14845-kode || true
+          grep -q 'RC make=0' build/build-armv7.log || exit 1
 
       - name: 9. Empacotar APK armv7 e extrair as libs
         env:
