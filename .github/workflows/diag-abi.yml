@@ -47,7 +47,7 @@ jobs:
           cat build/download.log
       - name: Comparar libs e classes
         run: |
-          set -euo pipefail
+          set +e
           {
             echo "== downloads"
             cat build/download.log 2>/dev/null || true
@@ -122,11 +122,12 @@ jobs:
             strings build/classes.dex | grep -E 'Lorg/xbmc/kodi/Main;|Lsmartedtv/full' | sort -u | head -20
           } > docs/abi-merge-info.txt 2>&1
           cat docs/abi-merge-info.txt
+          test -s docs/abi-merge-info.txt
       - name: Commitar relatorio
         run: |
           set -euo pipefail
           git config user.name 'diag-abi'
           git config user.email 'diag-abi@users.noreply.github.com'
           git add docs/abi-merge-info.txt
-          git commit -m "diag: comparar libs arm64 do SMARTEDTV com Kodi oficial e listar armv7"
+          git diff --cached --quiet || git commit -m "diag: comparar libs arm64 do SMARTEDTV com Kodi oficial e listar armv7"
           git push origin HEAD:arena/39a14845-kode
