@@ -30,8 +30,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       BASE_RELEASE: v1.0.83-unificado
       BASE_ASSET: SMARTEDTV-atual.apk
-      TAG_SAIDA: v1.0.83-tela-inicial-v12
-      FINAL: SMARTEDTV-atual-com-tela-inicial-v12.apk
+      TAG_SAIDA: v1.0.83-tela-inicial-v13
+      FINAL: SMARTEDTV-atual-com-tela-inicial-v13.apk
     steps:
       - uses: actions/checkout@v4
 
@@ -158,6 +158,7 @@ jobs:
               print("DEBUG removidos=%s" % removidos)
               obrigatorios = ('addon.xml', 'default.py',
                               'resources/skins/Default/1080i/DialogWelcome.xml',
+                              'resources/skins/Default/1080i/DialogWelcomeTV.xml',
                               'resources/skins/Default/media/bg.png',
                               'resources/skins/Default/media/qr_checkout.png',
                               'resources/skins/Default/media/qr_apk.png')
@@ -213,6 +214,7 @@ jobs:
                       raise SystemExit('APK base ja tinha a tela: ' + n)
               # a tela vai como esta no repositorio (gerada do pacote)
               for relativo in ('resources/skins/Default/1080i/DialogWelcome.xml',
+                               'resources/skins/Default/1080i/DialogWelcomeTV.xml',
                                'resources/skins/Default/media/qr_checkout.png',
                                'resources/skins/Default/media/qr_apk.png',
                                'resources/skins/Default/media/bg.png'):
@@ -280,11 +282,13 @@ jobs:
               ads = z.read(SMART)
               servico = z.read(SERVICO)
               xml = z.read(PREFIX + 'resources/skins/Default/1080i/DialogWelcome.xml')
+              xml_tv = z.read(PREFIX + 'resources/skins/Default/1080i/DialogWelcomeTV.xml')
               tela_txt = tela.decode('utf-8')
               vip_txt = vip.decode('utf-8')
               ads_txt = ads.decode('utf-8')
               servico_txt = servico.decode('utf-8')
               xml_txt = xml.decode('utf-8')
+              xml_tv_txt = xml_tv.decode('utf-8')
           assert tela == open('kodi/addons/' + ADDON + '/default.py', 'rb').read()
           assert vip == open('kodi/addons/service.smarted.bootstrap/vip.py', 'rb').read()
           assert ads == open('kodi/addons/service.smarted.bootstrap/smart_ads.py', 'rb').read()
@@ -304,6 +308,11 @@ jobs:
           assert "comando_ok('RestartApp'" not in tela_txt
           assert 'welcome_teclado' not in xml_txt
           assert 'id="960"' not in xml_txt
+          # variante TV/box/projetor/stick: area segura contra overscan
+          assert xml_tv == open('kodi/addons/' + ADDON +
+                                '/resources/skins/Default/1080i/DialogWelcomeTV.xml', 'rb').read()
+          assert 'Use as setas e OK do controle.' in xml_tv_txt
+          assert '>310<' in xml_tv_txt
           # --- VIP: rota real e campo certo ---
           assert 'https://smartedtv-vip.lovable.app/api/public/validar-codigo' in vip_txt
           assert "{'code': codigo}" in vip_txt
@@ -380,8 +389,8 @@ jobs:
               "build/tela-entrada-prova.png" "build/tela-entrada-dialogo.png" \
               "build/tela-entrada-status.png" \
               --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title 'SMARTEDTV 1.0.83 + tela inicial (v12: anuncio em toda troca de conteudo e VIP pelo site)' \
-              --notes 'v12 (anuncios por troca de conteudo + ativacao VIP real + correcao do app que fechava sozinho). ANUNCIOS: o gancho do xbmc.Player no service.py do APK base ja existia, mas o smart_ads.py que estava dentro do APK usava nomes de classe antigos/origem errada e nao estava no repositorio; agora o injetor substitui smart_ads.py e vip.py pela versao do repositorio (byte a byte). O intersticial pede a activity EXISTENTE smartedtv.full.PreRollActivity por StartAndroidActivity com 9 parametros (className no ultimo, intent nao vazio). O gancho escuta onPlayBackStarted e onAVStarted e usa caminho + canal/titulo como chave: canal->canal, filme->filme, episodio->episodio e repetir o mesmo conteudo depois de parar pedem anuncio; so o par de callbacks do MESMO inicio e deduplicado (janela de 10 s, configuravel em ads_intervalo). VIP ativo continua sem anuncios. VIP: a validacao usa a rota real confirmada do site, POST https://smartedtv-vip.lovable.app/api/public/validar-codigo com corpo {"code":"..."} (nao e "codigo", nao e /api/validar). So ativa com active=true de verdade; 403 de codigo invalido NAO tenta uma segunda rota; 200 sem active NAO ativa. A licenca e gravada em addon_data/service.smarted.bootstrap/vip.json (o caminho que o Java Licenca/SmartAds le), com ativo=true e expira em AAAA-MM-DD; a tela e o service usam o mesmo arquivo (o antigo userdata/vip.json era ignorado pelo app). A ativacao roda em thread (a rede nao trava mais a interface) e tem um vigia de 30 s; o resultado aparece no dialogo de status e o OK leva a Home. FECHA SOZINHO: removido o RestartApp de ultimo recurso do _ir_para_home (agora tenta ActivateWindow/ReplaceWindow e, se falhar, mantem o app aberto e avisa); removido o overlay falso do teclado (grupo 960) que cobria o campo 310 e impedia o clique de abrir o teclado real do Kodi; o campo e o botao Ativar abrem o teclado do Kodi. LIMITE CONHECIDO: colar da area de transferencia do Android nao existe no Kodi 21.3 (getClipboard nao implementado no WinSystemAndroid); o codigo usa getClipboard se uma versao futura expuser a API, mas nesta versao a digitacao e pelo teclado do Kodi. Nada de visual, layout, skin, motor, assinatura ou dados do usuario foi alterado; o APK e instalado por cima (mesma chave). Prova: static-check, simulador de boot, testes de botoes e injecao byte a byte; nao houve execucao em aparelho real neste ambiente.'
+              --title 'SMARTEDTV 1.0.83 + tela inicial (v13: TV, box, projetor e stick com area segura e controle remoto)'  \
+              --notes 'v13 (suporte a TV, Box, Projetor e Stick, mantendo o visual e tudo que ja funcionava). A tela de entrada agora tem uma variante DialogWelcomeTV.xml com area segura contra o overscan de TVs: o logo/titulo descem 20 px e recuam 62 px da esquerda, a barra/textos do rodape recuam para x=96/100, a barra do codigo sobe para 880 e a linha do campo/Ativar/Assistir sobe para 892, entao nada fica cortado nas bordas. A dica muda para "Use as setas e OK do controle.". O default.py detecta TV/box/projetor/stick por plataforma.txt (escolha antiga do app), pela resolucao 16:9 >= 1280x720 e pelo nome do aparelho (AFT/Fire/Shield/Chromecast/box/stick/projetor/leanback); celulares 18:9+ continuam com o layout normal. A deteccao e gravada em plataforma.txt (getFilesDir), que o Java AdTela usa para focar o botao Pular anuncio no controle remoto. O manifest do APK ja traz LEANBACK_LAUNCHER, banner, android.software.leanback required=false, android.hardware.touchscreen required=false e type.television required=false: instala e abre em TV, box, projetor e stick sem mudar a assinatura. D-pad: o campo 310 e o defaultcontrol; OK abre o teclado do Kodi, as setas navegam e VOLTAR funciona pelo keymap. Anuncios continuam em toda troca de conteudo e o VIP continua desligando-os; em aparelhos sem Google Play (Fire OS) o AdMob simplesmente nao preenche e a tela fecha sozinha, sem derrubar o app. Nada do visual original, botoes 120-123, VIP, tela de entrada ou dados do usuario foi removido. Prova: static-check (XML inclui a variante), testes TVBoxStickTest, simulador de boot, injecao byte a byte; nao houve execucao em aparelho real neste ambiente.'
           fi
           echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_SAIDA/$FINAL"
 

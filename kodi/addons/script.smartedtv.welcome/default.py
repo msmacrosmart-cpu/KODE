@@ -69,6 +69,7 @@ Pressionar e segurar o 121 continua abrindo o compartilhamento nativo
 from __future__ import absolute_import, unicode_literals
 
 import os
+import re
 import sys
 import threading
 import time
@@ -81,6 +82,11 @@ import xbmcvfs
 ADDON_ID = 'script.smartedtv.welcome'
 SERVICO = 'service.smarted.bootstrap'
 XML_RELATIVO = 'resources/skins/Default/1080i/DialogWelcome.xml'
+XML_ARQUIVO = 'DialogWelcome.xml'
+# Variante com area segura para TV/box/projetor/stick (overscan).
+XML_TV_RELATIVO = 'resources/skins/Default/1080i/DialogWelcomeTV.xml'
+XML_TV_ARQUIVO = 'DialogWelcomeTV.xml'
+PLATAFORMA_ARQUIVO = 'special://home/../plataforma.txt'
 MARCA_ABERTA = 'smartedtv.welcome.ativa'
 MARCA_SAIU = 'smartedtv.welcome.saiu'      # a tela saiu de cena
 MARCA_HOME = 'smartedtv.welcome.home'      # abrindo|ok|restart
@@ -155,6 +161,116 @@ def _vip():
     except Exception as erro:
         _log('modulo vip indisponivel: %s' % erro, xbmc.LOGWARNING)
         return None
+
+
+_PLATAFORMA_GRAVADA = [False]
+
+
+def _caminho_plataforma():
+    try:
+        return xbmcvfs.translatePath(PLATAFORMA_ARQUIVO)
+    except Exception:
+        return ''
+
+
+def _plataforma_salva():
+    """Le a escolha antiga do app (celular/tv) gravada pelo Java Plataforma."""
+    caminho = _caminho_plataforma()
+    if not caminho:
+        return ''
+    try:
+        if not xbmcvfs.exists(caminho):
+            return ''
+        arquivo = xbmcvfs.File(caminho)
+        try:
+            texto = (arquivo.read() or '')
+        finally:
+            arquivo.close()
+        if isinstance(texto, bytes):
+            texto = texto.decode('utf-8', 'replace')
+        texto = texto.strip().lower()
+        if texto.startswith('tv'):
+            return 'tv'
+        if texto.startswith('celular'):
+            return 'celular'
+    except Exception:
+        pass
+    return ''
+
+
+def _gravar_plataforma(modo):
+    """Compartilha a deteccao com o Java (AdTela usa para focar o Pular)."""
+    if _PLATAFORMA_GRAVADA[0]:
+        return
+    caminho = _caminho_plataforma()
+    if not caminho:
+        return
+    try:
+        arquivo = xbmcvfs.File(caminho, 'w')
+        try:
+            arquivo.write(('%s\n' % modo).encode('utf-8'))
+        finally:
+            arquivo.close()
+        _PLATAFORMA_GRAVADA[0] = True
+    except Exception:
+        pass
+
+
+def _parece_tv():
+    """TV, box, projetor ou stick: tela 16:9 grande e/ou nome de aparelho."""
+    try:
+        if not xbmc.getCondVisibility('System.Platform.Android'):
+            return False
+    except Exception:
+        return False
+    try:
+        resolucao = xbmc.getInfoLabel('System.ScreenResolution') or ''
+    except Exception:
+        resolucao = ''
+    achado = re.search(r'(\d{3,5})\s*[xX]\s*(\d{3,5})', resolucao)
+    if achado:
+        largura, altura = int(achado.group(1)), int(achado.group(2))
+        if altura >= 720 and largura >= 1280:
+            proporcao = float(largura) / float(altura)
+            # 16:9 (TV/box/stick/projetor). Celulares atuais sao 18:9 ou mais.
+            if 1.60 <= proporcao <= 1.90:
+                return True
+    try:
+        nome = (xbmc.getInfoLabel('System.FriendlyName') or '').lower()
+    except Exception:
+        nome = ''
+    for marca in ('tv', 'box', 'stick', 'fire', 'aft', 'shield',
+                  'chromecast', 'projector', 'projetor', 'leanback'):
+        if marca in nome:
+            return True
+    return False
+
+
+def _modo_tv():
+    """True = usa a variante com margem de overscan.
+
+    A escolha antiga (plataforma.txt) manda; sem ela, detecta pela resolucao e
+    pelo nome do aparelho. A deteccao tambem e gravada para o Java, que assim
+    sabe focar o botao Pular do anuncio no controle remoto.
+    """
+    salvo = _plataforma_salva()
+    if salvo:
+        return salvo == 'tv'
+    tv = _parece_tv()
+    _gravar_plataforma('tv' if tv else 'celular')
+    return tv
+
+
+def _xml_da_tela(pasta):
+    """XML a abrir: a variante TV quando o aparelho pede area segura."""
+    if _modo_tv():
+        caminho = os.path.join(pasta, XML_TV_RELATIVO)
+        try:
+            if xbmcvfs.exists(caminho):
+                return XML_TV_ARQUIVO
+        except Exception:
+            pass
+    return XML_ARQUIVO
 
 
 def _pasta_da_tela():
@@ -835,7 +951,7 @@ def voltar_para_a_tela():
     _definir(MARCA_ABERTA, '1')
     _definir(MARCA_HOME, 'ok')
     try:
-        janela = WelcomeDialog('DialogWelcome.xml', pasta, 'Default', '1080i')
+        janela = WelcomeDialog(_xml_da_tela(pasta), pasta, 'Default', '1080i')
     except Exception as erro:
         _log('falha ao montar a tela (voltar): %s' % erro, xbmc.LOGERROR)
         _limpar(MARCA_VOLTAR)
@@ -867,7 +983,7 @@ def abrir_tela_entrada():
         _ir_para_home('tela de entrada indisponivel')
         return False
     try:
-        janela = WelcomeDialog('DialogWelcome.xml', pasta, 'Default', '1080i')
+        janela = WelcomeDialog(_xml_da_tela(pasta), pasta, 'Default', '1080i')
     except Exception as erro:
         _log('falha ao montar a tela: %s' % erro, xbmc.LOGERROR)
         _ir_para_home('tela de entrada indisponivel')

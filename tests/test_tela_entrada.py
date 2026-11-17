@@ -918,3 +918,47 @@ class BotoesAndroidTest(unittest.TestCase):
                   if b.startswith('StartAndroidActivity(,android.intent.action.SEND,')]
         self.assertEqual(len(envios), 1, self.xbmc.BUILTINS)
         self.assertIn('android.intent.extra.TEXT', envios[0])
+
+
+class TVBoxStickTest(unittest.TestCase):
+    """A mesma tela precisa funcionar em TV/box/projetor/stick (overscan)."""
+
+    TV = ADDON / 'resources' / 'skins' / 'Default' / '1080i' / 'DialogWelcomeTV.xml'
+
+    def test_variante_tv_tem_area_segura_e_o_campo_310(self):
+        self.assertTrue(self.TV.is_file(), 'DialogWelcomeTV.xml ausente')
+        raiz = ET.parse(self.TV).getroot()
+        self.assertEqual(raiz.findtext('defaultcontrol'), '310')
+        for ident in ('10', '11', '12'):
+            topo = int(raiz.find(".//control[@id='%s']/top" % ident).text)
+            self.assertGreaterEqual(topo, 60, 'logo/titulo no overscan: %s' % ident)
+        for ident in ('6', '60', '61', '310', '311', '312'):
+            controle = raiz.find(".//control[@id='%s']" % ident)
+            topo = int(controle.findtext('top'))
+            altura = int(controle.findtext('height') or '0')
+            self.assertLessEqual(topo + altura, 1000,
+                                 'linha do codigo no overscan: %s' % ident)
+        self.assertIn('setas', raiz.find(".//control[@id='61']/label").text.lower())
+        # 5% de overscan lateral: nada de texto/logo antes de x=96
+        for ident in ('10', '60', '61'):
+            esquerda = int(raiz.find(".//control[@id='%s']/left" % ident).text)
+            self.assertGreaterEqual(esquerda, 96, 'texto no overscan: %s' % ident)
+
+    def test_detecta_tv_por_resolucao_e_nao_por_celular(self):
+        modulo, xbmc, _ = carregar_default()
+        xbmc.getCondVisibility = lambda consulta: True
+        xbmc.getInfoLabel = lambda info: (
+            '1920x1080 @ 60.00 Hz - Fullscreen'
+            if info == 'System.ScreenResolution' else '')
+        self.assertTrue(modulo._parece_tv())
+        xbmc.getInfoLabel = lambda info: (
+            '2400x1080 @ 60.00 Hz - Fullscreen'
+            if info == 'System.ScreenResolution' else '')
+        self.assertFalse(modulo._parece_tv())
+
+    def test_escolhe_o_xml_da_variante(self):
+        modulo, _, _ = carregar_default()
+        modulo._modo_tv = lambda: True
+        self.assertEqual(modulo._xml_da_tela(str(ADDON)), 'DialogWelcomeTV.xml')
+        modulo._modo_tv = lambda: False
+        self.assertEqual(modulo._xml_da_tela(str(ADDON)), 'DialogWelcome.xml')
