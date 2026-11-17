@@ -85,7 +85,7 @@ def intervalo_configurado(padrao=PREROLL_INTERVALO):
         import xbmcaddon
         bruto = xbmcaddon.Addon().getSetting('ads_intervalo')
         valor = int(float(bruto))
-        return valor if 1 <= valor <= 15 else padrao
+        return valor if 6 <= valor <= 15 else padrao
     except Exception:
         return padrao
 
