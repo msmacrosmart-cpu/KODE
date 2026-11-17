@@ -312,4 +312,4 @@ jobs:
           subprocess.run(['gh', 'release', 'edit', os.environ['TAG_SAIDA'],
                           '--repo', repo, '--notes', notas], check=True)
           PY
-# build acionado: patch_startup aceita formatos variados do Startup.xml
+# build acionado: botoes 120 e 121 saem do app via StartAndroidActivity direto
