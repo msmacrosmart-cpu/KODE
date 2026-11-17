@@ -275,12 +275,15 @@ auditoria tipográfica ou o mapa de botões falharem.
 
 - Release: `v1.0.83-tela-inicial-v9` (base visual = tela da v5 + os ajustes
   lista dos em 4a-0b)
-- APK: `SMARTEDTV-atual-com-tela-inicial-v9.apk` (tamanho e SHA-256 no corpo da
-  release, junto com os blocos `APK_BLOBS`)
+- APK: `SMARTEDTV-atual-com-tela-inicial-v9.apk`, 249.856.123 bytes,
+  SHA-256 `9cc101cc7ca7bec8be3c6177a2f822d9f0306ed01dcff0b43c461e5a7ffe6cce`
 - Assinatura: `855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`
 - Delta sobre o APK atual: +26 arquivos do addon da tela, +1 keymap
   (`assets/system/keymaps/zzz-smartedtv-voltar.xml`), 0 removidos e 7 arquivos
   alterados (`Startup.xml` e `Font.xml` das 3 skins + `addon-manifest.xml`)
+- Workflow `44003349149` (todos os passos verdes). APK reconstruído a partir
+  dos `APK_BLOBS`: hash confere, os 26 arquivos do addon e o keymap são
+  idênticos byte a byte aos do repositório.
 - Conferido: `Startup.xml` das 3 skins com 2 `onload` e zero `ReplaceWindow`;
   keymap só com a seção `<Home>`; addon `optional="true"`; perfil semeado
   intacto; `service.smarted.bootstrap` sem alteração.
