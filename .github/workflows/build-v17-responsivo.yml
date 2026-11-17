@@ -21,12 +21,15 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       BASE_RELEASE: v1.0.86-tela-inicial-v16
       BASE_ASSET: SMARTEDTV-atual-com-tela-inicial-v16-universal.apk
-      TAG_SAIDA: v1.0.88-reabertura-v18
-      FINAL: SMARTEDTV-atual-v18-reabertura-universal.apk
+      TAG_SAIDA: v1.0.89-instalacao-v19
+      FINAL: SMARTEDTV-atual-v19-instalacao-universal.apk
+      FINAL_ARM64: SMARTEDTV-atual-v19-instalacao-arm64.apk
+      FINAL_ARM32: SMARTEDTV-atual-v19-instalacao-arm32.apk
+      FINAL_V2: SMARTEDTV-atual-v19-instalacao-v2.apk
       VERSAO_DE: '1.0.86'
-      VERSAO_PARA: '1.0.88'
+      VERSAO_PARA: '1.0.89'
       CODIGO_DE: '2103072'
-      CODIGO_PARA: '2103074'
+      CODIGO_PARA: '2103075'
     steps:
       - uses: actions/checkout@v4
 
@@ -148,7 +151,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add -f build/diag.txt
-          git commit -m "[v18][skip ci] diagnostico do APK" || true
+          git commit -m "[v19][skip ci] diagnostico do APK" || true
           git push origin HEAD:arena/39a14845-kode || true
 
       - name: 4. Simular o boot (sem tela preta e com foco)
@@ -162,12 +165,12 @@ jobs:
             git config user.name 'github-actions[bot]'
             git config user.email 'github-actions[bot]@users.noreply.github.com'
             git add -f build/boot.log
-            git commit -m "[v18][skip ci] log do simulador de boot"
+            git commit -m "[v19][skip ci] log do simulador de boot"
             git push origin HEAD:arena/39a14845-kode
           fi
           exit "$RC"
 
-      - name: 5. Subir versao 1.0.88 / 2103074
+      - name: 5. Subir versao 1.0.89 / 2103075
         run: |
           set -euo pipefail
           python3 tools/kodi/ajustar-versao-apk.py build/bruto.apk \
@@ -179,8 +182,8 @@ jobs:
           import struct, zipfile
           with zipfile.ZipFile('build/bruto.apk') as z:
               m = z.read('AndroidManifest.xml')
-          assert '1.0.88'.encode('utf-16-le') in m
-          assert struct.pack('<I', 2103074) in m
+          assert '1.0.89'.encode('utf-16-le') in m
+          assert struct.pack('<I', 2103075) in m
           assert '1.0.86'.encode('utf-16-le') not in m
           assert struct.pack('<I', 2103072) not in m
           import importlib.util
@@ -191,31 +194,73 @@ jobs:
           _, alterados, vistos = mod.desligar_debug(m)
           assert not alterados, alterados
           assert 'debuggable' in [nome for _elemento, nome in vistos], vistos
-          print('OK: 1.0.88/2103074 e debuggable=false')
+          print('OK: 1.0.89/2103075 e debuggable=false')
           PY
 
-      - name: 6. Alinhar e assinar com a mesma chave
+      - name: 6. Gerar variantes, alinhar e assinar com a mesma chave
         run: |
           set -euo pipefail
           export KODE_BUILD_HOME="$RUNNER_TEMP/kode-build"
           ./tools/kodi/setup.sh
-          python3 tools/kodi/align-apk.py build/bruto.apk build/alinhado.apk
           JAVA="$KODE_BUILD_HOME/python/jdk4py/java-runtime/bin/java"
           SIGNER="$KODE_BUILD_HOME/tools/apksigner.jar"
-          "$JAVA" -jar "$SIGNER" sign \
-            --ks dropbox/smarted-tv-test.jks \
-            --ks-pass pass:android --key-pass pass:android \
-            --ks-key-alias smarted-tv-test \
-            --v1-signing-enabled true --v2-signing-enabled true \
-            --v3-signing-enabled true --v4-signing-enabled false \
-            --out "build/$FINAL" build/alinhado.apk
-          "$JAVA" -jar "$SIGNER" verify --verbose --print-certs "build/$FINAL" \
-            | tee build/certs.txt
-          grep -qi "855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a" build/certs.txt
-          rm -f build/bruto.apk build/alinhado.apk
-          ( cd build && sha256sum "$FINAL" > "$FINAL.sha256" )
-          ls -lh "build/$FINAL"
-          cat "build/$FINAL.sha256"
+          python3 - <<'PY'
+          import zipfile
+          from pathlib import Path
+          base = Path('build/bruto.apk')
+          for saida, remover in (
+              (Path('build/bruto-arm64.apk'), 'lib/armeabi-v7a/'),
+              (Path('build/bruto-arm32.apk'), 'lib/arm64-v8a/')):
+              with zipfile.ZipFile(base) as z, zipfile.ZipFile(saida, 'w', allowZip64=True) as o:
+                  for item in z.infolist():
+                      if item.is_dir() or item.filename.startswith(remover):
+                          continue
+                      o.writestr(item, z.read(item.filename))
+              print(saida, saida.stat().st_size)
+          PY
+          assinar() {
+            local origem="$1" destino="$2" v3="$3"
+            python3 tools/kodi/align-apk.py "$origem" build/alinhado.apk
+            "$JAVA" -jar "$SIGNER" sign \
+              --ks dropbox/smarted-tv-test.jks \
+              --ks-pass pass:android --key-pass pass:android \
+              --ks-key-alias smarted-tv-test \
+              --v1-signing-enabled true --v2-signing-enabled true \
+              --v3-signing-enabled "$v3" --v4-signing-enabled false \
+              --out "$destino" build/alinhado.apk
+            "$JAVA" -jar "$SIGNER" verify --verbose --print-certs "$destino" \
+              > "build/certs-$(basename "$destino").txt"
+            grep -qi "855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a" \
+              "build/certs-$(basename "$destino").txt"
+            echo "assinado: $destino"
+          }
+          assinar build/bruto.apk "build/$FINAL" true
+          assinar build/bruto-arm64.apk "build/$FINAL_ARM64" true
+          assinar build/bruto-arm32.apk "build/$FINAL_ARM32" true
+          # Alguns firmwares Android 11 de projetor rejeitam o bloco v3; variante v1+v2.
+          cp build/bruto.apk build/bruto-v2.apk
+          assinar build/bruto-v2.apk "build/$FINAL_V2" false
+          python3 - <<'PY'
+          import os, zipfile
+          esperado = {
+              os.environ['FINAL']: ('lib/arm64-v8a/libkodi.so', 'lib/armeabi-v7a/libkodi.so'),
+              os.environ['FINAL_ARM64']: ('lib/arm64-v8a/libkodi.so',),
+              os.environ['FINAL_ARM32']: ('lib/armeabi-v7a/libkodi.so',),
+              os.environ['FINAL_V2']: ('lib/arm64-v8a/libkodi.so', 'lib/armeabi-v7a/libkodi.so'),
+          }
+          for nome, libs in esperado.items():
+              with zipfile.ZipFile('build/' + nome) as z:
+                  nomes = z.namelist()
+              for lib in libs:
+                  assert lib in nomes, (nome, lib)
+              print('OK', nome, 'ABIs conferidas')
+          PY
+          rm -f build/bruto.apk build/bruto-arm64.apk build/bruto-arm32.apk \
+                build/bruto-v2.apk build/alinhado.apk
+          ( cd build && sha256sum "$FINAL" "$FINAL_ARM64" "$FINAL_ARM32" "$FINAL_V2" \
+              > hashes-v19.txt )
+          ls -lh "build/$FINAL" "build/$FINAL_ARM64" "build/$FINAL_ARM32" "build/$FINAL_V2"
+          cat build/hashes-v19.txt
 
       - name: 7. Provas visuais 720p/1080p/4K
         run: |
@@ -233,16 +278,17 @@ jobs:
             --dialogo status --resolucao 1280x720 --saida build/tela-status-720p.png
           ls -lh build/tela-*.png
 
-      - name: 8. Publicar release v18
+      - name: 8. Publicar release v19
         run: |
           set -euo pipefail
-          NOTAS='v18 (1.0.88, versionCode 2103074). Reabertura apos Sair: Quit nativo + guarda que encerra somente o proprio processo se o Android mantiver a instancia antiga. Barra VIP centralizada e alinhada, area segura de 5% para TV, textos e campo redistribuidos sem reduzir a interface em bloco. Addons: addon.xml do servico em XML 1.0, sem a extensao duplicada de vip.py, versoes 1.0.9/1.0.1, check.py e addon.xml incluidos no APK rapido; addons do app sao habilitados antes do Startup. Mantem ABIs, assinatura, perfil e VIP. Validacao automatizada; teste fisico de 10 ciclos de reabertura ainda pendente.'
+          NOTAS='v19 (1.0.89, versionCode 2103075) - entrega para instalacao. Quatro APKs com a MESMA assinatura e o MESMO pacote: universal (arm64+arm32), arm64, arm32 e v2 (sem bloco de assinatura v3), para projetor/firmware que recusa a instalacao. versionCode novo tambem evita sobra de tentativa anterior. Correcoes da v18 mantidas (reabertura, barra VIP, area segura, addons). Validacao: ZIP/assinatura/alinhamento no CI; nao testado em aparelho fisico.'
           ASSETS=(
-            "build/$FINAL" "build/$FINAL.sha256"
+            "build/$FINAL" "build/$FINAL_ARM64" "build/$FINAL_ARM32" "build/$FINAL_V2"
+            build/hashes-v19.txt
             build/tela-720p.png build/tela-1080p.png build/tela-4k.png
             build/tela-dialogo-720p.png build/tela-status-720p.png
           )
-          TITULO='SMARTEDTV 1.0.88 (v18: reabertura confiavel, barra VIP e area segura)'
+          TITULO='SMARTEDTV 1.0.89 (v19: instalacao universal, arm64, arm32 e assinatura v2)'
           if gh release view "$TAG_SAIDA" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG_SAIDA" "${ASSETS[@]}" \
               --repo "$GITHUB_REPOSITORY" --clobber
