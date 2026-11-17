@@ -124,8 +124,11 @@ jobs:
               open('kodi/addons/service.smarted.bootstrap/service.py', 'rb').read()
           conferir('assets/addons/skin.novatv/xml/Home.xml',
                    'kodi/skin.novatv/xml/Home.xml')
-          conferir('assets/addons/skin.novatv/xml/ShutdownMenu.xml',
-                   'kodi/skin.novatv/xml/ShutdownMenu.xml')
+          conferir('assets/addons/skin.novatv/xml/DialogButtonMenu.xml',
+                   'kodi/skin.novatv/xml/DialogButtonMenu.xml')
+          if 'assets/addons/skin.novatv/xml/ShutdownMenu.xml' in nomes:
+              conferir('assets/addons/skin.novatv/xml/ShutdownMenu.xml',
+                       'kodi/skin.novatv/xml/ShutdownMenu.xml')
           print('OK: duas ABIs + tela/servico/anuncios/skin do repositorio')
           PY
 

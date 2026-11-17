@@ -6,20 +6,23 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MENU = ROOT / 'kodi' / 'skin.novatv' / 'xml' / 'ShutdownMenu.xml'
+MENU_ATIVO = ROOT / 'kodi' / 'skin.novatv' / 'xml' / 'DialogButtonMenu.xml'
 WELCOME = ROOT / 'kodi' / 'addons' / 'script.smartedtv.welcome' / 'default.py'
 
 
 class SaidaLimpaTest(unittest.TestCase):
     def test_menu_energia_sai_pela_tela_de_entrada(self):
-        raiz = ET.parse(MENU).getroot()
-        sair = raiz.find(".//control[@id='3504']")
-        self.assertIsNotNone(sair)
-        self.assertEqual(
-            (sair.findtext('onclick') or '').strip(),
-            'RunScript(script.smartedtv.welcome,sair)')
-        self.assertEqual((sair.findtext('visible') or '').strip(), 'true')
-        reiniciar = raiz.find(".//control[@id='3508']")
-        self.assertIn('RestartApp', reiniciar.findtext('onclick') or '')
+        for caminho in (MENU_ATIVO, MENU):
+            raiz = ET.parse(caminho).getroot()
+            sair = raiz.find(".//control[@id='3504']")
+            self.assertIsNotNone(sair, caminho)
+            self.assertEqual(
+                (sair.findtext('onclick') or '').strip(),
+                'RunScript(script.smartedtv.welcome,sair)', caminho)
+            self.assertEqual((sair.findtext('visible') or '').strip(), 'true',
+                             caminho)
+            reiniciar = raiz.find(".//control[@id='3508']")
+            self.assertIn('RestartApp', reiniciar.findtext('onclick') or '')
 
     def test_saida_fecha_janelas_e_pede_quit_nativo(self):
         fonte = WELCOME.read_text(encoding='utf-8')

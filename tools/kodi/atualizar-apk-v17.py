@@ -42,6 +42,8 @@ KEYMAP_DESTINO = 'assets/system/keymaps/zzz-smartedtv-voltar.xml'
 SKIN_ARQUIVOS = {
     'assets/addons/skin.novatv/xml/Home.xml':
         ROOT / 'kodi' / 'skin.novatv' / 'xml' / 'Home.xml',
+    'assets/addons/skin.novatv/xml/DialogButtonMenu.xml':
+        ROOT / 'kodi' / 'skin.novatv' / 'xml' / 'DialogButtonMenu.xml',
     'assets/addons/skin.novatv/xml/ShutdownMenu.xml':
         ROOT / 'kodi' / 'skin.novatv' / 'xml' / 'ShutdownMenu.xml',
 }

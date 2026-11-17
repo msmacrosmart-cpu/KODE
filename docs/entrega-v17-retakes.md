@@ -169,7 +169,8 @@ em um Android 8; medir tempo até “pular” e alcançar o botão com D-pad.
 
 ### Mudanças
 
-- Menu Energia (`skin.novatv/ShutdownMenu.xml`), item 3504:
+- Menu Energia (`skin.novatv/DialogButtonMenu.xml`, o XML que o Kodi abre em
+  `ActivateWindow(ShutdownMenu)`, e o equivalente `ShutdownMenu.xml`), item 3504:
   - era `Quit` com `visible = System.ShowExitButton` (podia nem aparecer);
   - agora **“Sair do SMARTEDTV”**, sempre visível, chama
     `RunScript(script.smartedtv.welcome,sair)`.
@@ -224,7 +225,9 @@ Pipeline rápido existente, sem compilar Kodi e sem trocar o APK base:
 - base: release `v1.0.86-tela-inicial-v16`
   (`SMARTEDTV-atual-com-tela-inicial-v16-universal.apk`);
 - `tools/kodi/atualizar-apk-v17.py` troca tela, serviço, **smart_ads.py,
-  service.py, Home.xml e ShutdownMenu.xml** e mantém as duas ABIs;
+  service.py, Home.xml, DialogButtonMenu.xml e ShutdownMenu.xml** e mantém as
+  duas ABIs. `ShutdownMenu.xml` só é trocado se existir na base; o menu real do
+  skin é `DialogButtonMenu.xml`;
 - assinatura com a mesma chave (`dropbox/smarted-tv-test.jks`);
 - release `v1.0.87-responsivo-v17`.
 

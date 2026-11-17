@@ -30,6 +30,8 @@ class AtualizarApkTest(unittest.TestCase):
                 z.writestr('assets/addons/service.smarted.bootstrap/service.py',
                            b'antigo')
                 z.writestr('assets/addons/skin.novatv/xml/Home.xml', b'antigo')
+                z.writestr('assets/addons/skin.novatv/xml/DialogButtonMenu.xml',
+                           b'antigo')
                 z.writestr('assets/addons/skin.novatv/xml/ShutdownMenu.xml', b'antigo')
                 z.writestr('lib/arm64-v8a/libkodi.so', b'a')
                 z.writestr('lib/armeabi-v7a/libkodi.so', b'b')
@@ -37,6 +39,7 @@ class AtualizarApkTest(unittest.TestCase):
             with zipfile.ZipFile(saida) as z:
                 nomes = z.namelist()
                 for nome in ('assets/addons/skin.novatv/xml/Home.xml',
+                             'assets/addons/skin.novatv/xml/DialogButtonMenu.xml',
                              'assets/addons/skin.novatv/xml/ShutdownMenu.xml'):
                     self.assertIn(nome, nomes)
                     origem = ROOT / 'kodi' / nome.replace('assets/addons/', '')
