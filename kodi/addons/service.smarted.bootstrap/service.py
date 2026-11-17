@@ -218,13 +218,25 @@ def rotate_hero(monitor, intervalo=HERO_ROTATION):
 
 
 def apply_performance():
-    """Cache agressivo + aceleração por hardware (idempotente)."""
+    """Cache agressivo + aceleração por hardware (idempotente).
+
+    O nome do aparelho decide o perfil de video: projetor usa MediaCodec sem
+    Surface (evita o canal com audio e tela preta); TV/box/stick mantem Surface.
+    """
     home = xbmcvfs.translatePath('special://home')
     try:
-        result = ensure_performance(home, jsonrpc, log)
+        nome = xbmc.getInfoLabel('System.FriendlyName') or ''
+    except Exception:
+        nome = ''
+    try:
+        result = ensure_performance(home, jsonrpc, log, nome_dispositivo=nome)
     except Exception as error:
         log('performance: falhou (%s)' % error, xbmc.LOGWARNING)
-        return {'applied': [], 'failed': [], 'advancedsettings': False}
+        return {'applied': [], 'failed': [], 'advancedsettings': False,
+                'projetor': False}
+    if result.get('projetor'):
+        log('video: projetor detectado em %r; Surface desligado e '
+            'ajuste de taxa de quadros desativado' % nome)
     return result
 
 

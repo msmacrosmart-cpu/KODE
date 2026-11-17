@@ -222,6 +222,31 @@ class PerformanceTest(unittest.TestCase):
         self.assertIn('videoplayer.usemediacodecsurface', applied)
         self.assertEqual(store['filecache.buffermode'], 4)
         self.assertTrue(store['videoplayer.usemediacodec'])
+        self.assertTrue(store['videoplayer.usemediacodecsurface'])
+
+    def test_projetor_desliga_surface_para_nao_ficar_com_imagem_preta(self):
+        store = {}
+        applied, failed = self.performance.apply_settings(
+            self.fake_jsonrpc(store), nome_dispositivo='XGIMI Halo+ Projector')
+        self.assertEqual(failed, [])
+        self.assertIn('videoplayer.usemediacodecsurface', applied)
+        self.assertFalse(store['videoplayer.usemediacodecsurface'])
+        self.assertTrue(store['videoplayer.usemediacodec'])
+        self.assertEqual(store['videoplayer.adjustrefreshrate'], 0)
+
+    def test_tv_box_continua_com_surface(self):
+        store = {}
+        self.performance.apply_settings(self.fake_jsonrpc(store),
+                                         nome_dispositivo='Samsung Smart TV')
+        self.assertTrue(store['videoplayer.usemediacodecsurface'])
+
+    def test_deteccao_de_projetor_nao_confunde_tv(self):
+        for nome in ('Projetor Wanbo X1', 'Android Projector', 'LG CineBeam',
+                     'Anker Nebula Capsule', 'Epson EH-TW5650'):
+            self.assertTrue(self.performance.eh_projetor(nome), nome)
+        for nome in ('Samsung Smart TV', 'Mi Box S', 'Fire TV Stick',
+                     'Chromecast with Google TV', 'Celular Galaxy S23'):
+            self.assertFalse(self.performance.eh_projetor(nome), nome)
 
     def test_setting_recusado_nao_derruba_o_boot(self):
         store = {}
@@ -245,3 +270,4 @@ class PerformanceTest(unittest.TestCase):
         main = source[source.index('def main():'):]
         self.assertIn('apply_performance()', main)
         self.assertIn('ensure_performance', source)
+        self.assertIn('System.FriendlyName', source)

@@ -1,0 +1,177 @@
+# v17: pipeline rapido (nao compila Kodi). Pega o APK universal v16 (arm64 +
+# armv7), troca somente a tela/servico e reassina com a mesma chave.
+# Corrige: tela preta no boot, foco/D-pad depois dos dialogos, layout em
+# 720p/1080p/4K e perfil de video de projetor (audio sem imagem).
+name: SMARTEDTV v17 - responsivo, foco e projetor
+
+on:
+  push:
+    branches: [arena/39a14845-kode]
+    paths: [.github/workflows/build-v17-responsivo.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  entregar:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BASE_RELEASE: v1.0.86-tela-inicial-v16
+      BASE_ASSET: SMARTEDTV-atual-com-tela-inicial-v16-universal.apk
+      TAG_SAIDA: v1.0.87-responsivo-v17
+      FINAL: SMARTEDTV-atual-v17-responsivo-universal.apk
+      VERSAO_DE: '1.0.86'
+      VERSAO_PARA: '1.0.87'
+      CODIGO_DE: '2103072'
+      CODIGO_PARA: '2103073'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Teste estatico
+        run: python3 tools/kodi/static-check.py
+
+      - name: 1b. Pillow/fonttools para medir e desenhar a tela
+        run: |
+          set -uo pipefail
+          python3 -m pip install --disable-pip-version-check \
+            "Pillow==11.3.0" "fonttools>=4.40,<5"
+          python3 -c "import PIL, fontTools; print('PIL', PIL.__version__)"
+
+      - name: 1c. Auditoria responsiva 720p/1080p/4K
+        run: |
+          set -euo pipefail
+          python3 tools/kodi/auditar-responsivo.py --falhar
+          python3 tools/kodi/auditar-tela-entrada.py --falhar
+          python3 tools/kodi/auditar-tela-entrada.py \
+            --layout kodi/addons/script.smartedtv.welcome/resources/skins/Default/1080i/DialogWelcomeTV.xml \
+            --falhar
+
+      - name: 1d. Testes de foco, boot, projetor e menu
+        run: |
+          set -euo pipefail
+          # Cada grupo em um processo: os testes trocam os modulos xbmc/vip
+          # globais e, juntos, um interfere no outro.
+          python3 -m unittest tests.test_tela_entrada.CicloDeVidaTest \
+            tests.test_tela_entrada.TVBoxStickTest -v
+          python3 -m unittest tests.test_favourites_bootstrap.PerformanceTest \
+            tests.test_menu_brazuca_bingie -v
+
+      - name: 2. Baixar o APK universal v16
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          gh release download "$BASE_RELEASE" --repo "$GITHUB_REPOSITORY" \
+            --pattern "$BASE_ASSET" --dir build --clobber
+          mv "build/$BASE_ASSET" build/base-v16.apk
+          sha256sum build/base-v16.apk | tee build/base.sha256
+          ls -lh build/base-v16.apk
+          unzip -l build/base-v16.apk | grep -E 'lib/(arm64-v8a|armeabi-v7a)/libkodi.so'
+
+      - name: 3. Trocar tela/servico preservando as duas ABIs e o perfil
+        run: |
+          set -euo pipefail
+          python3 -u tools/kodi/atualizar-apk-v17.py \
+            --apk build/base-v16.apk --saida build/bruto.apk
+          python3 - <<'PY'
+          import zipfile
+          z = zipfile.ZipFile('build/bruto.apk')
+          nomes = z.namelist()
+          for n in ('lib/arm64-v8a/libkodi.so', 'lib/armeabi-v7a/libkodi.so'):
+              assert n in nomes, n
+          assert z.read('assets/addons/script.smartedtv.welcome/default.py') == \
+              open('kodi/addons/script.smartedtv.welcome/default.py', 'rb').read()
+          assert z.read('assets/addons/service.smarted.bootstrap/menu_smarted.py') == \
+              open('kodi/addons/service.smarted.bootstrap/menu_smarted.py', 'rb').read()
+          assert z.read('assets/addons/service.smarted.bootstrap/performance.py') == \
+              open('kodi/addons/service.smarted.bootstrap/performance.py', 'rb').read()
+          assert z.read('assets/addons/service.smarted.bootstrap/vip.py') == \
+              open('kodi/addons/service.smarted.bootstrap/vip.py', 'rb').read()
+          print('OK: duas ABIs + tela/servico do repositorio')
+          PY
+
+      - name: 4. Simular o boot (sem tela preta e com foco)
+        run: |
+          set -euo pipefail
+          python3 tools/kodi/simular-boot-tela-entrada.py --apk build/bruto.apk
+
+      - name: 5. Subir versao 1.0.87 / 2103073
+        run: |
+          set -euo pipefail
+          python3 tools/kodi/ajustar-versao-apk.py build/bruto.apk \
+            build/bruto-versao.apk \
+            --de "$VERSAO_DE" --para "$VERSAO_PARA" \
+            --de-codigo "$CODIGO_DE" --para-codigo "$CODIGO_PARA"
+          mv build/bruto-versao.apk build/bruto.apk
+          python3 - <<'PY'
+          import struct, zipfile
+          with zipfile.ZipFile('build/bruto.apk') as z:
+              m = z.read('AndroidManifest.xml')
+          assert '1.0.87'.encode('utf-16-le') in m
+          assert struct.pack('<I', 2103073) in m
+          assert '1.0.86'.encode('utf-16-le') not in m
+          assert struct.pack('<I', 2103072) not in m
+          import importlib.util
+          spec = importlib.util.spec_from_file_location(
+              'ajustar', 'tools/kodi/ajustar-versao-apk.py')
+          mod = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(mod)
+          _, alterados, vistos = mod.desligar_debug(m)
+          assert not alterados, alterados
+          assert 'debuggable' in [nome for _elemento, nome in vistos], vistos
+          print('OK: 1.0.87/2103073 e debuggable=false')
+          PY
+
+      - name: 6. Alinhar e assinar com a mesma chave
+        run: |
+          set -euo pipefail
+          export KODE_BUILD_HOME="$RUNNER_TEMP/kode-build"
+          ./tools/kodi/setup.sh
+          python3 tools/kodi/align-apk.py build/bruto.apk build/alinhado.apk
+          JAVA="$KODE_BUILD_HOME/python/jdk4py/java-runtime/bin/java"
+          SIGNER="$KODE_BUILD_HOME/tools/apksigner.jar"
+          "$JAVA" -jar "$SIGNER" sign \
+            --ks dropbox/smarted-tv-test.jks \
+            --ks-pass pass:android --key-pass pass:android \
+            --ks-key-alias smarted-tv-test \
+            --v1-signing-enabled true --v2-signing-enabled true \
+            --v3-signing-enabled true --v4-signing-enabled false \
+            --out "build/$FINAL" build/alinhado.apk
+          "$JAVA" -jar "$SIGNER" verify --verbose --print-certs "build/$FINAL" \
+            | tee build/certs.txt
+          grep -qi "855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a" build/certs.txt
+          rm -f build/bruto.apk build/alinhado.apk
+          ( cd build && sha256sum "$FINAL" > "$FINAL.sha256" )
+          ls -lh "build/$FINAL"
+          cat "build/$FINAL.sha256"
+
+      - name: 7. Provas visuais 720p/1080p/4K
+        run: |
+          set -euo pipefail
+          L=kodi/addons/script.smartedtv.welcome/resources/skins/Default/1080i/DialogWelcomeTV.xml
+          python3 tools/kodi/renderizar-tela-entrada.py --layout "$L" \
+            --resolucao 1280x720 --saida build/tela-720p.png
+          python3 tools/kodi/renderizar-tela-entrada.py --layout "$L" \
+            --resolucao 1920x1080 --saida build/tela-1080p.png
+          python3 tools/kodi/renderizar-tela-entrada.py --layout "$L" \
+            --resolucao 3840x2160 --saida build/tela-4k.png
+          python3 tools/kodi/renderizar-tela-entrada.py --layout "$L" \
+            --dialogo ads --resolucao 1280x720 --saida build/tela-dialogo-720p.png
+          python3 tools/kodi/renderizar-tela-entrada.py --layout "$L" \
+            --dialogo status --resolucao 1280x720 --saida build/tela-status-720p.png
+          ls -lh build/tela-*.png
+
+      - name: 8. Publicar release v17
+        run: |
+          set -euo pipefail
+          NOTAS='v17 (1.0.87, versionCode 2103073). Mantem as duas ABIs da v16 (arm64-v8a + armeabi-v7a), a mesma assinatura (855de171...) e o perfil/VIP. Correcoes: (1) tela preta no boot: o servico chamava ReloadSkin() no meio da inicializacao, derrubando a tela de entrada/Home; o reload foi removido e a troca para a Home passou a ter um unico dono (ActivateWindow(Home) valido, sem comando concorrente). (2) D-pad: o foco era pedido no mesmo quadro em que o dialogo de anuncios ficava visivel e o Kodi recusava; agora o foco e confirmado com getFocusId/retry, os botoes 905/906/955 tem navegacao explicita e qualquer seta recupera o foco se ele cair. (3) responsividade: um unico desenho 1920x1080 escalado pelo Kodi para 720p/1080p/4K, QR com aspectratio keep, barra inferior sem sobrepor os cartoes, variante TV/box/projetor com area segura; auditado nas tres resolucoes. (4) canais sem imagem em projetor: o boot forcava MediaCodec (Surface); em projetor (System.FriendlyName) agora usa MediaCodec sem Surface e desliga o ajuste automatico de taxa de quadros. Nao testado em projetor/aparelho real neste ambiente; validacao estatica e simulacao de boot.'
+          gh release create "$TAG_SAIDA" \
+            "build/$FINAL" "build/$FINAL.sha256" \
+            build/tela-720p.png build/tela-1080p.png build/tela-4k.png \
+            build/tela-dialogo-720p.png build/tela-status-720p.png \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title 'SMARTEDTV 1.0.87 (v17: responsivo 720p/1080p/4K, tela preta, D-pad e projetor)' \
+            --notes "$NOTAS"
+          echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_SAIDA/$FINAL"

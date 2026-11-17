@@ -71,7 +71,7 @@ Delta exato sobre o APK da release `v1.0.83-unificado` (nada mais muda):
    essa propriedade para a janela de startup, não para um destino). Resultado:
    comando executado numa janela morta, Home (10000) nunca carregada e **tela
    preta** depois de "Assistir com anúncios". Quem abre a Home agora é o próprio
-   addon, depois que a modal sai de cena: `ActivateWindow(Home,return)` →
+   addon, depois que a modal sai de cena: `ActivateWindow(Home)` →
    `ReplaceWindow(Home)` → espera de 5 s → nova tentativa/aviso (nunca `RestartApp`,
    marcando `smartedtv.welcome.saiu` para a tela não reaparecer).
 3. **`xml/Font.xml`** das skins — declaradas as fontes `wfNN` do layout (o

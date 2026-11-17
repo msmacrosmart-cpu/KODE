@@ -335,6 +335,9 @@ def criar_modulos(sim, raiz_addon, raiz_servico):
         def setFocusId(self, controle):
             sim.foco.append(controle)
 
+        def getFocusId(self):
+            return sim.foco[-1] if sim.foco else 0
+
         def getControl(self, controle):
             if controle == 310:
                 campo = types.SimpleNamespace()
@@ -461,8 +464,8 @@ def conferir_execucao(sim, modulo, codigo_vip="SMARTED-1234"):
     if sim.janela_atual != "Home":
         raise SystemExit(
             "tela preta: apos sair da tela a janela e %r" % sim.janela_atual)
-    if "ActivateWindow(Home,return)" not in sim.builtins:
-        raise SystemExit("ActivateWindow(Home,return) nao chamado: %r"
+    if "ActivateWindow(Home)" not in sim.builtins:
+        raise SystemExit("ActivateWindow(Home) nao chamado: %r"
                          % sim.builtins)
     if sim.properties.get("smartedtv.welcome.home") != "ok":
         raise SystemExit("marca home nao e ok: %r" % sim.properties)

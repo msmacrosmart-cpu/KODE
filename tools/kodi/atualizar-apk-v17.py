@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Atualiza um APK SMARTEDTV ja publicado sem recompilar o Kodi.
+
+Usado pelo pipeline rapido da v17: pega o APK universal da v16 (as duas ABIs
+``arm64-v8a`` e ``armeabi-v7a`` ja estao assinadas no arquivo) e troca SOMENTE:
+
+* ``assets/addons/script.smartedtv.welcome/`` -> versao do repositorio;
+* ``service.smarted.bootstrap/{service,menu_smarted,performance,vip,smart_ads}.py``
+  -> correcoes de tela preta, foco, projetor e update;
+* ``assets/system/keymaps/zzz-smartedtv-voltar.xml`` -> keymap do repositorio
+  (se existir);
+* ``Startup.xml`` das skins -> o do repositorio, quando o nome da skin existe.
+
+Perfil semeado, banco de addons, natives libs (as duas ABIs), manifesto, fontes e
+demais arquivos ficam byte a byte iguais. Assinatura antiga e removida; o
+workflow assina de novo com a mesma chave.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import re
+import sys
+import zipfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+ADDON_ID = 'script.smartedtv.welcome'
+ADDON_DIR = ROOT / 'kodi' / 'addons' / ADDON_ID
+ADDON_PREFIX = 'assets/addons/%s/' % ADDON_ID
+SERVICO = 'assets/addons/service.smarted.bootstrap/'
+MODULOS = ('service.py', 'menu_smarted.py', 'performance.py', 'vip.py',
+           'smart_ads.py')
+KEYMAP_ORIGEM = ROOT / 'kodi' / 'keymaps' / 'smartedtv-voltar.xml'
+KEYMAP_DESTINO = 'assets/system/keymaps/zzz-smartedtv-voltar.xml'
+SIG = re.compile(r'^META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC))$', re.I)
+STARTUP = re.compile(r'assets/addons/([^/]+)/xml/Startup\.xml$')
+EXIGIDOS = (
+    'AndroidManifest.xml',
+    'classes.dex',
+    'assets/system/addon-manifest.xml',
+    'assets/addons/%s/default.py' % ADDON_ID,
+    'lib/arm64-v8a/libkodi.so',
+    'lib/armeabi-v7a/libkodi.so',
+)
+
+
+def dbg(msg):
+    print('[V17] %s' % msg, flush=True)
+
+
+def arquivos_do_addon():
+    arquivos = {}
+    for caminho in sorted(ADDON_DIR.rglob('*')):
+        if not caminho.is_file() or '__pycache__' in caminho.parts or caminho.suffix == '.pyc':
+            continue
+        arquivos[ADDON_PREFIX + caminho.relative_to(ADDON_DIR).as_posix()] = caminho.read_bytes()
+    for rel in ('addon.xml', 'default.py',
+                'resources/skins/Default/1080i/DialogWelcome.xml',
+                'resources/skins/Default/1080i/DialogWelcomeTV.xml',
+                'resources/skins/Default/media/bg.png'):
+        if ADDON_PREFIX + rel not in arquivos:
+            raise SystemExit('addon incompleto: falta %s' % rel)
+    return arquivos
+
+
+def arquivos_do_servico():
+    extras = {}
+    for nome in MODULOS:
+        caminho = ROOT / 'kodi' / 'addons' / 'service.smarted.bootstrap' / nome
+        if not caminho.is_file():
+            raise SystemExit('modulo do servico ausente: %s' % caminho)
+        extras[SERVICO + nome] = caminho.read_bytes()
+    if KEYMAP_ORIGEM.is_file():
+        extras[KEYMAP_DESTINO] = KEYMAP_ORIGEM.read_bytes()
+    return extras
+
+
+def startup_do_repositorio(skin):
+    caminho = ROOT / 'kodi' / skin / 'xml' / 'Startup.xml'
+    return caminho.read_bytes() if caminho.is_file() else None
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--apk', required=True, type=Path)
+    parser.add_argument('--saida', required=True, type=Path)
+    args = parser.parse_args(argv)
+    if args.apk.resolve() == args.saida.resolve():
+        raise SystemExit('entrada e saida precisam ser diferentes')
+
+    extras = arquivos_do_addon()
+    extras.update(arquivos_do_servico())
+    dbg('arquivos para atualizar: %d (addon + servico/keymap)' % len(extras))
+
+    perfil = {}
+    substituidos = set()
+    startups = 0
+    with zipfile.ZipFile(args.apk) as origem:
+        nomes = set(origem.namelist())
+        for exigido in EXIGIDOS:
+            if exigido not in nomes:
+                raise SystemExit('APK base sem %s' % exigido)
+        if 'assets/addons/service.smarted.bootstrap/service.py' not in nomes:
+            raise SystemExit('APK base sem o servico smarted')
+
+        with zipfile.ZipFile(args.saida, 'w', allowZip64=True) as destino:
+            vistos = set()
+            for item in origem.infolist():
+                if item.is_dir() or SIG.fullmatch(item.filename):
+                    continue
+                if item.filename in vistos:
+                    raise SystemExit('entrada duplicada: %s' % item.filename)
+                vistos.add(item.filename)
+                dados = origem.read(item)
+                if item.filename.startswith(ADDON_PREFIX):
+                    substituidos.add(item.filename)
+                    continue
+                if item.filename.startswith(SERVICO) and \
+                        item.filename[len(SERVICO):] in MODULOS:
+                    substituidos.add(item.filename)
+                    continue
+                if item.filename == KEYMAP_DESTINO:
+                    substituidos.add(item.filename)
+                    continue
+                alvo_startup = STARTUP.fullmatch(item.filename)
+                if alvo_startup:
+                    novo = startup_do_repositorio(alvo_startup.group(1))
+                    if novo is not None and novo != dados:
+                        dados = novo
+                        startups += 1
+                        dbg('%s: Startup.xml atualizado' % alvo_startup.group(1))
+                if item.filename.startswith('assets/smarted/profile/'):
+                    perfil[item.filename] = hashlib.sha256(dados).hexdigest()
+                info = zipfile.ZipInfo(item.filename, date_time=item.date_time)
+                info.compress_type = item.compress_type
+                info.external_attr = item.external_attr
+                info.comment = item.comment
+                destino.writestr(info, dados)
+
+            for nome in sorted(extras):
+                info = zipfile.ZipInfo(nome, date_time=(2026, 11, 17, 18, 0, 0))
+                info.compress_type = zipfile.ZIP_DEFLATED
+                info.external_attr = 0o644 << 16
+                destino.writestr(info, extras[nome])
+                dbg('gravado: %s' % nome)
+            dbg('substituidos no APK base: %d; Startups atualizados: %d'
+                % (len(substituidos), startups))
+
+    with zipfile.ZipFile(args.saida) as z:
+        for nome, resumo in perfil.items():
+            if hashlib.sha256(z.read(nome)).hexdigest() != resumo:
+                raise SystemExit('perfil semeado alterado: %s' % nome)
+        for nome in extras:
+            if nome not in z.namelist() or z.read(nome) != extras[nome]:
+                raise SystemExit('arquivo nao entrou igual: %s' % nome)
+        for aba in ('lib/arm64-v8a/libkodi.so', 'lib/armeabi-v7a/libkodi.so'):
+            if aba not in z.namelist():
+                raise SystemExit('ABI perdida: %s' % aba)
+        if any(SIG.fullmatch(n) for n in z.namelist()):
+            raise SystemExit('assinatura antiga nao foi removida')
+        dbg('OK: %d arquivos do perfil intactos, duas ABIs e sem assinatura antiga'
+            % len(perfil))
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

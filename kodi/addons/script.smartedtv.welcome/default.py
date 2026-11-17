@@ -119,6 +119,12 @@ PROP_TEXTO = 'welcome_status_text'
 PROP_OK = 'welcome_status_ok'
 PROP_TECLADO = 'welcome_teclado'
 
+# Controles principais (fora dos dialogos) e os de cada dialogo. Servem para
+# recuperar o foco quando uma janela/dialogo invisivel deixa o D-pad sem destino.
+FOCO_PRINCIPAL = (310, 120, 121, 122, 123, 311, 312)
+FOCO_ADS = (905, 906)
+FOCO_STATUS = (955,)
+
 
 def _log(mensagem, nivel=None):
     try:
@@ -217,7 +223,7 @@ def _gravar_plataforma(modo):
 
 
 def _parece_tv():
-    """TV, box, projetor ou stick: tela 16:9 grande e/ou nome de aparelho."""
+    """TV, box, projetor ou stick: tela grande (16:9, 16:10 ou 4:3) e/ou nome."""
     try:
         if not xbmc.getCondVisibility('System.Platform.Android'):
             return False
@@ -230,10 +236,11 @@ def _parece_tv():
     achado = re.search(r'(\d{3,5})\s*[xX]\s*(\d{3,5})', resolucao)
     if achado:
         largura, altura = int(achado.group(1)), int(achado.group(2))
-        if altura >= 720 and largura >= 1280:
+        if altura >= 600 and largura >= 1024:
             proporcao = float(largura) / float(altura)
-            # 16:9 (TV/box/stick/projetor). Celulares atuais sao 18:9 ou mais.
-            if 1.60 <= proporcao <= 1.90:
+            # 16:9 (TV/box/stick/projetor) e tambem 4:3/16:10 de projetores
+            # antigos. Celulares atuais sao 18:9 ou mais e ficam de fora.
+            if 1.25 <= proporcao <= 2.00:
                 return True
     try:
         nome = (xbmc.getInfoLabel('System.FriendlyName') or '').lower()
@@ -330,6 +337,17 @@ def _mascarar(codigo):
     return codigo[:4] + '...' + codigo[-2:]
 
 
+def _id_acao(action):
+    """Kodi 21 entrega um objeto Action; versoes antigas entregam int."""
+    try:
+        return int(action.getId())
+    except Exception:
+        try:
+            return int(action)
+        except Exception:
+            return 0
+
+
 def _clipboard():
     """Tenta ler a area de transferencia pelas APIs que o Kodi expuser.
 
@@ -359,6 +377,69 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
     def __init__(self, *args, **kwargs):
         xbmcgui.WindowXMLDialog.__init__(self, *args, **kwargs)
         self.saiu = False
+        self._ultimo_foco = 310
+        self._foco_anterior = 310
+
+    # --- foco / D-pad -----------------------------------------------------
+    def _focar(self, controle, tentativas=5):
+        """Coloca o foco DEPOIS que o Kodi desenhou a visibilidade.
+
+        O ``setFocusId`` antigo era chamado no mesmo clique que ligava a
+        condicao ``welcome_dialog=ads``. Nesse instante o grupo 900 ainda
+        estava invisivel e o Kodi recusava o foco em silencio: o controle
+        ficava sem destino e o D-pad so voltava depois de um toque na tela.
+        Aqui esperamos alguns quadros e confirmamos por ``getFocusId``.
+        """
+        destino = int(controle)
+        # A validacao VIP roda numa thread: nesse caso o foco vai pelo builtin
+        # (fila da thread de interface), nunca por setFocusId direto.
+        na_thread = threading.current_thread() is not threading.main_thread()
+        for tentativa in range(max(1, int(tentativas))):
+            try:
+                if na_thread:
+                    xbmc.executebuiltin('SetFocus(%d)' % destino)
+                else:
+                    self.setFocusId(destino)
+                atual = int(self.getFocusId() or 0)
+                if atual == destino:
+                    self._ultimo_foco = destino
+                    return True
+            except Exception:
+                pass
+            if tentativa + 1 < tentativas:
+                try:
+                    xbmc.sleep(40)
+                except Exception:
+                    pass
+        _log('nao consegui confirmar o foco no controle %d' % destino,
+             xbmc.LOGWARNING)
+        return False
+
+    def _foco_atual(self):
+        try:
+            return int(self.getFocusId() or 0)
+        except Exception:
+            return 0
+
+    def _destino_de_foco(self):
+        """Controle valido para o estado atual (dialogo aberto ou tela)."""
+        dialogo = self.getProperty(PROP_DIALOGO)
+        foco = self._foco_atual()
+        if dialogo == 'ads':
+            return 905 if foco not in FOCO_ADS else None
+        if dialogo == 'status':
+            return 955 if foco != 955 else None
+        if foco not in FOCO_PRINCIPAL:
+            return (self._ultimo_foco if self._ultimo_foco in FOCO_PRINCIPAL
+                    else 310)
+        return None
+
+    def _garantir_foco(self):
+        """Rede de seguranca chamada antes de cada tecla de navegacao."""
+        destino = self._destino_de_foco()
+        if destino is not None:
+            self._focar(destino)
+        return destino
 
     # --- dialogos ---------------------------------------------------------
     def _dialogo(self, titulo, texto, ok='Entendi'):
@@ -366,17 +447,14 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
                              (PROP_OK, ok)):
             self.setProperty(chave, valor)
         self.setProperty(PROP_DIALOGO, 'status')
-        try:
-            self.setFocusId(955)
-        except Exception:
-            pass
+        self._focar(955)
 
-    def _fechar_dialogo(self, foco=311):
+    def _fechar_dialogo(self, foco=None):
         self.clearProperty(PROP_DIALOGO)
-        try:
-            self.setFocusId(foco)
-        except Exception:
-            pass
+        destino = foco if foco is not None else (self._foco_anterior or 311)
+        if destino not in FOCO_PRINCIPAL:
+            destino = 311
+        self._focar(destino)
 
     # --- acoes ligadas ao que ja existe no projeto -----------------------
     def _intent_navegador(self,url):
@@ -584,15 +662,14 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
             codigo = self._digitar_codigo()
         if not codigo:
             _log('[SMARTEDTV] Nenhum codigo informado. Cancelado pelo usuario.')
-            try:
-                self.setFocusId(310)
-            except Exception:
-                pass
+            self._focar(310)
             return
         codigo = codigo.strip()
         _log('[SMARTEDTV] Codigo recebido (%s); iniciando validacao.'
              % _mascarar(codigo))
 
+        self._ultimo_foco = 311
+        self._foco_anterior = 311
         self._validando = True
         self._geracao_validacao = getattr(self, '_geracao_validacao', 0) + 1
         geracao = self._geracao_validacao
@@ -601,10 +678,7 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         self.setProperty(PROP_OK, 'Aguarde')
         self.setProperty('welcome_status_action', '')
         self.setProperty(PROP_DIALOGO, 'status')
-        try:
-            self.setFocusId(955)
-        except Exception:
-            pass
+        self._focar(955)
 
         def trabalho():
             try:
@@ -672,7 +746,7 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
             self.setProperty(PROP_OK, acao)
             self.setProperty('welcome_status_action', 'home' if ok else '')
             self.setProperty(PROP_DIALOGO, 'status')
-            self.setFocusId(955)
+            self._focar(955)
         except Exception:
             # janela ja fechada: o resultado nao tem onde aparecer
             pass
@@ -683,7 +757,11 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
 
     def _sair(self):
         self.saiu = True
-        _definir(MARCA_SAIU, '1')      # o vigia para de agir
+        # Marca que a tela esta saindo ANTES de fechar. O vigia espera a
+        # troca normal terminar; so assume se ela travar (6 s). Sem isso,
+        # dois ActivateWindow/ReplaceWindow concorrentes podiam deixar preto.
+        _definir(MARCA_HOME, 'saindo')
+        _definir(MARCA_SAIU, '1')      # o vigia sabe que a tela saiu de cena
         self.close()
 
     # --- eventos ---------------------------------------------------------
@@ -713,11 +791,10 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
             return
         if control_id == 312:
             _log('[SMARTEDTV] Botao 312 (Assistir com anuncios) acionado.')
+            self._ultimo_foco = 312
+            self._foco_anterior = 312
             self.setProperty(PROP_DIALOGO, 'ads')
-            try:
-                self.setFocusId(905)
-            except Exception:
-                pass
+            self._focar(905)
         elif control_id == 905:
             _log('[SMARTEDTV] Botao 905 (Voltar do dialogo ads) acionado.')
             self._fechar_dialogo(312)
@@ -753,17 +830,28 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         # Clique nesses ids nao faz nada (ver tests).
 
     def onAction(self, action):
+        acao = _id_acao(action)
+        # Qualquer seta/OK: se o foco caiu (controle invisivel, dialogo que
+        # acabou de abrir), devolve para um controle valido em vez de deixar o
+        # D-pad sem destino. O toque na tela deixava de ser necessario.
+        if acao in (getattr(xbmcgui, 'ACTION_MOVE_LEFT', 1),
+                    getattr(xbmcgui, 'ACTION_MOVE_RIGHT', 2),
+                    getattr(xbmcgui, 'ACTION_MOVE_UP', 3),
+                    getattr(xbmcgui, 'ACTION_MOVE_DOWN', 4),
+                    getattr(xbmcgui, 'ACTION_SELECT_ITEM', 7),
+                    getattr(xbmcgui, 'ACTION_ENTER', 13)):
+            if self._garantir_foco() is not None:
+                # primeiro toque so devolve o foco; o proximo ja navega
+                return
         # Toque longo no 121 preserva o compartilhamento nativo que existia
         # antes de o botao virar o atalho do Dropbox (o visual nao muda).
-        if action == getattr(xbmcgui, 'ACTION_CONTEXT_MENU', 117):
-            try:
-                foco = self.getFocusId()
-            except Exception:
-                foco = None
+        if acao == getattr(xbmcgui, 'ACTION_CONTEXT_MENU', 117):
+            foco = self._foco_atual()
             if foco == 121:
                 self._compartilhar()
                 return
-        if action in (xbmcgui.ACTION_NAV_BACK, xbmcgui.ACTION_PREVIOUS_MENU):
+        if acao in (getattr(xbmcgui, 'ACTION_NAV_BACK', 92),
+                    getattr(xbmcgui, 'ACTION_PREVIOUS_MENU', 10)):
             if self.getProperty(PROP_DIALOGO) == 'ads':
                 self._fechar_dialogo(312)
                 return
@@ -783,10 +871,9 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         _limpar(PROP_TECLADO)      # propriedade antiga; o overlay nao existe mais
         _sinalizar_abertura()
         _log('tela de entrada carregada (antes da Home)')
-        try:
-            self.setFocusId(310)
-        except Exception:
-            pass
+        # O foco tambem era negado enquanto o XML ainda nao tinha desenhado;
+        # a tela abria sem destino para o D-pad ate um toque.
+        self._focar(310)
 
 
 def _tela_da_home():
@@ -812,11 +899,11 @@ def _comando_ok(comando, espera=0.6):
     return True
 
 
-def _ir_para_home(motivo=''):
+def _ir_para_home(motivo='', forcar=False):
     """Abre a Home DEPOIS que a tela saiu de cena. Nunca deixa tela preta.
 
-    1. `ActivateWindow(Home,return)` — caminho normal (o Kodi carrega a janela
-       ao ativa-la, mesmo com a Home ainda nao criada);
+    1. `ActivateWindow(Home)` — caminho normal (o Kodi carrega a janela ao
+       ativa-la, mesmo com a Home ainda nao criada);
     2. `ReplaceWindow(Home)` — se a ativacao nao pegou;
     3. confirma por ate 5 s olhando `System.CurrentWindow`;
     4. se nada funcionou, tenta a Home mais uma vez e avisa o usuario — NAO
@@ -828,10 +915,24 @@ def _ir_para_home(motivo=''):
     """
     if motivo:
         _log('abrindo a Home: %s' % motivo, xbmc.LOGWARNING)
+    if _propriedade(MARCA_HOME) == 'ok' and _tela_da_home():
+        return True
+    if _propriedade(MARCA_HOME) == 'abrindo' and not forcar:
+        # Outro processo ja esta abrindo; nao dispara comandos concorrentes.
+        limite = time.time() + 3.0
+        while time.time() < limite:
+            if _tela_da_home() or _propriedade(MARCA_HOME) == 'ok':
+                return True
+            try:
+                xbmc.sleep(250)
+            except Exception:
+                pass
     _definir(MARCA_HOME, 'abrindo')
     _definir(MARCA_ABERTA, '1')      # a partir daqui o vigia nao age sozinho
 
-    _comando_ok('ActivateWindow(Home,return)', espera=1.2)
+    # `ActivateWindow(Home,return)` NAO e o comando certo: o segundo argumento
+    # e um caminho, e "return" nao e caminho valido. Usa a forma oficial.
+    _comando_ok('ActivateWindow(Home)', espera=1.2)
     if _tela_da_home():
         _log('Home ativa (ActivateWindow)')
         _definir(MARCA_HOME, 'ok')
@@ -904,23 +1005,27 @@ def vigiar_inicializacao():
     return True
 
 
-def _vigiar_depois_da_tela(prazo=25):
-    """A tela assumiu: se ela sair de cena sem a Home, abre a Home."""
+def _vigiar_depois_da_tela(prazo=30):
+    """A tela assumiu: se ela sair de cena sem a Home, abre a Home.
+
+    Espera a Home normal antes de assumir. O ``_sair()`` marca
+    ``smartedtv.welcome.home=abrindo`` antes de fechar; o vigia so age se,
+    depois de 6 s, ninguem concluiu a troca (script morreu/travou). Assim nao
+    existem dois ``ActivateWindow(Home)`` concorrentes, outra causa de preto.
+    """
     limite = time.time() + prazo
+    saiu_em = None
     while time.time() < limite:
-        if _propriedade(MARCA_HOME):
-            return True                    # a tela ja resolveu
-        if _propriedade(MARCA_SAIU):
-            try:
-                xbmc.sleep(1500)           # deixa a propria tela tentar
-            except Exception:
-                pass
-            if _tela_da_home() or _propriedade(MARCA_HOME):
-                return True
-            _log('vigia: a tela saiu sem abrir a Home; assumindo',
-                 xbmc.LOGWARNING)
-            _ir_para_home('vigia (a tela saiu e a Home nao veio)')
+        if _propriedade(MARCA_HOME) == 'ok' or _tela_da_home():
             return True
+        if _propriedade(MARCA_SAIU):
+            if saiu_em is None:
+                saiu_em = time.time()
+            elif time.time() - saiu_em >= 6.0:
+                _log('vigia: a tela saiu e a Home nao veio em 6 s; assumindo',
+                     xbmc.LOGWARNING)
+                _ir_para_home('vigia (troca de janela travou)', forcar=True)
+                return True
         try:
             xbmc.sleep(250)
         except Exception:
@@ -966,8 +1071,9 @@ def voltar_para_a_tela():
     # A Home ja estava carregada: basta garantir que continua na tela. Nada de
     # RestartApp (o usuario estaria assistindo) e nada de ReplaceWindow.
     if not _tela_da_home():
-        _comando_ok('ActivateWindow(Home,return)', espera=0.6)
+        _comando_ok('ActivateWindow(Home)', espera=0.6)
     _limpar(MARCA_SAIU)
+    _definir(MARCA_HOME, 'ok')      # a Home ja estava no ar: troca concluida
     return True
 
 

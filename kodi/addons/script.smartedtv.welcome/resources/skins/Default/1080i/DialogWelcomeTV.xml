@@ -213,7 +213,7 @@
       <width>272</width>
       <height>272</height>
       <texture>qr_plate.png</texture>
-      <aspectratio>stretch</aspectratio>
+      <aspectratio>keep</aspectratio>
     </control>
     <control type="image" id="44">
       <left>824</left>
@@ -293,7 +293,7 @@
       <width>272</width>
       <height>272</height>
       <texture>qr_plate.png</texture>
-      <aspectratio>stretch</aspectratio>
+      <aspectratio>keep</aspectratio>
     </control>
     <control type="image" id="54">
       <left>1447</left>
@@ -358,15 +358,15 @@
     </control>
     <control type="image" id="6">
       <left>96</left>
-      <top>880</top>
+      <top>891</top>
       <width>1728</width>
-      <height>113</height>
+      <height>109</height>
       <texture>bar.png</texture>
       <aspectratio>stretch</aspectratio>
     </control>
     <control type="label" id="60">
       <left>100</left>
-      <top>892</top>
+      <top>903</top>
       <width>500</width>
       <height>34</height>
       <label>Já é assinante? Ative seu VIP</label>
@@ -375,7 +375,7 @@
     </control>
     <control type="label" id="61">
       <left>100</left>
-      <top>929</top>
+      <top>940</top>
       <width>500</width>
       <height>24</height>
       <label>Use as setas e OK do controle.</label>
@@ -384,7 +384,7 @@
     </control>
     <control type="image" id="62">
       <left>1589</left>
-      <top>894</top>
+      <top>905</top>
       <width>2</width>
       <height>49</height>
       <texture>divider.png</texture>
@@ -392,7 +392,7 @@
     </control>
     <control type="button" id="312">
       <left>1617</left>
-      <top>892</top>
+      <top>903</top>
       <width>208</width>
       <height>57</height>
       <label>Assistir com anúncios</label>
@@ -408,7 +408,7 @@
     </control>
     <control type="edit" id="310">
       <left>753</left>
-      <top>892</top>
+      <top>903</top>
       <width>710</width>
       <height>57</height>
       <label>Código de ativação</label>
@@ -423,7 +423,7 @@
     </control>
     <control type="button" id="311">
       <left>1474</left>
-      <top>892</top>
+      <top>903</top>
       <width>87</width>
       <height>57</height>
       <label>Ativar</label>
@@ -503,6 +503,10 @@
         <texturenofocus border="11">btn_quiet.png</texturenofocus>
         <align>center</align>
         <aligny>center</aligny>
+        <onleft>906</onleft>
+        <onright>906</onright>
+        <onup>905</onup>
+        <ondown>905</ondown>
       </control>
       <control type="button" id="906">
         <left>954</left>
@@ -517,6 +521,10 @@
         <texturenofocus border="11">btn_primary.png</texturenofocus>
         <align>center</align>
         <aligny>center</aligny>
+        <onleft>905</onleft>
+        <onright>905</onright>
+        <onup>906</onup>
+        <ondown>906</ondown>
       </control>
     </control>
     <control type="group" id="950">
@@ -575,6 +583,10 @@
         <texturenofocus border="11">btn_primary.png</texturenofocus>
         <align>center</align>
         <aligny>center</aligny>
+        <onleft>955</onleft>
+        <onright>955</onright>
+        <onup>955</onup>
+        <ondown>955</ondown>
       </control>
     </control>
   </controls>

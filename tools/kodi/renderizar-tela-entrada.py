@@ -230,9 +230,18 @@ def main(argv=None):
                         default=ROOT / "kodi" / "skin.estilo.personalizado" / "xml" / "Font.xml")
     parser.add_argument("--dialogo", default="",
                         help="ades|status para desenhar um dos dialogos")
+    parser.add_argument("--layout", type=Path, default=LAYOUT,
+                        help="XML a desenhar (padrao: DialogWelcome.xml)")
+    parser.add_argument("--resolucao", default="1920x1080",
+                        help="1280x720, 1920x1080 ou 3840x2160")
     args = parser.parse_args(argv)
 
-    raiz = ET.parse(LAYOUT).getroot()
+    layout = args.layout
+    try:
+        largura_saida, altura_saida = (int(v) for v in args.resolucao.lower().split("x"))
+    except ValueError:
+        raise SystemExit("--resolucao deve ser LARGURAxALTURA (ex.: 1280x720)")
+    raiz = ET.parse(layout).getroot()
     tamanhos = tamanhos_de_fonte(args.font_xml)
     # os estilos wfNN declarados pelo injetor (nome = tamanho)
     for bloco in re.findall(r"<font>(.*?)</font>", args.font_xml.read_text(
@@ -240,7 +249,7 @@ def main(argv=None):
         nome = re.search(r"<name>wf(\d+)</name>", bloco)
         if nome:
             tamanhos[nome.group(1) and "wf" + nome.group(1)] = int(nome.group(1))
-    for nome in re.findall(r"<font>(wf\d+)</font>", LAYOUT.read_text(encoding="utf-8")):
+    for nome in re.findall(r"<font>(wf\d+)</font>", layout.read_text(encoding="utf-8")):
         tamanhos.setdefault(nome, int(nome[2:]))
 
     props = {}
@@ -260,9 +269,12 @@ def main(argv=None):
     for controle in raiz.find("controls").findall("control"):
         desenhar_controle(imagem, controle, (0, 0), tamanhos, props)
 
+    if (imagem.width, imagem.height) != (largura_saida, altura_saida):
+        imagem = imagem.resize((largura_saida, altura_saida), Image.LANCZOS)
     args.saida.parent.mkdir(parents=True, exist_ok=True)
     imagem.convert("RGB").save(args.saida, quality=95)
-    print("prova visual: %s (%dx%d)" % (args.saida, imagem.width, imagem.height))
+    print("prova visual: %s (%dx%d, %s)" % (
+        args.saida, imagem.width, imagem.height, layout.name))
     return 0
 
 

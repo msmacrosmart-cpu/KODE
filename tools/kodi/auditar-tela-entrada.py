@@ -87,8 +87,9 @@ def glifos_ausentes(texto, caminho_fonte):
     return sorted({c for c in texto if c not in ("\n",) and ord(c) not in cmap})
 
 
-def auditar():
-    raiz = ET.parse(LAYOUT).getroot()
+def auditar(caminho=None):
+    caminho = caminho or LAYOUT
+    raiz = ET.parse(caminho).getroot()
     tamanhos = tamanhos_fonte()
     problemas = []
     textos = []      # (id, x0, y0, x1, y1, texto)
@@ -252,12 +253,13 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--falhar", action="store_true",
                         help="sai com erro se houver qualquer problema")
+    parser.add_argument("--layout", type=Path, default=LAYOUT)
     args = parser.parse_args(argv)
     if not PIL_OK:
         raise SystemExit("Pillow necessario: python3 -m pip install Pillow==11.3.0")
 
-    problemas, textos = auditar()
-    print("Auditoria de %s" % LAYOUT.relative_to(ROOT))
+    problemas, textos = auditar(args.layout)
+    print("Auditoria de %s" % args.layout.resolve().relative_to(ROOT))
     print("  %d textos medidos com a fonte real" % len(textos))
     for problema in problemas:
         print("  FALHA  %s" % problema)

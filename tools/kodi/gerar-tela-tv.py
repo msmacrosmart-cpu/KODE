@@ -8,7 +8,7 @@ topo e a linha do codigo no rodape. Esta variante mantem todo o desenho e os
 textos, mas:
 
   * desce o logo/titulo/subtitulo 20 px e recua o bloco da esquerda 62 px;
-  * sobe a barra do codigo para 880 e a linha de botoes para 892;
+  * desce a barra do codigo para 891 e a linha de botoes para 903;
   * recua a barra e os textos do rodape para dentro dos 5% laterais;
   * troca a dica do codigo por uma instrucao de controle remoto.
 
@@ -28,13 +28,13 @@ DESTINO = ORIGEM.with_name("DialogWelcomeTV.xml")
 TOPO = {"10", "11", "12"}
 # id -> novo topo (a barra/linha inteira sobe para dentro da area segura)
 RODAPE = {
-    "6": "880",      # barra de fundo
-    "60": "892",     # "Já é assinante?"
-    "61": "929",     # dica (trocada abaixo)
-    "62": "894",     # divisor
-    "310": "892",    # campo do código
-    "311": "892",    # Ativar
-    "312": "892",    # Assistir com anúncios
+    "6": "891",      # barra de fundo (abaixo dos cartoes, sem sobrepor)
+    "60": "903",     # "Já é assinante?"
+    "61": "940",     # dica (trocada abaixo)
+    "62": "905",     # divisor
+    "310": "903",    # campo do código
+    "311": "903",    # Ativar
+    "312": "903",    # Assistir com anúncios
 }
 # id -> nova esquerda (o overscan lateral de 5% cortava o logo e os textos)
 ESQUERDA = {

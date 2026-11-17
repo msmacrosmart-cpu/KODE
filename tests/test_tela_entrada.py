@@ -32,7 +32,7 @@ DEFAULT_PY = ADDON / 'default.py'
 INJETOR = ROOT / 'tools' / 'kodi' / 'injetar-tela-entrada.py'
 # A Home agora e aberta pelo proprio addon (a v7 usava ReplaceWindow do
 # Startup.xml, que disparava em torno da janela de startup -> tela preta).
-HOME = 'ActivateWindow(Home,return)'
+HOME = 'ActivateWindow(Home)'
 
 # Pacote entregue no Dropbox (smartedtv-src.zip): a tela no APK tem de ser esta.
 PACOTE = ROOT / 'build_test' / 'src_novo' / 'smartedtv'
@@ -681,6 +681,60 @@ class CicloDeVidaTest(unittest.TestCase):
         self._com_interacao(acoes)
         self.assertEqual(self.modulo._log.__module__, self.modulo.__name__)
 
+    def test_dpad_continua_depois_de_abrir_o_dialogo_de_anuncios(self):
+        """O foco nao pode ficar no controle coberto pelo overlay."""
+        vistos = []
+
+        def acoes(janela):
+            janela.onClick(312)
+            vistos.append(janela.getFocusId())
+            # simula o foco perdido (controle invisivel/reload de propriedade)
+            janela.foco = []
+            janela.onAction(1)          # seta esquerda
+            vistos.append(janela.getFocusId())
+            janela.onAction(2)          # seta direita, agora ja navega
+            vistos.append(janela.getFocusId())
+
+        self._com_interacao(acoes)
+        self.assertEqual(vistos[0], 905)
+        self.assertEqual(vistos[1], 905)
+        self.assertIn(vistos[2], (905, 906))
+
+    def test_foco_volta_ao_botao_312_ao_fechar_o_dialogo(self):
+        vistos = []
+
+        def acoes(janela):
+            janela.onClick(312)
+            janela.onClick(905)
+            vistos.append(janela.getFocusId())
+
+        self._com_interacao(acoes)
+        self.assertEqual(vistos, [312])
+
+    def test_dialogo_de_status_recupera_o_foco_955(self):
+        vistos = []
+
+        def acoes(janela):
+            janela.props['_codigo'] = 'SMARTED-99'
+            janela.onClick(311)
+            vistos.append(janela.getFocusId())
+            janela.foco = []
+            janela.onAction(3)          # seta para cima
+            vistos.append(janela.getFocusId())
+
+        self._com_interacao(acoes)
+        self.assertEqual(vistos, [955, 955])
+
+    def test_botoes_dos_dialogos_tem_navegacao_explicita(self):
+        """Sem onleft/onright/onup/ondown o D-pad procura controles atras do overlay."""
+        raiz = ET.parse(LAYOUT).getroot()
+        for ident in ('905', '906', '955'):
+            controle = raiz.find(".//control[@id='%s']" % ident)
+            self.assertIsNotNone(controle, ident)
+            for tag in ('onleft', 'onright', 'onup', 'ondown'):
+                self.assertTrue((controle.findtext(tag) or '').strip(),
+                                '%s sem %s' % (ident, tag))
+
     def test_controles_removidos_nao_existem_mais(self):
         """Seletor de aparelho e pilulas de plano sairam do layout e do codigo."""
         ids = {c.get('id') for c in _raiz().iter('control')}
@@ -951,6 +1005,13 @@ class TVBoxStickTest(unittest.TestCase):
             '1920x1080 @ 60.00 Hz - Fullscreen'
             if info == 'System.ScreenResolution' else '')
         self.assertTrue(modulo._parece_tv())
+        # Projetor antigo 4:3/16:10 tambem e tela grande, mas nao e celular.
+        for resolucao in ('1024x768 @ 60.00 Hz - Fullscreen',
+                          '1280x800 @ 60.00 Hz - Fullscreen',
+                          '3840x2160 @ 60.00 Hz - Fullscreen'):
+            xbmc.getInfoLabel = lambda info, r=resolucao: (
+                r if info == 'System.ScreenResolution' else '')
+            self.assertTrue(modulo._parece_tv(), resolucao)
         xbmc.getInfoLabel = lambda info: (
             '2400x1080 @ 60.00 Hz - Fullscreen'
             if info == 'System.ScreenResolution' else '')
