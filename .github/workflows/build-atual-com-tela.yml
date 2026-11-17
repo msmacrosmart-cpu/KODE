@@ -337,4 +337,4 @@ jobs:
           subprocess.run(['gh', 'release', 'edit', os.environ['TAG_SAIDA'],
                           '--repo', repo, '--notes', notas], check=True)
           PY
-# build acionado: atualizacao real via Dropbox, compartilhamento ACTION_SEND nativo
+# build aciado: correcao definitiva botoes com fallback, logs, vip.py registrado, qr_plate sem moldura
