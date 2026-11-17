@@ -1,0 +1,19 @@
+APK: SMARTEDTV-atual-com-tela-inicial-v15.apk
+Tamanho: 250491255 bytes
+SHA-256: 860edc71067547e87c6e6671984977699d9c1a5c74857b3c87e01c78eaa15fe3
+
+package: smartedtv.full
+versionName: 1.0.85
+versionCode: 2103071
+minSdk: 21
+targetSdk: 34
+debuggable: false
+testOnly: None
+features: ['android.hardware.bluetooth', 'android.hardware.microphone', 'android.hardware.screen.landscape', 'android.hardware.touchscreen', 'android.hardware.touchscreen.multitouch', 'android.hardware.type.television', 'android.hardware.usb.host', 'android.hardware.wifi', 'android.software.leanback']
+
+ABIs nativas:
+  arm64-v8a
+
+Segurança:
+META-INF: ['META-INF/com/android/build/gradle/app-metadata.properties', 'META-INF/androidx.activity_activity.version', 'META-INF/androidx.annotation_annotation-experimental.version', 'META-INF/androidx.arch.core_core-runtime.version', 'META-INF/androidx.browser_browser.version', 'META-INF/androidx.core_core-ktx.version', 'META-INF/androidx.core_core.version', 'META-INF/androidx.customview_customview.version', 'META-INF/androidx.fragment_fragment.version', 'META-INF/androidx.interpolator_interpolator.version']
+assinatura v2 presente: True

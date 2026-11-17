@@ -27,6 +27,7 @@ public final class ProfileDirectorySeed {
         File target = new File(home, ".kodi");
         File lockFile = new File(privateDir, "smarted-seed.lock");
         try (RandomAccessFile lock = new RandomAccessFile(lockFile, "rw"); FileLock ignored = lock.getChannel().lock()) {
+            sweepStaleStages(home);
             // Do not alter an existing profile, even an empty or interrupted one.
             if (target.exists()) return false;
             if (!source.isDirectory() || !manifest.isFile() || manifest.length() > 2 * 1024 * 1024 ||
@@ -107,6 +108,22 @@ public final class ProfileDirectorySeed {
         }
         return hex(md.digest());
     }
+    /**
+     * Remove restos de um seed interrompido sem tocar em .kodi nem em addon_data.
+     * O limite de 10 minutos evita apagar o estagio de uma execucao viva.
+     */
+    private static void sweepStaleStages(File home) {
+        File[] children = home.listFiles();
+        if (children == null) return;
+        long limit = System.currentTimeMillis() - 10L * 60 * 1000;
+        for (File child : children) {
+            String name = child.getName();
+            if (!name.startsWith(".smarted-seed-") || !child.isDirectory()) continue;
+            if (child.lastModified() > limit) continue;
+            try { removeOwned(child); } catch (IOException ignored) { }
+        }
+    }
+
     private static void removeOwned(File path) throws IOException {
         if (!path.exists()) return;
         if (path.isDirectory()) {

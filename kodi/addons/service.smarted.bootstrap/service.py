@@ -18,6 +18,7 @@ import repair
 from favourites import ensure_favourites
 from performance import ensure_performance
 from menu_smarted import garantir_menu, rodar_validacao_navegacao, silenciar_avisos_brazuca
+import smart_ads
 from skin_setup import ensure_home_nodes, ensure_skin, home_xml_candidates
 
 ADDON = xbmcaddon.Addon()
@@ -32,6 +33,8 @@ POLL_SECONDS = 5
 REPAIR_ATTEMPTS = 6
 REPAIR_RETRY_SECONDS = 5
 UISOUNDS_SILENCIO = 'resource.uisounds.silencio'
+CORE_ADDONS = ('script.smartedtv.welcome', 'service.smarted.bootstrap',
+               'plugin.video.smarted', UISOUNDS_SILENCIO)
 
 
 def log(message, level=xbmc.LOGINFO):
@@ -85,6 +88,127 @@ def apply_silencio():
         return False
     log('silencio: navegacao sem sons (%s)' % UISOUNDS_SILENCIO)
     return True
+
+
+def _remover_arvore(caminho):
+    try:
+        import xbmcvfs
+        pastas, arquivos = xbmcvfs.listdir(caminho)
+        for nome in arquivos:
+            xbmcvfs.delete(caminho + '/' + nome)
+        for nome in pastas:
+            _remover_arvore(caminho + '/' + nome)
+        xbmcvfs.rmdir(caminho)
+    except Exception:
+        pass
+
+
+def limpar_estagios_de_seed():
+    """Apaga somente estagios temporarios de um seed interrompido.
+
+    O seed Java publica o perfil por rename atomico. Se o processo morrer no
+    meio, sobra ``.smarted-seed-<uuid>`` no diretorio do usuario. O proximo
+    boot remove esses restos; o perfil publicado e o addon_data nunca entram
+    nessa varredura.
+    """
+    removidos = 0
+    try:
+        import xbmcvfs
+        raiz = xbmcvfs.translatePath('special://profile')
+        pastas, arquivos = xbmcvfs.listdir(raiz)
+        for nome in pastas + arquivos:
+            if not nome.startswith('.smarted-seed-'):
+                continue
+            caminho = raiz.rstrip('/') + '/' + nome
+            _remover_arvore(caminho)
+            if not xbmcvfs.exists(caminho):
+                removidos += 1
+        if removidos:
+            log('seed: %d estagio(s) temporario(s) removido(s)' % removidos)
+        return removidos
+    except Exception as erro:
+        log('seed: varredura de estagios falhou (%s)' % erro,
+            xbmc.LOGWARNING)
+        return 0
+
+
+def limpar_estado_interface():
+    """Remove marcas de uma sessao anterior da tela de entrada.
+
+    Quit/reabertura nao podem herdar ``saiu``/``home=ok``/``voltar`` presos na
+    janela 10000; a tela nova precisa decidir o boot do zero. Nao limpa
+    ``smartedtv.welcome.ativa``: o vigia do Startup.xml conta com ela.
+    """
+    limpar_estagios_de_seed()
+    try:
+        import xbmcgui
+        janela = xbmcgui.Window(10000)
+        for chave in ('smartedtv.welcome.saiu', 'smartedtv.welcome.home',
+                      'smartedtv.welcome.voltar',
+                      'smartedtv.welcome.saindo'):
+            try:
+                janela.clearProperty(chave)
+            except Exception:
+                pass
+        log('interface: marcas antigas da tela de entrada limpas')
+        return True
+    except Exception as erro:
+        log('interface: nao foi possivel limpar marcas (%s)' % erro,
+            xbmc.LOGWARNING)
+        return False
+
+
+def _janela_atual():
+    try:
+        return (xbmc.getInfoLabel('System.CurrentWindow') or '').strip().lower()
+    except Exception:
+        return ''
+
+
+def garantir_interface_inicial(monitor, log=None, espera=25):
+    """Recupera um boot sem janela (tela preta) sem tocar no processo.
+
+    O Startup.xml normal abre a tela de entrada. Se o Kodi reutilizou um estado
+    antigo e nao abriu nenhuma janela, este vigia pede a tela de entrada e, se
+    ela nao vier, libera a Home. Nao apaga perfil, VIP, cache nem configuracoes.
+    """
+    limite = time.time() + max(8, int(espera))
+    while time.time() < limite:
+        if monitor.abortRequested():
+            return False
+        atual = _janela_atual()
+        try:
+            if xbmc.getCondVisibility('Window.IsActive(Home)'):
+                return True
+        except Exception:
+            pass
+        if atual in ('home', 'startup', 'startupwindow'):
+            return True
+        try:
+            if monitor.waitForAbort(1):
+                return False
+        except Exception:
+            time.sleep(1)
+    log('boot: nenhuma janela ativa em %d s; reabrindo a tela de entrada'
+        % espera, xbmc.LOGWARNING)
+    xbmc.executebuiltin('RunScript(script.smartedtv.welcome)')
+    limite = time.time() + 12
+    while time.time() < limite:
+        try:
+            if xbmc.getCondVisibility('Window.IsActive(Home)'):
+                return True
+        except Exception:
+            pass
+        if _janela_atual() in ('home', 'startup', 'startupwindow'):
+            return True
+        try:
+            if monitor.waitForAbort(1):
+                return False
+        except Exception:
+            time.sleep(1)
+    log('boot: a tela de entrada nao veio; liberando a Home', xbmc.LOGERROR)
+    xbmc.executebuiltin('ActivateWindow(Home)')
+    return False
 
 
 def write_report(home, report):
@@ -218,13 +342,25 @@ def rotate_hero(monitor, intervalo=HERO_ROTATION):
 
 
 def apply_performance():
-    """Cache agressivo + aceleração por hardware (idempotente)."""
+    """Cache agressivo + aceleração por hardware (idempotente).
+
+    O nome do aparelho decide o perfil de video: projetor usa MediaCodec sem
+    Surface (evita o canal com audio e tela preta); TV/box/stick mantem Surface.
+    """
     home = xbmcvfs.translatePath('special://home')
     try:
-        result = ensure_performance(home, jsonrpc, log)
+        nome = xbmc.getInfoLabel('System.FriendlyName') or ''
+    except Exception:
+        nome = ''
+    try:
+        result = ensure_performance(home, jsonrpc, log, nome_dispositivo=nome)
     except Exception as error:
         log('performance: falhou (%s)' % error, xbmc.LOGWARNING)
-        return {'applied': [], 'failed': [], 'advancedsettings': False}
+        return {'applied': [], 'failed': [], 'advancedsettings': False,
+                'projetor': False}
+    if result.get('projetor'):
+        log('video: projetor detectado em %r; Surface desligado e '
+            'ajuste de taxa de quadros desativado' % nome)
     return result
 
 
@@ -247,7 +383,24 @@ def repair_until_ready(monitor):
 
 def main():
     monitor = xbmc.Monitor()
+    limpar_estado_interface()
+    try:
+        vigia = threading.Thread(target=garantir_interface_inicial,
+                                 args=(monitor, log), name='boot-interface')
+        vigia.daemon = True
+        vigia.start()
+    except Exception as erro:
+        log('boot: nao foi possivel iniciar o vigia da interface (%s)' % erro,
+            xbmc.LOGWARNING)
     log('startup: preparando o Brazuca Play')
+    # A tela de entrada e um addon separado. Se o banco de addons do aparelho
+    # ficou com ele desabilitado numa atualizacao, o Startup.xml chama
+    # RunScript e nada aparece (tela preta). Habilita os addons do app antes.
+    try:
+        enable_addons(CORE_ADDONS)
+    except Exception as erro:
+        log('addons: falha ao habilitar os addons do app (%s)' % erro,
+            xbmc.LOGWARNING)
     xbmc.executebuiltin('Notification(SMARTED, Preparando o conteudo..., 4000)')
 
     waited = 0
@@ -276,6 +429,19 @@ def main():
         falhas = [linha for linha in navegacao if linha.startswith('FALHA')]
         log('nav-check: %d destinos testados, %d falha(s)' % (len(navegacao), len(falhas)))
     performance = apply_performance()
+
+    # Anuncios: o gancho de pre-roll precisa existir ANTES de qualquer video
+    # (canal/filme/serie). Sem esta chamada o MonitorPreRoll nunca era criado e
+    # nenhum anuncio era pedido, em nenhum aparelho. O app-open espera a Home.
+    try:
+        smart_ads.iniciar_monitor(log)
+        abertura = threading.Thread(target=smart_ads.abertura_depois_do_boot,
+                                    args=(monitor, log), name='ads-abertura')
+        abertura.daemon = True
+        abertura.start()
+    except Exception as erro:  # nunca derrubar o boot por causa de anuncio
+        log('ads: nao foi possivel iniciar os gatilhos (%s)' % erro,
+            xbmc.LOGWARNING)
 
     # 1º arranque: skin SMARTEDTV ativa + nós da Home ligados às rotas do addon
     home = xbmcvfs.translatePath('special://home')

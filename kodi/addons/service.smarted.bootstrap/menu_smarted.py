@@ -2,10 +2,17 @@
 """Troca o menu generico do Kodi pelo menu SMARTEDTV (categorias do Brazuca Play).
 
 A skin padrao (base Bingie) traz um menu superior estatico gerado a partir das
-rotas do Brazuca Play. Como o Kodi guarda os includes da skin em cache e o
-script.skinshortcuts mantem dados do menu antigo no perfil, no primeiro boot
-depois da atualizacao o menu velho continuaria aparecendo. Esta rotina roda uma
-vez por versao: limpa os dados antigos e recarrega a skin.
+rotas do Brazuca Play. Como o script.skinshortcuts mantem dados do menu antigo
+no perfil, no primeiro boot depois da atualizacao o menu velho poderia aparecer.
+Esta rotina roda uma vez por versao: limpa os dados antigos e grava o marcador.
+
+IMPORTANTE (correcao da tela preta): esta rotina NAO chama ``ReloadSkin()``.
+O servico roda em paralelo com o boot; o reload derrubava a janela de entrada
+(e/ou a Home recem-aberta), deixando o aparelho em tela preta por alguns
+segundos. A Home do SMARTEDTV le os valores ``smarted_nav_*`` direto da skin e
+o ``apply_navigation()`` os publica com ``Skin.SetString``, que atualiza a
+interface sem recarregar a skin inteira. O menu antigo deixa de ser lido no
+proximo boot, quando o Kodi monta a skin do zero.
 """
 from __future__ import absolute_import, unicode_literals
 
@@ -59,8 +66,10 @@ def garantir_menu(xbmc_module=xbmc, log=None):
             arquivo.write('ok')
     except Exception as erro:  # noqa: BLE001
         log('menu: marcador nao gravado (%s)' % erro)
-    xbmc_module.executebuiltin('ReloadSkin()')
-    log('menu SMARTEDTV ativado (dados antigos removidos: %s)'
+    # Sem ReloadSkin(): veja o aviso no topo do modulo. O reload no meio do
+    # boot era a causa da tela preta que so voltava ao tocar/reabrir.
+    log('menu SMARTEDTV ativado sem recarregar a skin '
+        '(dados antigos removidos: %s)'
         % (', '.join(removidos) or 'nenhum'))
     return {'applied': True, 'removed': removidos}
 

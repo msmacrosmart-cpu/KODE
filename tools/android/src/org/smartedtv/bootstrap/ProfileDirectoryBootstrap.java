@@ -23,6 +23,7 @@ public final class ProfileDirectoryBootstrap {
     // State is read and modified exclusively on the Android main thread.
     private static WeakReference<Activity> current = new WeakReference<Activity>(null);
     private static boolean working;
+    private static long workingSince;
     private static Boolean result;
 
     private ProfileDirectoryBootstrap() { }
@@ -35,8 +36,13 @@ public final class ProfileDirectoryBootstrap {
             deliverResult();
             return;
         }
+        // Uma falha anterior nao pode condenar a nova Activity para sempre.
+        if (working && System.currentTimeMillis() - workingSince > 120000) {
+            working = false;
+        }
         if (working) return;
         working = true;
+        workingSince = System.currentTimeMillis();
         final Context context = activity.getApplicationContext();
         new Thread(new Runnable() {
             @Override public void run() {

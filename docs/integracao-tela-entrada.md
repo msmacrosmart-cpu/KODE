@@ -1,0 +1,334 @@
+# Tela de entrada do SMARTEDTV — a primeira interface do app
+
+Este documento descreve **o que foi entregue** e **por que funciona**: a tela do
+pacote `smartedtv-src` (Dropbox) é a primeira coisa que o usuário vê ao abrir o
+aplicativo, e a Home só é carregada quando ele conclui a tela.
+
+A tela é **sempre horizontal (16:9, 1920×1080)**. O pacote traz também um
+layout retrato para celular em pé; essa parte do CSS não é traduzida, porque o
+app roda deitado (TV/Android TV) — o seletor “Celular” do pacote é apenas
+visual.
+
+O desenho anterior — abrir a tela por cima de uma Home já carregada — foi
+descartado: o serviço (`service.smarted.bootstrap`) só começa **depois** da Home,
+então nenhuma janela aberta por ele é a primeira interface do app.
+
+---
+
+## 1. Onde a tela entra no boot do Kodi 21.3 (Omega)
+
+Trechos do código do Kodi (tag `21.3-Omega`) usados como base:
+
+| arquivo | o que ele faz |
+|---|---|
+| `xbmc/application/Application.cpp` (`CApplication::Initialize`) | carrega a skin, ativa `WINDOW_SPLASH` e depois ativa `g_SkinInfo->GetFirstWindow()` |
+| `xbmc/addons/Skin.cpp` (`CSkinInfo::GetFirstWindow`) | se a skin tem `Startup.xml`, devolve `WINDOW_STARTUP_ANIM` (12999) em vez da janela configurada (a Home, 10000) |
+| `xbmc/windows/GUIWindowStartup.cpp` | essa janela é `CGUIWindow(WINDOW_STARTUP_ANIM, "Startup.xml")`; o `GUI_MSG_UI_READY` só é enviado quando ela é desativada |
+| `xbmc/guilib/GUIWindow.cpp` + `xbmc/guilib/GUIControlFactory.cpp` | cada tag `<onload>` do XML vira uma ação de verdade; várias tags são **acumuladas** na ordem em que aparecem |
+| `xbmc/interfaces/builtins/AddonBuiltins.cpp` (`RunScript`) | resolve o argumento como **id de addon habilitado** (o caminho absoluto é só o plano B) |
+| `xbmc/addons/AddonDatabase.cpp` (`SyncInstalled`) | toda linha **nova** do banco de addons nasce com `enabled=1` quando o id está no `addon-manifest.xml` (`system` ou `optional`) |
+| `xbmc/addons/AddonManager.cpp` (`Init`) | addon do manifest marcado `<addon>` **obrigatório** que não carregue aborta o Kodi (`LOGFATAL`) — por isso a tela usa `optional="true"`, como os outros addons do app |
+| `xbmc/interfaces/builtins/AlarmClock.cpp` e `xbmc/utils/AlarmClock.cpp` | `AlarmClock(nome,comando,HH:MM:SS,silent)` executa o comando no prazo; `CancelAlarm(nome)` cancela |
+
+Ou seja: **as três skins do APK já tinham `xml/Startup.xml`** com
+`ReplaceWindow($INFO[System.StartupWindow])` (salto direto para a Home). Esse é
+o ponto exato onde a tela entra.
+
+## 2. O que o APK entregue tem de diferente
+
+Delta exato sobre o APK da release `v1.0.83-unificado` (nada mais muda):
+
+1. **+31 arquivos** em `assets/addons/script.smartedtv.welcome/` —
+   `addon.xml`, `resources/__init__.py`, o `default.py` (único arquivo de lógica:
+   liga os botões ao app), o layout `DialogWelcome.xml` (1920×1080, horizontal) e
+   as 27 texturas do pacote. A tela é **gerada** do próprio pacote por
+   `tools/kodi/gerar-tela-entrada.py`, que lê `css/styles.css` (cores, raios,
+   gradientes, `rem`/`vw`/`vh`/`clamp`) e desenha fundo, cartões de vidro,
+   botões, pílulas de plano, placa do QR e logo com os mesmos valores. Os dois
+   QR Codes (`qr_checkout.png`, `qr_apk.png`) são cópia **byte a byte** de
+   `assets/qr-checkout.png` e `assets/qr-apk.png` do pacote.
+2. **`xml/Startup.xml`** das 3 skins (`skin.novatv`, `skin.smartedtv.classic`,
+   `skin.estuary`) — o salto direto para a Home é substituído por:
+
+   ```xml
+   <onload>AlarmClock(smartedtv_entrada,RunScript(script.smartedtv.welcome),00:00:00,silent)</onload>
+   <onload>RunScript(script.smartedtv.welcome,seguro=1)</onload>
+   ```
+
+   O primeiro dispara a tela imediatamente (`00:00:00`, no próximo ciclo do
+   alarme). O segundo é o **vigia**: um processo Python separado que, se a tela
+   não avisar em 8 s que desenhou, abre a Home. **Não há `ReplaceWindow` nenhum
+   no `Startup.xml`** — era exatamente esse o defeito da v7:
+
+   ```xml
+   <!-- v7 (ERRADO, deixava tela preta) -->
+   <onload>AlarmClock(smartedtv_entrada_seguro,ReplaceWindow($INFO[System.StartupWindow]),00:00:30,silent)</onload>
+   ```
+
+   O `AlarmClock` dispara **em torno da janela que o criou** — a janela de
+   startup 12999 —, que já saiu de cena quando os 30 s terminam; e
+   `$INFO[System.StartupWindow]` resolve para essa mesma janela (o Kodi define
+   essa propriedade para a janela de startup, não para um destino). Resultado:
+   comando executado numa janela morta, Home (10000) nunca carregada e **tela
+   preta** depois de "Assistir com anúncios". Quem abre a Home agora é o próprio
+   addon, depois que a modal sai de cena: `ActivateWindow(Home)` →
+   `ReplaceWindow(Home)` → espera de 5 s → nova tentativa/aviso (nunca `RestartApp`,
+   marcando `smartedtv.welcome.saiu` para a tela não reaparecer).
+3. **`xml/Font.xml`** das skins — declaradas as fontes `wfNN` do layout (o
+   número é a altura em px medida do CSS: `wf11`, `wf13`, `wf15`, `wf17`,
+   `wf18`, `wf21`, `wf22`, `wf26`, `wf33`, `wf42`), que as skins do app não
+   tinham. Sem elas `GUIFontManager::GetFont` cai em `font13` e a tela fica
+   fora de escala. A lista é lida do próprio `DialogWelcome.xml` pelo injetor.
+4. **`assets/system/addon-manifest.xml`** — `<addon optional="true">script.smartedtv.welcome</addon>`,
+   a mesma forma dos outros addons do app. É o que faz a linha nova do banco de
+   addons nascer habilitada, condição para o `RunScript(script.smartedtv.welcome)`
+   do `Startup.xml` resolver.
+
+Nada mais: mesma skin, mesma versão (`1.0.83`), mesmo motor, mesma chave de
+assinatura, perfil semeado intacto (2731 arquivos com SHA-256 conferido) e o
+`service.py` do `service.smarted.bootstrap` sem uma linha alterada. O único
+arquivo desse addon que entra no APK é `vip.py` (o módulo de licença que a tela
+usa e que o APK base ainda não tinha; ele vai como arquivo novo, sem tocar no
+serviço de boot).
+
+## 3. O que a tela faz
+
+`kodi/addons/script.smartedtv.welcome/default.py` (`WelcomeDialog`) mantém a
+janela do pacote viva no lugar da Home e liga cada controle ao fluxo que **já
+existe** no app:
+
+| controle | ação | implementação reutilizada |
+|---|---|---|
+| 311 (Ativar) + 310 (campo) | valida o código de ativação no servidor | `service.smarted.bootstrap/vip.py` → `validar()` (`POST /api/public/validar-codigo`, corpo `{"code":"..."}`; grava `addon_data/service.smarted.bootstrap/vip.json`) |
+| 120 (Abrir checkout) | sai do Kodi e abre o checkout da Cakto no navegador padrão do Android | `vip.abrir_checkout()` → `StartAndroidActivity(,android.intent.action.VIEW,,https://pay.cakto.com.br/nkvbegd_1323120)` (o mesmo destino do QR `qr_checkout.png`) |
+| 121 (Compartilhar link) | sai do Kodi e abre a página do Dropbox com o APK no navegador padrão do Android | `vip.abrir_dropbox()` → `vip.DROPBOX_URL`, que é o endereço verdadeiro gravado no QR `qr_apk.png` (com `rlkey`, `dl=0`). Toque longo no mesmo botão continua abrindo o `ACTION_SEND` (`vip.compartilhar()`) |
+| 122 (Baixar APK) | sai do Kodi e baixa o APK pelo navegador | `vip.open_apk_download()` → `vip.APK` (o mesmo link do QR, com `dl=1`) |
+| 123 (ATUALIZAR APLICATIVO) | checa versão (OTA) ou abre a página do Dropbox | `vip.procurar_atualizacao()`; sem manifesto configurado, abre `vip.DROPBOX_URL` no navegador |
+| 140/141 (10 min / 1 mês) | escolhe o plano que acompanha o código | o plano é só rótulo: quem decide validade é o servidor de ativação |
+| 312 → 905/906 | confirma "continuar com anúncios" | fecha o modal e libera a Home (versão com anúncios, como hoje) |
+| Voltar / menu anterior | volta do modal ou conclui a tela | `_sair()` → `_abrir_home()` (ActivateWindow(Home) com confirmação e rede de segurança) |
+| **Voltar já na Home** | reabre esta tela do zero, para quem entrou só para ver e depois tem um código | keymap `system/keymaps/zzz-smartedtv-voltar.xml` → `RunScript(script.smartedtv.welcome,voltar)` → `voltar_para_a_tela()` (modal por cima da Home; a Home continua carregada, a licença é preservada) |
+| 130/131 (Android TV / Celular) | seletor visual do pacote | a tela é fixa em 16:9 (não há layout retrato): só registrado no log |
+
+Nenhuma API, endpoint ou credencial nova: o módulo VIP é importado da pasta do
+`service.smarted.bootstrap` que já vem no APK, e o "ir para a Home" usa o mesmo
+comando que o `Startup.xml` original usava.
+
+### 3.1 Por que os botões 120/121 não abriam nada
+
+O builtin do Kodi tem a assinatura `StartAndroidActivity(package,intent,dataType,dataURI)`
+(`xbmc/interfaces/builtins/AndroidBuiltins.cpp` no Omega). O primeiro parâmetro
+é o **pacote Android**, não a action. A versão anterior chamava
+`StartAndroidActivity(android.intent.action.VIEW,URL,,)`: o Kodi procurava um
+pacote chamado `android.intent.action.VIEW` e o intent morria ali. Agora o
+pacote vai vazio — no Android ele vira `null` (jstring NULL em libandroidjni),
+ou seja, intent implícito — e o navegador padrão do aparelho abre por cima do
+Kodi. O mesmo erro foi corrigido em `vip.py` e no fallback do `default.py`.
+Os endereços são exatamente os do projeto: Cakto
+`https://pay.cakto.com.br/nkvbegd_1323120` (conteúdo do `qr_checkout.png`) e
+Dropbox com `rlkey` (conteúdo do `qr_apk.png`).
+
+## 4. Robustez: o app nunca fica preso
+
+- `onInit` da tela → `smartedtv.welcome.ativa=1` na janela 10000 (a tela
+  assumiu; o vigia para de agir).
+- `abrir_tela_entrada()` sempre termina em `_abrir_home()`: se a pasta da tela
+  não existir, se a janela não montar ou se `doModal()` falhar, a Home abre
+  igual e o motivo vai para o log.
+- Se o Python da tela nem iniciar, o vigia `seguro=1` (o segundo `onload`) abre
+  a Home em 8 s; depois que a tela saiu, ele ainda espera 25 s por
+  `smartedtv.welcome.home` e assume se a Home não vier.
+
+### 4a-0. Voltar na Home volta para a tela inicial
+
+Pedido do usuário: *"quando estiver na tela home e usar a opção voltar, ele deve
+voltar pra tela inicial (assim, quem tiver código pode pôr; mesmo que tenha
+clicado em assistir com anúncios só pra ver) continue de onde parou"*.
+
+Como funciona:
+
+1. o build injeta `assets/system/keymaps/zzz-smartedtv-voltar.xml` no APK
+   (`special://xbmc/system/keymaps/`, o `xbmc/system/keymaps/` do motor). O nome
+   `zzz-` importa: o Kodi carrega os `*.xml` em ordem alfabética e o último
+   vence, então nenhum keymap do app sobrescreve esta seção;
+2. só a seção `<Home>` é tocada — `backspace` (é o `KEYCODE_BACK` do Android,
+   que chega ao Kodi como `XBMCK_BACKSPACE`), `browser_back`, `escape` no
+   teclado e `back` no controle. Vídeo, listas e diálogos continuam iguais;
+3. a ação é `RunScript(script.smartedtv.welcome,voltar)`: o `default.py` entra
+   em `voltar_para_a_tela()` e mostra a modal **por cima da Home** (a Home já
+   está carregada, portanto o caminho do boot — que só carrega a Home quando a
+   modal fecha — não se aplica). Ao sair, a tela não chama `RestartApp` nem
+   `ReplaceWindow`: confirma que a Home continua ativa e devolve o controle;
+4. o campo do código abre vazio, pronto para um código VIP, e o estado que
+   importa é preservado: a licença é lida/gravada em `vip.json` pelo módulo VIP,
+   não na tela — quem já ativou continua ativo, e quem entrou em "Assistir com
+   anúncios" só para ver pode voltar e ativar depois.
+
+Limite conhecido e declarado: sem aparelho/emulador neste ambiente, a ligação
+`KEYCODE_BACK → XBMCK_BACKSPACE → <Home><keyboard><backspace>` foi conferida no
+código-fonte do Kodi 21 (`xbmc/platform/android/activity/AndroidKey.cpp`) e no
+`system/keymaps/keyboard.xml` da Omega, e a lógica do `voltar` é exercitada nos
+testes e na simulação — a confirmação final é no aparelho (o mesmo vale para a
+fila de ativação por código, que depende de rede até o servidor VIP).
+
+## 4a-0b. Base visual: a tela da v5 (a última aprovada)
+
+A tela entregue é **a da v5, byte a byte** (extraída do APK publicado), e sobre
+ela foram aplicados só estes ajustes — os que já estavam pedidos:
+
+| o que | onde |
+|---|---|
+| Fora o seletor "Android TV / Celular" e as pílulas "10 min / 1 mês" | controles 130/131/140/141 e a placa 13 saíram do XML; ids no `default.py` não fazem nada |
+| Fora os ícones dentro dos botões | controles 124/125 saíram |
+| Todo rótulo de botão centralizado nos dois eixos | `<align>center</align>` + `<aligny>center</aligny>` em todos os `<button>` |
+| "Continuar com anúncios" → **"Assistir com anúncios"** | controle 312 (o diálogo mantém "Continuar com anúncios") |
+| QR no tamanho natural do pacote, moldura branca reta de 1 px | controles 43/44 e 53/54: 270×270 + 1 px, `qr_plate.png` desenhado no tamanho final |
+| Chip do card 3 dizia "Compartilhar" (igual ao botão) → "Indique" | controle 52, para casar com o card 2 ("Plano mensal") |
+| Barra inferior harmonizada | 121 "Compartilhar link" e 122 "Baixar APK" voltaram para a linha de ação dos cards 2 e 3 |
+
+A geometria, as texturas e o resto dos textos são os da v5 — não foram
+redesenhados. As únicas alterações fora do layout são as duas correções
+funcionais (Home garantida no boot e VOLTAR na Home reabrindo a tela).
+
+## 4a. O que mudou na revisão de layout (v6)
+
+- **Cabeçalho:** só a marca, à esquerda. O seletor "Android TV / Celular" saiu
+  (a tela é 16:9 fixa; o seletor não levava a lugar nenhum).
+- **Barra inferior:** as pílulas "10 min" / "1 mês" saíram — eram elas que
+  invadiam o campo do código. Sobrou rótulo + campo + **Ativar** + link.
+  Sem escolha de plano na tela: o servidor define validade na ativação.
+- **Grade:** margem 56, respiro 32, entre cards 28, padding interno do card 32.
+  Tudo múltiplo de 8 px, para nada ficar "quase alinhado".
+- **Linha de base única:** as ações primárias dos três cards terminam na mesma
+  altura. No card 3 os dois botões ficam lado a lado, na mesma linha de ação do
+  card 2 — assim os dois QR Codes têm o mesmo tamanho e ficam na mesma linha.
+- **Ícones dos botões** nascem a partir do início real do rótulo (o Kodi
+  centraliza o texto do botão); antes o ícone cobria a primeira letra.
+
+## 4a-bis. Ajustes finos de acabamento (v7)
+
+- **QR Codes:** a imagem aparece no tamanho normal do pacote (sem ampliar), com
+  apenas 1 px de moldura branca em volta e **cantos retos**. O arredondamento
+  exagerado vinha de uma placa de 80 px com raio esticada para 320 px (o raio
+  era multiplicado por 4); agora a moldura é desenhada no tamanho final, sem raio.
+- **Botões sem ícone:** "ATUALIZAR APLICATIVO", "Compartilhar link" e "Baixar APK
+  (Android)" mostram só o texto (as texturas `icon_refresh` / `icon_download`
+  saíram do addon).
+- **Texto centralizado:** todo `<button>` declara `align=center` e
+  `aligny=center` no XML, em vez de depender do padrão da skin.
+- **Barra inferior:** "Continuar com anúncios" virou o botão **"Assistir com
+  anúncios"**, com o mesmo vidro/pílula dos outros secundários e a mesma altura
+  do "Ativar", ao lado do campo. O diálogo de confirmação mantém o texto antigo.
+
+## 4b. Tipografia: a regra que o build não deixa quebrar
+
+O layout nasceu de um HTML/CSS e o Kodi **não** tem layout automático: cada
+texto é uma caixa fixa em 1080p e o que não cabe é cortado em silêncio. Por isso
+todo texto passa por medição com a fonte real:
+
+- a altura de cada `<label>` vem de `altura_linha()` (ascendente + descendente da
+  Noto Sans naquele tamanho), não de um multiplicador estimado — é o que evita
+  cortar "ã", "ç", "J", "g" e "p";
+- onde o texto precisa quebrar linha há **uma `<label>` por linha**, medida, em
+  vez de `[CR]` (o `[CR]` só quebra dentro de `<textbox>`);
+- a mensagem do servidor no diálogo de status é `<textbox>`: o texto é dinâmico
+  e pode ser longo, então quebra sozinho e corta com "..." dentro da caixa;
+- botão com ícone tem folga simétrica dos dois lados (`texto + 2×(ícone+folga)`),
+  porque o Kodi centraliza o rótulo no botão;
+- todo botão precisa de textura de foco diferente da normal (D-pad sem realce =
+  usuário não sabe onde está).
+
+O `tools/kodi/auditar-tela-entrada.py` mede isso (36 textos no total) e roda na
+CI como passo bloqueante; há também testes em `tests/test_tela_entrada.py`.
+
+## 5. Como conferir
+
+```bash
+# 1. XML + Python de todo o repositório
+python3 tools/kodi/static-check.py
+
+# 2. testes (fidelidade ao pacote, Startup antes da Home, fluxos dos botões)
+python3 -m unittest tests.test_tela_entrada tests.test_injetor_tela_entrada
+
+# 3. injetar num APK limpo e simular o boot
+python3 tools/kodi/injetar-tela-entrada.py --apk atual.apk --saida bruto.apk
+python3 tools/kodi/simular-boot-tela-entrada.py --apk bruto.apk
+
+# 4. auditoria tipográfica: mede CADA texto com a fonte real no px do Kodi e
+#    reprova estouro, corte de acento/descendente, encosto em ícone/borda,
+#    glifo ausente (tofu) e botão sem realce de foco
+python3 tools/kodi/auditar-tela-entrada.py          # relatório
+python3 tools/kodi/auditar-tela-entrada.py --falhar # sai 1 (usado na CI)
+
+# 5. prova visual a partir do próprio XML da tela
+python3 tools/kodi/renderizar-tela-entrada.py --saida prova.png
+python3 tools/kodi/renderizar-tela-entrada.py --dialogo ads --saida dialogo.png
+python3 tools/kodi/renderizar-tela-entrada.py --dialogo status --saida status.png
+
+# 6. regerar a tela a partir do pacote (se o pacote mudar)
+python3 tools/kodi/gerar-tela-entrada.py --origem build_test/src_novo/smartedtv
+```
+
+O workflow `.github/workflows/build-atual-com-tela.yml` faz tudo isso e publica
+o APK assinado na tag `v1.0.83-tela-inicial-v5`, e reprova o build se a
+auditoria tipográfica ou o mapa de botões falharem.
+
+## 6. Limitações declaradas
+
+- **Não houve execução em Kodi real**: este ambiente não tem Kodi, emulador
+  Android nem dispositivo. O que foi verificado é: código-fonte do Kodi 21.3
+  (semântica de `Startup.xml`, `onload`, `RunScript`, `AlarmClock`,
+  `SyncInstalled`), o APK gerado (conteúdo, fontes, manifest, perfil intacto,
+  assinatura) e uma simulação com stubs do ciclo de vida da janela.
+- A prova visual (`tela-entrada-prova.png`) é desenhada a partir do
+  `DialogWelcome.xml` + texturas do addon; não é captura de tela de um aparelho.
+- A tradução HTML/CSS → XML/texturas é fiel nas cores (os tokens `--ink`,
+  `--txt`, `--mut` do CSS são conferidos por teste), nos raios, nos gradientes e
+  na geometria (box model de 1920×1080), mas não é um motor de layout CSS: o
+  texto é posicionado pelo box model calculado, como o Kodi exige.
+- O `default.py` é o único arquivo de lógica; todo o visual vem do pacote.
+
+## 7. Resultado deste build
+
+- Release: `v1.0.83-tela-inicial-v9` (base visual = tela da v5 + os ajustes
+  lista dos em 4a-0b)
+- APK: `SMARTEDTV-atual-com-tela-inicial-v9.apk`, 249.856.123 bytes,
+  SHA-256 `9cc101cc7ca7bec8be3c6177a2f822d9f0306ed01dcff0b43c461e5a7ffe6cce`
+- Assinatura: `855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`
+- Delta sobre o APK atual: +26 arquivos do addon da tela, +1 keymap
+  (`assets/system/keymaps/zzz-smartedtv-voltar.xml`), 0 removidos e 7 arquivos
+  alterados (`Startup.xml` e `Font.xml` das 3 skins + `addon-manifest.xml`)
+- Workflow `44003349149` (todos os passos verdes). APK reconstruído a partir
+  dos `APK_BLOBS`: hash confere, os 26 arquivos do addon e o keymap são
+  idênticos byte a byte aos do repositório.
+- Conferido: `Startup.xml` das 3 skins com 2 `onload` e zero `ReplaceWindow`;
+  keymap só com a seção `<Home>`; addon `optional="true"`; perfil semeado
+  intacto; `service.smarted.bootstrap` sem alteração.
+
+## 8. Variante TV/Box/Projetor/Stick (v13)
+
+A tela não muda para celular. Ao lado de `DialogWelcome.xml` o addon leva
+`DialogWelcomeTV.xml`, **gerado** por `tools/kodi/gerar-tela-tv.py` a partir da
+tela normal (não editar à mão):
+
+- 5% de overscan: logo/título descem 20 px e recuam 62 px da esquerda; a barra
+  do rodapé sobe para 880, a linha do campo/Ativar/Assistir para 892 e os
+  textos do rodapé vão para x=100; a barra vai para x=96 com 1728 de largura;
+- a dica vira “Use as setas e OK do controle.”;
+- fontes e ações dos botões são as mesmas; `defaultcontrol` continua 310.
+
+O `default.py` escolhe a variante em `_xml_da_tela()` usando `_modo_tv()`:
+`plataforma.txt` (Java `Plataforma`) manda; sem ele, resolução 16:9 ≥1280×720 ou
+nome do aparelho com tv/box/stick/fire/aft/shield/chromecast/projetor/leanback.
+A detecção é gravada em `special://home/../plataforma.txt`, o mesmo arquivo que
+o Java `AdTela` lê para focar o “Pular anúncio” no controle remoto.
+
+Regerar depois de qualquer mudança na tela normal:
+
+```bash
+python3 tools/kodi/gerar-tela-tv.py
+python3 tools/kodi/static-check.py
+python3 -m unittest tests.test_tela_entrada.TVBoxStickTest
+```
+
+Teste que garante a área segura: `tests/test_tela_entrada.py::TVBoxStickTest`.

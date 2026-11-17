@@ -1,0 +1,258 @@
+# v17: pipeline rapido (nao compila Kodi). Pega o APK universal v16 (arm64 +
+# armv7), troca somente a tela/servico e reassina com a mesma chave.
+# Corrige: tela preta no boot, foco/D-pad depois dos dialogos, layout em
+# 720p/1080p/4K e perfil de video de projetor (audio sem imagem).
+name: SMARTEDTV v17 - responsivo, foco e projetor
+
+on:
+  push:
+    branches: [arena/39a14845-kode]
+    paths: [.github/workflows/build-v17-responsivo.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  entregar:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BASE_RELEASE: v1.0.86-tela-inicial-v16
+      BASE_ASSET: SMARTEDTV-atual-com-tela-inicial-v16-universal.apk
+      TAG_SAIDA: v1.0.88-reabertura-v18
+      FINAL: SMARTEDTV-atual-v18-reabertura-universal.apk
+      VERSAO_DE: '1.0.86'
+      VERSAO_PARA: '1.0.88'
+      CODIGO_DE: '2103072'
+      CODIGO_PARA: '2103074'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Teste estatico
+        run: python3 tools/kodi/static-check.py
+
+      - name: 1b. Pillow/fonttools para medir e desenhar a tela
+        run: |
+          set -uo pipefail
+          python3 -m pip install --disable-pip-version-check \
+            "Pillow==11.3.0" "fonttools>=4.40,<5"
+          python3 -c "import PIL, fontTools; print('PIL', PIL.__version__)"
+
+      - name: 1c. Auditoria responsiva 720p/1080p/4K
+        run: |
+          set -euo pipefail
+          python3 tools/kodi/auditar-responsivo.py --falhar
+          python3 tools/kodi/auditar-tela-entrada.py --falhar
+          python3 tools/kodi/auditar-tela-entrada.py \
+            --layout kodi/addons/script.smartedtv.welcome/resources/skins/Default/1080i/DialogWelcomeTV.xml \
+            --falhar
+
+      - name: 1d. Testes de foco, boot, projetor e menu
+        run: |
+          set -euo pipefail
+          # Cada grupo em um processo: os testes trocam os modulos xbmc/vip
+          # globais e, juntos, um interfere no outro.
+          python3 -m unittest tests.test_tela_entrada.CicloDeVidaTest \
+            tests.test_tela_entrada.TVBoxStickTest -v
+          python3 -m unittest tests.test_favourites_bootstrap.PerformanceTest \
+            tests.test_menu_brazuca_bingie -v
+          python3 -m unittest tests.test_home_navegacao \
+            tests.test_saida_limpa -v
+          python3 -m unittest tests.test_ads_compatibilidade \
+            tests.test_atualizar_apk -v
+
+      - name: 2. Baixar o APK universal v16
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          gh release download "$BASE_RELEASE" --repo "$GITHUB_REPOSITORY" \
+            --pattern "$BASE_ASSET" --dir build --clobber
+          mv "build/$BASE_ASSET" build/base-v16.apk
+          sha256sum build/base-v16.apk | tee build/base.sha256
+          ls -lh build/base-v16.apk
+          unzip -l build/base-v16.apk | grep -E 'lib/(arm64-v8a|armeabi-v7a)/libkodi.so'
+
+      - name: 3. Trocar tela/servico preservando as duas ABIs e o perfil
+        run: |
+          set -euo pipefail
+          python3 -u tools/kodi/atualizar-apk-v17.py \
+            --apk build/base-v16.apk --saida build/bruto.apk
+          python3 - <<'PY'
+          import zipfile
+          z = zipfile.ZipFile('build/bruto.apk')
+          nomes = z.namelist()
+          with open('build/diag.txt', 'w') as diag:
+              diag.write('total=%d\n' % len(nomes))
+              diag.write('\n'.join(n for n in nomes
+                                     if 'smartedtv.welcome' in n or
+                                     'skin.novatv/xml/Home' in n))
+              diag.write('\n')
+          for n in ('lib/arm64-v8a/libkodi.so', 'lib/armeabi-v7a/libkodi.so'):
+              assert n in nomes, n
+          def conferir(nome, origem):
+              try:
+                  atual = z.read(nome)
+              except Exception as erro:
+                  with open('build/diag.txt', 'a') as diag:
+                      diag.write('ERRO %s: %r\n' % (nome, erro))
+                  raise
+              esperado = open(origem, 'rb').read()
+              if atual != esperado:
+                  with open('build/diag.txt', 'a') as diag:
+                      diag.write('%s: apk=%d repo=%d\n' % (nome, len(atual), len(esperado)))
+                      diag.write('sha apk=%s repo=%s\n' % (
+                          __import__('hashlib').sha256(atual).hexdigest(),
+                          __import__('hashlib').sha256(esperado).hexdigest()))
+                      diag.write('entradas iguais no zip=%r\n' % [
+                          n for n in z.namelist() if n.endswith(nome.rsplit('/', 1)[-1])])
+                  print('::error title=APK diverge::%s (%d B) != %s (%d B)'
+                        % (nome, len(atual), origem, len(esperado)))
+                  raise SystemExit(1)
+          conferir('assets/addons/script.smartedtv.welcome/default.py',
+                   'kodi/addons/script.smartedtv.welcome/default.py')
+          assert z.read('assets/addons/service.smarted.bootstrap/menu_smarted.py') == \
+              open('kodi/addons/service.smarted.bootstrap/menu_smarted.py', 'rb').read()
+          assert z.read('assets/addons/service.smarted.bootstrap/performance.py') == \
+              open('kodi/addons/service.smarted.bootstrap/performance.py', 'rb').read()
+          assert z.read('assets/addons/service.smarted.bootstrap/vip.py') == \
+              open('kodi/addons/service.smarted.bootstrap/vip.py', 'rb').read()
+          assert z.read('assets/addons/service.smarted.bootstrap/smart_ads.py') == \
+              open('kodi/addons/service.smarted.bootstrap/smart_ads.py', 'rb').read()
+          assert z.read('assets/addons/service.smarted.bootstrap/service.py') == \
+              open('kodi/addons/service.smarted.bootstrap/service.py', 'rb').read()
+          assert z.read('assets/addons/service.smarted.bootstrap/addon.xml') == \
+              open('kodi/addons/service.smarted.bootstrap/addon.xml', 'rb').read()
+          at_addon = z.read('assets/addons/service.smarted.bootstrap/addon.xml')
+          assert b'library="vip.py"' not in at_addon
+          assert b'<?xml version="1.1"' not in at_addon
+          assert b'<extension point="xbmc.service" library="service.py" start="startup">' in at_addon
+          assert z.read('assets/addons/service.smarted.bootstrap/check.py') == \
+              open('kodi/addons/service.smarted.bootstrap/check.py', 'rb').read()
+          conferir('assets/addons/skin.novatv/xml/Home.xml',
+                   'kodi/skin.novatv/xml/Home.xml')
+          conferir('assets/addons/skin.novatv/xml/DialogButtonMenu.xml',
+                   'kodi/skin.novatv/xml/DialogButtonMenu.xml')
+          if 'assets/addons/skin.novatv/xml/ShutdownMenu.xml' in nomes:
+              conferir('assets/addons/skin.novatv/xml/ShutdownMenu.xml',
+                       'kodi/skin.novatv/xml/ShutdownMenu.xml')
+          print('OK: duas ABIs + tela/servico/anuncios/skin do repositorio')
+          PY
+
+      - name: 3b. Publicar diagnostico da divergencia
+        if: failure()
+        run: |
+          set -uo pipefail
+          if [ ! -f build/diag.txt ]; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -f build/diag.txt
+          git commit -m "[v18][skip ci] diagnostico do APK" || true
+          git push origin HEAD:arena/39a14845-kode || true
+
+      - name: 4. Simular o boot (sem tela preta e com foco)
+        run: |
+          set +e
+          python3 -u tools/kodi/simular-boot-tela-entrada.py --apk build/bruto.apk \
+            > build/boot.log 2>&1
+          RC=$?
+          cat build/boot.log
+          if [ "$RC" -ne 0 ]; then
+            git config user.name 'github-actions[bot]'
+            git config user.email 'github-actions[bot]@users.noreply.github.com'
+            git add -f build/boot.log
+            git commit -m "[v18][skip ci] log do simulador de boot"
+            git push origin HEAD:arena/39a14845-kode
+          fi
+          exit "$RC"
+
+      - name: 5. Subir versao 1.0.88 / 2103074
+        run: |
+          set -euo pipefail
+          python3 tools/kodi/ajustar-versao-apk.py build/bruto.apk \
+            build/bruto-versao.apk \
+            --de "$VERSAO_DE" --para "$VERSAO_PARA" \
+            --de-codigo "$CODIGO_DE" --para-codigo "$CODIGO_PARA"
+          mv build/bruto-versao.apk build/bruto.apk
+          python3 - <<'PY'
+          import struct, zipfile
+          with zipfile.ZipFile('build/bruto.apk') as z:
+              m = z.read('AndroidManifest.xml')
+          assert '1.0.88'.encode('utf-16-le') in m
+          assert struct.pack('<I', 2103074) in m
+          assert '1.0.86'.encode('utf-16-le') not in m
+          assert struct.pack('<I', 2103072) not in m
+          import importlib.util
+          spec = importlib.util.spec_from_file_location(
+              'ajustar', 'tools/kodi/ajustar-versao-apk.py')
+          mod = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(mod)
+          _, alterados, vistos = mod.desligar_debug(m)
+          assert not alterados, alterados
+          assert 'debuggable' in [nome for _elemento, nome in vistos], vistos
+          print('OK: 1.0.88/2103074 e debuggable=false')
+          PY
+
+      - name: 6. Alinhar e assinar com a mesma chave
+        run: |
+          set -euo pipefail
+          export KODE_BUILD_HOME="$RUNNER_TEMP/kode-build"
+          ./tools/kodi/setup.sh
+          python3 tools/kodi/align-apk.py build/bruto.apk build/alinhado.apk
+          JAVA="$KODE_BUILD_HOME/python/jdk4py/java-runtime/bin/java"
+          SIGNER="$KODE_BUILD_HOME/tools/apksigner.jar"
+          "$JAVA" -jar "$SIGNER" sign \
+            --ks dropbox/smarted-tv-test.jks \
+            --ks-pass pass:android --key-pass pass:android \
+            --ks-key-alias smarted-tv-test \
+            --v1-signing-enabled true --v2-signing-enabled true \
+            --v3-signing-enabled true --v4-signing-enabled false \
+            --out "build/$FINAL" build/alinhado.apk
+          "$JAVA" -jar "$SIGNER" verify --verbose --print-certs "build/$FINAL" \
+            | tee build/certs.txt
+          grep -qi "855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a" build/certs.txt
+          rm -f build/bruto.apk build/alinhado.apk
+          ( cd build && sha256sum "$FINAL" > "$FINAL.sha256" )
+          ls -lh "build/$FINAL"
+          cat "build/$FINAL.sha256"
+
+      - name: 7. Provas visuais 720p/1080p/4K
+        run: |
+          set -euo pipefail
+          L=kodi/addons/script.smartedtv.welcome/resources/skins/Default/1080i/DialogWelcomeTV.xml
+          python3 tools/kodi/renderizar-tela-entrada.py --layout "$L" \
+            --resolucao 1280x720 --saida build/tela-720p.png
+          python3 tools/kodi/renderizar-tela-entrada.py --layout "$L" \
+            --resolucao 1920x1080 --saida build/tela-1080p.png
+          python3 tools/kodi/renderizar-tela-entrada.py --layout "$L" \
+            --resolucao 3840x2160 --saida build/tela-4k.png
+          python3 tools/kodi/renderizar-tela-entrada.py --layout "$L" \
+            --dialogo ads --resolucao 1280x720 --saida build/tela-dialogo-720p.png
+          python3 tools/kodi/renderizar-tela-entrada.py --layout "$L" \
+            --dialogo status --resolucao 1280x720 --saida build/tela-status-720p.png
+          ls -lh build/tela-*.png
+
+      - name: 8. Publicar release v18
+        run: |
+          set -euo pipefail
+          NOTAS='v18 (1.0.88, versionCode 2103074). Reabertura apos Sair: Quit nativo + guarda que encerra somente o proprio processo se o Android mantiver a instancia antiga. Barra VIP centralizada e alinhada, area segura de 5% para TV, textos e campo redistribuidos sem reduzir a interface em bloco. Addons: addon.xml do servico em XML 1.0, sem a extensao duplicada de vip.py, versoes 1.0.9/1.0.1, check.py e addon.xml incluidos no APK rapido; addons do app sao habilitados antes do Startup. Mantem ABIs, assinatura, perfil e VIP. Validacao automatizada; teste fisico de 10 ciclos de reabertura ainda pendente.'
+          ASSETS=(
+            "build/$FINAL" "build/$FINAL.sha256"
+            build/tela-720p.png build/tela-1080p.png build/tela-4k.png
+            build/tela-dialogo-720p.png build/tela-status-720p.png
+          )
+          TITULO='SMARTEDTV 1.0.88 (v18: reabertura confiavel, barra VIP e area segura)'
+          if gh release view "$TAG_SAIDA" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG_SAIDA" "${ASSETS[@]}" \
+              --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit "$TAG_SAIDA" --repo "$GITHUB_REPOSITORY" \
+              --title "$TITULO" --notes "$NOTAS"
+          else
+            gh release create "$TAG_SAIDA" "${ASSETS[@]}" \
+              --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "$TITULO" --notes "$NOTAS"
+          fi
+          echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_SAIDA/$FINAL"
+
+# gatilho: correcao do Startup.xml em todas as skins

@@ -163,12 +163,13 @@ class BootstrapMenuTest(unittest.TestCase):
         sys.modules.pop('xbmcvfs', None)
         self.tmp.cleanup()
 
-    def test_primeira_execucao_limpa_menu_e_recarrega(self):
+    def test_primeira_execucao_limpa_menu_sem_recarregar_a_skin(self):
         resultado = self.modulo.garantir_menu(log=lambda *a, **k: None)
         self.assertTrue(resultado['applied'])
         self.assertIn('skin.novatv.DATA.xml', resultado['removed'])
         self.assertTrue((self.perfil / 'script.skinshortcuts' / 'outra.DATA.xml').exists())
-        self.assertIn('ReloadSkin()', self.builtins_chamados)
+        # ReloadSkin no meio do boot derrubava a tela de entrada/Home (preto).
+        self.assertEqual(self.builtins_chamados, [])
 
     def test_segunda_execucao_nao_repete(self):
         self.modulo.garantir_menu(log=lambda *a, **k: None)

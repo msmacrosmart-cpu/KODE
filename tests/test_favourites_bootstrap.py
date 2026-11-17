@@ -13,6 +13,7 @@ import re
 import sys
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 from xml.etree import ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -222,6 +223,31 @@ class PerformanceTest(unittest.TestCase):
         self.assertIn('videoplayer.usemediacodecsurface', applied)
         self.assertEqual(store['filecache.buffermode'], 4)
         self.assertTrue(store['videoplayer.usemediacodec'])
+        self.assertTrue(store['videoplayer.usemediacodecsurface'])
+
+    def test_projetor_desliga_surface_para_nao_ficar_com_imagem_preta(self):
+        store = {}
+        applied, failed = self.performance.apply_settings(
+            self.fake_jsonrpc(store), nome_dispositivo='XGIMI Halo+ Projector')
+        self.assertEqual(failed, [])
+        self.assertIn('videoplayer.usemediacodecsurface', applied)
+        self.assertFalse(store['videoplayer.usemediacodecsurface'])
+        self.assertTrue(store['videoplayer.usemediacodec'])
+        self.assertEqual(store['videoplayer.adjustrefreshrate'], 0)
+
+    def test_tv_box_continua_com_surface(self):
+        store = {}
+        self.performance.apply_settings(self.fake_jsonrpc(store),
+                                         nome_dispositivo='Samsung Smart TV')
+        self.assertTrue(store['videoplayer.usemediacodecsurface'])
+
+    def test_deteccao_de_projetor_nao_confunde_tv(self):
+        for nome in ('Projetor Wanbo X1', 'Android Projector', 'LG CineBeam',
+                     'Anker Nebula Capsule', 'Epson EH-TW5650'):
+            self.assertTrue(self.performance.eh_projetor(nome), nome)
+        for nome in ('Samsung Smart TV', 'Mi Box S', 'Fire TV Stick',
+                     'Chromecast with Google TV', 'Celular Galaxy S23'):
+            self.assertFalse(self.performance.eh_projetor(nome), nome)
 
     def test_setting_recusado_nao_derruba_o_boot(self):
         store = {}
@@ -245,3 +271,48 @@ class PerformanceTest(unittest.TestCase):
         main = source[source.index('def main():'):]
         self.assertIn('apply_performance()', main)
         self.assertIn('ensure_performance', source)
+        self.assertIn('System.FriendlyName', source)
+
+    def test_servico_recupera_boot_sem_janela(self):
+        source = (BOOTSTRAP / 'service.py').read_text()
+        self.assertIn('def garantir_interface_inicial', source)
+        self.assertIn("name='boot-interface'", source)
+        self.assertIn('RunScript(script.smartedtv.welcome)', source)
+
+    def test_addon_do_servico_tem_uma_unica_extensao_de_script(self):
+        raiz = ET.parse(BOOTSTRAP / 'addon.xml').getroot()
+        scripts = [e for e in raiz.findall('extension')
+                   if e.get('point') == 'xbmc.python.script']
+        self.assertEqual(len(scripts), 1)
+        self.assertEqual(scripts[0].get('library'), 'check.py')
+        self.assertEqual(raiz.get('version'), '1.0.9')
+
+    def test_addon_do_servico_declara_xml_1_0_e_um_script_existente(self):
+        texto = (BOOTSTRAP / 'addon.xml').read_text()
+        self.assertTrue(texto.startswith('<?xml version="1.0"'))
+        self.assertNotIn('version="1.1"', texto)
+        raiz = ET.parse(BOOTSTRAP / 'addon.xml').getroot()
+        for extensao in raiz.findall('extension'):
+            biblioteca = extensao.get('library')
+            if biblioteca:
+                self.assertTrue((BOOTSTRAP / biblioteca).is_file(), biblioteca)
+
+    def test_servico_remove_estagios_temporarios_de_seed(self):
+        source = (BOOTSTRAP / 'service.py').read_text()
+        self.assertIn('def limpar_estagios_de_seed', source)
+        self.assertIn("nome.startswith('.smarted-seed-')", source)
+        self.assertIn('limpar_estagios_de_seed()', source)
+
+    def test_servico_habilita_os_addons_do_app_antes_da_interface(self):
+        source = (BOOTSTRAP / 'service.py').read_text()
+        self.assertIn('CORE_ADDONS', source)
+        self.assertIn('enable_addons(CORE_ADDONS)', source)
+        for addon in ('script.smartedtv.welcome', 'service.smarted.bootstrap',
+                      'plugin.video.smarted'):
+            self.assertIn(addon, source)
+
+    def test_servico_liga_os_anuncios_e_limpa_marcas_no_boot(self):
+        source = (BOOTSTRAP / 'service.py').read_text()
+        self.assertIn('smart_ads.iniciar_monitor(log)', source)
+        self.assertIn('smart_ads.abertura_depois_do_boot', source)
+        self.assertIn('limpar_estado_interface()', source)

@@ -1,0 +1,269 @@
+# SMARTEDTV universal: compila o Kodi 21.3 em ARMv7 (32 bits) com o MESMO
+# APP_PACKAGE do APK (smartedtv.full) e junta as libs armv7 ao APK arm64.
+#
+# Por que compilar: o libkodi.so chama FindClass("<APP_PACKAGE>/Main"), entao
+# nao serve copiar as libs do Kodi oficial (org.xbmc.kodi): o app e
+# smartedtv.full e a classe nao existiria. O build usa a mesma receita do
+# workflow smartedtv-build-source.yml, trocando o host para
+# arm-linux-androideabi e o APP_PACKAGE no version.txt.
+name: SMARTEDTV - universal armv7 + arm64
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/39a14845-kode]
+    paths: [.github/workflows/build-armv7-universal.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: smartedtv-armv7-universal
+  cancel-in-progress: true
+
+env:
+  KODI_TAG: 21.3-Omega
+  KODI_COMMIT: a3a448d26b8d560a65655dab2cd122994dc4e146
+  APP_PACKAGE: smartedtv.full
+  TAG_SAIDA: v1.0.86-tela-inicial-v16
+  FINAL: SMARTEDTV-atual-com-tela-inicial-v16-universal.apk
+
+jobs:
+  libs:
+    name: Compilar Kodi 21.3 armv7 (arm-linux-androideabi)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Libertar espaco em disco
+        run: |
+          echo "== antes =="; df -h /
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /opt/ghc /usr/local/.ghcup || true
+          sudo rm -rf /opt/hostedtoolcache/CodeQL || true
+          sudo rm -rf /usr/local/lib/android/sdk/system-images || true
+          sudo apt-get clean
+          docker image prune -af 2>/dev/null || true
+          echo "== depois =="; df -h /
+
+      - name: 2. JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: 3. Dependencias de sistema
+        run: |
+          set -uo pipefail
+          sudo apt-get update -o Acquire::Retries=5 -qq 2>/dev/null || true
+          sudo apt-get install -y -qq --no-install-recommends \
+            autoconf automake bison build-essential curl flex gawk git gperf \
+            lib32stdc++6 lib32z1 libcurl4-openssl-dev unzip zip zlib1g-dev \
+            libtool pkg-config cmake 2>/dev/null || true
+          for t in cmake make git curl unzip python3 autoconf automake libtoolize pkg-config gperf bison flex; do
+            command -v "$t" >/dev/null 2>&1 || { echo "::error::faltando $t"; exit 1; }
+          done
+          python3 -m pip install --quiet --break-system-packages 'Pillow==11.3.0' \
+            || python3 -m pip install --quiet --user 'Pillow==11.3.0'
+
+      - name: 4. SDK/NDK do Kodi 21.3
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
+            'platforms;android-34' 'build-tools;33.0.1' 'ndk;21.4.7075529'
+          test -d "$ANDROID_HOME/ndk/21.4.7075529"
+
+      - name: 5. Codigo-fonte do Kodi 21.3 + APP_PACKAGE smartedtv.full
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch "$KODI_TAG" https://github.com/xbmc/xbmc.git "$RUNNER_TEMP/kodi"
+          test "$(git -C "$RUNNER_TEMP/kodi" rev-parse HEAD)" = "$KODI_COMMIT"
+          grep -q "^APP_PACKAGE org.xbmc.kodi$" "$RUNNER_TEMP/kodi/version.txt"
+          sed -i 's/^APP_PACKAGE org\.xbmc\.kodi$/APP_PACKAGE smartedtv.full/' "$RUNNER_TEMP/kodi/version.txt"
+          grep -q "^APP_PACKAGE smartedtv.full$" "$RUNNER_TEMP/kodi/version.txt"
+          echo "APP_PACKAGE trocado para smartedtv.full"
+
+      - name: 6. Cache das dependencias armv7
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/xbmc-depends
+          key: depends-armv7-${{ env.KODI_TAG }}-ndk21.4.7075529-v1
+
+      - name: 7. Dependencias Android armv7
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/kodi/tools/depends"
+          ./bootstrap
+          ./configure --with-tarballs="$RUNNER_TEMP/tarballs-armv7" \
+            --host=arm-linux-androideabi \
+            --with-sdk-path="$ANDROID_HOME" \
+            --with-ndk-path="$ANDROID_HOME/ndk/21.4.7075529" \
+            --prefix="$RUNNER_TEMP/xbmc-depends"
+          make -j2
+          echo "livre apos depends: $(df -h --output=avail / | tail -1)"
+
+      - name: 8. Compilar Kodi armv7
+        run: |
+          set +e
+          set -uo pipefail
+          mkdir -p build
+          test -d "$RUNNER_TEMP/xbmc-depends/lib" || echo "AVISO: prefixo de depends nao encontrado"
+          {
+            echo "== cmakebuildsys =="
+            make -C "$RUNNER_TEMP/kodi/tools/depends/target/cmakebuildsys" \
+              BUILD_DIR="$RUNNER_TEMP/kodi-build-armv7"
+            RC1=$?
+            echo "RC cmakebuildsys=$RC1"
+            if [ "$RC1" -eq 0 ]; then
+              echo "== make kodi =="
+              make -C "$RUNNER_TEMP/kodi-build-armv7" -j2
+              RC2=$?
+            else
+              RC2=$RC1
+            fi
+            echo "RC make=$RC2"
+          } > build/build-armv7.log 2>&1
+          tail -400 build/build-armv7.log
+          tail -400 build/build-armv7.log > build/erro-armv7.txt
+          git config user.name 'build-armv7'
+          git config user.email 'build-armv7@users.noreply.github.com'
+          git add build/erro-armv7.txt
+          git diff --cached --quiet || git commit -m "diag: fim do log do build armv7"
+          git push origin HEAD:arena/39a14845-kode || true
+          grep -q 'RC make=0' build/build-armv7.log || exit 1
+
+      - name: 9. Empacotar APK armv7 e extrair as libs
+        env:
+          KODI_ANDROID_STORE_FILE: ${{ github.workspace }}/dropbox/smarted-tv-test.jks
+          KODI_ANDROID_STORE_PASSWORD: android
+          KODI_ANDROID_KEY_ALIAS: smarted-tv-test
+          KODI_ANDROID_KEY_PASSWORD: android
+        run: |
+          set -euo pipefail
+          make -C "$RUNNER_TEMP/kodi-build-armv7" apk
+          APK=$(find "$RUNNER_TEMP/kodi-build-armv7" "$RUNNER_TEMP/kodi" -type f -name '*.apk' \
+                | grep -v 'unaligned\|unsigned\|intermediate' | head -1)
+          [ -n "$APK" ] || { echo "::error::nenhum APK armv7"; exit 1; }
+          echo "APK armv7: $APK"
+          mkdir -p build/armv7-libs build/armv7-extract
+          cp "$APK" build/kodi-armv7.apk
+          unzip -q "$APK" 'lib/armeabi-v7a/*' -d build/armv7-extract
+          cp build/armv7-extract/lib/armeabi-v7a/*.so build/armv7-libs/
+          test -f build/armv7-libs/libkodi.so
+          echo "libs: $(ls build/armv7-libs/*.so | wc -l)"
+          strings build/armv7-libs/libkodi.so | grep -q 'smartedtv' \
+            || { echo "::error::libkodi armv7 nao tem o pacote smartedtv"; exit 1; }
+          ls -lh build/armv7-libs | head -10
+
+      - name: 10. Guardar libs e APK armv7
+        uses: actions/upload-artifact@v4
+        with:
+          name: armv7
+          path: |
+            build/armv7-libs/*.so
+            build/kodi-armv7.apk
+          retention-days: 30
+          if-no-files-found: error
+
+  universal:
+    name: Juntar armv7 ao APK v15 e publicar universal
+    needs: libs
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Baixar o APK v15 e as libs armv7
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          gh release download v1.0.85-tela-inicial-v15 \
+            --pattern 'SMARTEDTV-atual-com-tela-inicial-v15.apk' --dir build
+          ls -lh build
+
+      - name: 2. Receber as libs armv7
+        uses: actions/download-artifact@v4
+        with:
+          name: armv7
+          path: build/armv7
+
+      - name: 3. Juntar as duas ABIs e atualizar o vip.py
+        run: |
+          set -euo pipefail
+          mkdir -p build/armv7-libs
+          cp build/armv7/*.so build/armv7-libs/ 2>/dev/null || true
+          if [ ! -f build/armv7-libs/libkodi.so ]; then
+            find build/armv7 -name '*.so' -exec cp {} build/armv7-libs/ \;
+          fi
+          test -f build/armv7-libs/libkodi.so
+          test -f build/armv7/kodi-armv7.apk
+          python3 - <<'PY'
+          import zipfile
+          from pathlib import Path
+          base = Path('build/SMARTEDTV-atual-com-tela-inicial-v15.apk')
+          saida = Path('build/universal-vip.apk')
+          vip = Path('kodi/addons/service.smarted.bootstrap/vip.py').read_bytes()
+          alvo = 'assets/addons/service.smarted.bootstrap/vip.py'
+          with zipfile.ZipFile(base) as src, zipfile.ZipFile(saida, 'w', allowZip64=True) as dst:
+              for item in src.infolist():
+                  if item.is_dir() or item.filename.startswith('META-INF/'):
+                      continue
+                  if item.filename == alvo:
+                      dst.writestr(item, vip)
+                      continue
+                  with src.open(item) as f, dst.open(item, 'w') as g:
+                      while True:
+                          bloco = f.read(1024 * 1024)
+                          if not bloco:
+                              break
+                          g.write(bloco)
+          PY
+          python3 tools/kodi/adicionar-abi-apk.py build/universal-vip.apk build/universal.apk \
+            --libs build/armv7-libs --abi armeabi-v7a --modelo-apk build/armv7/kodi-armv7.apk
+          python3 tools/kodi/ajustar-versao-apk.py build/universal.apk build/universal-final.apk \
+            --de 1.0.85 --para 1.0.86 --de-codigo 2103071 --para-codigo 2103072
+          mv build/universal-final.apk build/universal.apk
+          unzip -l build/universal.apk | awk '$4 ~ /^lib\/(arm64-v8a|armeabi-v7a)\/libkodi\.so$/ {print "ABI:",$4}'
+          test "$(unzip -l build/universal.apk | grep -c 'lib/arm64-v8a/libkodi.so')" -eq 1
+          test "$(unzip -l build/universal.apk | grep -c 'lib/armeabi-v7a/libkodi.so')" -eq 1
+
+      - name: 4. Alinhar e assinar com a mesma chave
+        run: |
+          set -euo pipefail
+          export KODE_BUILD_HOME="$RUNNER_TEMP/kode-build"
+          ./tools/kodi/setup.sh
+          python3 tools/kodi/align-apk.py build/universal.apk build/alinhado.apk
+          JAVA="$KODE_BUILD_HOME/python/jdk4py/java-runtime/bin/java"
+          SIGNER="$KODE_BUILD_HOME/tools/apksigner.jar"
+          "$JAVA" -jar "$SIGNER" sign \
+            --ks dropbox/smarted-tv-test.jks \
+            --ks-pass pass:android --key-pass pass:android \
+            --ks-key-alias smarted-tv-test \
+            --v1-signing-enabled true --v2-signing-enabled true \
+            --v3-signing-enabled true --v4-signing-enabled false \
+            --out "build/$FINAL" build/alinhado.apk
+          "$JAVA" -jar "$SIGNER" verify --verbose --print-certs "build/$FINAL" | tee build/certs.txt
+          grep -qi "855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a" build/certs.txt
+          ( cd build && sha256sum "$FINAL" > "$FINAL.sha256" )
+          ls -lh "build/$FINAL"
+          cat "build/$FINAL.sha256"
+
+      - name: 5. Publicar release universal
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG_SAIDA" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG_SAIDA" "build/$FINAL" "build/$FINAL.sha256" \
+              --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG_SAIDA" "build/$FINAL" "build/$FINAL.sha256" \
+              --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "SMARTEDTV 1.0.86 universal (armv7 32-bit + arm64 64-bit)" \
+              --notes 'v16 universal: o MESMO APK traz lib/armeabi-v7a (32 bits) e lib/arm64-v8a (64 bits). O libkodi armv7 foi compilado do Kodi 21.3-Omega com APP_PACKAGE smartedtv.full, o mesmo da versao arm64, para o JNI encontrar as classes Java do app; nao foi copiado do Kodi oficial (que usa org.xbmc.kodi). Assim instala e abre em Android 8+ 32-bit e 64-bit, celular, TV, box, projetor e stick. versionCode 2103072 (maior que v12-v15), mesma assinatura 855de171..., VIP e dados preservados na atualizacao, android:debuggable=false. Tela de entrada normal no celular e DialogWelcomeTV.xml em TV/box/projetor/stick; anuncios e VIP como antes. Prova: libkodi armv7 contem o pacote smartedtv; APK final tem as duas libkodi.so; versao e certificado conferidos; NAO foi executado em aparelho real neste ambiente.'
+          fi
+          echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG_SAIDA/$FINAL"

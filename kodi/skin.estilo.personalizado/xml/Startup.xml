@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Primeira interface apresentada pelo SMARTEDTV.
+
+  O Kodi abre esta janela (WINDOW_STARTUP_ANIM, "Startup.xml") no lugar da Home
+  durante CApplication::Initialize; a Home (janela 10000) so e criada quando
+  este XML pede. Aqui a tela do ZIP (script.smartedtv.welcome) e aberta e fica
+  no ar; a Home e carregada somente depois que o usuario conclui a tela de
+  entrada, que executa ReplaceWindow($INFO[System.StartupWindow]) - o mesmo
+  comando que este arquivo executava antes.
+
+  - AlarmClock(...,00:00:00) dispara no proximo ciclo do Kodi, depois que esta
+    janela existe e o interpretador Python esta pronto.
+  - Fica tambem um seguro de 30 s: se a tela nao chegar a abrir (erro no
+    Python), a Home e liberada para o aplicativo nunca ficar travado. A tela
+    cancela esse seguro no onInit, entao com a tela funcionando nao existe Home
+    por tras nem antes dele.
+-->
 <window>
-	<onload>ReplaceWindow($INFO[System.StartupWindow])</onload>
+	<onload>AlarmClock(smartedtv_entrada,RunScript(script.smartedtv.welcome),00:00:00,silent)</onload>
+	<onload>RunScript(script.smartedtv.welcome,seguro=1)</onload>
 	<controls />
 </window>

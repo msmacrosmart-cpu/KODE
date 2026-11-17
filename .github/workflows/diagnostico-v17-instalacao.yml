@@ -1,0 +1,95 @@
+name: Diagnostico da instalacao v17
+
+on:
+  push:
+    branches: [arena/39a14845-kode]
+    paths: [.github/workflows/diagnostico-v17-instalacao.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  diagnosticar:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Baixar o APK publicado
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          gh release download v1.0.87-responsivo-v17 \
+            --pattern 'SMARTEDTV-atual-v17-responsivo-universal.apk' \
+            --dir build --clobber
+          mv build/SMARTEDTV-atual-v17-responsivo-universal.apk build/v17.apk
+          sha256sum build/v17.apk
+          ls -l build/v17.apk
+      - name: Inspecionar manifesto, ABIs e alinhamento
+        run: |
+          set -uo pipefail
+          python3 -m pip install --disable-pip-version-check pyaxmlparser==0.3.31
+          python3 - <<'PY' | tee docs/diagnostico-v17-instalacao.txt
+          import struct, zipfile, hashlib
+          from pyaxmlparser import APK
+          p = 'build/v17.apk'
+          a = APK(p)
+          print('arquivo:', p)
+          print('bytes:', __import__('os').path.getsize(p))
+          print('sha256:', hashlib.sha256(open(p,'rb').read()).hexdigest())
+          print('pacote:', a.package)
+          print('nome:', a.get_app_name())
+          print('versionName:', a.version_name)
+          print('versionCode:', a.version_code)
+          print('minSdk:', a.get_min_sdk_version() if hasattr(a,'get_min_sdk_version') else a.min_sdk_version)
+          print('targetSdk:', a.get_target_sdk_version() if hasattr(a,'get_target_sdk_version') else a.target_sdk_version)
+          try:
+              app = a.get_android_manifest_xml().find('application')
+              ns = '{http://schemas.android.com/apk/res/android}'
+              print('extractNativeLibs:', app.get(ns + 'extractNativeLibs'))
+              print('debuggable:', app.get(ns + 'debuggable'))
+              print('testOnly:', app.get(ns + 'testOnly'))
+              print('isSplitRequired:', app.get(ns + 'isSplitRequired'))
+              print('app attrs:', sorted(app.attrib))
+          except Exception as e:
+              print('manifest application:', e)
+          z = zipfile.ZipFile(p)
+          nomes = z.namelist()
+          print('entradas:', len(nomes))
+          abis = sorted({n.split('/')[1] for n in nomes if n.startswith('lib/') and n.count('/') >= 2})
+          print('ABIs:', abis)
+          for abi in abis:
+              so = [n for n in nomes if n.startswith('lib/%s/' % abi) and n.endswith('.so')]
+              print('  %s: %d .so, %.1f MB descomprimido' % (
+                  abi, len(so), sum(z.getinfo(n).file_size for n in so)/1048576.0))
+          print('libkodi arm64:', 'lib/arm64-v8a/libkodi.so' in nomes)
+          print('libkodi armv7:', 'lib/armeabi-v7a/libkodi.so' in nomes)
+          # Se extractNativeLibs=false, cada .so precisa estar alinhado a 4096.
+          alinhamento = {}
+          for n in nomes:
+              if not n.endswith('.so'):
+                  continue
+              info = z.getinfo(n)
+              off = info.header_offset + 30 + len(n.encode('utf-8')) + len(info.extra)
+              alinhamento.setdefault(off % 4096, []).append(n)
+          print('offset .so mod 4096:', {k: len(v) for k, v in sorted(alinhamento.items())})
+          print('resources.arsc comprimido:', z.getinfo('resources.arsc').compress_type)
+          print('tamanho descomprimido total: %.1f MB' % (sum(i.file_size for i in z.infolist())/1048576.0))
+          print('libs por ABI:')
+          for abi in abis:
+              so = sorted(n.split('/')[-1] for n in nomes if n.startswith('lib/%s/' % abi) and n.endswith('.so'))
+              print('  %s (%d): %s' % (abi, len(so), ', '.join(so[:20])))
+          print('assinaturas:', [n for n in nomes if n.startswith('META-INF/') and n.upper().endswith(('.RSA','.DSA','.EC','.SF','.MF'))])
+          print('addon default:', z.read('assets/addons/script.smartedtv.welcome/default.py')[:40])
+          PY
+      - name: Publicar o laudo no repositorio
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -f docs/diagnostico-v17-instalacao.txt
+          git commit -m "[v17][skip ci] laudo da instalacao do APK" || true
+          git push origin HEAD:arena/39a14845-kode || true

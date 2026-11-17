@@ -12,6 +12,17 @@ Duas camadas, ambas nativas e idempotentes:
   (``videoplayer.usemediacodecsurface`` / ``videoplayer.usemediacodec``), que
   valem imediatamente e não exigem reiniciar o app.
 
+Modo projetor (imagem preta com audio)
+-------------------------------------
+Alguns projetores Android anunciam MediaCodec, mas o caminho
+``MediaCodec (Surface)`` entrega audio sem quadro nenhum (tela preta). Nesses
+aparelhos o boot troca para MediaCodec sem Surface e desliga o ajuste
+automatico de taxa de quadros, que tambem apaga a imagem em projetores que
+renegociam HDMI. A deteccao e conservadora: so pelo nome do aparelho
+(projetor/projector e marcas conhecidas); TVs, boxes e sticks continuam com o
+caminho rapido com Surface. Tudo com leitura de volta e sem derrubar o boot se
+o Kodi recusar uma opcao.
+
 Nada é inventado: os ids abaixo existem em ``system/settings/settings.xml`` do
 Kodi 21 (Omega) e os valores respeitam as listas de opções aceitas
 (``filecachememorysizes`` = 16..1024 MB, ``filecachereadfactors`` = 110..5000,
@@ -37,6 +48,21 @@ VIDEO_SETTINGS = {
     'videoplayer.usemediacodec': True,          # decodificador MediaCodec nativo
 }
 
+# Projetor/Android TV com saida HDMI que apaga a imagem no decoder Surface.
+VIDEO_SETTINGS_PROJETOR = {
+    'videoplayer.usemediacodecsurface': False,  # Surface: audio sem imagem
+    'videoplayer.usemediacodec': True,          # MediaCodec sem Surface
+    'videoplayer.adjustrefreshrate': 0,         # nao renegocia HDMI ao abrir canal
+}
+
+# Nomes que identificam projetores (System.FriendlyName). Sem acento/minusculo.
+PROJETOR_MARCAS = (
+    'projetor', 'projector', 'cinebeam', 'the freestyle', 'freestyle',
+    'xgimi', 'wanbo', 'byintek', 'magcubic', 'salange', 'yaber', 'vankyo',
+    'nebula', 'anker', 'benq', 'epson', 'viewsonic', 'optoma', 'vivitek',
+    'pico', 'dlp', 'led projector', 'smart projector', 'home projector',
+)
+
 # --- advancedsettings.xml ---------------------------------------------------
 ADVANCED_TEMPLATE = """<!-- {marker}: cache agressivo para streams do Brazuca Play -->
 <advancedsettings version="1.0">
@@ -51,6 +77,25 @@ ADVANCED_TEMPLATE = """<!-- {marker}: cache agressivo para streams do Brazuca Pl
     </network>
 </advancedsettings>
 """
+
+
+def _sem_acento(texto):
+    import unicodedata
+    return ''.join(c for c in unicodedata.normalize('NFKD', texto or '')
+                   if not unicodedata.combining(c)).lower()
+
+
+def eh_projetor(nome_dispositivo):
+    """True para projetores Android conhecidos (nao confunde TV/box/stick)."""
+    nome = _sem_acento(nome_dispositivo)
+    return any(marca in nome for marca in PROJETOR_MARCAS)
+
+
+def video_settings(nome_dispositivo=''):
+    """Perfil de video: Surface para TV/box/stick, sem Surface para projetor."""
+    if eh_projetor(nome_dispositivo):
+        return dict(VIDEO_SETTINGS_PROJETOR)
+    return dict(VIDEO_SETTINGS)
 
 
 def advanced_path(home):
@@ -83,15 +128,22 @@ def write_advancedsettings(home, log=None):
     return True
 
 
-def apply_settings(jsonrpc, log=None):
+def apply_settings(jsonrpc, log=None, nome_dispositivo=''):
     """Aplica cache + aceleração por hardware via JSON-RPC.
 
     Devolve ``(aplicados, falhas)``; nunca levanta exceção para não derrubar o
-    boot por causa de um setting inexistente.
+    boot por causa de um setting inexistente. Em projetor usa o perfil sem
+    MediaCodec Surface (imagem preta com audio).
     """
     applied = []
     failed = []
-    for setting, value in sorted(CACHE_SETTINGS.items()) + sorted(VIDEO_SETTINGS.items()):
+    perfil = video_settings(nome_dispositivo)
+    if log:
+        log('video: %s -> %s' % (
+            'projetor (sem Surface)'
+            if perfil.get('videoplayer.usemediacodecsurface') is False
+            else 'padrao (MediaCodec Surface)', perfil))
+    for setting, value in sorted(CACHE_SETTINGS.items()) + sorted(perfil.items()):
         try:
             response = jsonrpc('Settings.SetSettingValue', {'setting': setting, 'value': value})
             if response.get('error'):
@@ -116,8 +168,9 @@ def apply_settings(jsonrpc, log=None):
     return applied, failed
 
 
-def ensure_performance(home, jsonrpc, log=None):
+def ensure_performance(home, jsonrpc, log=None, nome_dispositivo=''):
     """Roda as duas camadas e devolve o resumo usado nos testes/relatório."""
     wrote = write_advancedsettings(home, log)
-    applied, failed = apply_settings(jsonrpc, log)
-    return {'advancedsettings': wrote, 'applied': applied, 'failed': failed}
+    applied, failed = apply_settings(jsonrpc, log, nome_dispositivo=nome_dispositivo)
+    return {'advancedsettings': wrote, 'applied': applied, 'failed': failed,
+            'projetor': eh_projetor(nome_dispositivo)}

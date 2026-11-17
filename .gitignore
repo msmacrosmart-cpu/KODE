@@ -10,3 +10,7 @@ build/
 # SMARTEDTV: saída de compilação (fonte patchado, dependências, APK)
 smartedtv/build/
 smartedtv/out-apk/
+
+# ambiente local e APKs de teste do agente
+.cache/
+build_test/
