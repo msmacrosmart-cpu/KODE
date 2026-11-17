@@ -1,8 +1,8 @@
 # Instalar o SMARTEDTV (celular, TV, box, projetor e stick)
 
-**Versão atual: v15 (1.0.85 / 2103071)**  
-https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.85-tela-inicial-v15/SMARTEDTV-atual-com-tela-inicial-v15.apk  
-SHA-256: `860edc71067547e87c6e6671984977699d9c1a5c74857b3c87e01c78eaa15fe3`
+**Versão atual: v16 universal (1.0.86 / 2103072, 32 e 64 bits)**  
+https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.86-tela-inicial-v16/SMARTEDTV-atual-com-tela-inicial-v16-universal.apk  
+SHA-256: `596a8d020f07f63cbcb8a3674251b656afe226fe53d1d58d6ff0acb9b5ff6360`
 
 O APK é grande (~250 MB) e é instalado **fora da Play Store**. A mensagem
 genérica **“Aplicativo não instalado”** quase sempre é uma destas causas —
@@ -10,14 +10,14 @@ nenhuma delas é vírus ou APK corrompido:
 
 | Causa | Como resolver |
 |---|---|
-| **Mesmo `versionCode` da versão instalada** | Use a v15 (1.0.85 / 2103071) ou desinstale a anterior antes. |
+| **Mesmo `versionCode` da versão instalada** | Use a v16 universal (1.0.86 / 2103072) ou desinstale a anterior antes. |
 | **Assinatura diferente da versão instalada** | Desinstale a versão antiga (perde dados e VIP) e instale de novo. |
 | **“Instalar apps desconhecidos” desligado** | Autorize o navegador/gerenciador/Downloader que está abrindo o APK. |
 | **Play Protect bloqueando** | Toque em **“Mais detalhes” → “Instalar mesmo assim”** (ou desligue a verificação temporariamente). |
-| **Pouco espaço** | Libere pelo menos **1 GB**; o APK + instalação do Kodi ocupam bastante. |
-| **Aparelho 32-bit (armeabi-v7a)** | Esta base do Kodi é **arm64-v8a**: não instala em Android 32-bit. Veja a seção 6. |
+| **Pouco espaço** | Libere pelo menos **1,5 GB**; o APK + instalação do Kodi ocupam bastante. |
+| **Aparelho 32-bit (armeabi-v7a)** | Use a **v16 universal**: ela tem `lib/armeabi-v7a` e `lib/arm64-v8a`. |
 
-> A v15 foi assinada com a **mesma chave** da v12/v13
+> A v16 foi assinada com a **mesma chave** da v12/v13
 > (`855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a`), então
 > instalar por cima da v12/v13 **preserva perfil, addons e VIP**. Só desinstale
 > se a versão que está no aparelho veio de outra chave (por exemplo, um APK
@@ -79,24 +79,21 @@ GitHub**, sem passar por WhatsApp/Telegram (eles comprimem/truncam arquivos).
 
 ## 5. Compatibilidade do APK
 
-Conferido no APK v15 (`docs/apk-info-v15.txt`):
+A **v16** é universal:
 
 - **minSdk 21** (Android 5.0) — instala em **Android 8, 9, 10, 11, 12, 13, 14 e 15**;
 - **targetSdk 34**;
-- **ABI: somente `arm64-v8a`** (64-bit ARM);
+- **ABIs: `arm64-v8a` (64-bit) e `armeabi-v7a` (32-bit)** no mesmo APK;
 - `debuggable: false`, `testOnly` ausente;
 - assinado com o certificado `855de171...`.
 
-Ou seja: **Android 8+ funciona em aparelho 64-bit**. Em aparelho **32-bit**
-(`armeabi-v7a`), o Android mostra “Aplicativo não instalado” porque não há
-bibliotecas nativas armv7 neste APK. Para conferir:
+O Android escolhe a ABI sozinho. Para conferir qual o aparelho usa:
 
 - app **AIDA64** ou **Device Info**: procure “ABI”/“CPU”;
 - ou no PC com adb: `adb shell getprop ro.product.cpu.abilist`.
 
-Se aparecer **`arm64-v8a`** (sozinho ou junto de `armeabi-v7a`), instala. Se
-aparecer **somente `armeabi-v7a`**, o aparelho é 32-bit e esta build não roda —
-seria preciso uma build separada com base Kodi armv7.
+Se aparecer `arm64-v8a`, `armeabi-v7a` ou os dois, a v16 instala. As builds
+v12–v15 eram somente arm64; por isso falhavam em aparelho 32-bit.
 
 ## 6. O que **não** é o problema
 

@@ -1,180 +1,0 @@
-== downloads
-== https://mirrors.kodi.tv/releases/android/arm/kodi-21.3-Omega-armeabi-v7a.apk
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-  0 64.6M    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0 33 64.6M   33 21.5M    0     0  13.7M      0  0:00:04  0:00:01  0:00:03 20.7M100 64.6M  100 64.6M    0     0  27.9M      0  0:00:02  0:00:02 --:--:-- 36.2M
-OK https://mirrors.kodi.tv/releases/android/arm/kodi-21.3-Omega-armeabi-v7a.apk
-== https://mirrors.kodi.tv/releases/android/arm/kodi-21.3-Omega-armeabi-v7a.apk?https=1
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0 64.6M    0  210k    0     0   158k      0  0:06:57  0:00:01  0:06:56  187k 13 64.6M   13 8992k    0     0  4069k      0  0:00:16  0:00:02  0:00:14 4478k 46 64.6M   46 30.2M    0     0  9532k      0  0:00:06  0:00:03  0:00:03  9.9M 81 64.6M   81 52.9M    0     0  12.3M      0  0:00:05  0:00:04  0:00:01 12.9M100 64.6M  100 64.6M    0     0  13.6M      0  0:00:04  0:00:04 --:--:-- 14.2M
-OK https://mirrors.kodi.tv/releases/android/arm/kodi-21.3-Omega-armeabi-v7a.apk?https=1
-== https://mirrors.kodi.tv/releases/android/arm64-v8a/kodi-21.3-Omega-arm64-v8a.apk
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0 65.0M    0 15957    0     0  14080      0  1:20:41  0:00:01  1:20:40 15567  2 65.0M    2 1554k    0     0   737k      0  0:01:30  0:00:02  0:01:28  777k 33 65.0M   33 21.8M    0     0  7192k      0  0:00:09  0:00:03  0:00:06 7450k 70 65.0M   70 45.6M    0     0  11.1M      0  0:00:05  0:00:04  0:00:01 11.4M100 65.0M  100 65.0M    0     0  13.2M      0  0:00:04  0:00:04 --:--:-- 13.5M
-OK https://mirrors.kodi.tv/releases/android/arm64-v8a/kodi-21.3-Omega-arm64-v8a.apk
-
-== SMARTEDTV v15
-package smartedtv.full version 1.0.85 2103071
-minSdk 21 target 34
-abi ? 'APK' object has no attribute 'get_android_abis'
-
-== Kodi oficial armv7
-package org.xbmc.kodi version 21.3 2103000
-minSdk 21 target 34
-abi ? 'APK' object has no attribute 'get_android_abis'
-
-== libs arm64: SMARTEDTV x Kodi oficial (md5)
-md5sum: libCryptodome_Cipher__ARC4.so: No such file or directory
-md5sum: libCryptodome_Cipher__Salsa20.so: No such file or directory
-md5sum: libCryptodome_Cipher__chacha20.so: No such file or directory
-md5sum: libCryptodome_Cipher__pkcs1_decode.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_aes.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_arc2.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_blowfish.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_cast.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_cbc.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_cfb.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_ctr.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_des.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_des3.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_ecb.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_eksblowfish.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_ocb.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_ofb.so: No such file or directory
-md5sum: libCryptodome_Hash__BLAKE2b.so: No such file or directory
-md5sum: libCryptodome_Hash__BLAKE2s.so: No such file or directory
-md5sum: libCryptodome_Hash__MD2.so: No such file or directory
-md5sum: libCryptodome_Hash__MD4.so: No such file or directory
-md5sum: libCryptodome_Hash__MD5.so: No such file or directory
-md5sum: libCryptodome_Hash__RIPEMD160.so: No such file or directory
-md5sum: libCryptodome_Hash__SHA1.so: No such file or directory
-md5sum: libCryptodome_Hash__SHA224.so: No such file or directory
-md5sum: libCryptodome_Hash__SHA256.so: No such file or directory
-md5sum: libCryptodome_Hash__SHA384.so: No such file or directory
-md5sum: libCryptodome_Hash__SHA512.so: No such file or directory
-md5sum: libCryptodome_Hash__ghash_portable.so: No such file or directory
-md5sum: libCryptodome_Hash__keccak.so: No such file or directory
-md5sum: libCryptodome_Hash__poly1305.so: No such file or directory
-md5sum: libCryptodome_Math__modexp.so: No such file or directory
-md5sum: libCryptodome_Protocol__scrypt.so: No such file or directory
-md5sum: libCryptodome_PublicKey__ec_ws.so: No such file or directory
-md5sum: libCryptodome_Util__cpuid_c.so: No such file or directory
-md5sum: libCryptodome_Util__strxor.so: No such file or directory
-md5sum: lib_imaging.so: No such file or directory
-md5sum: lib_imagingft.so: No such file or directory
-md5sum: lib_imagingmath.so: No such file or directory
-md5sum: lib_imagingmorph.so: No such file or directory
-md5sum: lib_imagingtk.so: No such file or directory
-md5sum: libc++_shared.so: No such file or directory
-md5sum: libdvdnav-aarch64.so: No such file or directory
-md5sum: libkodi.so: No such file or directory
-md5sum: libshairplay.so: No such file or directory
-md5sum: libCryptodome_Cipher__ARC4.so: No such file or directory
-md5sum: libCryptodome_Cipher__Salsa20.so: No such file or directory
-md5sum: libCryptodome_Cipher__chacha20.so: No such file or directory
-md5sum: libCryptodome_Cipher__pkcs1_decode.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_aes.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_arc2.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_blowfish.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_cast.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_cbc.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_cfb.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_ctr.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_des.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_des3.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_ecb.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_eksblowfish.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_ocb.so: No such file or directory
-md5sum: libCryptodome_Cipher__raw_ofb.so: No such file or directory
-md5sum: libCryptodome_Hash__BLAKE2b.so: No such file or directory
-md5sum: libCryptodome_Hash__BLAKE2s.so: No such file or directory
-md5sum: libCryptodome_Hash__MD2.so: No such file or directory
-md5sum: libCryptodome_Hash__MD4.so: No such file or directory
-md5sum: libCryptodome_Hash__MD5.so: No such file or directory
-md5sum: libCryptodome_Hash__RIPEMD160.so: No such file or directory
-md5sum: libCryptodome_Hash__SHA1.so: No such file or directory
-md5sum: libCryptodome_Hash__SHA224.so: No such file or directory
-md5sum: libCryptodome_Hash__SHA256.so: No such file or directory
-md5sum: libCryptodome_Hash__SHA384.so: No such file or directory
-md5sum: libCryptodome_Hash__SHA512.so: No such file or directory
-md5sum: libCryptodome_Hash__ghash_portable.so: No such file or directory
-md5sum: libCryptodome_Hash__keccak.so: No such file or directory
-md5sum: libCryptodome_Hash__poly1305.so: No such file or directory
-md5sum: libCryptodome_Math__modexp.so: No such file or directory
-md5sum: libCryptodome_Protocol__scrypt.so: No such file or directory
-md5sum: libCryptodome_PublicKey__ec_ws.so: No such file or directory
-md5sum: libCryptodome_Util__cpuid_c.so: No such file or directory
-md5sum: libCryptodome_Util__strxor.so: No such file or directory
-md5sum: lib_imaging.so: No such file or directory
-md5sum: lib_imagingft.so: No such file or directory
-md5sum: lib_imagingmath.so: No such file or directory
-md5sum: lib_imagingmorph.so: No such file or directory
-md5sum: lib_imagingtk.so: No such file or directory
-md5sum: libc++_shared.so: No such file or directory
-md5sum: libdvdnav-aarch64.so: No such file or directory
-md5sum: libkodi.so: No such file or directory
-md5sum: libperipheral.joystick.so: No such file or directory
-md5sum: libshairplay.so: No such file or directory
-base: 0 libs; oficial: 0 libs
--- só no SMARTEDTV:
--- só no oficial:
--- hashes diferentes:
-
-== libs armv7 do Kodi oficial (que faltam no APK)
-  lib/armeabi-v7a/libCryptodome_Cipher__ARC4.so
-  lib/armeabi-v7a/libCryptodome_Cipher__Salsa20.so
-  lib/armeabi-v7a/libCryptodome_Cipher__chacha20.so
-  lib/armeabi-v7a/libCryptodome_Cipher__pkcs1_decode.so
-  lib/armeabi-v7a/libCryptodome_Cipher__raw_aes.so
-  lib/armeabi-v7a/libCryptodome_Cipher__raw_arc2.so
-  lib/armeabi-v7a/libCryptodome_Cipher__raw_blowfish.so
-  lib/armeabi-v7a/libCryptodome_Cipher__raw_cast.so
-  lib/armeabi-v7a/libCryptodome_Cipher__raw_cbc.so
-  lib/armeabi-v7a/libCryptodome_Cipher__raw_cfb.so
-  lib/armeabi-v7a/libCryptodome_Cipher__raw_ctr.so
-  lib/armeabi-v7a/libCryptodome_Cipher__raw_des.so
-  lib/armeabi-v7a/libCryptodome_Cipher__raw_des3.so
-  lib/armeabi-v7a/libCryptodome_Cipher__raw_ecb.so
-  lib/armeabi-v7a/libCryptodome_Cipher__raw_eksblowfish.so
-  lib/armeabi-v7a/libCryptodome_Cipher__raw_ocb.so
-  lib/armeabi-v7a/libCryptodome_Cipher__raw_ofb.so
-  lib/armeabi-v7a/libCryptodome_Hash__BLAKE2b.so
-  lib/armeabi-v7a/libCryptodome_Hash__BLAKE2s.so
-  lib/armeabi-v7a/libCryptodome_Hash__MD2.so
-  lib/armeabi-v7a/libCryptodome_Hash__MD4.so
-  lib/armeabi-v7a/libCryptodome_Hash__MD5.so
-  lib/armeabi-v7a/libCryptodome_Hash__RIPEMD160.so
-  lib/armeabi-v7a/libCryptodome_Hash__SHA1.so
-  lib/armeabi-v7a/libCryptodome_Hash__SHA224.so
-  lib/armeabi-v7a/libCryptodome_Hash__SHA256.so
-  lib/armeabi-v7a/libCryptodome_Hash__SHA384.so
-  lib/armeabi-v7a/libCryptodome_Hash__SHA512.so
-  lib/armeabi-v7a/libCryptodome_Hash__ghash_portable.so
-  lib/armeabi-v7a/libCryptodome_Hash__keccak.so
-  lib/armeabi-v7a/libCryptodome_Hash__poly1305.so
-  lib/armeabi-v7a/libCryptodome_Math__modexp.so
-  lib/armeabi-v7a/libCryptodome_Protocol__scrypt.so
-  lib/armeabi-v7a/libCryptodome_PublicKey__ec_ws.so
-  lib/armeabi-v7a/libCryptodome_Util__cpuid_c.so
-  lib/armeabi-v7a/libCryptodome_Util__strxor.so
-  lib/armeabi-v7a/lib_imaging.so
-  lib/armeabi-v7a/lib_imagingft.so
-  lib/armeabi-v7a/lib_imagingmath.so
-  lib/armeabi-v7a/lib_imagingmorph.so
-  lib/armeabi-v7a/lib_imagingtk.so
-  lib/armeabi-v7a/libc++_shared.so
-  lib/armeabi-v7a/libdvdnav-arm.so
-  lib/armeabi-v7a/libkodi.so
-  lib/armeabi-v7a/libperipheral.joystick.so
-  lib/armeabi-v7a/libshairplay.so
-
-== JNI/classes no libkodi.so
--- build/libkodi-base.so
--- build/libkodi-v7.so
-
-== classes.dex
