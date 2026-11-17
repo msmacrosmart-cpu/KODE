@@ -50,12 +50,15 @@ jobs:
               ns = '{http://schemas.android.com/apk/res/android}'
               print('extractNativeLibs:', app.get(ns + 'extractNativeLibs'))
               print('debuggable:', app.get(ns + 'debuggable'))
+              print('testOnly:', app.get(ns + 'testOnly'))
+              print('isSplitRequired:', app.get(ns + 'isSplitRequired'))
+              print('app attrs:', sorted(app.attrib))
           except Exception as e:
               print('manifest application:', e)
           z = zipfile.ZipFile(p)
           nomes = z.namelist()
           print('entradas:', len(nomes))
-          abis = sorted({n.split('/')[1] for n in nomes if n.startswith('lib/') and n.count('/') > 2})
+          abis = sorted({n.split('/')[1] for n in nomes if n.startswith('lib/') and n.count('/') >= 2})
           print('ABIs:', abis)
           for abi in abis:
               so = [n for n in nomes if n.startswith('lib/%s/' % abi) and n.endswith('.so')]
@@ -73,6 +76,11 @@ jobs:
               alinhamento.setdefault(off % 4096, []).append(n)
           print('offset .so mod 4096:', {k: len(v) for k, v in sorted(alinhamento.items())})
           print('resources.arsc comprimido:', z.getinfo('resources.arsc').compress_type)
+          print('tamanho descomprimido total: %.1f MB' % (sum(i.file_size for i in z.infolist())/1048576.0))
+          print('libs por ABI:')
+          for abi in abis:
+              so = sorted(n.split('/')[-1] for n in nomes if n.startswith('lib/%s/' % abi) and n.endswith('.so'))
+              print('  %s (%d): %s' % (abi, len(so), ', '.join(so[:20])))
           print('assinaturas:', [n for n in nomes if n.startswith('META-INF/') and n.upper().endswith(('.RSA','.DSA','.EC','.SF','.MF'))])
           print('addon default:', z.read('assets/addons/script.smartedtv.welcome/default.py')[:40])
           PY
