@@ -1,5 +1,13 @@
 # v12 — anúncio em toda troca de conteúdo, VIP real e app que não fecha
 
+**Release:** `v1.0.83-tela-inicial-v12`
+**Arquivo:** `SMARTEDTV-atual-com-tela-inicial-v12.apk`
+**Tamanho:** 250.470.632 bytes
+**SHA-256:** `082788d544c9e4f43c8013d62edf4877116ab8fd2f581744298e0b86fcc08e8c`
+**Link:** https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.83-tela-inicial-v12/SMARTEDTV-atual-com-tela-inicial-v12.apk
+
+Build: run `44109209662` (push `fc8ae0e`), todos os passos 1–9 verdes.
+
 ## O que mudou
 
 ### 1. Um anúncio por conteúdo escolhido
