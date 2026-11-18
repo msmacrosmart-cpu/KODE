@@ -1,0 +1,72 @@
+name: Diagnostico 10 (codigo completo das classes de anuncio)
+
+on:
+  push:
+    branches: [arena/5c219515-kode]
+    paths: [.github/workflows/diag-anuncios10.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  inspecionar:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Baixar base v22 e desmontar
+        run: |
+          set -euo pipefail
+          mkdir -p build/diag
+          gh release download v1.0.87-universal-v22 -R "$GITHUB_REPOSITORY" \
+            --pattern SMARTEDTV-universal.apk --dir build/diag --clobber
+          mv build/diag/SMARTEDTV-universal.apk build/diag/base.apk
+          cd build/diag
+          unzip -o -q base.apk 'classes*.dex'
+          TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          echo "TOOLS=$TOOLS" >> "$GITHUB_ENV"
+          for dex in classes*.dex; do
+            "$TOOLS/dexdump" -d "$dex" > "dump-$dex.txt" || true
+          done
+      - name: Recortar as classes de anuncio
+        run: |
+          set +e
+          cd build/diag
+          python3 - <<'PY'
+          import glob, re, os
+          alvos = ('Lsmartedtv/full/PreRollActivity;', 'Lsmartedtv/full/PreRollActivity$1;',
+                   'Lsmartedtv/full/AppOpenActivity;', 'Lsmartedtv/full/AppOpenActivity$1;',
+                   'Lsmartedtv/full/SmartAds;', 'Lsmartedtv/full/AdTela;',
+                   'Lsmartedtv/full/Licenca;')
+          por_classe = {}
+          for caminho in glob.glob('dump-*.txt'):
+              atual = None
+              for linha in open(caminho, errors='replace'):
+                  m = re.search(r"Class descriptor\s*:\s*'(L[^']+)'", linha)
+                  if m:
+                      atual = m.group(1)
+                      continue
+                  if atual in alvos:
+                      por_classe.setdefault(atual, []).append(linha.rstrip())
+          saida = []
+          for classe in sorted(por_classe):
+              saida.append('#' * 70)
+              saida.append('# ' + classe)
+              saida.extend(por_classe[classe])
+          os.makedirs('../../docs', exist_ok=True)
+          open('../../docs/diag-ads-codigo.txt', 'w').write('\n'.join(saida))
+          print('classes:', sorted(por_classe))
+          print('linhas:', len(saida))
+          PY
+          ls -l ../../docs/diag-ads-codigo.txt
+      - name: Publicar no repositorio
+        run: |
+          set -euo pipefail
+          git config user.name 'SMARTEDTV Build'
+          git config user.email 'ci@smarted.local'
+          git add docs/diag-ads-codigo.txt
+          git commit -m 'diag: codigo das classes Java de anuncio' || echo 'sem mudanca'
+          git push
