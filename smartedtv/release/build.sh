@@ -15,9 +15,12 @@ final="$work/SMARTEDTV-universal.apk"
 scratch=$(mktemp -d "$work/montagem.XXXXXX")
 trap 'rm -rf "$scratch"' EXIT
 python3 tools/kodi/atualizar-apk-v17.py --apk "$base" --saida "$scratch/overlay.apk"
+# Receita IDENTICA a da v22/v21, que instalou no aparelho: o manifesto muda
+# so versao/codigo (o minSdk fica o da base) e o alinhamento e feito pelo
+# align-apk.py, o mesmo daquela entrega. Nao elevar nem reduzir minSdk aqui.
 python3 tools/kodi/ajustar-versao-apk.py "$scratch/overlay.apk" "$scratch/raw.apk" \
-  --de 1.0.87 --de-codigo 2103073 --para "$VERSION_NAME" --para-codigo "$VERSION_CODE" --min-sdk 21
-"$bt/zipalign" -P 16 -f 4 "$scratch/raw.apk" "$scratch/aligned.apk"
+  --de 1.0.87 --de-codigo 2103073 --para "$VERSION_NAME" --para-codigo "$VERSION_CODE"
+python3 tools/kodi/align-apk.py "$scratch/raw.apk" "$scratch/aligned.apk"
 "$bt/apksigner" sign --ks "$KODI_ANDROID_STORE_FILE" --ks-key-alias "$KODI_ANDROID_KEY_ALIAS" \
   --ks-pass env:KODI_ANDROID_STORE_PASSWORD --key-pass env:KODI_ANDROID_KEY_PASSWORD \
   --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false \

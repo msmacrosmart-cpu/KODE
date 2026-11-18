@@ -93,6 +93,32 @@ else
   install "$work/SMARTEDTV-universal.apk"
 fi
 abrir LEANBACK_LAUNCHER
+# --- INSTALADOR PELO CAMINHO DO APP ----------------------------------------
+# "Aplicativo nao instalado" sem barra de progresso acontece antes da tela do
+# instalador: o pacote que abre o APK pelo file:// nao consegue ler o arquivo.
+# Aqui o APK e copiado para o armazenamento do app (como o download do botao
+# Atualizar faz), com a permissao que o app usa, e instalado por esse caminho.
+adbc() {
+  local caminho
+  caminho=$(adb shell pm path "$pkg" | tr -d '\r' | sed 's/^package://' | head -1)
+  [[ -n $caminho ]] || return 1
+  adb push build/universal/SMARTEDTV-universal.apk /data/local/tmp/SMARTEDTV.apk >/dev/null
+  adb shell run-as "$pkg" sh -c "mkdir -p files/userdata/smartedtv-downloads && cat /data/local/tmp/SMARTEDTV.apk > files/userdata/smartedtv-downloads/SMARTEDTV.apk && chmod 644 files/userdata/smartedtv-downloads/SMARTEDTV.apk" >/dev/null
+  echo "$(dirname "$(dirname "$caminho")")/files/userdata/smartedtv-downloads/SMARTEDTV.apk"
+}
+baixado=$(adbc) || { echo '::error::nao consegui simular o download dentro do app'; exit 1; }
+echo "::notice::APK baixado pelo app em: $baixado"
+# O instalador do Android precisa conseguir ABRIR o arquivo (read habilitado).
+adb shell run-as "$pkg" ls -l files/userdata/smartedtv-downloads/SMARTEDTV.apk | tr -d '\r' | tee "$work/apk-do-app.txt"
+if ! adb shell run-as "$pkg" ls -l files/userdata/smartedtv-downloads/SMARTEDTV.apk | grep -q '^-rw-'; then
+  erro 'o APK baixado pelo app nao esta legivel pelo instalador'
+fi
+# E o instalador tem de aceitar exatamente esse arquivo.
+resultado=$(adb shell pm install -r -d "$baixado" 2>&1) || true
+echo "$resultado" | tr -d '\r' | tee "$work/install-do-app.txt"
+grep -q 'Success' <<< "$resultado" || erro "instalador recusou o APK do app: $resultado"
+echo '::notice::APK do app aprovado pelo instalador (pm install -r -d)'
+adb shell rm -f /data/local/tmp/SMARTEDTV.apk >/dev/null 2>&1 || true
 if adb logcat -b crash -d | grep -E 'Process: smartedtv\.full,|>>> smartedtv\.full <<<' ; then
   erro 'Crash do SMARTEDTV no primeiro arranque'
 fi

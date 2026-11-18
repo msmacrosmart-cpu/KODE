@@ -63,8 +63,20 @@ jobs:
             unzip -l "$apk" | awk '$4 ~ /^lib\// {n[$4]++} END {for (k in n) print k}' | sed 's|lib/\([^/]*\)/.*|\1|' | sort | uniq -c
             { unzip -l "$apk" | grep -c 'lib/.*\.so$' || true; } | sed 's/^/total de .so: /'
             echo
+            echo
+            echo "== zip: alinhamento e compressao =="
+            # Instalar no Android exige recursos sem compressao e entradas
+            # alinhadas (o zipalign que o build roda depois de assinar NAO
+            # realinha: ele so confere). Este bloco prova os dois.
+            "$bt/zipalign" -c -P 16 4 "$apk" && echo 'zipalign -c -P 16 4: OK' || echo 'zipalign: FALHOU'
+            "$bt/zipalign" -c 4 "$apk" && echo 'zipalign -c 4: OK' || echo 'zipalign 4: FALHOU'
+            unzip -v "$apk" | awk '$2=="Stored" {print $8}' | grep -E '^(resources\.arsc|AndroidManifest\.xml)$' || true
+            echo
             echo "== assinatura =="
             { "$bt/apksigner" verify --min-sdk-version 21 --verbose --print-certs "$apk" | grep -E "Verified using|Number of signers|certificate SHA-256 digest|Signer #1 certificate DN" || true; }
+            echo
+            echo "== assinatura completa (sem filtro) =="
+            "$bt/apksigner" verify --min-sdk-version 21 --print-certs "$apk" 2>&1 || echo 'apksigner: FALHOU'
             echo
             echo "== identidade instalada (antes desta build) =="
             { grep -E "versionName|versionCode|primaryCpuAbi|codePath" build/universal/pacote-instalado.txt 2>/dev/null || echo "(sem dumpsys nesta etapa)"; } | head -8
@@ -91,6 +103,10 @@ jobs:
           grep -q 'Verified using v3 scheme (APK Signature Scheme v3): true' "$RUNNER_TEMP/laudo-apk.txt" || falhar 'assinatura v3 ausente'
           grep -Fq '855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a' "$RUNNER_TEMP/laudo-apk.txt" \
             || falhar 'certificado diferente do historico (855de171...)'
+          grep -q 'zipalign -c -P 16 4: OK' "$RUNNER_TEMP/laudo-apk.txt" || falhar 'APK nao esta alinhado a 16 KiB / 4 bytes'
+          grep -q 'zipalign -c 4: OK' "$RUNNER_TEMP/laudo-apk.txt" || falhar 'APK nao esta alinhado a 4 bytes'
+          grep -q '^resources\.arsc$' "$RUNNER_TEMP/laudo-apk.txt" || falhar 'resources.arsc nao esta sem compressao'
+          grep -q 'appears to be signed' "$RUNNER_TEMP/laudo-apk.txt" || falhar 'apksigner nao reconheceu a assinatura completa'
           echo '::notice::Laudo do APK conferido: identidade, SDK 21, ABIs 32/64, assinatura v1/v2/v3 e certificado.'
           # Publicar as linhas do laudo como anotacao: o log do runner nao
           # fica sempre acessivel e a evidencia precisa ser legivel.

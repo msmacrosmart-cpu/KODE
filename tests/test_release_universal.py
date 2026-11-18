@@ -43,8 +43,15 @@ class Contrato(unittest.TestCase):
         """
         self.assertEqual(verify.MIN_SDK, '21')
         build = (ROOT / 'smartedtv/release/build.sh').read_text()
-        self.assertIn('--min-sdk 21', build)
+        # O build NAO mexe no minSdk: mantem o da base v22 (API 21), que e a
+        # receita da v21/v22 que instalou no aparelho. `--min-sdk 26` foi o
+        # erro da 1.0.92 (recusava Android 7/Fire OS 6); `--min-sdk 21` seria
+        # uma alteracao de manifesto que aquela receita nao fazia.
         self.assertNotIn('--min-sdk 26', build)
+        self.assertNotIn('--min-sdk 21', build)
+        # E o alinhamento e o mesmo da entrega que instalou.
+        self.assertIn('tools/kodi/align-apk.py', build)
+        self.assertNotIn('zipalign\" -P 16 -f 4', build)
         # minSdk 21 e aceito; 26 nao e mais o unico valor valido
         raiz = ET.fromstring(SAMPLE)
         verify.verify_manifest(raiz, '1.0.87', '2103073')

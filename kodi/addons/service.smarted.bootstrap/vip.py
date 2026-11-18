@@ -721,6 +721,14 @@ def download_update(apk_url):
         log('APK baixado em %s (%d bytes%s)' % (
             APK_DOWNLOAD_PATH, total,
             ', esperado %d' % esperado if esperado else ''))
+        # O Kodi roda com o proprio uid: sem leitura para os outros, o
+        # instalador do Android (outro processo) nao consegue ler o arquivo e
+        # responde so "Aplicativo nao instalado", sem abrir a barra.
+        try:
+            os.chmod(APK_DOWNLOAD_PATH, 0o644)
+        except Exception as erro:
+            log('nao consegui ajustar a permissao do APK: %s' % erro,
+                xbmc.LOGWARNING)
         if total < APK_TAMANHO_MINIMO or (esperado and total != esperado):
             log('download incompleto: %d de %s bytes' % (total, esperado),
                 xbmc.LOGWARNING)
