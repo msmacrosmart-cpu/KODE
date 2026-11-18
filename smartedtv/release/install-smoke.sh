@@ -41,6 +41,43 @@ primary=$(awk -F= '/primaryCpuAbi=/{gsub(/[[:space:]]/, "", $2);print $2;exit}' 
 echo "::notice::v22 instalada e atualizada com adb install -r; versionCode=$VERSION_CODE; ABI selecionada: $primary"
 abrir LAUNCHER
 abrir LEANBACK_LAUNCHER
+
+# --- REABERTURA DO APP (tela preta / app saindo sozinho) --------------------
+# Sair e abrir varias vezes seguidas (inclusive em segundos, com o processo
+# ainda quente) tem de terminar sempre com o app vivo e com imagem na tela.
+# Era exatamente aqui que aparecia "tela preta e fecha sozinho".
+python3 -m pip install --quiet --disable-pip-version-check pillow >/dev/null 2>&1 || true
+tela_preto() {
+  python3 - "$1" <<'PY'
+import sys
+try:
+    from PIL import Image, ImageStat
+except Exception:
+    print('sem pillow: checagem de brilho pulada')
+    sys.exit(0)
+media = ImageStat.Stat(Image.open(sys.argv[1]).convert('L')).mean[0]
+print('brilho medio: %.1f' % media)
+sys.exit(0 if media >= 8 else 1)
+PY
+}
+componente_tv=$(adb shell cmd package resolve-activity --brief --user 0 \
+  -a android.intent.action.MAIN -c android.intent.category.LEANBACK_LAUNCHER \
+  -p "$pkg" | tr -d '\r' | awk '$1 ~ /^smartedtv\.full\// {print $1}')
+for ciclo in 1 2 3; do
+  adb shell am force-stop "$pkg"
+  sleep 1
+  adb shell am start -W -n "$componente_tv" >/dev/null 2>&1 || true
+  # 8 s: janela de boot desenhada -> tela de entrada -> Home
+  sleep 8
+  if ! adb shell pidof "$pkg" >/dev/null; then
+    erro "reabertura $ciclo: o processo morreu ($(adb logcat -b crash -d -t 12))"
+  fi
+  adb exec-out screencap -p > "$work/reabertura-$ciclo.png" 2>/dev/null || true
+  if [ -s "$work/reabertura-$ciclo.png" ] && ! tela_preto "$work/reabertura-$ciclo.png"; then
+    erro "reabertura $ciclo: tela preta (app vivo, mas sem desenho)"
+  fi
+  echo "::notice::reabertura $ciclo: app vivo e com imagem na tela"
+done
 # Testar também instalação limpa. Se o tradutor oferecer ambas as ABIs,
 # usar a outra, sem inventar suporte a uma ABI não anunciada pelo Android.
 other=armeabi-v7a
