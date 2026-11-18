@@ -1,0 +1,119 @@
+======================================================================
+CLASSE AdTela (846 linhas de dump)
+-- STRINGS (27) --
+  (sem intent)
+  {action=
+   data=
+  }
+  tecla ignorada (controle remoto): 
+  fechando (
+  )
+  SmartAds
+  : erro ao fechar: 
+  diagnostico exibido
+  : tempo esgotado sem anuncio, fechando
+  timeout
+  : tempo do anuncio esgotado (TV sem toque), fechando
+  tempo do anuncio
+  : 
+   | 
+  SMARTEDTV Ads: 
+  SMARTEDTV Ads - diagnostico\n\n
+  \n\n
+  \n\n(pacote 
+  voltar: fechando a tela de anuncio
+  voltar
+  : licenca VIP ativa (ou ads desligados), sem anuncio
+  aberta | pacote=
+   teste=
+   android=
+   intent=
+-- CHAMADAS getStringExtra/getExtra/getInt --
+  Landroid/content/Intent;.getAction:(
+  Landroid/content/Intent;.getDataString:(
+-- CHAMADAS DO SDK --
+-- CAMPOS/CONSTANTES --
+
+======================================================================
+CLASSE AppOpenActivity (274 linhas de dump)
+-- STRINGS (15) --
+  erro desconhecido
+  codigo 
+   (
+  ) | 
+   | 
+  ver documentacao
+  MEDIATION_NO_FILL
+  APP_ID_MISSING/MISMATCH
+  NO_FILL
+  NETWORK_ERROR
+  INVALID_REQUEST
+  INTERNAL_ERROR
+  carregando ABERTURA unidade=
+   (teste=
+  )
+-- CHAMADAS getStringExtra/getExtra/getInt --
+-- CHAMADAS DO SDK --
+  Lcom/google/android/gms/ads/AdError;.getCode
+  Lcom/google/android/gms/ads/AdError;.getDomain
+  Lcom/google/android/gms/ads/AdError;.getMessage
+  Lcom/google/android/gms/ads/LoadAdError;.getCode
+  Lcom/google/android/gms/ads/LoadAdError;.getDomain
+  Lcom/google/android/gms/ads/LoadAdError;.getMessage
+  Lcom/google/android/gms/ads/AdRequest$Builder;.<init>
+  Lcom/google/android/gms/ads/AdRequest$Builder;.build
+  Lcom/google/android/gms/ads/appopen/AppOpenAd;.load
+-- CAMPOS/CONSTANTES --
+
+======================================================================
+CLASSE PreRollActivity (119 linhas de dump)
+-- STRINGS (3) --
+  carregando VIDEO unidade=
+   (teste=
+  )
+-- CHAMADAS getStringExtra/getExtra/getInt --
+-- CHAMADAS DO SDK --
+  Lcom/google/android/gms/ads/AdRequest$Builder;.<init>
+  Lcom/google/android/gms/ads/AdRequest$Builder;.build
+  Lcom/google/android/gms/ads/interstitial/InterstitialAd;.load
+-- CAMPOS/CONSTANTES --
+
+======================================================================
+CLASSE SmartAds (456 linhas de dump)
+-- STRINGS (26) --
+  SmartAds: licenca ilegivel, seguindo com anuncios (
+  )
+  SmartAds
+  ads=
+  ads=0
+  anuncios 
+  ligados
+  desligados
+   pelo intent (
+  teste=
+  teste=0
+  modo de teste alterado pelo intent (
+  ): 
+   -> 
+  config: teste=
+   unidades=
+  TESTE do Google
+  REAIS do projeto
+   appId=
+  ca-app-pub-2066014755407744~5076693043
+  AdMob nao inicializou: 
+  AdMob inicializado: 
+  ca-app-pub-3940256099942544/9257395921
+  ca-app-pub-2066014755407744/4214378379
+  ca-app-pub-3940256099942544/1033173712
+  ca-app-pub-2066014755407744/3572039686
+-- CHAMADAS getStringExtra/getExtra/getInt --
+  Landroid/content/Intent;.getDataString:(
+-- CHAMADAS DO SDK --
+  Lcom/google/android/gms/ads/RequestConfiguration$Builder;.<init>
+  Lcom/google/android/gms/ads/RequestConfiguration$Builder;.setTestDeviceIds
+  Lcom/google/android/gms/ads/RequestConfiguration$Builder;.build
+  Lcom/google/android/gms/ads/MobileAds;.setRequestConfiguration
+  Lcom/google/android/gms/ads/MobileAds;.initialize
+  Lcom/google/android/gms/ads/initialization/InitializationStatus;.getAdapterStatusMap
+-- CAMPOS/CONSTANTES --
