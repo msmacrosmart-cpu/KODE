@@ -57,7 +57,8 @@ jobs:
           set -euo pipefail
           unzip -p "$RUNNER_TEMP/overlay.apk" \
             assets/addons/plugin.video.smarted/ordering.py > "$RUNNER_TEMP/ordering.py"
-          grep -q 'route=pasta' "$RUNNER_TEMP/ordering.py"
+          # A rota e montada com urlencode, entao o literal e "'route': 'pasta'".
+          grep -q "'route': 'pasta'" "$RUNNER_TEMP/ordering.py"
           unzip -p "$RUNNER_TEMP/overlay.apk" \
             assets/addons/plugin.video.smarted/default.py > "$RUNNER_TEMP/default.py"
           grep -q "route == 'ordenar'" "$RUNNER_TEMP/default.py"
