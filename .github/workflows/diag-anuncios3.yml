@@ -1,0 +1,67 @@
+name: Diagnostico 3 dos anuncios
+
+on:
+  push:
+    branches: [arena/5c219515-kode]
+    paths: [.github/workflows/diag-anuncios3.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspecionar:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Baixar base v22
+        run: |
+          set -euo pipefail
+          mkdir -p build/diag
+          gh release download v1.0.87-universal-v22 -R "$GITHUB_REPOSITORY" \
+            --pattern SMARTEDTV-universal.apk --dir build/diag --clobber
+          mv build/diag/SMARTEDTV-universal.apk build/diag/base.apk
+      - name: Laudo em anotacoes
+        run: |
+          set +e
+          cd build/diag
+          TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          "$TOOLS/aapt" dump xmltree base.apk --file AndroidManifest.xml > manifest.txt 2>&1
+          unzip -o -q base.apk 'classes*.dex' 2>&1
+          cat classes*.dex > todos.dex 2>/dev/null
+          echo "sem classes dex" > vazio
+          python3 - <<'PY'
+          import re, subprocess, sys
+          def notice(titulo, texto):
+              texto = re.sub(r'\s+', ' ', str(texto)).strip()
+              if texto:
+                  print('::notice::%s => %s' % (titulo, texto[:900]))
+          man = open('manifest.txt', errors='replace').read()
+          dex = open('todos.dex', 'rb').read().decode('latin-1')
+          notice('app-id no manifesto', 'gms.ads.APPLICATION_ID' in man)
+          m = re.findall(r'gms\.ads\.[A-Z_]+', man)
+          notice('meta-data ads', sorted(set(m)))
+          # valor do application id: procura a string depois do atributo
+          pos = man.find('gms.ads.APPLICATION_ID')
+          notice('contexto app-id', man[pos - 200:pos + 400] if pos > 0 else 'ausente')
+          acts = sorted(set(re.findall(r'smartedtv\.full\.[A-Za-z0-9_]*', man)))
+          notice('activities', acts)
+          notice('unidades', sorted(set(re.findall(r'ca-app-pub-[0-9]+/[0-9]+', dex))))
+          notice('app-ids', sorted(set(re.findall(r'ca-app-pub-[0-9]+~[0-9]+', dex))))
+          notice('gms.ads no dex', dex.count('com/google/android/gms/ads'))
+          notice('AdTela', dex.count('AdTela'))
+          notice('mensagens de anuncio', sorted(set(
+              re.findall(r'[A-Za-zÀ-ÿ0-9 ,.:()\-]{12,90}(?:an[uú]ncio|AdMob|interstic)[A-Za-zÀ-ÿ0-9 ,.:()\-]{0,90}', dex, re.I)))[:6])
+          notice('arquivos de config citados', sorted(set(
+              re.findall(r'[a-z0-9_\-]{3,30}\.(?:txt|json|cfg|properties)', dex)))[:40])
+          PY
+      - name: Guardar laudo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diag3-${{ github.run_id }}
+          path: build/diag/manifest.txt
+          if-no-files-found: warn
