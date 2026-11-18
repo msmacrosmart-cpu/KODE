@@ -23,7 +23,15 @@ import xbmc
 import xbmcvfs
 
 RESULTADOS = []
-JANELA_ESPERA = 3.0
+JANELA_ESPERA = 2.0
+# Teto de tempo da prova inteira: o CI espera o marcador FIM em 5 min. Se algo
+# travar (janela que nao abre, lista que nao carrega), o marcador tem de sair
+# mesmo assim, com as verificacoes restantes marcadas como nao executadas.
+PRAZO_TOTAL = 210.0
+_INICIO = time.time()
+
+def estourou():
+    return (time.time() - _INICIO) > PRAZO_TOTAL
 
 
 def _rpc(method, params=None):
@@ -54,42 +62,50 @@ def janela():
 # de uma lista fixa. Numa execucao real o foco caiu em ids que a lista fixa nao
 # cobria (ex.: 9030 no menu lateral), e o teste acusava "semo foco" sem haver
 # defeito. Lendo os XMLs, o conjunto e exatamente o do skin que esta rodando.
-FOCAVEIS_XML = ('Home.xml', 'MyVideoNav.xml', 'Settings.xml',
-                'DialogButtonMenu.xml', 'Startup.xml')
-_ID_CACHE = []
+# Um arquivo por janela: ler TODOS os XMLs custa caro (cada Control.HasFocus
+# pega o lock da GUI) e a prova estourava os 5 minutos. Aqui so os controles da
+# janela na tela entram na busca.
+XML_DA_JANELA = {
+    'home': ('Home.xml',),
+    'vídeos': ('MyVideoNav.xml',), 'videos': ('MyVideoNav.xml',),
+    'ajustes': ('Settings.xml',), 'settings': ('Settings.xml',),
+}
+XML_PADRAO = ('Home.xml', 'MyVideoNav.xml', 'Settings.xml')
+_ID_CACHE = {}
 
 
 def _ids_do_skin():
-    if _ID_CACHE:
-        return _ID_CACHE
+    """Ids focaveis da janela atual (cacheado por janela)."""
+    chave = janela().lower()
+    if chave in _ID_CACHE:
+        return _ID_CACHE[chave]
     import os
-    import re
     import xml.etree.ElementTree as ET
 
+    nomes = XML_DA_JANELA.get(chave, XML_PADRAO)
     tipos = {'button', 'radiobutton', 'togglebutton', 'spincontrol', 'list',
              'panel', 'grouplist', 'fixedlist', 'wraplist', 'textbox', 'edit',
              'slider', 'mover', 'colorbutton'}
+    try:
+        raiz_addons = xbmcvfs.translatePath('special://home/addons')
+    except Exception:
+        raiz_addons = xbmc.translatePath('special://home/addons')
     vistos = []
     for skin in ('skin.estilo.personalizado', 'skin.novatv'):
-        try:
-            raiz_addons = xbmcvfs.translatePath('special://home/addons')
-        except Exception:
-            raiz_addons = xbmc.translatePath('special://home/addons')
-        base = os.path.join(raiz_addons, skin, 'xml')
-        for nome in FOCAVEIS_XML:
-            caminho = os.path.join(base, nome)
+        for nome in nomes:
+            caminho = os.path.join(raiz_addons, skin, 'xml', nome)
             try:
                 raiz = ET.parse(caminho).getroot()
             except Exception as erro:
                 _log('SMARTED_PROVA_IDS_ERRO %s: %s' % (caminho, erro))
                 continue
             for controle in raiz.iter('control'):
-                if controle.get('type') in tipos and controle.get('id'):
-                    if controle.get('id') not in vistos:
-                        vistos.append(controle.get('id'))
-    _ID_CACHE.extend(vistos)
-    _log('SMARTED_PROVA_IDS (%d) %s' % (len(_ID_CACHE), ','.join(_ID_CACHE[:100])))
-    return _ID_CACHE
+                cid = controle.get('id')
+                if controle.get('type') in tipos and cid and cid not in vistos:
+                    vistos.append(cid)
+    _ID_CACHE[chave] = vistos
+    _log('SMARTED_PROVA_IDS (%s, %d) %s' % (chave, len(vistos), ','.join(vistos[:100])))
+    return vistos
 
 
 def foco():
@@ -249,10 +265,20 @@ try:
     # A tela de entrada/ativacao pode estar na frente: voltar ate a Home.
     if not ir_para_home():
         _log('SMARTED_PROVA aviso: Home nao apareceu (janela=%s)' % janela())
-    pode = prova_categoria()
-    prova_filtro(pode)
-    prova_ajustes()
-    prova_home_topo()
+    if estourou():
+        registrar('categoria', False, 'nao executou: prazo esgotado')
+        registrar('filtro', False, 'nao executou: prazo esgotado')
+    else:
+        pode = prova_categoria()
+        if estourou():
+            registrar('filtro', False, 'nao executou: prazo esgotado')
+        else:
+            prova_filtro(pode)
+    for nome, etapa in (('ajustes', prova_ajustes), ('home', prova_home_topo)):
+        if estourou():
+            registrar(nome, False, 'nao executou: prazo de %ds esgotado' % PRAZO_TOTAL)
+            continue
+        etapa()
 except Exception as erro:  # nao mascarar: registrar e terminar
     registrar('excecao', False, '%s' % erro)
 falhas = [nome for nome, ok, _ in RESULTADOS if not ok]
