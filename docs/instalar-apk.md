@@ -1,6 +1,14 @@
 # Instalar o SMARTEDTV (celular, TV, box, projetor e stick)
 
-**Versão atual: v18 universal (1.0.88 / 2103074, 32 e 64 bits)**
+**Versão atual: v20 universal única (1.0.90 / 2103076, v1+v2+v3, 32 e 64 bits)**
+
+https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.90-universal-v20/SMARTEDTV-atual-v20-universal.apk
+
+Tamanho: 285.488.378 bytes · SHA-256:
+`3fbc702f4ed329b0b67666049902855b241e99672d3df42e18fcec69c150149f`
+
+Pacote `smartedtv.full`, minSdk 21, targetSdk 34, ABIs `arm64-v8a` e
+`armeabi-v7a`, assinatura v1+v2+v3 com o certificado `855de171...`.
 
 **Pacote de download limpo (recomendado):**  
 https://github.com/msmacrosmart-cpu/KODE/releases/tag/v1.0.88-reabertura-v18-download
