@@ -71,8 +71,8 @@ MANIFEST_URL = None  # configurar com o URL do manifesto JSON no Dropbox
 
 # Versao atual do app (deve bater com o applicationId/versionCode do APK).
 # Atualizar quando publicar uma nova versao.
-CURRENT_VERSION_NAME = '1.0.90'
-CURRENT_VERSION_CODE = 90
+CURRENT_VERSION_NAME = '1.0.91'
+CURRENT_VERSION_CODE = 91
 
 # Caminho da licenca ativada (gravada por validar() quando OK).
 # O Java Licenca/SmartAds le exatamente addon_data/service.smarted.bootstrap/
