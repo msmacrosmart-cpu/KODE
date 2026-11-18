@@ -29,6 +29,17 @@ class EspelhoDaClassicaTest(unittest.TestCase):
         diferentes = [n for n in fonte if fonte[n] != espelho.get(n)]
         self.assertEqual(diferentes, [], 'arquivos diferentes')
 
+    def test_toda_fonte_citada_existe_na_skin(self):
+        # Kodi não cai para o fontset Default sozinho se o .ttf citado faltar:
+        # a tela de entrada (wfNN) e a Home (font12/font13) usam estas fontes.
+        import xml.etree.ElementTree as ET
+        for base in (FONTE, ESPELHO):
+            raiz = ET.parse(base / 'xml' / 'Font.xml').getroot()
+            citadas = {(f.findtext('filename') or '').strip() for f in raiz.iter('font')}
+            faltando = sorted(n for n in citadas
+                              if n and not (base / 'fonts' / n).is_file())
+            self.assertEqual(faltando, [], str(base))
+
     def test_home_espelhada_e_a_classica(self):
         # A Home da foto (67974c2) + os ajustes de navegação desta entrega.
         home = (ESPELHO / 'xml' / 'Home.xml').read_bytes()
