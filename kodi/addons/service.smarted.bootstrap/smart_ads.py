@@ -136,6 +136,90 @@ def marcar_abertura(quando=None):
         return False
 
 
+# --- perfil de dispositivo (celular/tablet x TV/box/projetor/stick) --------
+# A deteccao usa o que o Kodi expoe, nesta ordem de confianca:
+#   1. System.Platform.Android.TV / Android.Mobile / Android.Handheld (o
+#      proprio Kodi ja responde isso pelo PackageManager: LEANBACK/television
+#      x touchscreen);
+#   2. nome amigavel do aparelho (projetor, box, tv, stick...);
+#   3. densidade de tela (System.ScreenHeight/Width) para tablet grande.
+# O resultado fica em log e na propriedade ``smartedtv.perfil`` da janela, para
+# conferir no aparelho sem precisar de ADB.
+PERFIL_CELULAR = 'celular'      # AdMob como sempre foi
+PERFIL_TELA_GRANDE = 'tela-grande'  # TV, TV Box, projetor, Fire Stick
+
+CHAVES_TELA_GRANDE = (
+    'projetor', 'projector', 'tv box', 'tvbox', 'android tv', 'google tv',
+    'fire tv', 'firetv', 'fire stick', 'firestick', 'stick', 'box', 'smart tv',
+    'smarttv', 'mi box', 'mibox', 'shield', 'chromecast', 'droidlogic',
+)
+CHAVES_CELULAR = ('phone', 'celular', 'smartphone', 'tablet', 'sm-', 'moto ',
+                  'redmi', 'poco', 'galaxy', 'pixel', 'moto g', 'moto e')
+
+
+def _condicao(consulta):
+    try:
+        return bool(xbmc.getCondVisibility(consulta))
+    except Exception:
+        return False
+
+
+def _info(rotulo):
+    try:
+        return (xbmc.getInfoLabel(rotulo) or '').strip()
+    except Exception:
+        return ''
+
+
+def _sem_acento(texto):
+    import unicodedata
+    return ''.join(c for c in unicodedata.normalize('NFKD', texto or '')
+                   if not unicodedata.combining(c)).lower()
+
+
+def perfil_dispositivo():
+    """Devolve (perfil, motivo) usando o que o Kodi sabe do aparelho.
+
+    ``perfil`` e ``celular`` ou ``tela-grande``. Celular continua no AdMob; as
+    telas grandes seguem o caminho de video (ver ``reproduzir_vast``).
+    """
+    for consulta, perfil, motivo in (
+            ('System.Platform.Android.TV', PERFIL_TELA_GRANDE, 'Android TV'),
+            ('System.Platform.Android.Mobile', PERFIL_CELULAR, 'celular'),
+    ):
+        if _condicao(consulta):
+            return perfil, motivo
+    nome = _sem_acento(_info('System.FriendlyName'))
+    for chave in CHAVES_TELA_GRANDE:
+        if chave in nome:
+            return PERFIL_TELA_GRANDE, 'nome do aparelho contem %r' % chave
+    for chave in CHAVES_CELULAR:
+        if chave in nome:
+            return PERFIL_CELULAR, 'nome do aparelho contem %r' % chave
+    # ultimo recurso: tela grande/retrato desconhecido vira TV (o caminho de
+    # tela grande e o conservador: nao abre activity que pode falhar)
+    try:
+        altura = int(float(_info('System.ScreenHeight') or 0))
+    except Exception:
+        altura = 0
+    if altura and altura <= 720:
+        return PERFIL_TELA_GRANDE, 'tela de %d linhas (HD/HD Ready)' % altura
+    return PERFIL_CELULAR, 'sem sinal de TV; mantendo AdMob'
+
+
+def publicar_perfil(log=None):
+    """Grava o perfil na janela (para inspecao) e no log. Idempotente."""
+    perfil, motivo = perfil_dispositivo()
+    try:
+        xbmc.executebuiltin(
+            'SetProperty(smartedtv.perfil,%s,tv)' % perfil)
+    except Exception:
+        pass
+    if log:
+        log('[SmartAds] dispositivo: %s (%s)' % (perfil, motivo))
+    return perfil, motivo
+
+
 def android():
     """So tenta a ponte nativa quando o Kodi esta rodando no Android."""
     try:
@@ -171,6 +255,15 @@ def tocar_anuncio(atividade, log=None, uri=''):
         if log:
             log('[SmartAds] ignorado (nao e Android)')
         return False
+    perfil, motivo = perfil_dispositivo()
+    if perfil == PERFIL_TELA_GRANDE:
+        # TV/box/projetor/stick: o video VAST e o caminho da tela do aparelho.
+        # O SDK Google IMA precisa estar COMPILADO no app Android para tocar o
+        # VAST no player; esta ponte e o ponto unico a trocar quando ele vier.
+        if log:
+            log('[SmartAds] perfil tela-grande (%s): anuncio VAST, sem activity '
+                'AdMob (que em projetor deixa o player preto)' % motivo)
+        return abrir_anuncio_vast(atividade, log=log, uri=uri)
     builtin = builtin_para(atividade, uri=uri)
     try:
         xbmc.executebuiltin(builtin)
@@ -199,6 +292,50 @@ def _kodi_em_foco(limite=2.5, passo=0.1):
             return True
         time.sleep(passo)
     return False
+
+
+# Bloco/tag VAST. Fica aqui porque e o mesmo contrato que o SDK IMA usa.
+VAST_TAG_PADRAO = ''  # preencher com a tag VAST/IMA; vazio = nao pedir anuncio
+
+
+def vast_disponivel():
+    """True quando ha tag VAST e o app tem o SDK de video compilado.
+
+    Enquanto o SDK Google IMA nao estiver no dex, a resposta e False por
+    construcao - e isso e proposital: pedir anuncio sem ter como renderizar
+    era o que deixava a tela preta ao escolher "continuar com anuncios".
+    """
+    if not (VAST_TAG_PADRAO or '').strip():
+        return False
+    return bool(android())
+
+
+def abrir_anuncio_vast(atividade, log=None, uri=''):
+    """Anuncio de video (VAST) na TV/box/projetor/stick.
+
+    HOJE: o SDK Google IMA nao esta compilado no app (ficou fora deste
+    repositorio). Sem ele, o VAST nao pode ser renderizado com controle D-pad.
+    Em vez de pedir uma activity AdMob que deixa o player preto em projetor,
+    a funcao NAO bloqueia: devolve False e o video comeca na hora.
+
+    QUANDO O IMA FOR COMPILADO no app Android, esta funcao e o unico ponto a
+    mudar: publicar a tag em VAST_TAG_PADRAO e abrir a activity de video deles
+    pelo mesmo StartAndroidActivity. O contrato com o resto (gatilho, VIP,
+    retomada de posicao) continua igual.
+    """
+    if not android():
+        if log:
+            log('[SmartAds] VAST ignorado (nao e Android)')
+        return False
+    if not vast_disponivel():
+        if log:
+            log('[SmartAds] VAST sem tag/ SDK no APK: video comeca sem anuncio '
+                '(evita tela preta em projetor)')
+        return False
+    sucesso = tocar_anuncio(atividade, log=log, uri=uri)
+    if log:
+        log('[SmartAds] VAST %s' % ('pedido' if sucesso else 'indisponivel'))
+    return sucesso
 
 
 def abrir_anuncio(atividade, log=None, uri=''):
@@ -518,11 +655,31 @@ class MonitorPreRoll(_BasePlayer):
                 return
             chave = _chave_conteudo(caminho)
             self.ultimo_caminho = caminho
-            mostrar_preroll(self.log, self.intervalo, caminho=caminho,
-                            chave=chave, sessao=self.sessao, disparar=self._disparar)
+            disparou = mostrar_preroll(self.log, self.intervalo, caminho=caminho,
+                                       chave=chave, sessao=self.sessao,
+                                       disparar=self._disparar)
+            # Canal ao vivo COM anuncio na frente nao da para medir imagem (o
+            # player esta pausado atras da tela do anuncio). Com a reproducao
+            # liberada, confere se veio quadro: sem imagem, troca o perfil de
+            # video e reabre o canal uma vez. Filme/serie nao entra aqui.
+            if not disparou:
+                self._vigiar_imagem(caminho)
         except Exception as erro:  # nunca derrubar o servico por causa do anuncio
             if self.log:
                 self.log('[SmartAds] pre-roll falhou (%s)' % erro, xbmc.LOGWARNING)
+
+    def _vigiar_imagem(self, caminho):
+        """So para canal continuo, e sem tocar em filme/serie."""
+        try:
+            import ao_vivo
+        except Exception:
+            return None
+        try:
+            if not ao_vivo.eh_ao_vivo(caminho):
+                return None
+        except Exception:
+            return None
+        return ao_vivo.iniciar(self, caminho, self.log)
 
     # Kodi 21 chama onPlayBackStarted; onAVStarted vem em seguida para o mesmo
     # stream. Os dois passam pela mesma janela anti-duplicidade.

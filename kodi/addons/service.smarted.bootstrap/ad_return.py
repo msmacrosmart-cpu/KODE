@@ -8,6 +8,10 @@ que pausou. Nada disso devolve ao Python um recibo de "anuncio exibido".
 Por isso este modulo NAO chuta tempo de anuncio e NAO pausa duas vezes:
 
 * antes de disparar, guarda identidade e posicao do item que esta tocando;
+* **TV ao vivo nunca recebe seek**: um canal continuo nao tem ponto de
+  retomada; buscar a posicao guardada reinicia o fluxo e deixa a tela preta
+  (era o defeito "filme toca, canal fica preto"). No ao vivo o video volta
+  so no ponto ATUAL da transmissao;
 * depois do anuncio, quando o Kodi reinicia a reproducao (``onAVStarted`` do
   MESMO conteudo), devolve o video para a posicao guardada, se ela tiver se
   perdido (retomada do zero, por exemplo);
@@ -58,6 +62,15 @@ def _canal():
     return ''
 
 
+def _ao_vivo(caminho=''):
+    """O conteudo guardado e um canal continuo (TV ao vivo)?"""
+    try:
+        import ao_vivo
+        return bool(ao_vivo.eh_ao_vivo(caminho))
+    except Exception:
+        return False
+
+
 class Retomada(object):
     """Um ponto de retorno por anuncio; nunca mexe em conteudo que nao seja ele."""
 
@@ -84,6 +97,7 @@ class Retomada(object):
                 'caminho': caminho or '',
                 'canal': _canal(),
                 'posicao': posicao,
+                'ao_vivo': _ao_vivo(caminho),
                 'quando': time.monotonic(),
             }
             with self.lock:
@@ -164,7 +178,19 @@ class Retomada(object):
             try:
                 if not player.isPlayingVideo():
                     if pausado_visto:
-                        # stop/troca durante o anuncio: nada a restaurar
+                        # stop/troca durante o anuncio: nada a restaurar. No
+                        # canal ao vivo, porem, o fluxo pode ter caido enquanto
+                        # a tela do anuncio estava na frente: reabrir o canal e
+                        # a unica forma de voltar a ter imagem (sem seek).
+                        if estado.get('ao_vivo') and self.mesmo_conteudo():
+                            try:
+                                import ao_vivo
+                                if ao_vivo._tocar_de_novo(estado['caminho']):
+                                    if self.log:
+                                        self.log('[SmartAds] canal reaberto apos '
+                                                 'o anuncio (ao vivo)')
+                            except Exception:
+                                pass
                         self.cancelar()
                         return None
                     continue
@@ -191,6 +217,12 @@ class Retomada(object):
     # -------------------------------------------------------------- correcao
     def corrigir(self, player, estado):
         """Devolve o player a posicao guardada, se ele perdeu o ponto."""
+        if estado.get('ao_vivo'):
+            # Canal continuo: seek aqui derruba o fluxo (tela preta). O canal
+            # volta no ponto atual da transmissao, que e o comportamento certo.
+            if self.log:
+                self.log('[SmartAds] TV ao vivo: sem retomada por posicao')
+            return None
         alvo = estado['posicao']
         if alvo <= 0:
             return None

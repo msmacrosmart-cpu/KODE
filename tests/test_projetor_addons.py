@@ -319,5 +319,14 @@ class AnuncioSemJanelaTest(unittest.TestCase):
         self.assertEqual(self.kodi.builtins, [])
 
 
+# O workflow de release roda uma lista fixa de modulos; para a cobertura das
+# regras de anuncio por dispositivo e da tela de pastas entrar no pipeline sem
+# mexer no workflow, as classes sao reexportadas aqui.
+from tests.test_ads_por_dispositivo import (  # noqa: E402,F401
+    DeteccaoTest, RoteamentoTest, TelaDePastasTest)
+from tests.test_ao_vivo import (  # noqa: E402,F401
+    AoVivoTest, RetomadaAoVivoTest)
+
+
 if __name__ == '__main__':
     unittest.main()

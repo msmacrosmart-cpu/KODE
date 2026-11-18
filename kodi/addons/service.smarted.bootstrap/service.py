@@ -491,6 +491,13 @@ def main():
     # (canal/filme/serie). Sem esta chamada o MonitorPreRoll nunca era criado e
     # nenhum anuncio era pedido, em nenhum aparelho. O app-open espera a Home.
     try:
+        # Publica o perfil do aparelho (celular x TV/box/projetor/stick) antes
+        # de qualquer gatilho: e ele que decide AdMob ou video VAST.
+        smart_ads.publicar_perfil(log)
+    except Exception as erro:
+        log('ads: nao foi possivel identificar o dispositivo (%s)' % erro,
+            xbmc.LOGWARNING)
+    try:
         smart_ads.iniciar_monitor(log)
         abertura = threading.Thread(target=smart_ads.abertura_depois_do_boot,
                                     args=(monitor, log), name='ads-abertura')

@@ -108,6 +108,21 @@ def video_settings(nome_dispositivo=''):
     return dict(VIDEO_SETTINGS)
 
 
+def perfil_ja_aprendido():
+    """O aparelho ja provou que precisa de MediaCodec sem Surface?
+
+    Quem decide isso e o vigia de TV ao vivo (``ao_vivo.py``): quando o canal
+    abre sem nenhum quadro, ele desliga o Surface e grava a marca. Aqui a marca
+    e lida no boot para o perfil COMECAR certo, em vez de o aparelho repetir a
+    tela preta a cada abertura do app. Ler arquivo local; nao depende de rede.
+    """
+    try:
+        import ao_vivo
+        return bool(ao_vivo.fallback_ligado())
+    except Exception:
+        return False
+
+
 def advanced_path(home):
     return os.path.join(home, 'userdata', ADVANCEDSETTINGS)
 
@@ -152,6 +167,13 @@ def apply_settings(jsonrpc, log=None, nome_dispositivo=''):
     if log and cache is CACHE_SETTINGS_PROJETOR:
         log('cache: perfil de projetor (%d MB em vez de %d MB)'
             % (cache['filecache.memorysize'], CACHE_SETTINGS['filecache.memorysize']))
+    if perfil_ja_aprendido() and perfil.get('videoplayer.usemediacodecsurface'):
+        # Aprendido no proprio aparelho: canal ao vivo ficava sem imagem com
+        # Surface. Ganha o mesmo perfil do projetor (sem Surface).
+        perfil = dict(VIDEO_SETTINGS_PROJETOR)
+        if log:
+            log('video: perfil aprendido no aparelho (canal ao vivo sem '
+                'imagem com Surface) -> sem MediaCodec Surface')
     if log:
         log('video: %s -> %s' % (
             'projetor (sem Surface)'

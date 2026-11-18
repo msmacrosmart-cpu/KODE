@@ -33,7 +33,8 @@ ADDON_DIR = ROOT / 'kodi' / 'addons' / ADDON_ID
 ADDON_PREFIX = 'assets/addons/%s/' % ADDON_ID
 SERVICO = 'assets/addons/service.smarted.bootstrap/'
 MODULOS = ('service.py', 'menu_smarted.py', 'performance.py', 'vip.py',
-           'smart_ads.py', 'ad_return.py', 'smarted_release.py', 'check.py', 'addon.xml')
+           'smart_ads.py', 'ad_return.py', 'ao_vivo.py', 'smarted_release.py',
+           'check.py', 'addon.xml')
 KEYMAP_ORIGEM = ROOT / 'kodi' / 'keymaps' / 'smartedtv-voltar.xml'
 KEYMAP_DESTINO = 'assets/system/keymaps/zzz-smartedtv-voltar.xml'
 # O *ID embarcado* não é a origem: o monólito copia a Clássica para skin.novatv.
@@ -44,7 +45,11 @@ CLASSICA = ROOT / 'kodi/skin.estilo.personalizado/xml'
 SKIN_ARQUIVOS = {
     'assets/addons/%s/xml/%s' % (skin, nome): CLASSICA / nome
     for skin in SKINS
-    for nome in ('Home.xml',)
+    # Home: identidade visual aprovada.
+    # MyVideoNav: e a tela de pastas/categorias do Brazuca; entra aqui para a
+    # correcao do bloco branco chegar ao APK (antes so o Home.xml era trocado
+    # e o XML do repositorio nao valia nada no aparelho).
+    for nome in ('Home.xml', 'MyVideoNav.xml')
 }
 SIG = re.compile(r'^META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC))$', re.I)
 STARTUP = re.compile(r'assets/addons/([^/]+)/xml/Startup\.xml$')
