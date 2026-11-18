@@ -139,14 +139,21 @@ class InjetorTest(unittest.TestCase):
                 texto = z.read('assets/addons/%s/xml/Startup.xml' % skin).decode()
                 raiz = ET.fromstring(texto.encode())
                 acoes = [e.text.strip() for e in raiz.findall('onload')]
-                self.assertEqual(len(acoes), 2, acoes)
+                self.assertEqual(len(acoes), 3, acoes)
                 self.assertIn('RunScript(script.smartedtv.welcome)', acoes[0])
                 self.assertIn('smartedtv_entrada,', acoes[0])
                 # o seguro e um processo do proprio addon; o Startup.xml NAO
                 # troca de janela (era o que deixava tela preta na v7)
                 self.assertIn('RunScript(script.smartedtv.welcome,seguro=1)',
                               acoes[1])
+                # ultimo recurso do proprio Kodi: addon quebrado nao pode
+                # deixar o app sem interface (vale tambem para skin.estuary)
+                self.assertIn('smartedtv_home_seguro', acoes[2])
                 self.assertEqual(texto.count('ReplaceWindow'), 0)
+                # e a janela de boot desenha a espera (janela vazia = preto)
+                self.assertEqual(len(raiz.findall('controls')), 1)
+                labels = [(e.text or '').strip() for e in raiz.iter('label')]
+                self.assertIn('Carregando', labels)
                 # o comando original sumiu: nao ha salto direto para a Home
                 self.assertNotIn(
                     '<onload>ReplaceWindow($INFO[System.StartupWindow])</onload>',
@@ -282,13 +289,16 @@ class InjetorTest(unittest.TestCase):
         modulo = carregar()
         novo = modulo.patch_startup(STARTUP)
         self.assertIn(b'smartedtv_entrada,', novo)
+        self.assertEqual(novo.count(b'<controls'), 1, novo)
+        self.assertIn(b'Carregando', novo)
         # um Startup.xml com Home solta nao pode passar
         ruim = (b'<window><onload>AlarmClock(smartedtv_entrada,'
                 b'RunScript(script.smartedtv.welcome),00:00:00,silent)</onload>'
                 b'<onload>ReplaceWindow($INFO[System.StartupWindow])</onload>'
-                b'</window>')
+                b'<controls><control type="label"><label>Carregando</label>'
+                b'</control></controls></window>')
         with self.assertRaises(SystemExit):
-            modulo.validar_publicacao(ruim)
+            modulo.validar_startup(ruim)
 
 
 if __name__ == '__main__':

@@ -74,39 +74,55 @@ STARTUP_NOVO = (
     "\t</controls>")
 
 
+def _espera_controls():
+    """Bloco <controls> da espera (usado em toda skin)."""
+    corpo = STARTUP_NOVO.split("<controls>", 1)[1]
+    if not corpo.rstrip().endswith("</controls>"):
+        raise SystemExit("Startup.xml: espera sem </controls>")
+    return "<controls>" + corpo.rstrip()[:-len("</controls>")] + "</controls>"
+
+
+def _com_espera(texto):
+    """Deixa um unico <controls> (o da espera) e devolve o novo XML."""
+    corpo = _espera_controls()
+    # Os <onload> novos entram no lugar do salto antigo; o <controls> antigo
+    # (vazio, self-closing ou com conteudo da skin) e trocado pelo da espera.
+    achado = re.search(r"<controls\b[^>]*/>|<controls\b[^>]*>.*?</controls>",
+                       texto, re.DOTALL)
+    if achado:
+        return texto[:achado.start()] + corpo + texto[achado.end():]
+    return texto.replace("</window>", "\t" + corpo + "\n</window>", 1)
+
+
 def patch_startup(dados):
-    """Troca o salto direto para a Home pelo disparo da tela de entrada."""
+    """Troca o salto direto para a Home pelo disparo da tela de entrada.
+
+    Vale para TODA skin do APK, inclusive a reserva (skin.estuary). Se a skin
+    padrao ficasse com o `ReplaceWindow($INFO[System.StartupWindow])` antigo e
+    fosse ativada por algum perfil antigo, o app abriria no preto: hoje o
+    simulador de boot exige o Startup.xml novo em todas as skins.
+    """
     texto = dados.decode("utf-8")
     if "smartedtv_entrada" in texto:
         dbg("patch_startup: ja tem smartedtv_entrada, pulando")
+        validar_startup(dados)
         return dados
-    # Tenta varios padroes de ReplaceWindow do StartupWindow
+    # Os <onload> da espera entram no lugar do salto antigo.
+    so_onloads = STARTUP_NOVO.split("<controls>", 1)[0].rstrip()
     padroes = [
         r"<onload[^>]*>\s*ReplaceWindow\(\$INFO\[System\.StartupWindow\]\)\s*</onload>",
-        r"<onload>\s*ReplaceWindow\(\$INFO\[System\.StartupWindow\]\)\s*</onload>",
         r"<onload\s*/>\s*ReplaceWindow\(\$INFO\[System\.StartupWindow\]\)",
         r"ReplaceWindow\(\$INFO\[System\.StartupWindow\]\)",
     ]
     for i, padrao in enumerate(padroes):
         alvos = re.findall(padrao, texto, re.DOTALL)
-        dbg("patch_startup: padro %d -> %d alvos" % (i, len(alvos)))
-        if len(alvos) == 1:
-            alvo = alvos[0]
-            novo = texto.replace(alvo, STARTUP_NOVO, 1)
-            # A tela de espera vai no <controls> que este arquivo ja tinha
-            # (normalmente vazio): dois <controls> no mesmo <window> e XML
-            # invalido para o Kodi.
-            novo = re.sub(r"\n?\s*<controls\s*/>", "", novo, count=1)
-            validar_startup(novo.encode("utf-8"))
-            return novo.encode("utf-8")
-    # Se nao encontrou nenhum, tenta injetar no final antes de </startup>
-    dbg("patch_startup: nenhum padro encontrado, tentando injecao manual")
-    if "</startup>" in texto:
-        novo = texto.replace("</startup>",
-                             STARTUP_NOVO + "\n</startup>", 1)
-        ET.fromstring(novo.encode("utf-8"))
+        dbg("patch_startup: padrao %d -> %d alvos" % (i, len(alvos)))
+        if len(alvos) != 1:
+            continue
+        novo = _com_espera(texto.replace(alvos[0], so_onloads, 1))
+        validar_startup(novo.encode("utf-8"))
         return novo.encode("utf-8")
-    raise SystemExit("Startup.xml sem ReplaceWindow do StartupWindow")
+    raise SystemExit("Startup.xml fora do formato esperado (sem ReplaceWindow)")
 
 
 def validar_startup(dados):
@@ -283,7 +299,9 @@ def main(argv=None):
                             startups.append(item.filename)
                             dbg("%s: abre a tela antes da Home" % item.filename)
                         except SystemExit as e:
-                            dbg("patch_startup pulado para %s: %s" % (item.filename, e))
+                            # Skin que nao segue o formato do Startup.xml: o
+                            # build nao publica. Ver simulador de boot.
+                            raise SystemExit("%s: %s" % (item.filename, e))
                     elif re.fullmatch(r"assets/addons/([^/]+)/xml/Font\.xml", item.filename):
                         try:
                             dados, adicionadas = patch_fonts(dados)
