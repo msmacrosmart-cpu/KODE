@@ -96,25 +96,39 @@ abrir LEANBACK_LAUNCHER
 # --- INSTALADOR PELO CAMINHO DO APP ----------------------------------------
 # "Aplicativo nao instalado" sem abrir a barra de progresso acontece ANTES da
 # tela do instalador: quem abre o file:// nao conseguiu ler o arquivo, ou nao
-# ha atividade que atenda a intent. Testamos esses dois pontos.
+# ha atividade que atenda a intent. Cada passo abaixo PUBLICADO na anotacao,
+# e nenhum deles pode abortar sem dizer o motivo.
+passo() { printf '::notice::%s: %s\n' "$1" "$2"; }
+passo_falha() { printf '::error::%s: %s\n' "$1" "$2"; return 1; }
 adbshell() { adb shell "$@" 2>&1 | tr -d '\r'; }
-# 1) O app grava o APK baixado com leitura para os outros (chmod 644).
-adb push build/universal/SMARTEDTV-universal.apk /data/local/tmp/SMARTEDTV.apk >/dev/null 2>&1 \
-  || erro 'nao consegui enviar o APK para o aparelho'
-copia=$(adbshell run-as "$pkg" sh -c "mkdir -p files/userdata/smartedtv-downloads; cat /data/local/tmp/SMARTEDTV.apk > files/userdata/smartedtv-downloads/SMARTEDTV.apk; chmod 644 files/userdata/smartedtv-downloads/SMARTEDTV.apk; ls -l files/userdata/smartedtv-downloads/SMARTEDTV.apk")
-echo "$copia" | tee "$work/apk-do-app.txt"
-grep -q '^-rw-r--r--' <<< "$copia" || erro "APK baixado pelo app nao esta legivel pelo instalador: $copia"
-# 2) Existe atividade que atenda ao file:// do instalador (senao nada abre).
-resolvido=$(adbshell cmd package resolve-activity --brief -a android.intent.action.VIEW \
-  -d file:///data/local/tmp/SMARTEDTV.apk -t application/vnd.android.package-archive)
-echo "$resolvido" | tee "$work/intent-instalador.txt"
-grep -q '/' <<< "$resolvido" || erro "nenhuma atividade atende ao file:// do instalador: $resolvido"
-# 3) O pacote instalador aceita ESTE arquivo (prova que o APK e instalavel).
-instalou=$(adbshell pm install -r -d /data/local/tmp/SMARTEDTV.apk)
-echo "$instalou" | tee -a "$work/install-do-app.txt"
-grep -q 'Success' <<< "$instalou" || erro "instalador recusou o APK do app: $instalou"
-echo "::notice::APK do app legivel (644), intent do instalador resolvida ($resolvido) e pacote aceito."
-adbshell rm -f /data/local/tmp/SMARTEDTV.apk >/dev/null 2>&1 || true
+falhou=0
+adtmp=/data/local/tmp/SMARTEDTV.apk
+if adb push build/universal/SMARTEDTV-universal.apk "$adtmp" >/dev/null 2>&1; then
+  passo 'apk no aparelho' "$adtmp"
+else
+  passo_falha 'apk no aparelho' 'adb push falhou' || falhou=1
+fi
+copia=$(adbshell run-as "$pkg" sh -c "mkdir -p files/userdata/smartedtv-downloads; cat $adtmp > files/userdata/smartedtv-downloads/SMARTEDTV.apk; chmod 644 files/userdata/smartedtv-downloads/SMARTEDTV.apk; ls -l files/userdata/smartedtv-downloads/SMARTEDTV.apk")
+if grep -q '^-rw-r--r--' <<< "$copia"; then
+  passo 'apk baixado pelo app (644)' "$copia"
+else
+  passo_falha 'apk baixado pelo app (644)' "$copia" || falhou=1
+fi
+resolvido=$(adbshell cmd package resolve-activity --brief -a android.intent.action.VIEW -d "file://$adtmp" -t application/vnd.android.package-archive)
+if grep -q '/' <<< "$resolvido"; then
+  passo 'intent do instalador (file://)' "$resolvido"
+else
+  passo_falha 'intent do instalador (file://)' "sem atividade: $resolvido" || falhou=1
+fi
+instalou=$(adbshell pm install -r -d "$adtmp")
+if grep -q 'Success' <<< "$instalou"; then
+  passo 'pm install -r -d' "Success"
+else
+  passo_falha 'pm install -r -d' "$instalou" || falhou=1
+fi
+adbshell rm -f "$adtmp" >/dev/null 2>&1 || true
+(( falhou == 0 )) || erro 'o caminho do instalador do app falhou (ver anotacoes acima)'
+echo '::notice::APK do app legivel (644), intent do instalador resolvida e pacote aceito.'
 if adb logcat -b crash -d | grep -E 'Process: smartedtv\.full,|>>> smartedtv\.full <<<' ; then
   erro 'Crash do SMARTEDTV no primeiro arranque'
 fi
