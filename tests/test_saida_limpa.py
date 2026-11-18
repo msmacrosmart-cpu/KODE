@@ -74,10 +74,11 @@ class ReaberturaDepoisDeSairTest(unittest.TestCase):
     def test_boot_reconhece_reabertura_e_vai_para_a_home(self):
         fonte = WELCOME.read_text(encoding='utf-8')
         self.assertIn('def _veio_de_uma_saida', fonte)
+        # a marca da saida e consumida no boot (senao a proxima saida herdaria
+        # uma marca vencida) e o desvio para a Home passa pela ativacao
         abertura = _trecho(fonte, 'def abrir_tela_entrada')
-        self.assertIn('_veio_de_uma_saida()', abertura)
-        self.assertLess(abertura.index('_veio_de_uma_saida()'),
-                        abertura.index('def _pasta_da_tela') if 'def _pasta_da_tela' in abertura else len(abertura) - 1)
+        self.assertIn('_limpar_marca_de_saida()', abertura)
+        self.assertIn('ativacao_concluida()', abertura)
         self.assertIn('_ir_para_home', abertura)
 
     def test_abertura_normal_nao_repete_a_tela_de_ativacao(self):
@@ -86,14 +87,23 @@ class ReaberturaDepoisDeSairTest(unittest.TestCase):
         self.assertIn('MARCA_ENTRADA_VISTA', fonte)
         self.assertIn('def entrada_ja_vista', fonte)
         self.assertIn('def marcar_entrada_vista', fonte)
-        # a marca e gravada quando a tela conclui a propria funcao
+        # a marca e gravada SO no sucesso da ativacao por codigo; sair pela
+        # tela (inclusive pelo caminho gratuito, com anuncios) nao libera a Home
+        sucesso = _trecho(fonte, 'def _concluir_validacao')
+        self.assertIn('marcar_entrada_vista()', sucesso)
         sair = _trecho(fonte, 'def _sair(')
-        self.assertIn('marcar_entrada_vista()', sair)
-        # e o boot consulta a marca ANTES de abrir a tela
+        self.assertNotIn('marcar_entrada_vista()', sair)
+        livre = _trecho(fonte, 'def _modo_gratuito(')
+        self.assertNotIn('marcar_entrada_vista()', livre)
+        # e o boot decide pela ativacao ANTES de abrir a tela
         abertura = _trecho(fonte, 'def abrir_tela_entrada')
-        self.assertIn('entrada_ja_vista()', abertura)
-        self.assertLess(abertura.index('entrada_ja_vista()'),
+        self.assertIn('ativacao_concluida()', abertura)
+        self.assertLess(abertura.index('ativacao_concluida()'),
                         abertura.index('_pasta_da_tela()'))
+        # a decisao exige a licenca, nao apenas o arquivo-marca
+        decisao = _trecho(fonte, 'def ativacao_concluida')
+        self.assertIn('entrada_ja_vista()', decisao)
+        self.assertIn('vip.ativa()', decisao)
 
     def test_marca_de_saida_sobrevive_ao_processo(self):
         fonte = WELCOME.read_text(encoding='utf-8')

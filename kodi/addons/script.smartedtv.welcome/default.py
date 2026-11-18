@@ -792,6 +792,9 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
             titulo = 'VIP ativado'
             acao = 'Começar a assistir'
             _log('[SMARTEDTV] Codigo ativado com sucesso; licenca gravada em vip.json.')
+            # Unico ponto em que o app passa a abrir direto na Home: ativacao
+            # com codigo valido. Sair pela tela sem ativar nao grava a marca.
+            marcar_entrada_vista()
         else:
             texto = mensagem or 'Este código não é válido. Verifique e tente novamente.'
             titulo = 'Código não ativado'
@@ -819,9 +822,6 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         # dois ActivateWindow/ReplaceWindow concorrentes podiam deixar preto.
         _definir(MARCA_HOME, 'saindo')
         _definir(MARCA_SAIU, '1')      # o vigia sabe que a tela saiu de cena
-        # Passou pela tela: da proxima abertura em diante o app vai direto para
-        # a Home (VOLTAR na Home reabre a tela quando o usuario quiser).
-        marcar_entrada_vista()
         self.close()
 
     # --- eventos ---------------------------------------------------------
@@ -1181,11 +1181,14 @@ def voltar_para_a_tela():
 MARCA_SAIDA = 'smarted-saindo'
 JANELA_SAIDA = 60      # segundos: reabrir antes disso = sessao nova (nao bloqueia nada)
 
-# Marca de "a tela de entrada JA foi vista neste aparelho". Sem ela o app abria
-# a tela do QR em TODA abertura, porque o Startup.xml chama o script em todo
-# boot (e o Android recria o processo do zero ao reabrir). Com a marca, o app
-# abre como qualquer app normal: primeira vez = tela de ativacao; depois disso,
-# Home. VOLTAR na Home continua reabrindo a tela quando o usuario quiser.
+# Marca de "a tela de entrada JA foi vista E a ativacao foi concluida".
+#
+# Regra do aplicativo: abrir direto na Home SO com codigo de ativacao ativado.
+# Sem essa marca (aparelho novo, ou saida pela tela sem ativar) o boot abre a
+# tela de ativacao; com ela, o boot vai direto para a Home. A marca so e
+# gravada no caminho de sucesso da ativacao (`_concluir_validacao`, ok=True).
+# Quem decide de fato e `vip.ativa()`: se a licenca vencer ou for apagada, a
+# tela volta a aparecer mesmo com a marca no disco.
 MARCA_ENTRADA_VISTA = 'smarted-entrada-vista'
 
 
@@ -1232,6 +1235,29 @@ def entrada_ja_vista():
     try:
         return bool(xbmcvfs.exists(caminho))
     except Exception:
+        return False
+
+
+def ativacao_concluida():
+    """Abrir direto na Home? So com codigo de ativacao ativado e valido.
+
+    Duas condicoes, nesta ordem:
+      1. a tela de ativacao ja concluiu uma ativacao neste aparelho (marca);
+      2. `vip.ativa()` confirma licenca gravada e dentro do prazo.
+    Se o usuario saiu pela tela SEM ativar, a marca nao existe e a tela volta
+    na proxima abertura. Se a licenca venceu, a tela volta tambem.
+    """
+    if not entrada_ja_vista():
+        return False
+    vip = _vip()
+    if vip is None or not callable(getattr(vip, 'ativa', None)):
+        # sem o modulo de licenca nao da para confirmar: mantem a tela
+        return False
+    try:
+        return bool(vip.ativa())
+    except Exception as erro:
+        _log('ativacao_concluida: falha ao consultar a licenca (%s)' % erro,
+             xbmc.LOGWARNING)
         return False
 
 
@@ -1467,13 +1493,13 @@ def abrir_tela_entrada():
     # Sessao nova: o ultimo recurso da SAIDA anterior nao pode continuar
     # armado (era ele que encerrava o app logo depois de reabrir).
     _limpar_guarda_de_saida()
-    # ABERTURA NORMAL: a tela de ativacao e de primeira abertura. Depois que o
-    # usuario passou por ela (ou saiu do app e voltou), abrir tem de cair na
-    # Home, como em qualquer app. Era o contrario que dava a impressao de que
-    # o app "nao abria": em todo boot aparecia o QR de novo.
-    if entrada_ja_vista() or _veio_de_uma_saida():
-        _log('abertura normal: indo direto para a Home (tela de ativacao ja '
-             'vista neste aparelho)')
+    # ABERTURA: a tela de ativacao aparece em todo boot, EXCETO quando este
+    # aparelho ja concluiu a ativacao por codigo e a licenca continua valida
+    # (`ativacao_concluida()`). Nesse caso a abertura cai direto na Home, como
+    # qualquer app - antes o QR voltava em toda abertura e parecia que o app
+    # "nao abria". Mesmo vindo de uma saida, sem ativacao a tela aparece.
+    if ativacao_concluida():
+        _log('abertura normal: ativacao concluida, indo direto para a Home')
         _limpar_marca_de_saida()
         _ir_para_home('abertura normal')
         return True

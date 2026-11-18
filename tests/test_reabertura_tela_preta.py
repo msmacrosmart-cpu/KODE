@@ -44,6 +44,8 @@ class KodiDeMentira(object):
         self.janela_atual = 'Startup'
         self.logs = []
         self.instante = 1000.0
+        # licenca VIP: o app so abre direto na Home com ativacao valida
+        self.licenca_ativa = False
 
     # --- tempo -------------------------------------------------------------
     def avancar(self, segundos):
@@ -189,8 +191,14 @@ def carregar_modulo(kodi):
     xbmcvfs.File = Arquivo
     xbmcvfs.delete = lambda p: (os.remove(traduzir(p)) or True)
 
+    # vip de mentira: `ativa()` e quem decide se o app abre direto na Home.
+    # O teste liga/desliga a licenca por kodi.licenca_ativa.
+    vip = types.ModuleType('vip')
+    vip.ativa = lambda: kodi.licenca_ativa
+    vip.estado = lambda: ({'ativo': True} if kodi.licenca_ativa else {})
+
     modulos = {'xbmc': xbmc, 'xbmcgui': xbmcgui, 'xbmcaddon': xbmcaddon,
-               'xbmcvfs': xbmcvfs, 'vip': types.ModuleType('vip')}
+               'xbmcvfs': xbmcvfs, 'vip': vip}
     salvos = {nome: sys.modules.get(nome) for nome in modulos}
     sys.modules.update(modulos)
     try:
@@ -203,11 +211,14 @@ def carregar_modulo(kodi):
                 sys.modules.pop(nome, None)
             else:
                 sys.modules[nome] = anterior
+        # o modulo de licenca continua disponivel: `_vip()` e chamado em tempo
+        # de execucao (abertura do app) e precisa do stub para `ativa()`
     # tempo controlado: o módulo usa time.time() para a marca da saída
     modulo.time = types.SimpleNamespace(
         time=lambda: kodi.instante + 1_700_000_000,
         sleep=lambda s: None)
     modulo.os.getpid = lambda: 4242
+    modulo._vip_stub = vip
     return modulo, kodi
 
 
@@ -218,6 +229,12 @@ class ReaberturaTest(unittest.TestCase):
         self.perfil = self.temp.name
         self.kodi = KodiDeMentira(self.perfil)
         self.modulo, self.kodi = carregar_modulo(self.kodi)
+        # `_vip()` importa de verdade: publica o stub e limpa depois do teste
+        anterior = sys.modules.get('vip')
+        sys.modules['vip'] = self.modulo._vip_stub
+        self.addCleanup(lambda: sys.modules.pop('vip', None)
+                        if anterior is None
+                        else sys.modules.__setitem__('vip', anterior))
 
     def test_janela_de_boot_nunca_fica_preta(self):
         raiz = ET.parse(STARTUP).getroot()
@@ -279,7 +296,9 @@ class ReaberturaTest(unittest.TestCase):
         self.assertEqual(self.kodi.janela_atual, 'Startup')
 
     def test_reabertura_abre_a_home_sem_a_tela_de_entrada(self):
-        """App reaberto depois de sair: vai direto para a Home."""
+        """Ativado: sai e volta direto para a Home, sem tela de ativacao."""
+        self.kodi.licenca_ativa = True
+        self.assertTrue(self.modulo.marcar_entrada_vista())
         self.modulo.sair_do_aplicativo()
         self.kodi.instante += 3
         self.kodi.janela_atual = 'Startup'
@@ -289,6 +308,34 @@ class ReaberturaTest(unittest.TestCase):
         self.assertFalse(os.path.exists(
             os.path.join(self.perfil, 'addon_data',
                          'script.smartedtv.welcome', 'smarted-saindo')))
+
+    def test_abrir_na_home_exige_codigo_de_ativacao(self):
+        """Regra: Home direta SO com ativacao valida.
+
+        Sem a marca (nunca ativou) ou com a licenca vencida/apagada, o app tem
+        de cair na tela de ativacao - nao na Home.
+        """
+        # 1) aparelho novo, nenhuma licenca
+        self.assertFalse(self.modulo.entrada_ja_vista())
+        self.assertFalse(self.modulo.ativacao_concluida())
+        # 2) a marca sozinha nao basta se a licenca nao estiver ativa
+        self.assertTrue(self.modulo.marcar_entrada_vista())
+        self.assertTrue(self.modulo.entrada_ja_vista())
+        self.assertFalse(self.modulo.ativacao_concluida())
+        # 3) marca + licenca valida = abre na Home
+        self.kodi.licenca_ativa = True
+        self.assertTrue(self.modulo.ativacao_concluida())
+        # 4) licenca vence: volta a exigir ativacao
+        self.kodi.licenca_ativa = False
+        self.assertFalse(self.modulo.ativacao_concluida())
+
+    def test_sem_ativacao_a_reabertura_nao_vai_para_a_home(self):
+        """Sair pela tela sem ativar nao pode "liberar" a Home."""
+        self.modulo.sair_do_aplicativo()
+        self.kodi.instante += 3
+        self.kodi.janela_atual = 'Startup'
+        self.assertFalse(self.modulo.ativacao_concluida())
+        self.assertFalse(self.modulo.entrada_ja_vista())
 
     def test_boot_limpa_marca_antiga_sem_bloquear_nada(self):
         """Uma saída antiga não prende o app nem arma alarme nenhum."""
