@@ -24,7 +24,8 @@ TELA = ROOT / 'kodi/addons/script.smartedtv.welcome/default.py'
 ADDON = ROOT / 'kodi/addons/service.smarted.bootstrap/addon.xml'
 
 TEMPORARIAS = ('smartedtv.welcome.saiu', 'smartedtv.welcome.home',
-               'smartedtv.welcome.voltar', 'smartedtv.welcome.saindo')
+               'smartedtv.welcome.voltar', 'smartedtv.welcome.saindo',
+               'smarted-saindo')
 PERMANENTES = {
     'guisettings': '<settings/>',
     'vip.licenca': 'ATIVO-123',
@@ -42,9 +43,15 @@ def iniciar(estado):
 
 
 def sair(estado):
-    """Mesma semantica do Python: limpa UI e estagios, preserva o resto."""
+    """Mesma semantica do Python: limpa UI e estagios, preserva o resto.
+
+    O guarda da saida agora e um alarme do Kodi (`smartedtv_sair_guarda`) com
+    arquivo-marca. A saida grava a marca; a abertura seguinte a remove e
+    cancela o alarme, entao a sessao nova nunca e encerrada pelo guarda velho.
+    """
     for chave in TEMPORARIAS:
         estado.pop(chave, None)
+    estado.pop('smartedtv_sair_guarda', None)
     for chave in list(estado):
         if chave.startswith('.smarted-seed-'):
             del estado[chave]
@@ -75,9 +82,21 @@ def main():
     addon = ADDON.read_text(encoding='utf-8')
     assert "nome.startswith('.smarted-seed-')" in fontes
     assert 'limpar_estagios_de_seed()' in fontes
+    # Saida: nada de thread dormindo matando a sessao seguinte.
     assert "os._exit(0)" in tela and 'System.Platform.Android' in tela
+    assert 'AlarmClock(smartedtv_sair_guarda' in tela
+    assert 'def _limpar_guarda_de_saida' in tela
+    assert 'JANELA_SAIDA' in tela
     assert 'library="vip.py"' not in addon
     assert '<?xml version="1.0"' in addon
+    # o guarda da saida pode ser armado em qualquer fase do ciclo
+    estado = dict(PERMANENTES)
+    iniciar(estado)
+    estado['smartedtv_sair_guarda'] = 'armado'
+    estado['smarted-saindo'] = '1700000000 4242'
+    sair(estado)
+    assert 'smartedtv_sair_guarda' not in estado
+    assert 'smarted-saindo' not in estado
     fases = ('boot', 'video', 'dialogo', 'rede')
     for numero in range(1, 11):
         ciclo(numero, fases[(numero - 1) % len(fases)])

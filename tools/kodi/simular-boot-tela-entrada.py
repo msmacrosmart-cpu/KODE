@@ -57,7 +57,24 @@ def conferir_startup(z):
             raise SystemExit("Startup.xml %s: seguro nao e do addon" % nome)
         if acoes.index(disparo[0]) >= acoes.index(seguros[0]):
             raise SystemExit("Startup.xml %s: ordem errada %r" % (nome, acoes))
-        dbg("   %-26s dispara a tela; vigia proprio (sem ReplaceWindow)" % nome)
+        # Ultimo recurso sem Python: se o addon da tela sumir, a Home abre.
+        alarmes = [a for a in acoes if "smartedtv_home_seguro" in a]
+        if len(alarmes) != 1 or "ActivateWindow(Home)" not in alarmes[0]:
+            raise SystemExit("Startup.xml %s: sem alarme de seguro da Home %r"
+                             % (nome, acoes))
+        # A janela de startup tem de DESENHAR: vazia = tela preta no boot.
+        controlls = raiz.findall("controls")
+        if len(controlls) != 1:
+            raise SystemExit("Startup.xml %s: %d <controls>"
+                             % (nome, len(controlls)))
+        labels = [(e.text or "").strip() for e in controlls[0].iter("label")]
+        if "Carregando" not in labels:
+            raise SystemExit("Startup.xml %s: janela de boot sem espera visivel"
+                             % nome)
+        if not [c for c in controlls[0].iter("control")
+                if (c.findtext("texture") or "").endswith("pb_white.png")]:
+            raise SystemExit("Startup.xml %s: janela de boot sem fundo" % nome)
+        dbg("   %-26s dispara a tela; espera desenhada; seguro da Home" % nome)
     return skins
 
 

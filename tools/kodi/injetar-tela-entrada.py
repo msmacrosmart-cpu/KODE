@@ -49,10 +49,29 @@ def fontes_da_tela(raiz=None):
 
 FONTES_DA_TELA = None
 
+# O Startup.xml tambem DESENHA uma espera (fundo + marca + "Carregando"):
+# janela de startup vazia = tela preta enquanto o Python/addons sobem. O
+# terceiro alarme (smartedtv_home_seguro) e o ultimo recurso do proprio Kodi:
+# se o addon da tela estiver desabilitado/corrompido, a Home abre em 25 s.
 STARTUP_NOVO = (
     "<onload>AlarmClock(smartedtv_entrada,"
     "RunScript(script.smartedtv.welcome),00:00:00,silent)</onload>\n"
-    "\t<onload>RunScript(script.smartedtv.welcome,seguro=1)</onload>")
+    "\t<onload>RunScript(script.smartedtv.welcome,seguro=1)</onload>\n"
+    "\t<onload>AlarmClock(smartedtv_home_seguro,ActivateWindow(Home),"
+    "00:00:25,silent)</onload>\n"
+    "\t<controls>\n"
+    "\t\t<control type=\"image\"><left>0</left><top>0</top>"
+    "<width>100%</width><height>100%</height>"
+    "<texture colordiffuse=\"pb_dark\">pb_white.png</texture></control>\n"
+    "\t\t<control type=\"label\"><left>0</left><top>470</top>"
+    "<width>100%</width><height>56</height><font>font13</font>"
+    "<textcolor>pb_white</textcolor><align>center</align>"
+    "<aligny>center</aligny><label>SMARTEDTV</label></control>\n"
+    "\t\t<control type=\"label\"><left>0</left><top>534</top>"
+    "<width>100%</width><height>36</height><font>font12</font>"
+    "<textcolor>pb_muted</textcolor><align>center</align>"
+    "<aligny>center</aligny><label>Carregando</label></control>\n"
+    "\t</controls>")
 
 
 def patch_startup(dados):
@@ -74,7 +93,11 @@ def patch_startup(dados):
         if len(alvos) == 1:
             alvo = alvos[0]
             novo = texto.replace(alvo, STARTUP_NOVO, 1)
-            ET.fromstring(novo.encode("utf-8"))
+            # A tela de espera vai no <controls> que este arquivo ja tinha
+            # (normalmente vazio): dois <controls> no mesmo <window> e XML
+            # invalido para o Kodi.
+            novo = re.sub(r"\n?\s*<controls\s*/>", "", novo, count=1)
+            validar_startup(novo.encode("utf-8"))
             return novo.encode("utf-8")
     # Se nao encontrou nenhum, tenta injetar no final antes de </startup>
     dbg("patch_startup: nenhum padro encontrado, tentando injecao manual")
@@ -84,6 +107,43 @@ def patch_startup(dados):
         ET.fromstring(novo.encode("utf-8"))
         return novo.encode("utf-8")
     raise SystemExit("Startup.xml sem ReplaceWindow do StartupWindow")
+
+
+def validar_startup(dados):
+    """Confere o Startup.xml que vai ao APK. Levanta SystemExit se faltar algo.
+
+    Regras (as mesmas do simulador de boot e do teste unitario):
+    * exatamente um disparo da tela e um vigia `seguro=1`, nessa ordem;
+    * nenhum ReplaceWindow do StartupWindow (era a tela preta do boot);
+    * um unico <controls>, com espera DESENHADA: fundo e o aviso "Carregando";
+    * alarme de seguranca do proprio Kodi (`smartedtv_home_seguro`).
+    """
+    raiz = ET.fromstring(dados)
+    if raiz.tag != "window":
+        raise SystemExit("Startup.xml sem <window>")
+    acoes = [(e.text or "").strip() for e in raiz.findall("onload")]
+    disparo = [a for a in acoes if "smartedtv_entrada," in a]
+    if len(disparo) != 1:
+        raise SystemExit("Startup.xml: disparo da tela invalido %r" % acoes)
+    seguros = [a for a in acoes if "seguro=1" in a and "RunScript" in a]
+    if len(seguros) != 1:
+        raise SystemExit("Startup.xml: vigia do boot invalido %r" % acoes)
+    if [a for a in acoes if "ReplaceWindow" in a]:
+        raise SystemExit("Startup.xml: ReplaceWindow do startup nao pode voltar")
+    alarmes = [a for a in acoes if "smartedtv_home_seguro" in a]
+    if len(alarmes) != 1:
+        raise SystemExit("Startup.xml: sem alarme de seguranca para a Home")
+    controles = raiz.findall("controls")
+    if len(controles) != 1:
+        raise SystemExit("Startup.xml: precisa de exatamente um <controls>")
+    labels = [(e.text or "").strip() for e in controles[0].iter("label")]
+    if "Carregando" not in labels:
+        raise SystemExit("Startup.xml: janela de boot sem a espera 'Carregando'")
+    fundo = [e for e in controles[0].iter("control")
+             if (e.findtext("texture") or "").strip().endswith("pb_white.png")]
+    if not fundo:
+        raise SystemExit("Startup.xml: janela de boot sem fundo (tela preta)")
+    return True
 
 
 def patch_fonts(dados):

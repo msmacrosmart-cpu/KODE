@@ -9,15 +9,79 @@
   entrada, que executa ReplaceWindow($INFO[System.StartupWindow]) - o mesmo
   comando que este arquivo executava antes.
 
-  - AlarmClock(...,00:00:00) dispara no proximo ciclo do Kodi, depois que esta
+  Tela preta na abertura (corrigido)
+  ==================================
+  Antes este XML tinha <controls /> vazio: enquanto o Python nao subia (addon
+  manager montando o banco, TV box lento, primeira abertura depois de uma
+  atualizacao, cache do APK sendo extraido) o usuario via PRETO. Em aparelho
+  lento/cache limpo isso podia passar de 10 s, e um app preto parece "fechado".
+  Agora a janela de startup DESENHA uma espera discreta (logo SMARTEDTV,
+  "Carregando" e um traco pulsando). Ela nao le nada: nao depende de addon,
+  de rede, de banco de dados nem de script. Se tudo falhar, este e o quadro que
+  fica na tela.
+
+  * AlarmClock(...,00:00:00) dispara no proximo ciclo do Kodi, depois que esta
     janela existe e o interpretador Python esta pronto.
-  - Fica tambem um seguro de 30 s: se a tela nao chegar a abrir (erro no
+  * Fica tambem um seguro de 30 s: se a tela nao chegar a abrir (erro no
     Python), a Home e liberada para o aplicativo nunca ficar travado. A tela
     cancela esse seguro no onInit, entao com a tela funcionando nao existe Home
     por tras nem antes dele.
+  * Terceiro alarme (smartedtv_home_seguro, 25 s): ultimo recurso do PROPRIO
+    Kodi, sem Python. Se o addon da tela estiver desabilitado/corrompido, a Home
+    abre mesmo assim (ActivateWindow(Home), nunca ReplaceWindow do startup) - falha de addon nao pode deixar o app sem interface. A
+    tela viva cancela este alarme no onInit (CancelAlarm) e o script tambem o
+    cancela em todos os caminhos que abrem a Home.
 -->
 <window>
 	<onload>AlarmClock(smartedtv_entrada,RunScript(script.smartedtv.welcome),00:00:00,silent)</onload>
 	<onload>RunScript(script.smartedtv.welcome,seguro=1)</onload>
-	<controls />
+	<onload>AlarmClock(smartedtv_home_seguro,ActivateWindow(Home),00:00:25,silent)</onload>
+	<controls>
+		<!-- Fundo solido: nunca preto puro, nunca transparente. -->
+		<control type="image">
+			<left>0</left>
+			<top>0</top>
+			<width>100%</width>
+			<height>100%</height>
+			<texture colordiffuse="pb_dark">pb_white.png</texture>
+		</control>
+		<!-- Espera discreta: marca, aviso e um traco pulsando. -->
+		<control type="image">
+			<left>0</left>
+			<top>0</top>
+			<width>100%</width>
+			<height>100%</height>
+			<texture>pb_scrim_v.png</texture>
+		</control>
+		<control type="label">
+			<left>0</left>
+			<top>470</top>
+			<width>100%</width>
+			<height>56</height>
+			<font>font13</font>
+			<textcolor>pb_white</textcolor>
+			<align>center</align>
+			<aligny>center</aligny>
+			<label>SMARTEDTV</label>
+		</control>
+		<control type="label">
+			<left>0</left>
+			<top>534</top>
+			<width>100%</width>
+			<height>36</height>
+			<font>font12</font>
+			<textcolor>pb_muted</textcolor>
+			<align>center</align>
+			<aligny>center</aligny>
+			<label>Carregando</label>
+		</control>
+		<control type="image">
+			<left>910</left>
+			<top>592</top>
+			<width>100</width>
+			<height>3</height>
+			<texture colordiffuse="pb_white">pb_white.png</texture>
+			<animation effect="fade" start="25" end="100" time="900" loop="true" condition="True">Conditional</animation>
+		</control>
+	</controls>
 </window>

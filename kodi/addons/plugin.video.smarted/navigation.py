@@ -14,6 +14,7 @@ Sem favoritos (perfil novo), a barra usa o menu raiz do proprio addon; se a rede
 falhar, usa as pastas reais do addon. Nunca uma lista inventada.
 """
 import json
+import os
 import re
 import time
 from urllib.parse import urlencode
@@ -212,14 +213,38 @@ def buildin_url(url):
 
 
 def save_cache(filename, entries, origem, today=None):
+    """Grava a barra do dia de forma atomica (arquivo temporario + replace).
+
+    Escrita direta deixava o JSON pela metade se o app fosse encerrado no meio
+    (Sair, Android matando o processo, bateria). Na abertura seguinte a barra
+    ficava vazia porque o cache "existia" mas nao era legivel - e a Home abria
+    sem os botoes, parecendo travada. O temporario fica ao lado do destino,
+    entao o os.replace e atomico no mesmo sistema de arquivos.
+    """
     dados = {'data': today or time.strftime('%Y-%m-%d'),
              'origem': origem, 'entradas': entries}
+    temporario = '%s.tmp' % filename
     try:
-        with open(filename, 'w', encoding='utf-8') as stream:
+        with open(temporario, 'w', encoding='utf-8') as stream:
             json.dump(dados, stream, ensure_ascii=False)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporario, filename)
     except OSError:
+        try:
+            if os.path.exists(temporario):
+                os.remove(temporario)
+        except OSError:
+            pass
         return False
     return True
+
+
+def _descartar(filename):
+    try:
+        os.remove(filename)
+    except OSError:
+        pass
 
 
 def load_cache(filename, today=None, aceitar_antigo=False):
@@ -227,8 +252,13 @@ def load_cache(filename, today=None, aceitar_antigo=False):
         with open(filename, 'r', encoding='utf-8') as stream:
             dados = json.load(stream)
     except (OSError, ValueError):
+        # JSON pela metade (saida no meio da gravacao): descarta o arquivo para
+        # a proxima abertura dele descobrir a barra de novo, em vez de achar
+        # que existe cache e abrir a Home vazia.
+        _descartar(filename)
         return None
     if not isinstance(dados, dict) or not isinstance(dados.get('entradas'), list):
+        _descartar(filename)
         return None
     if not aceitar_antigo and dados.get('data') != (today or time.strftime('%Y-%m-%d')):
         return None

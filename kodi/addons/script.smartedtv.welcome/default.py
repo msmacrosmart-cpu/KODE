@@ -94,6 +94,11 @@ MARCA_HOME = 'smartedtv.welcome.home'      # abrindo|ok|restart
 MARCA_VOLTAR = 'smartedtv.welcome.voltar'
 # Comando usado pelo proprio Startup.xml das skins para ir a Home.
 FLUXO_INTERFACE_PRINCIPAL = 'ReplaceWindow($INFO[System.StartupWindow])'
+# Alarme que o Startup.xml entrega ao PROPRIO Kodi como ultimo recurso: se o
+# Python nao subir (addon desabilitado/corrompido), a Home abre em 25 s. A tela
+# viva cancela este alarme assim que desenha e em toda ida para a Home, para
+# nao haver dois "abrir a Home" concorrentes (outra causa de tela preta).
+ALARME_SEGURO = 'smartedtv_home_seguro'
 
 # Fallbacks usados so quando o vip.py nao puder ser importado. Os valores sao
 # os mesmos de vip.py: checkout do pacote e o link verdadeiro gravado no QR
@@ -113,6 +118,8 @@ ESPERA_HOME = 5
 ARG_VOLTAR = 'voltar'
 # Argumento do menu Energia: encerra o Kodi de forma limpa.
 ARG_SAIR = 'sair'
+# Argumento do menu Energia: reinicia o app limpando o estado antes.
+ARG_REINICIAR = 'reiniciar'
 
 # Propriedades da janela usadas pelos grupos do XML (dialogos).
 PROP_DIALOGO = 'welcome_dialog'
@@ -899,12 +906,13 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         # de 30 s no Startup.xml — era ele que deixava a tela preta)
         self.saiu = False
         _limpar(MARCA_SAIU)
+        _limpar_guarda_de_saida()
         _limpar(PROP_TECLADO)      # propriedade antiga; o overlay nao existe mais
         _sinalizar_abertura()
         try:
             # o Startup.xml deixa um alarme de Home para o caso de este addon
             # estar desabilitado; a tela viva cancela para nao cobrir a entrada.
-            xbmc.executebuiltin('CancelAlarm(smartedtv_home_seguro,silent)')
+            xbmc.executebuiltin('CancelAlarm(%s,silent)' % ALARME_SEGURO)
         except Exception:
             pass
         _log('tela de entrada carregada (antes da Home)')
@@ -964,6 +972,13 @@ def _ir_para_home(motivo='', forcar=False):
                 xbmc.sleep(250)
             except Exception:
                 pass
+    # O Kodi nao pode continuar com o alarme de seguranca do Startup.xml: ele
+    # abriria a Home 25 s depois do boot, por cima do que o usuario estiver
+    # fazendo (inclusive por cima de um video aberto).
+    _comando_ok('CancelAlarm(%s,silent)' % ALARME_SEGURO, espera=0)
+    # guarda da SAIDA: se este processo foi reutilizado de uma sessao encerrada,
+    # o timer antigo continuaria contando e mataria a sessao nova.
+    _limpar_guarda_de_saida()
     _definir(MARCA_HOME, 'abrindo')
     _definir(MARCA_ABERTA, '1')      # a partir daqui o vigia nao age sozinho
 
@@ -1114,37 +1129,134 @@ def voltar_para_a_tela():
     return True
 
 
-def _soltar_processo_se_quit_travar(segundos=15):
-    """Ultimo recurso: encerra SOMENTE o processo deste aplicativo.
+# Guarda da saida: marca em disco (sobrevive ao processo) + token da sessao.
+# A causa da tela preta seguida de "o app fecha sozinho" nao e o Quit: e este
+# guarda. Ele era um thread com `time.sleep(15)` e `os._exit(0)`. Quando o
+# Android reabria o app ANTES dos 15 s (o caso tipico: sair e abrir de novo na
+# sequencia), ou quando o processo NAO morria e o Splash reutilizava o mesmo
+# processo Python, o thread antigo continuava contando e matava a sessao NOVA
+# 15 s depois de abrir - com a Home ja na tela ou ainda carregando. Resultado:
+# tela preta e app "fechando sozinho" ao entrar.
+#
+# Agora:
+#   * sem thread dormindo: `AlarmClock` do proprio Kodi, que morre com o app;
+#   * arquivo-marca `smarted-saindo` com o instante da saida: se a abertura nova
+#     acontecer dentro de JANELA_SAIDA segundos, o alarme antigo NAO e armado;
+#   * nenhum `os._exit` e disparado sem conferir o token da sessao atual.
+MARCA_SAIDA = 'smarted-saindo'
+JANELA_SAIDA = 60      # segundos: reabrir antes disso = sessao nova, sem matar
+ESPERA_QUIT = 15       # quanto esperar o Quit nativo antes do ultimo recurso
 
-    O ``Quit`` nativo e o caminho normal. Em alguns Android/Kodi o processo
-    fica vivo depois do Quit com a Activity antiga em cache; ao abrir de novo o
-    Splash reusa esse processo e a tela fica preta. Depois de dar tempo ao
-    desligamento do Kodi, este guarda encerra apenas o proprio PID. Nunca toca
-    em outro aplicativo nem no sistema.
-    """
+
+def _caminho_marca_saida():
     try:
-        time.sleep(max(5, int(segundos)))
+        return xbmcvfs.translatePath('special://profile/addon_data/' + ADDON_ID +
+                                     '/' + MARCA_SAIDA)
     except Exception:
-        return
+        return ''
+
+
+def _instante_de_saida():
+    """Quando a sessao anterior pediu para sair (0 se nunca/arquivo ilegivel)."""
+    caminho = _caminho_marca_saida()
+    if not caminho or not xbmcvfs.exists(caminho):
+        return 0.0
     try:
-        _log('Quit nao encerrou o processo em %d s; finalizando o proprio PID'
-             % segundos, xbmc.LOGWARNING)
+        arquivo = xbmcvfs.File(caminho)
+        try:
+            texto = arquivo.read() or ''
+        finally:
+            arquivo.close()
+        if isinstance(texto, bytes):
+            texto = texto.decode('utf-8', 'replace')
+        return float(str(texto).strip().split()[0])
+    except Exception:
+        return 0.0
+
+
+def _marcar_saida(quando=None):
+    caminho = _caminho_marca_saida()
+    if not caminho:
+        return False
+    try:
+        pasta = os.path.dirname(caminho)
+        if pasta and not xbmcvfs.exists(pasta):
+            xbmcvfs.mkdirs(pasta)
+        arquivo = xbmcvfs.File(caminho, 'w')
+        try:
+            arquivo.write('%d %d\n' % (int(quando or time.time()), os.getpid()))
+        finally:
+            arquivo.close()
+        return True
+    except Exception:
+        return False
+
+
+def _limpar_marca_de_saida():
+    caminho = _caminho_marca_saida()
+    if not caminho:
+        return False
+    try:
+        if xbmcvfs.exists(caminho):
+            xbmcvfs.delete(caminho)
+        return True
+    except Exception:
+        return False
+
+
+def _limpar_guarda_de_saida():
+    """Boot: desarma o ultimo recurso de uma saida anterior, se ainda valer.
+
+    Chamado quando a interface aparece. Se o app foi reaberto ha menos de
+    JANELA_SAIDA segundos, o alarme da sessao anterior e cancelado para nao
+    derrubar esta sessao. O arquivo-marca e sempre removido.
+    """
+    desde = _instante_de_saida()
+    try:
+        if desde and (time.time() - desde) < JANELA_SAIDA:
+            xbmc.executebuiltin('CancelAlarm(smartedtv_sair_guarda,silent)')
+            _log('saida anterior ha %.0f s: guarda antigo cancelado' %
+                 (time.time() - desde))
     except Exception:
         pass
+    _limpar_marca_de_saida()
+    return desde
+
+
+def _soltar_processo_se_quit_travar(segundos=ESPERA_QUIT, token=None):
+    """Ultimo recurso: encerra SOMENTE o processo deste aplicativo.
+
+    Roda como ``AlarmClock`` do Kodi (nao como thread dormindo) e so age se a
+    sessao que pediu a saida ainda for a atual: um ``token`` (instante da
+    saida) e conferido contra o arquivo-marca e contra o alarme. Se o app ja
+    foi reaberto, o arquivo-marca sumiu e nada acontece.
+    """
+    desde = _instante_de_saida()
+    if desde and token is not None and abs(desde - float(token)) > 1.0:
+        _log('guarda da saida: outra sessao ja comecou; nao encerro nada')
+        _limpar_marca_de_saida()
+        return False
+    if not desde:
+        _log('guarda da saida: sessao nova detectada; nada a encerrar')
+        return False
+    _log('Quit nao encerrou o processo em %d s; finalizando o proprio PID'
+         % segundos, xbmc.LOGWARNING)
+    _limpar_marca_de_saida()
     try:
         os._exit(0)
     except Exception:
-        pass
+        return False
+    return True
 
 
 def sair_do_aplicativo():
     """Encerra o SMARTEDTV/Kodi de forma limpa (menu Energia -> Sair).
 
-    Fecha dialogos, para a reproducao, limpa apenas marcas temporarias e pede o
-    ``Quit`` nativo. Se o Quit nao terminar o processo (causa da tela preta na
-    reabertura), um guarda encerra somente o processo deste app depois de 15 s.
-    Nunca usa Kill em outros apps, Shutdown ou RestartApp.
+    Fecha dialogos, para a reproducao, grava a marca de saida e pede o ``Quit``
+    nativo. O ultimo recurso (encerrar o proprio PID se o Quit travar) vira um
+    ``AlarmClock`` do Kodi, que morre junto com o processo: o thread antigo
+    sobrevivia a reabertura e matava a sessao seguinte. Nunca usa Kill em outro
+    app, Shutdown ou RestartApp.
     """
     _log('saindo do aplicativo: fechando dialogos e liberando a reproducao')
     try:
@@ -1163,6 +1275,10 @@ def sair_do_aplicativo():
         xbmc.sleep(250)       # deixa o Kodi processar o stop/close
     except Exception:
         pass
+    # A marca e o que impede o guarda de uma sessao ANTIGA de agir: o boot novo
+    # a encontra, cancela o alarme e segue normalmente.
+    quando = int(time.time())
+    _marcar_saida(quando)
     try:
         # Só no Android: em PC/teste o Quit já encerra o processo do Kodi.
         try:
@@ -1170,16 +1286,45 @@ def sair_do_aplicativo():
         except Exception:
             android = False
         if android:
-            guarda = threading.Thread(
-                target=_soltar_processo_se_quit_travar, args=(15,),
-                name='smarted-quit-guard')
-            guarda.daemon = True
-            guarda.start()
+            _log('saida: ultimo recurso em %d s (alarme do Kodi)' % ESPERA_QUIT)
+            # Formato do Kodi: HH:MM:SS. "00:15" seria QUINZE MINUTOS.
+            segundos = max(5, min(59, int(ESPERA_QUIT)))
+            xbmc.executebuiltin('AlarmClock(smartedtv_sair_guarda,'
+                                'RunScript(%s,seguro_quit=%d),00:00:%02d,silent)'
+                                % (ADDON_ID, quando, segundos))
         _log('saindo do aplicativo: Quit() do Kodi')
         xbmc.executebuiltin('Quit')
         return True
     except Exception as erro:
         _log('falha ao encerrar pelo Quit: %s' % erro, xbmc.LOGERROR)
+        return False
+
+
+def reiniciar_aplicativo():
+    """Menu Energia -> Reiniciar aplicativo: estado limpo e so entao restart.
+
+    ``RestartApp`` sozinho reinicia o Kodi mantendo as marcas da tela de
+    entrada e o alarme da saida: a sessao nova nascia com ``home=ok``/``saiu``
+    presos e a Home aparecia preta. Aqui a limpeza vem antes.
+    """
+    _log('reiniciando o aplicativo: limpando marcas da sessao atual')
+    for chave in (MARCA_VOLTAR, MARCA_ABERTA, MARCA_SAIU, MARCA_HOME):
+        _limpar(chave)
+    _limpar_guarda_de_saida()
+    try:
+        xbmc.executebuiltin('CancelAlarm(smartedtv_home_seguro,silent)')
+    except Exception:
+        pass
+    try:
+        xbmc.sleep(250)
+    except Exception:
+        pass
+    try:
+        _log('reiniciando o aplicativo: RestartApp')
+        xbmc.executebuiltin('RestartApp')
+        return True
+    except Exception as erro:
+        _log('falha ao reiniciar: %s' % erro, xbmc.LOGERROR)
         return False
 
 
@@ -1189,6 +1334,9 @@ def abrir_tela_entrada():
     # `seguro=1` do Startup.xml (8 s). Aqui limpamos qualquer trava do modo
     # `voltar` e abrimos a Home em todos os caminhos de falha.
     _limpar(MARCA_VOLTAR)
+    # Sessao nova: o ultimo recurso da SAIDA anterior nao pode continuar
+    # armado (era ele que encerrava o app logo depois de reabrir).
+    _limpar_guarda_de_saida()
     pasta = _pasta_da_tela()
     if not pasta:
         _log('pasta da tela nao encontrada', xbmc.LOGERROR)
@@ -1217,6 +1365,19 @@ if __name__ == '__main__':
     argumentos = [a.lower() for a in sys.argv[1:]]
     if any('seguro' in a for a in argumentos):
         vigiar_inicializacao()
+    elif any(a.startswith('seguro_quit') for a in argumentos):
+        # ultimo recurso agendado na SAIDA (AlarmClock): so age se esta ainda
+        # for a sessao que pediu para sair.
+        token = None
+        for a in argumentos:
+            if a.startswith('seguro_quit'):
+                try:
+                    token = float(a.split('=', 1)[1])
+                except (IndexError, ValueError):
+                    token = None
+        _soltar_processo_se_quit_travar(ESPERA_QUIT, token)
+    elif any(ARG_REINICIAR in a for a in argumentos):
+        reiniciar_aplicativo()
     elif any(ARG_SAIR in a for a in argumentos):
         sair_do_aplicativo()
     elif any(ARG_VOLTAR in a for a in argumentos):

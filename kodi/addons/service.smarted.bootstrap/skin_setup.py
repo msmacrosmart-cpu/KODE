@@ -77,7 +77,12 @@ def skin_installed(home):
 
 
 def set_skin_xml(home, skin_id=SKIN_ID):
-    """Reescreve só a linha da skin no guisettings.xml. Devolve True se mudou."""
+    """Reescreve só a linha da skin no guisettings.xml. Devolve True se mudou.
+
+    A gravação é atômica (temporário + os.replace). Antes era escrita direta:
+    encerrar o app no meio deixava o guisettings.xml truncado e o Kodi caía na
+    skin padrão (Home diferente da SMARTEDTV) ou abria sem interface.
+    """
     path = guisettings_path(home)
     try:
         with open(path, 'r', encoding='utf-8') as handle:
@@ -96,10 +101,19 @@ def set_skin_xml(home, skin_id=SKIN_ID):
         return False
     if novo_texto == text:
         return False
+    temp = path + '.tmp'
     try:
-        with open(path, 'w', encoding='utf-8') as handle:
+        with open(temp, 'w', encoding='utf-8') as handle:
             handle.write(novo_texto)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temp, path)
     except (OSError, IOError):
+        try:
+            if os.path.exists(temp):
+                os.remove(temp)
+        except OSError:
+            pass
         return False
     return True
 

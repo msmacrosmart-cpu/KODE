@@ -316,15 +316,35 @@ class StartupAntesDaHomeTest(unittest.TestCase):
 
     def test_startup_da_skin_fonte_dispara_a_tela(self):
         acoes = self._acoes(STARTUP_SKIN)
-        self.assertEqual(len(acoes), 2, acoes)
+        self.assertEqual(len(acoes), 3, acoes)
         self.assertIn('RunScript(%s)' % ADDON_ID, acoes[0])
         self.assertIn('smartedtv_entrada,', acoes[0])
         # o seguro agora e um processo proprio do addon (nao um AlarmClock,
         # que disparava em torno da janela de startup e deixava tela preta)
         self.assertIn('RunScript(script.smartedtv.welcome,seguro=1)', acoes[1])
+        # ultimo recurso do proprio Kodi: falha do addon nao pode deixar o app
+        # sem interface (ActivateWindow(Home), nunca ReplaceWindow do startup)
+        self.assertIn('smartedtv_home_seguro', acoes[2])
+        self.assertIn('ActivateWindow(Home)', acoes[2])
         corpo = STARTUP_SKIN.read_text(encoding='utf-8')
         corpo = corpo.split('<window>', 1)[1]
         self.assertEqual(corpo.count('ReplaceWindow'), 0)
+
+    def test_janela_de_boot_desenha_espera_em_vez_de_preto(self):
+        """A janela de startup vazia era a tela preta do boot."""
+        raiz = ET.fromstring(STARTUP_SKIN.read_bytes())
+        controles = raiz.findall('controls')
+        self.assertEqual(len(controles), 1, 'um <controls> por janela')
+        labels = [(e.text or '').strip() for e in controles[0].iter('label')]
+        self.assertIn('Carregando', labels)
+        self.assertIn('SMARTEDTV', labels)
+        fundos = [c for c in controles[0].iter('control')
+                  if (c.findtext('texture') or '').endswith('pb_white.png')]
+        self.assertTrue(fundos, 'sem fundo solido = tela preta')
+        # a espera nao pode depender de addon, rede ou imagem externa
+        for c in controles[0].iter('texture'):
+            self.assertNotIn('$INFO', c.text or '')
+            self.assertNotIn('http', c.text or '')
 
     def test_injetor_aplica_o_mesmo_startup_no_apk(self):
         spec = importlib.util.spec_from_file_location('injetor_startup', INJETOR)
@@ -334,12 +354,19 @@ class StartupAntesDaHomeTest(unittest.TestCase):
                     '\t<onload>ReplaceWindow($INFO[System.StartupWindow])</onload>\n'
                     '\t<controls />\n</window>\n')
         novo = injetor.patch_startup(original.encode()).decode()
-        acoes = [(e.text or '').strip()
-                 for e in ET.fromstring(novo.encode()).findall('onload')]
-        self.assertEqual(len(acoes), 2, acoes)
+        raiz = ET.fromstring(novo.encode())
+        acoes = [(e.text or '').strip() for e in raiz.findall('onload')]
+        self.assertEqual(len(acoes), 3, acoes)
         self.assertIn('RunScript(%s)' % ADDON_ID, acoes[0])
         self.assertIn('seguro=1', acoes[1])
+        self.assertIn('smartedtv_home_seguro', acoes[2])
         self.assertNotIn('ReplaceWindow', novo)
+        # o injetor tambem deixa a espera desenhada e nunca dois <controls>
+        self.assertEqual(len(raiz.findall('controls')), 1)
+        self.assertEqual(novo.count('<controls'), 1)
+        labels = [(e.text or '').strip() for e in raiz.iter('label')]
+        self.assertIn('Carregando', labels)
+        self.assertTrue(injetor.validar_startup(novo.encode()))
 
     def test_startup_com_home_solta_e_recusado(self):
         spec = importlib.util.spec_from_file_location('injetor_recusa', INJETOR)
@@ -352,7 +379,7 @@ class StartupAntesDaHomeTest(unittest.TestCase):
                     '\t<onload>ReplaceWindow($INFO[System.StartupWindow])</onload>\n'
                     '\t<controls />\n</window>\n')
         with self.assertRaises(SystemExit):
-            injetor.validar_publicacao(quebrado.encode())
+            injetor.validar_startup(quebrado.encode())
 
 
 class JanelaFake(object):
@@ -854,10 +881,13 @@ class CicloDeVidaTest(unittest.TestCase):
         modulo.__dict__['sys'] = sys
         modulo.__dict__['ARG_VOLTAR'] = 'voltar'
         modulo.__dict__['ARG_SAIR'] = 'sair'
+        modulo.__dict__['ARG_REINICIAR'] = 'reiniciar'
         modulo.__dict__['voltar_para_a_tela'] = \
             lambda: chamadas.append('voltar')
         modulo.__dict__['sair_do_aplicativo'] = \
             lambda: chamadas.append('sair')
+        modulo.__dict__['reiniciar_aplicativo'] = \
+            lambda: chamadas.append('reiniciar')
         modulo.__dict__['vigiar_inicializacao'] = \
             lambda: chamadas.append('vigia')
         modulo.__dict__['abrir_tela_entrada'] = \
@@ -868,6 +898,8 @@ class CicloDeVidaTest(unittest.TestCase):
         try:
             for args, esperado in (('voltar', 'voltar'),
                                    ('seguro=1', 'vigia'),
+                                   ('sair', 'sair'),
+                                   ('reiniciar', 'reiniciar'),
                                    ('', 'boot')):
                 chamadas[:] = []
                 sys.argv = ['default.py'] + ([args] if args else [])
