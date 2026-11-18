@@ -49,14 +49,31 @@ def janela():
     return _info('System.CurrentWindow')
 
 
-def foco():
-    """(id, rotulo) do controle com foco.
+# Controles focaveis do skin (Home e MyVideoNav/Configuracoes).
+IDS_CONHECIDOS = ['50', '51', '52', '9000', '9030', '9031', '9032', '9033',
+                  '9034', '9035', '9036', '9037', '9038', '9039', '9050',
+                  '9051', '9052', '9053', '9060', '9061todos', '9061az',
+                  '9061za', '9061adicionados', '9061votados', '9061recentes',
+                  '9100', '9117', '9121', '9122', '9123', '9201', '9203',
+                  '9210', '9220', '9300', '9301', '9302', '9320', '9050']
 
-    O JSON-RPC ``GUI.GetProperties(currentcontrol)`` volta vazio nesta versao
-    para controles de skin; as infolabels ``System.CurrentControlID``/
-    ``System.CurrentControl`` sao as que o proprio skin usa e trazem o dado.
+
+def foco():
+    """Id do controle com foco.
+
+    ``System.CurrentControlID`` volta vazio para botoes/containers deste skin e
+    ``GUI.GetProperties(currentcontrol)`` tambem; ``Control.HasFocus(id)`` e o
+    teste que o proprio skin usa nas condicoes ``<visible>`` e responde sempre.
     """
-    return _info('System.CurrentControlID'), _info('System.CurrentControl')
+    for cid in IDS_CONHECIDOS:
+        if _info('Control.HasFocus(%s)' % cid) in ('true', '1'):
+            return cid
+    atual = _info('System.CurrentControlID')
+    return atual or '?'
+
+
+def romano(valor):
+    return valor
 
 
 def itens(limite=25):
@@ -66,10 +83,13 @@ def itens(limite=25):
     infolabels ``Container(id).ListItemNoWrap(n).Label`` leem direto do
     container e funcionam mesmo com o servidor desligado.
     """
-    container = _info('System.CurrentControlID') or '50'
+    container = foco() if foco() in ('50', '51', '52') else '50'
     rotulos = []
     for indice in range(limite):
-        valor = _info('Container(%s).ListItemNoWrap(%d).Label' % (container, indice))
+        # ItemIndex(n)/ListItemAbsolute(n) sao as sintaxes que o Kodi 21 aceita;
+        # segunda tentativa para nao depender de uma unica forma.
+        valor = (_info('Container(%s).ListItemAbsolute(%d).Label' % (container, indice))
+                 or _info('Container(%s).ListItemNoWrap(%d).Label' % (container, indice)))
         if not valor:
             break
         rotulos.append(valor)
@@ -104,28 +124,29 @@ def ir_para_home(tentativas=12):
 
 def prova_categoria():
     """Entra numa pasta do plugin e desce dentro dela."""
+    # Mesmo caminho do app: a janela Videos com a rota do plugin. "return"
+    # garante que ela abre por cima da Home (sem isso o Kodi pode manter a Home).
     abrir('ActivateWindow(Videos,plugin://plugin.video.smarted/?route=series)')
     dentro = janela()
-    id_ini, rotulo_ini = foco()
-    registrar('categoria_abre', True, 'janela=%s foco=%s(%s) itens=%d'
-              % (dentro, id_ini, rotulo_ini, len(itens())))
-    foco_lista = id_ini in ('50', '51', '52')
-    registrar('categoria_foco_na_lista', foco_lista,
-              'controle inicial=%s esperado 50/51/52 em %s' % (id_ini, dentro))
+    id_ini = foco()
+    registrar('categoria_abre', True, 'janela=%s foco=%s itens=%d' % (dentro, id_ini, len(itens())))
+    LISTAS = ('50', '51', '52')
+    registrar('categoria_foco_na_lista', id_ini in LISTAS,
+              'janela=%s controle inicial=%s (esperado 50/51/52)' % (dentro, id_ini))
     trilha = []
     for _ in range(5):
         acao('Down', 0.5)
-        trilha.append(foco()[0])
-    saida = foco()[0]
-    registrar('categoria_dpad_desce', saida in ('50', '51', '52'),
+        trilha.append(foco())
+    saida = foco()
+    registrar('categoria_dpad_desce', saida in LISTAS,
               'trilha=%s final=%s (tem de ficar na lista)' % ('>'.join(trilha), saida))
     # Subir tem de sair da lista para a barra de filtros, e nao para um controle
     # invisivel: e o caminho que o cliente percorre para filtrar.
     for _ in range(8):
         acao('Up', 0.4)
-        if foco()[0] == '9060':
+        if foco() == '9060':
             break
-    no_filtro = foco()[0]
+    no_filtro = foco()
     registrar('categoria_sobe_para_filtro', no_filtro == '9060',
               'controle apos subir=%s (esperado 9060)' % no_filtro)
     return no_filtro == '9060'
@@ -155,15 +176,15 @@ def prova_filtro(pode_filtrar):
 
 def prova_ajustes():
     abrir('ActivateWindow(Settings)')
-    ini = foco()[0]
+    ini = foco()
     trilha = []
     for _ in range(3):
         acao('Right', 0.5)
-        trilha.append(foco()[0])
+        trilha.append(foco())
     for _ in range(3):
         acao('Down', 0.5)
-        trilha.append(foco()[0])
-    fim = foco()[0]
+        trilha.append(foco())
+    fim = foco()
     registrar('ajustes_dpad_move', len(set([ini] + trilha)) > 1,
               'trilha=%s' % '>'.join([ini] + trilha))
 
@@ -179,17 +200,17 @@ def prova_home_topo():
     trilha = []
     for _ in range(10):
         acao('Up', 0.45)
-        atual = foco()[0]
+        atual = foco()
         trilha.append(atual)
         if atual.startswith('912'):
             break
-    topo = foco()[0]
+    topo = foco()
     registrar('home_sobe_para_barra', topo in ('9121', '9122', '9123'),
               'trilha=%s final=%s' % ('>'.join(trilha), topo))
     # Descer do topo tem de voltar para conteudo visivel, nunca para o 9000,
     # que so existe no layout aurora.
     acao('Down', 0.8)
-    abaixo = foco()[0]
+    abaixo = foco()
     registrar('home_topo_desce_visivel', abaixo not in ('9000', ''),
               'controle abaixo do topo=%s' % abaixo)
 
