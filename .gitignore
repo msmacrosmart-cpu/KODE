@@ -14,3 +14,4 @@ smartedtv/out-apk/
 # ambiente local e APKs de teste do agente
 .cache/
 build_test/
+special:

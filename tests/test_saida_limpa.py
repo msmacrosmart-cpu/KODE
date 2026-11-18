@@ -38,19 +38,19 @@ class SaidaLimpaTest(unittest.TestCase):
         self.assertLess(trecho.index('_limpar_guarda_de_saida()'),
                         trecho.index("executebuiltin('RestartApp')"))
 
-    def test_saida_tem_guarda_para_processo_reutilizado(self):
+    def test_saida_nao_encerra_o_proprio_processo(self):
+        """Fechar e nao abrir mais: o guarda que matava o processo saiu."""
         fonte = WELCOME.read_text(encoding='utf-8')
-        self.assertIn('def _soltar_processo_se_quit_travar', fonte)
-        self.assertIn('os._exit(0)', fonte)
-        self.assertIn('System.Platform.Android', fonte)
-        self.assertNotIn('os.kill', fonte)
+        self.assertIn('def nao_encerrar_o_processo', fonte)
+        self.assertNotIn('os._exit(', fonte)
+        self.assertNotIn('os.kill(', fonte)
         self.assertNotIn("executebuiltin('Shutdown", fonte)
         self.assertNotIn("executebuiltin('Kill", fonte)
+        self.assertNotIn("executebuiltin('RestartApp')", _trecho(fonte, 'def sair_do_aplicativo'))
 
     def test_saida_fecha_janelas_e_pede_quit_nativo(self):
         fonte = WELCOME.read_text(encoding='utf-8')
-        trecho = fonte[fonte.index('def sair_do_aplicativo'):]
-        trecho = trecho[:trecho.index('\ndef ', 1)] if '\ndef ' in trecho[1:] else trecho
+        trecho = _trecho(fonte, 'def sair_do_aplicativo')
         self.assertIn('Dialog.Close(all,true)', trecho)
         self.assertIn("'Quit'", trecho)
         self.assertNotIn('os.kill', trecho)
@@ -60,6 +60,46 @@ class SaidaLimpaTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+def _trecho(fonte, inicio):
+    """Do inicio do def ate o proximo def de mesmo nivel."""
+    trecho = fonte[fonte.index(inicio):]
+    return trecho[:trecho.index('\ndef ', 1)] if '\ndef ' in trecho[1:] else trecho
+
+
+class ReaberturaDepoisDeSairTest(unittest.TestCase):
+    """App fechado volta a abrir: sem matar processo e direto na Home."""
+
+    def test_boot_reconhece_reabertura_e_vai_para_a_home(self):
+        fonte = WELCOME.read_text(encoding='utf-8')
+        self.assertIn('def _veio_de_uma_saida', fonte)
+        abertura = _trecho(fonte, 'def abrir_tela_entrada')
+        self.assertIn('_veio_de_uma_saida()', abertura)
+        self.assertLess(abertura.index('_veio_de_uma_saida()'),
+                        abertura.index('def _pasta_da_tela') if 'def _pasta_da_tela' in abertura else len(abertura) - 1)
+        self.assertIn('_ir_para_home', abertura)
+
+    def test_abertura_normal_nao_repete_a_tela_de_ativacao(self):
+        """Kodi normal: a tela de ativacao e de primeira abertura."""
+        fonte = WELCOME.read_text(encoding='utf-8')
+        self.assertIn('MARCA_ENTRADA_VISTA', fonte)
+        self.assertIn('def entrada_ja_vista', fonte)
+        self.assertIn('def marcar_entrada_vista', fonte)
+        # a marca e gravada quando a tela conclui a propria funcao
+        sair = _trecho(fonte, 'def _sair(')
+        self.assertIn('marcar_entrada_vista()', sair)
+        # e o boot consulta a marca ANTES de abrir a tela
+        abertura = _trecho(fonte, 'def abrir_tela_entrada')
+        self.assertIn('entrada_ja_vista()', abertura)
+        self.assertLess(abertura.index('entrada_ja_vista()'),
+                        abertura.index('_pasta_da_tela()'))
+
+    def test_marca_de_saida_sobrevive_ao_processo(self):
+        fonte = WELCOME.read_text(encoding='utf-8')
+        marca = _trecho(fonte, 'def _marcar_saida')
+        self.assertIn('xbmcvfs.File', marca)
+        self.assertIn('os.getpid()', marca)
 
 
 class GuildaDeSaidaNaoMataSessaoNovaTest(unittest.TestCase):
@@ -73,27 +113,28 @@ class GuildaDeSaidaNaoMataSessaoNovaTest(unittest.TestCase):
 
     def test_saida_nao_usa_thread_dormindo_nem_mata_por_conta_propria(self):
         fonte = WELCOME.read_text(encoding='utf-8')
-        trecho = fonte[fonte.index('def sair_do_aplicativo'):]
+        trecho = _trecho(fonte, 'def sair_do_aplicativo')
         self.assertNotIn('threading.Thread', trecho)
         self.assertNotIn('os._exit', trecho)
-        self.assertIn('AlarmClock(smartedtv_sair_guarda', trecho)
         self.assertIn('_marcar_saida(', trecho)
+        # a marca fica gravada ANTES do Quit: o proximo boot sabe que reabriu
+        self.assertLess(trecho.index('_marcar_saida('), trecho.index("'Quit'"))
 
-    def test_guarda_confere_o_token_da_sessao_antes_de_encerrar(self):
+    def test_alarme_da_saida_nao_dispara_o_vigia_de_boot(self):
+        """`seguro_quit` contem 'seguro': na ordem antiga abria o vigia de boot."""
         fonte = WELCOME.read_text(encoding='utf-8')
-        trecho = fonte[fonte.index('def _soltar_processo_se_quit_travar'):]
-        trecho = trecho[:trecho.index('\ndef ', 1)]
-        self.assertIn('_instante_de_saida()', trecho)
-        self.assertIn('abs(desde - float(token)) > 1.0', trecho)
-        self.assertLess(trecho.index('_instante_de_saida()'),
-                        trecho.index('os._exit'))
+        trecho = fonte[fonte.index("argumentos = [a.lower()"):]
+        self.assertLess(trecho.index("a.startswith('seguro_quit')"),
+                        trecho.index("if any('seguro' in a for a in argumentos)"))
+        # e o alarme que chamava isso nao e mais armado na saida
+        saida = _trecho(fonte, 'def sair_do_aplicativo')
+        self.assertNotIn('AlarmClock(smartedtv_sair_guarda', saida)
+        self.assertIn("'Quit'", saida)
 
-    def test_boot_cancela_o_guarda_da_saida_anterior(self):
+    def test_boot_limpa_a_marca_da_saida_anterior(self):
         fonte = WELCOME.read_text(encoding='utf-8')
-        trecho = fonte[fonte.index('def _limpar_guarda_de_saida'):]
-        trecho = trecho[:trecho.index('\ndef ', 1)]
+        trecho = _trecho(fonte, 'def _limpar_guarda_de_saida')
         self.assertIn('CancelAlarm(smartedtv_sair_guarda', trecho)
-        self.assertIn('JANELA_SAIDA', trecho)
         self.assertIn('_limpar_marca_de_saida()', trecho)
         # chamada na ida para a Home (todo caminho de boot passa por ali)
         home = fonte[fonte.index('def _ir_para_home'):]

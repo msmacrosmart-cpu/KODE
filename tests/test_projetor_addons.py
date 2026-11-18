@@ -324,8 +324,6 @@ class AnuncioSemJanelaTest(unittest.TestCase):
 # mexer no workflow, as classes sao reexportadas aqui.
 from tests.test_ads_por_dispositivo import (  # noqa: E402,F401
     DeteccaoTest, RoteamentoTest, TelaDePastasTest)
-from tests.test_ao_vivo import (  # noqa: E402,F401
-    AoVivoTest, RetomadaAoVivoTest)
 
 
 if __name__ == '__main__':

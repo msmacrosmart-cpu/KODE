@@ -70,8 +70,10 @@ def carregar_modulo(kodi):
     """Carrega default.py com xbmc/xbmcgui/xbmcvfs/xbmcaddon de mentira."""
 
     def traduzir(caminho):
-        return (caminho.replace('special://profile/', kodi.perfil + '/')
-                       .replace('special://home/', kodi.perfil + '/home/'))
+        texto = (caminho.replace('special://home/', kodi.perfil + '/home/')
+                        .replace('special://profile/', kodi.perfil + '/'))
+        # 'special://profile' sem barra final (usado por ao_vivo.py)
+        return texto.replace('special://profile', kodi.perfil)
 
     xbmc = types.ModuleType('xbmc')
     xbmc.LOGINFO, xbmc.LOGWARNING, xbmc.LOGERROR = 1, 3, 4
@@ -243,68 +245,61 @@ class ReaberturaTest(unittest.TestCase):
         fonte = TELA.read_text(encoding='utf-8')
         self.assertIn("CancelAlarm(%s,silent)' % ALARME_SEGURO", fonte)
 
-    def test_sair_e_reabrir_nao_mata_a_sessao_nova(self):
-        """O bug do usuário: sai, abre de novo e a tela fica preta/sai.
+    def test_sair_e_reabrir_cai_na_home_e_nao_mata_a_sessao(self):
+        """O bug do usuário: fecha o app e ele não abre mais.
 
-        Antes: o guarda da saída (sleep 15 + os._exit) sobrevivia à reabertura
-        e encerrava a sessão nova. Agora ele é um AlarmClock que o boot novo
-        cancela ao encontrar a marca de saída recente.
+        Antes: a saída armava um AlarmClock com `RunScript(...,seguro_quit=N)` e,
+        se o Quit demorasse, um `os._exit(0)` matava o processo. Matar o processo
+        por dentro deixa a tarefa velha no Android: o Splash reusa, e o app volta
+        preto ou não abre. Agora a saída só grava a marca e pede o Quit nativo.
         """
         # 1ª sessão: sai pelo menu Energia
         self.modulo.sair_do_aplicativo()
         self.assertIn('Quit', self.kodi.builtins)
         self.assertEqual(self.kodi.janela_atual, 'SamdoProcesso')
-        alarme = [c for c in self.kodi.builtins
-                  if c.startswith('AlarmClock(smartedtv_sair_guarda,')]
-        self.assertEqual(len(alarme), 1)
-        # HH:MM:SS — "00:15" seria quinze MINUTOS e nao segundos
-        self.assertIn(',00:00:15,', alarme[0])
-        self.assertIn('smartedtv_sair_guarda', self.kodi.alarmes)
-        self.assertTrue(os.path.exists(
-            os.path.join(self.perfil, 'addon_data', 'script.smartedtv.welcome',
-                         'smarted-saindo')))
-        # 2ª sessão: o app é reaberto 3 s depois (processo reutilizado)
+        # nenhum alarme de último recurso é armado
+        self.assertEqual([c for c in self.kodi.builtins
+                          if 'smartedtv_sair_guarda' in c], [])
+        self.assertEqual(self.kodi.alarmes, {})
+        # e o processo não é encerrado por conta própria
+        self.modulo.nao_encerrar_o_processo()
+        self.assertEqual([b for b in self.kodi.builtins if b == 'Quit'], ['Quit'])
+        # a marca da saída fica gravada para o próximo boot
+        marca = os.path.join(self.perfil, 'addon_data',
+                             'script.smartedtv.welcome', 'smarted-saindo')
+        self.assertTrue(os.path.exists(marca))
+        # 2ª sessão: o app é reaberto 3 s depois (processo novo ou reusado)
         self.kodi.instante += 3
         self.kodi.janela_atual = 'Startup'
-        self.modulo._limpar_guarda_de_saida()
-        # comum: o alarme antigo já não existe
-        self.assertNotIn('smartedtv_sair_guarda', self.kodi.alarmes)
-        # pior caso: o alarme do Kodi dispara de qualquer forma
-        self.modulo._soltar_processo_se_quit_travar(15, token=1000.0)
-        vencidos = self.kodi.avancar(20)
-        # nenhum alarme desta sessão vai encerrar nada
-        self.assertFalse([c for _n, c in vencidos if 'seguro_quit' in c])
-        # nada de "app saindo sozinho": a sessão nova continua viva
+        self.assertTrue(self.modulo._veio_de_uma_saida())
         self.assertEqual(self.kodi.janela_atual, 'Startup')
-        self.assertEqual([b for b in self.kodi.builtins if b == 'Quit'], ['Quit'])
-        # a marca foi limpa: a próxima saída grava outra
-        self.assertFalse(os.path.exists(
-            os.path.join(self.perfil, 'addon_data', 'script.smartedtv.welcome',
-                         'smarted-saindo')))
+        # nenhum alarme desta sessão vai encerrar nada
+        vencidos = self.kodi.avancar(20)
+        self.assertEqual(vencidos, [])
+        self.assertEqual(self.kodi.janela_atual, 'Startup')
 
-    def test_abrir_a_tela_ja_desarma_o_guarda_da_sessao_anterior(self):
-        """Nenhum caminho de abertura pode herdar o guarda armado."""
+    def test_reabertura_abre_a_home_sem_a_tela_de_entrada(self):
+        """App reaberto depois de sair: vai direto para a Home."""
         self.modulo.sair_do_aplicativo()
-        self.assertIn('smartedtv_sair_guarda', self.kodi.alarmes)
         self.kodi.instante += 3
+        self.kodi.janela_atual = 'Startup'
         self.modulo.abrir_tela_entrada()
-        self.assertNotIn('smartedtv_sair_guarda', self.kodi.alarmes)
+        self.assertEqual(self.kodi.janela_atual, 'Home')
+        # a marca foi consumida: a próxima saída grava outra
+        self.assertFalse(os.path.exists(
+            os.path.join(self.perfil, 'addon_data',
+                         'script.smartedtv.welcome', 'smarted-saindo')))
 
-    def test_guarda_ainda_encerra_quando_a_saida_realmente_trava(self):
-        """Se ninguém reabriu, o último recurso continua funcionando."""
+    def test_boot_limpa_marca_antiga_sem_bloquear_nada(self):
+        """Uma saída antiga não prende o app nem arma alarme nenhum."""
         self.modulo.sair_do_aplicativo()
-        instante = self.modulo._instante_de_saida()
-        self.assertTrue(instante)
-        encerrou = []
-
-        def falso_exit(code):
-            encerrou.append(code)
-            raise SystemExit(code)
-
-        self.modulo.os._exit = falso_exit
-        with self.assertRaises(SystemExit):
-            self.modulo._soltar_processo_se_quit_travar(15, token=instante)
-        self.assertEqual(encerrou, [0])
+        self.kodi.instante += 3600
+        self.assertFalse(self.modulo._veio_de_uma_saida())
+        self.modulo._limpar_guarda_de_saida()
+        self.assertFalse(os.path.exists(
+            os.path.join(self.perfil, 'addon_data',
+                         'script.smartedtv.welcome', 'smarted-saindo')))
+        self.assertEqual(self.kodi.alarmes, {})
 
     def test_home_nova_cancela_o_alarme_de_seguranca(self):
         self.modulo._ir_para_home('teste')

@@ -152,7 +152,12 @@ class DeteccaoTest(BaseAds):
 
 
 class RoteamentoTest(BaseAds):
-    """Celular pede AdMob; tela grande nao pede activity que pode falhar."""
+    """Anuncio AdMob em TODOS os aparelhos: celular, TV, box, stick e projetor.
+
+    Pedido explicito do usuario: manter os anuncios do celular e passar a exibir
+    tambem em TV, Box, Stick e Projetor. O mesmo builtin (com o className do
+    anuncio) e usado em qualquer aparelho.
+    """
 
     def test_celular_dispara_a_activity_admob_do_apk(self):
         kodi = AdsFalso(condicoes={'System.Platform.Android.Mobile',
@@ -163,16 +168,29 @@ class RoteamentoTest(BaseAds):
         self.assertEqual(len(envios), 1, kodi.builtins)
         self.assertIn(modulo.ATIVIDADE_PREROLL, envios[0])
 
-    def test_tela_grande_nao_dispara_activity_admob(self):
+    def test_tv_box_stick_projetor_tambem_disparam_admob(self):
+        for condicoes, nome in (
+                ({'System.Platform.Android.TV', 'System.Platform.Android'}, 'TV'),
+                ({'System.Platform.Android', 'System.FriendlyName'}, 'box'),
+                ({'System.Platform.Android'}, 'stick/projetor')):
+            kodi = AdsFalso(condicoes=condicoes,
+                            nomes={'System.FriendlyName': 'Fire TV Stick'})
+            modulo = self._carregar(kodi)
+            self.assertTrue(modulo.tocar_anuncio(modulo.ATIVIDADE_PREROLL), nome)
+            envios = [b for b in kodi.builtins
+                      if b.startswith('StartAndroidActivity')]
+            self.assertEqual(len(envios), 1, (nome, kodi.builtins))
+            self.assertIn(modulo.ATIVIDADE_PREROLL, envios[0], nome)
+
+    def test_abertura_tambem_vale_na_tv(self):
         kodi = AdsFalso(condicoes={'System.Platform.Android.TV',
                                    'System.Platform.Android'})
         modulo = self._carregar(kodi)
-        self.assertFalse(modulo.tocar_anuncio(modulo.ATIVIDADE_PREROLL))
-        self.assertEqual([b for b in kodi.builtins
-                          if b.startswith('StartAndroidActivity')], [],
-                         'tela grande nao pode abrir a activity AdMob')
+        self.assertTrue(modulo.tocar_anuncio(modulo.ATIVIDADE_ABERTURA))
+        envios = [b for b in kodi.builtins if b.startswith('StartAndroidActivity')]
+        self.assertIn(modulo.ATIVIDADE_ABERTURA, envios[0])
 
-    def test_vast_reporta_indisponivel_enquanto_nao_ha_sdk(self):
+    def test_vast_nunca_e_simulado(self):
         kodi = AdsFalso(condicoes={'System.Platform.Android.TV',
                                    'System.Platform.Android'})
         modulo = self._carregar(kodi)

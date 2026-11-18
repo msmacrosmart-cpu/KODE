@@ -53,9 +53,17 @@ FALLBACK_ARQUIVO = 'ao-vivo-sem-surface.txt'
 
 
 def _marker_path():
+    """Caminho do arquivo de perfil aprendido (perfil real do Kodi).
+
+    Exige caminho absoluto: em Kodi ``special://profile`` sempre resolve para
+    um caminho real. Se nao resolver (teste fora do aparelho), nao se grava
+    nada - marca em caminho relativo nao serve para nada.
+    """
     try:
         perfil = xbmcvfs.translatePath('special://profile')
     except Exception:
+        return None
+    if not perfil or not os.path.isabs(perfil):
         return None
     return os.path.join(perfil, 'addon_data', 'service.smarted.bootstrap',
                         FALLBACK_ARQUIVO)

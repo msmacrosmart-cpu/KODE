@@ -255,15 +255,15 @@ def tocar_anuncio(atividade, log=None, uri=''):
         if log:
             log('[SmartAds] ignorado (nao e Android)')
         return False
+    # O anuncio e o MESMO em celular, tablet, TV, TV Box, projetor e stick: a
+    # activity nativa que ja vive neste APK. Ela nasce com o botao "Pular
+    # anuncio" focado no D-pad (o Java AdTela le plataforma.txt via
+    # Plataforma.eTV()), entao controle remoto funciona sem toque na tela.
+    # O perfil do aparelho fica registrado no log para diagnostico, mas NAO
+    # decide mais se ha anuncio: todos os aparelhos recebem.
     perfil, motivo = perfil_dispositivo()
-    if perfil == PERFIL_TELA_GRANDE:
-        # TV/box/projetor/stick: o video VAST e o caminho da tela do aparelho.
-        # O SDK Google IMA precisa estar COMPILADO no app Android para tocar o
-        # VAST no player; esta ponte e o ponto unico a trocar quando ele vier.
-        if log:
-            log('[SmartAds] perfil tela-grande (%s): anuncio VAST, sem activity '
-                'AdMob (que em projetor deixa o player preto)' % motivo)
-        return abrir_anuncio_vast(atividade, log=log, uri=uri)
+    if log:
+        log('[SmartAds] aparelho: %s (%s) - anuncio AdMob' % (perfil, motivo))
     builtin = builtin_para(atividade, uri=uri)
     try:
         xbmc.executebuiltin(builtin)
@@ -311,17 +311,14 @@ def vast_disponivel():
 
 
 def abrir_anuncio_vast(atividade, log=None, uri=''):
-    """Anuncio de video (VAST) na TV/box/projetor/stick.
+    """Anuncio de video (VAST) - NAO e usado pelo fluxo normal.
 
-    HOJE: o SDK Google IMA nao esta compilado no app (ficou fora deste
-    repositorio). Sem ele, o VAST nao pode ser renderizado com controle D-pad.
-    Em vez de pedir uma activity AdMob que deixa o player preto em projetor,
-    a funcao NAO bloqueia: devolve False e o video comeca na hora.
-
-    QUANDO O IMA FOR COMPILADO no app Android, esta funcao e o unico ponto a
-    mudar: publicar a tag em VAST_TAG_PADRAO e abrir a activity de video deles
-    pelo mesmo StartAndroidActivity. O contrato com o resto (gatilho, VIP,
-    retomada de posicao) continua igual.
+    O anuncio que o app exibe em todos os aparelhos (celular, TV, box, stick e
+    projetor) e o AdMob da activity nativa, disparado por ``tocar_anuncio``.
+    Esta funcao fica como ponto unico para o dia em que o SDK Google IMA for
+    compilado no app Android (hoje ele nao esta: nao ha fonte Java dele neste
+    repositorio). Sem tag configurada em ``VAST_TAG_PADRAO`` devolve False e
+    nada e pedido - nao existe anuncio simulado.
     """
     if not android():
         if log:
@@ -375,8 +372,8 @@ def tocar_anuncio_com_aviso(atividade, log=None):
 def _garantir_tela_visivel(log=None):
     """Se nada estiver tocando e nao houver janela util, mostra a Home.
 
-    O anuncio abre por cima do Kodi; quando o aparelho (projetor) nao tem a
-    activity ou inventario, o usuario ficava com a tela preta do ultimo quadro.
+    O anuncio abre por cima do Kodi; quando o aparelho nao tem inventario do
+    AdMob (por exemplo Fire OS sem Google Play), pode voltar sem nada na tela.
     Nao interrompe video: so age quando nao ha midia em reproducao.
     """
     try:

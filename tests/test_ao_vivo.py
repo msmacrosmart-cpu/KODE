@@ -114,13 +114,28 @@ class AoVivoTest(unittest.TestCase):
 
     def _vfs(self):
         vfs = types.ModuleType('xbmcvfs')
-        vfs.translatePath = lambda p: self.tmp if 'profile' in p else p
+        # perfil -> pasta temporaria ABSOLUTA; o resto do perfil e um arquivo
+        # qualquer (nao ha criacao de pasta fora daqui).
+        # o modulo grava em special://profile/... e depois rele o mesmo caminho
+        def traduzir(caminho):
+            prefixo = 'special://profile'
+            if caminho == prefixo:
+                return self.tmp
+            if caminho.startswith(prefixo + '/'):
+                return os.path.join(self.tmp, caminho[len(prefixo) + 1:])
+            return caminho
+        vfs.translatePath = traduzir
+        vfs.exists = lambda p: os.path.exists(traduzir(p))
         os.makedirs(os.path.join(self.tmp, 'addon_data',
                                  'service.smarted.bootstrap'), exist_ok=True)
         return vfs
 
     def _carregar(self, kodi):
-        return carregar('ao_vivo_teste', BASE / 'ao_vivo.py', kodi, self._vfs())[0]
+        modulo, salvos = carregar('ao_vivo_teste', BASE / 'ao_vivo.py', kodi,
+                                  self._vfs())
+        # os modulos falsos NAO podem vazar para os outros testes da suite
+        self.addCleanup(restaurar, salvos)
+        return modulo
 
     # -------------------------------------------------------------- deteccao
     def test_reconhece_canal_continuo(self):
@@ -205,6 +220,7 @@ class AoVivoTest(unittest.TestCase):
         performance, salvos = carregar('performance_teste',
                                        BASE / 'performance.py', kodi,
                                        self._vfs())
+        self.addCleanup(restaurar, salvos)
         try:
             self.assertTrue(performance.perfil_ja_aprendido())
             aplicados, falhas = performance.apply_settings(
@@ -232,12 +248,18 @@ class RetomadaAoVivoTest(unittest.TestCase):
         self.kodi = KodiAoVivo({'VideoPlayer.ChannelName': 'Canal A'})
         self.ad_return, self.salvos = carregar(
             'ad_return_teste', BASE / 'ad_return.py', self.kodi, None)
-        self.ao_vivo = carregar('ao_vivo_teste', BASE / 'ao_vivo.py',
-                                self.kodi)[0]
+        self.addCleanup(restaurar, self.salvos)
+        self.ao_vivo, salvos_vfs = carregar('ao_vivo_teste',
+                                            BASE / 'ao_vivo.py', self.kodi,
+                                            self._vfs())
+        self.addCleanup(restaurar, salvos_vfs)
+        self.addCleanup(sys.modules.pop, 'ao_vivo', None)
 
-    def tearDown(self):
-        restaurar(self.salvos)
-        sys.modules.pop('ao_vivo', None)
+    def _vfs(self):
+        vfs = types.ModuleType('xbmcvfs')
+        vfs.translatePath = lambda p: p
+        vfs.exists = lambda p: False
+        return vfs
 
     def _armar(self, player):
         sys.modules['ao_vivo'] = self.ao_vivo
