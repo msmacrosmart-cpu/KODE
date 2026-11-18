@@ -1,0 +1,28 @@
+name: SMARTEDTV • APK universal Android 8+
+on:
+  push:
+    branches: [arena/5c219515-kode]
+    paths:
+      - 'smartedtv/release/version.env'
+      - '.github/workflows/smartedtv-universal.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smartedtv-universal-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Preparar SDK, conferir backup do Dropbox e buscar base v22 assinada
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: smartedtv/release/prepare.sh
