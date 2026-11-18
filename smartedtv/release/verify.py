@@ -41,6 +41,29 @@ def verify_manifest(root, name, code):
             'launcher celular, launcher TV ou banner ausente')
 
 
+def verificar_skins(apk, names):
+    """A Home entregue é a Clássica (a da foto) e a tela de entrada tem fonte."""
+    for skin in ('skin.novatv', 'skin.smartedtv.classic'):
+        home = apk.read('assets/addons/%s/xml/Home.xml' % skin)
+        raiz = ET.fromstring(home)
+
+        def topo(ident):
+            return (raiz.find(".//control[@id='%s']/top" % ident).text or '').strip()
+
+        require(topo('9201') == '570' and topo('9203') == '822' and topo('9300') == '460',
+                '%s: Home não é a Clássica' % skin)
+        require(any((e.text or '').strip() == 'LANÇAMENTO' for e in raiz.iter('label')),
+                '%s: selo LANÇAMENTO ausente' % skin)
+        require(any('Container(9201).ListItem.Art(fanart)' in (e.text or '')
+                    for e in raiz.iter('texture')), '%s: hero sem fanart' % skin)
+        fontes = apk.read('assets/addons/%s/xml/Font.xml' % skin).decode('utf-8')
+        for estilo in ('wf13', 'wf17', 'wf42'):
+            require('<name>%s</name>' % estilo in fontes, '%s sem %s' % (skin, estilo))
+        require('assets/addons/%s/fonts/NotoSans-Regular.ttf' % skin in names,
+                '%s sem a fonte da tela de entrada' % skin)
+        print('skin ok: %s (Home Clássica + fontes)' % skin)
+
+
 def verify_apk(base, final):
     def code_files(z):
         return {n for n in z.namelist() if n.startswith('lib/') or re.fullmatch(r'classes\d*\.dex|resources\.arsc', n)}
@@ -61,6 +84,7 @@ def verify_apk(base, final):
         for abi in ABIS:
             require(f'lib/{abi}/libkodi.so' in names, 'motor ausente: '+abi)
             print(abi, sum(n.startswith(f'lib/{abi}/') and n.endswith('.so') for n in names), 'bibliotecas verificadas')
+        verificar_skins(apk, names)
         for layout in ('DialogWelcome.xml', 'DialogWelcomeTV.xml'):
             require('assets/addons/script.smartedtv.welcome/resources/skins/Default/1080i/'+layout in names, layout)
 
