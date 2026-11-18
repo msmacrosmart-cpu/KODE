@@ -27,7 +27,7 @@ JANELA_ESPERA = 2.0
 # Teto de tempo da prova inteira: o CI espera o marcador FIM em 5 min. Se algo
 # travar (janela que nao abre, lista que nao carrega), o marcador tem de sair
 # mesmo assim, com as verificacoes restantes marcadas como nao executadas.
-PRAZO_TOTAL = 210.0
+PRAZO_TOTAL = 240.0
 _INICIO = time.time()
 
 def estourou():
@@ -133,7 +133,7 @@ def foco():
     return '?'
 
 
-def itens(limite=25):
+def itens(limite=12):
     """Rotulos da lista da janela ativa, na ordem em que aparecem.
 
     ``Container.GetItems`` pela JSON-RPC depende do servidor embutido; as

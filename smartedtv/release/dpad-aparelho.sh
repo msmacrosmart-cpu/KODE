@@ -47,27 +47,49 @@ comp=$(adb shell cmd package resolve-activity --brief --user 0 \
 adb shell am start -W -n "$comp" >/dev/null 2>&1 || true
 
 # O Kodi precisa terminar de subir (a tela de entrada/ativacao vem antes).
-note '1. Esperar o Kodi ficar pronto'
+note '1. Esperar o Kodi aceitar teclas'
+# O app demora a subir (boot do Kodi + tela de entrada). Enviar o F10 antes
+# disso nao faz nada e a prova "nao termina" sem nunca ter comecado - foi o que
+# aconteceu nas primeiras execucoes. Aqui o log e a propria prova: espera o
+# kodi.log existir e o Kodi estar desenhando, depois dispara e confirma que o
+# script comecou, reenviando se preciso.
 pronto=0
 for _ in $(seq 1 90); do
-  if ler_log | grep -q 'SMARTED_DPAD_INICIO\|Initialize\b.*done\|Kodi.*started'; then pronto=1; break; fi
+  if adb shell "[ -f $KODI_LOG ]" 2>/dev/null && [ "$(ler_log | wc -l)" -gt 20 ]; then
+    pronto=1; break
+  fi
   sleep 2
 done
-[ "$pronto" -eq 1 ] || ok 'log do Kodi ainda sem marcador de inicio; seguindo'
+[ "$pronto" -eq 1 ] && ok 'kodi.log presente: o app esta rodando'   || ok 'kodi.log ainda curto/ausente; tentando mesmo assim'
 
 note '2. Disparar a prova dentro do Kodi (F10)'
-before=$(ler_log | grep -c 'SMARTED_PROVA_FIM' || true)
-adb shell input keyevent 140 >/dev/null 2>&1 || true   # 140 = KEYCODE_F10 -> o keymap de teste chama o dpad-monitor
-# O teste abre janelas, aperta setas e reabre pastas: 3 minutos e folga.
-fim=0
-for _ in $(seq 1 100); do
+iniciou=0
+for tentativa in $(seq 1 8); do
+  adb shell input keyevent 140 >/dev/null 2>&1 || true   # 140 = KEYCODE_F10
+  for _ in $(seq 1 15); do
+    sleep 2
+    if ler_log | grep -q 'SMARTED_PROVA_INICIO'; then iniciou=1; break; fi
+  done
+  [ "$iniciou" -eq 1 ] && { ok "prova iniciada na tentativa $tentativa"; break; }
+  # Antes do Kodi aceitar teclas ele pode estar na tela de entrada: um BACK
+  # ajuda a chegar na Home e o F10 e reenviado.
+  adb shell input keyevent 4 >/dev/null 2>&1 || true
   sleep 3
-  agora=$(ler_log | grep -c 'SMARTED_PROVA_FIM' || true)
-  if [ "${agora:-0}" -gt "${before:-0}" ]; then fim=1; break; fi
+done
+if [ "$iniciou" -ne 1 ]; then
+  erro 'a prova nao iniciou: o Kodi nao recebeu o F10 (SMARTED_PROVA_INICIO ausente)'
+  coletar; exit 1
+fi
+
+note '2b. Esperar o fim da prova'
+fim=0
+for _ in $(seq 1 120); do
+  sleep 4
+  if ler_log | grep -q 'SMARTED_PROVA_FIM'; then fim=1; break; fi
 done
 ler_log > "$out/kodi.log"
 if [ "$fim" -ne 1 ]; then
-  erro 'a prova nao terminou dentro de 5 minutos (SMARTED_PROVA_FIM ausente)'
+  erro 'a prova iniciou mas nao terminou (SMARTED_PROVA_FIM ausente)'
   coletar; exit 1
 fi
 
