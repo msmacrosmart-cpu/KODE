@@ -1,0 +1,70 @@
+name: Diagnostico 5 dos anuncios (classes e app-id)
+
+on:
+  push:
+    branches: [arena/5c219515-kode]
+    paths: [.github/workflows/diag-anuncios5.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspecionar:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Baixar base v22
+        run: |
+          set -euo pipefail
+          mkdir -p build/diag
+          gh release download v1.0.87-universal-v22 -R "$GITHUB_REPOSITORY" \
+            --pattern SMARTEDTV-universal.apk --dir build/diag --clobber
+          mv build/diag/SMARTEDTV-universal.apk build/diag/base.apk
+          cd build/diag
+          "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest print base.apk > manifest.xml
+          unzip -o -q base.apk 'classes*.dex'
+          cat classes*.dex > todos.dex
+      - name: Laudo
+        run: |
+          set +e
+          cd build/diag
+          python3 - <<'PY'
+          import re
+          txt = open('manifest.xml', errors='replace').read()
+          def n(t, v):
+              v = re.sub(r'\s+', ' ', str(v)).strip()
+              if v:
+                  print('::notice::%s => %s' % (t, v[:850]))
+          # 1. todas as activities do pacote
+          acts = re.findall(r'<activity[^>]*android:name="([^"]+)"', txt)
+          n('ACTIVITIES', acts)
+          # 2. valor do APPLICATION_ID (o <meta-data> seguinte ao name)
+          i = txt.find('com.google.android.gms.ads.APPLICATION_ID')
+          n('APPID-BLOCO', txt[i:i + 260] if i > 0 else 'ausente')
+          # 3. receivers/services do ads
+          n('ADS-SERVICES', re.findall(r'<service[^>]*android:name="(com\.google[^"]*)"', txt))
+          # 4. classes smartedtv no dex
+          dex = open('todos.dex', 'rb').read().decode('latin-1')
+          classes = sorted(set(re.findall(r'Lsmartedtv/full/[A-Za-z0-9_$]+;', dex)))
+          n('CLASSES-DEX', classes)
+          # 5. quem referencia PreRollActivity / AppOpenActivity
+          for alvo in ('PreRollActivity', 'AppOpenActivity', 'AdTela'):
+              n('CITACOES ' + alvo, dex.count(alvo))
+          # 6. unidades e app-id que o Java usa
+          n('APP-IDS', sorted(set(re.findall(r'ca-app-pub-[0-9]+~[0-9]+', dex))))
+          n('UNIDADES', sorted(set(re.findall(r'ca-app-pub-[0-9]+/[0-9]+', dex))))
+          # 7. mensagens de log do SmartAds/AdTela
+          msgs = sorted(set(re.findall(r'(?:SmartAds|AdTela|Licenca)[^"\\\n]{5,120}', dex)))
+          n('LOGS', msgs[:20])
+          PY
+      - name: Guardar laudo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diag5-${{ github.run_id }}
+          path: build/diag/manifest.xml
+          if-no-files-found: warn
