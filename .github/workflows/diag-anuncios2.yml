@@ -32,7 +32,7 @@ jobs:
           "$TOOLS/aapt" dump xmltree base.apk --file AndroidManifest.xml > manifest.txt
           unzip -o -q base.apk 'classes*.dex'
           cat classes*.dex > todos.dex
-          n() { local linha; linha=$(printf '%s' "$1" | tr -d '\r' | cut -c1-160); [ -n "$linha" ] && echo "::notice title=DIAG2::$linha"; }
+          n() { local linha; linha=$(printf '%s' "$1" | tr -d '\r' | cut -c1-900); [ -n "$linha" ] && echo "::notice::DIAG2 $linha"; }
           n "APPID-LINHA: $(grep -A2 'gms.ads.APPLICATION_ID' manifest.txt | tr '\n' ' ' | tr -s ' ')"
           n "ACTIVITIES: $(grep -oE 'smartedtv\.full\.[A-Za-z]*Ad[A-Za-z]*|smartedtv\.full\.(PreRoll|AppOpen)[A-Za-z]*' manifest.txt | sort -u | tr '\n' ' ')"
           n "TESTE-IDS: $(strings -n 6 todos.dex | grep -c '3940256099942544')"
