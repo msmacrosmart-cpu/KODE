@@ -54,6 +54,15 @@ def _info(rotulo):
         return ''
 
 
+def _condicao(expressao):
+    """Condicao booleana do skin (``Control.HasFocus(50)`` e condicao, NAO
+    infolabel: por getInfoLabel ela sempre volta vazia)."""
+    try:
+        return bool(xbmc.getCondVisibility(expressao))
+    except Exception:
+        return False
+
+
 def janela():
     return _info('System.CurrentWindow')
 
@@ -111,12 +120,15 @@ def _ids_do_skin():
 def foco():
     """Id do controle com foco.
 
-    ``System.CurrentControlID`` volta vazio para botoes/containers deste skin e
-    ``GUI.GetProperties(currentcontrol)`` tambem; ``Control.HasFocus(id)`` e o
-    teste que o proprio skin usa nas condicoes ``<visible>`` e sempre responde.
+    ``System.CurrentControlID`` nao e confiavel para todo controle deste skin e
+    ``GUI.GetProperties(currentcontrol)`` volta vazio; ``Control.HasFocus(id)``
+    e o teste que o proprio skin usa nas condicoes ``<visible>``.
     """
+    atual = _info('System.CurrentControlId') or _info('System.CurrentControlID')
+    if atual:
+        return atual
     for cid in _ids_do_skin():
-        if _info('Control.HasFocus(%s)' % cid) in ('true', '1'):
+        if _condicao('Control.HasFocus(%s)' % cid):
             return cid
     return '?'
 
@@ -180,7 +192,7 @@ def prova_categoria():
     registrar('categoria_abre', True,
               'janela=%s foco=%s itens=%d ids=%d hasFocus50=%r primeiros=%s'
               % (dentro, id_ini, len(itens()), len(ids),
-                 _info('Control.HasFocus(50)'), ','.join(ids[:12])))
+                 _condicao('Control.HasFocus(50)'), ','.join(ids[:12])))
     LISTAS = ('50', '51', '52')
     registrar('categoria_foco_na_lista', id_ini in LISTAS,
               'janela=%s controle inicial=%s (esperado 50/51/52)' % (dentro, id_ini))
