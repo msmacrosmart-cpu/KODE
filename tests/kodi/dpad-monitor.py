@@ -135,9 +135,10 @@ def foco():
     ``GUI.GetProperties(currentcontrol)`` volta vazio; ``Control.HasFocus(id)``
     e o teste que o proprio skin usa nas condicoes ``<visible>``.
     """
-    atual = _info('System.CurrentControlId') or _info('System.CurrentControlID')
-    if atual:
-        return atual
+    # Sem atalho por System.CurrentControlId: esse infolabel devolve um id fixo
+    # que nao muda quando o foco anda (a trilha saia sempre igual), o que
+    # produzia "o d-pad nao anda" mesmo com o foco andando. A verdade vem do
+    # teste que o skin usa: Control.HasFocus(id).
     for cid in _ids_do_skin():
         if _condicao('Control.HasFocus(%s)' % cid):
             return cid
