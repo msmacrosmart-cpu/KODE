@@ -57,28 +57,48 @@ jobs:
             sha256sum "$apk"
             echo
             echo "== badging =="
-            "$bt/aapt" dump badging "$apk" | grep -E "^(package:|sdkVersion:|targetSdkVersion:|native-code:|launchable-activity:|leanback-launchable-activity:|application-label:)"
+            { "$bt/aapt" dump badging "$apk" | grep -E "^(package:|sdkVersion:|targetSdkVersion:|native-code:|launchable-activity:|leanback-launchable-activity:|application-label:)" || true; }
             echo
             echo "== ABIs e libs nativas =="
             unzip -l "$apk" | awk '$4 ~ /^lib\// {n[$4]++} END {for (k in n) print k}' | sed 's|lib/\([^/]*\)/.*|\1|' | sort | uniq -c
-            unzip -l "$apk" | grep -c 'lib/.*\.so$' | sed 's/^/total de .so: /'
+            { unzip -l "$apk" | grep -c 'lib/.*\.so$' || true; } | sed 's/^/total de .so: /'
             echo
             echo "== assinatura =="
-            "$bt/apksigner" verify --min-sdk-version 21 --verbose --print-certs "$apk" | grep -E "Verified using|Number of signers|certificate SHA-256 digest|Signer #1 certificate DN"
+            { "$bt/apksigner" verify --min-sdk-version 21 --verbose --print-certs "$apk" | grep -E "Verified using|Number of signers|certificate SHA-256 digest|Signer #1 certificate DN" || true; }
             echo
             echo "== identidade instalada (antes desta build) =="
-            cat build/universal/pacote-instalado.txt 2>/dev/null | grep -E "versionName|versionCode|primaryCpuAbi|codePath" | head -8 || echo "(sem dumpsys nesta etapa)"
+            { grep -E "versionName|versionCode|primaryCpuAbi|codePath" build/universal/pacote-instalado.txt 2>/dev/null || echo "(sem dumpsys nesta etapa)"; } | head -8
           } | tee "$RUNNER_TEMP/laudo-apk.txt"
           # Regras objetivas: o laudo TEM de provar estas propriedades.
-          grep -Fq "package: name='smartedtv.full' versionCode='$VERSION_CODE' versionName='$VERSION_NAME'" "$RUNNER_TEMP/laudo-apk.txt"
-          grep -Fq 'minSdkVersion:' "$RUNNER_TEMP/laudo-apk.txt"
-          grep -q "sdkVersion:'21'" "$RUNNER_TEMP/laudo-apk.txt"
-          grep -q "native-code:.*'arm64-v8a'" "$RUNNER_TEMP/laudo-apk.txt"
-          grep -q "native-code:.*'armeabi-v7a'" "$RUNNER_TEMP/laudo-apk.txt"
-          for scheme in 1 2 3; do grep -q "Verified using v$scheme scheme (APK Signature Scheme v$scheme): true" "$RUNNER_TEMP/laudo-apk.txt"; done
-          grep -Fq 'certificate SHA-256 digest: 855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a' "$RUNNER_TEMP/laudo-apk.txt" \
-            || grep -Fq '855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a' "$RUNNER_TEMP/laudo-apk.txt"
-          echo '::notice::Laudo do APK gerado e conferido (identidade, SDK 21, ABIs 32/64, assinatura v1/v2/v3).'
+          # Em caso de falha, o laudo inteiro vai para a anotação do run
+          # (o log do runner nem sempre fica acessível), e vira artefato.
+          falhar() {
+            echo "::error::$1"
+            sed -n '1,80p' "$RUNNER_TEMP/laudo-apk.txt" | while IFS= read -r linha; do
+              echo "::error::  $linha"
+            done
+            exit 1
+          }
+          grep -Fq "package: name='smartedtv.full' versionCode='$VERSION_CODE' versionName='$VERSION_NAME'" "$RUNNER_TEMP/laudo-apk.txt" \
+            || falhar 'badging: pacote/versao/codigo nao conferem'
+          grep -q "sdkVersion:'21'" "$RUNNER_TEMP/laudo-apk.txt" || falhar 'minSdkVersion nao e 21'
+          grep -q "targetSdkVersion:'34'" "$RUNNER_TEMP/laudo-apk.txt" || falhar 'targetSdkVersion nao e 34'
+          grep -q "native-code:.*'arm64-v8a'" "$RUNNER_TEMP/laudo-apk.txt" || falhar 'APK sem arm64-v8a'
+          grep -q "native-code:.*'armeabi-v7a'" "$RUNNER_TEMP/laudo-apk.txt" || falhar 'APK sem armeabi-v7a'
+          # v1 sai como "JAR signing"; v2/v3 como "APK Signature Scheme".
+          grep -q 'Verified using v1 scheme (JAR signing): true' "$RUNNER_TEMP/laudo-apk.txt" || falhar 'assinatura v1 ausente'
+          grep -q 'Verified using v2 scheme (APK Signature Scheme v2): true' "$RUNNER_TEMP/laudo-apk.txt" || falhar 'assinatura v2 ausente'
+          grep -q 'Verified using v3 scheme (APK Signature Scheme v3): true' "$RUNNER_TEMP/laudo-apk.txt" || falhar 'assinatura v3 ausente'
+          grep -Fq '855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a' "$RUNNER_TEMP/laudo-apk.txt" \
+            || falhar 'certificado diferente do historico (855de171...)'
+          echo '::notice::Laudo do APK conferido: identidade, SDK 21, ABIs 32/64, assinatura v1/v2/v3 e certificado.'
+      - name: Guardar laudo do APK
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: laudo-apk-${{ github.run_id }}
+          path: ${{ runner.temp }}/laudo-apk.txt
+          if-no-files-found: warn
       - name: Habilitar aceleração do emulador
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
