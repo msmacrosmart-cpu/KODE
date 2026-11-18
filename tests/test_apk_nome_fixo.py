@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-"""O arquivo publicado no Dropbox tem NOME FIXO: SMARTEDTV-atual.apk.
+"""O arquivo publicado no Dropbox tem NOME FIXO: SMARTEDTV.apk.
 
 Quem mantem o app troca o conteudo por dentro e o link nunca muda. Estes
 testes travam esse contrato e o que ele exige:
 
-* o nome do arquivo e sempre `SMARTEDTV-atual.apk` (nada de nome por versao);
+* o nome do arquivo e sempre `SMARTEDTV.apk` (nada de nome por versao);
 * o link usado e o do Dropbox, com `rlkey` e `dl=1` (download direto);
 * um arquivo publicado com a versao ANTIGA nao e instalado - o Android
   responde "Aplicativo nao instalado" e o usuario nao descobre a causa;
@@ -25,7 +25,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 VIP = ROOT / 'kodi' / 'addons' / 'service.smarted.bootstrap' / 'vip.py'
 RELEASE = ROOT / 'kodi' / 'addons' / 'service.smarted.bootstrap' / 'smarted_release.py'
-NOME_FIXO = 'SMARTEDTV-atual.apk'
+NOME_FIXO = 'SMARTEDTV.apk'
 
 
 def carregar_vip():
@@ -200,7 +200,7 @@ class NomeFixoTest(unittest.TestCase):
         do arquivo com o nome combinado. E isso que torna o NOME o contrato.
         """
         token = 'AK7fQutCVmMZBWlqKAt0p-g'
-        html = ('<a href="/scl/fo/5w6yfp0tvee0xro2wh0m3/%s/SMARTEDTV-atual.apk'
+        html = ('<a href="/scl/fo/5w6yfp0tvee0xro2wh0m3/%s/SMARTEDTV.apk'
                 '?rlkey=3b8m9dnw571waz7vs83n0vn17&dl=0">' % token)
 
         class Resposta(object):
@@ -213,10 +213,10 @@ class NomeFixoTest(unittest.TestCase):
         url = self.vip.url_do_apk_por_nome()
         self.assertEqual(
             url, 'https://www.dropbox.com/scl/fo/5w6yfp0tvee0xro2wh0m3/%s/'
-                 'SMARTEDTV-atual.apk?rlkey=3b8m9dnw571waz7vs83n0vn17&dl=1'
+                 'SMARTEDTV.apk?rlkey=3b8m9dnw571waz7vs83n0vn17&dl=1'
                  % token)
         self.vip._cabecalhos_remotos = lambda u: (287248566,
-                                                  'SMARTEDTV-atual.apk')
+                                                  'SMARTEDTV.apk')
         encontrada, motivo = self.vip.resolver_apk_publicado()
         self.assertEqual(motivo, 'dropbox-nome')
         self.assertEqual(encontrada, url)
@@ -231,7 +231,7 @@ class NomeFixoTest(unittest.TestCase):
             lambda req, timeout=None: Resposta())
         self.assertIsNone(self.vip.url_do_apk_por_nome())
         self.vip._cabecalhos_remotos = lambda url: (287248566,
-                                                    'SMARTEDTV-atual.apk')
+                                                    'SMARTEDTV.apk')
         url, motivo = self.vip.resolver_apk_publicado()
         self.assertEqual(motivo, 'dropbox')
         self.assertEqual(url, self.vip.APK)
@@ -272,7 +272,7 @@ class NomeFixoTest(unittest.TestCase):
 
     def test_baixar_apk_usa_o_link_resolvido(self):
         self.vip._cabecalhos_remotos = lambda url: (
-            287248566, 'SMARTEDTV-atual.apk')
+            287248566, 'SMARTEDTV.apk')
         self.vip.url_do_apk_por_nome = lambda nome=None: None
         self.assertTrue(self.vip.open_apk_download())
         self.assertEqual(self.xbmc.BUILTINS,

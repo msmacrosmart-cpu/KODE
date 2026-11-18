@@ -435,7 +435,7 @@ class VipFake(object):
     CHECKOUT = 'https://pay.cakto.com.br/nkvbegd_1323120'
     SITE = 'https://smartedtv-vip.lovable.app/'
     DROPBOX_URL = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
-                   'SMARTEDTV-atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
+                   'SMARTEDTV.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
                    '&st=p1m6ebvg&dl=0')
     APK = DROPBOX_URL.replace('&dl=0', '&dl=1')
 
@@ -445,7 +445,7 @@ class VipFake(object):
         return self.APK
 
     APK_GITHUB = ('https://github.com/msmacrosmart-cpu/KODE/releases/latest/'
-                  'download/SMARTEDTV-atual.apk')
+                  'download/SMARTEDTV.apk')
 
     def __init__(self):
         self.chamadas = []
@@ -991,11 +991,11 @@ class BotoesAndroidTest(unittest.TestCase):
                 'https://pay.cakto.com.br/nkvbegd_1323120)')
     DROPBOX = ('StartAndroidActivity(,android.intent.action.VIEW,,'
                'https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
-               'SMARTEDTV-atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
+               'SMARTEDTV.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
                '&st=p1m6ebvg&dl=0)')
     APK = ('StartAndroidActivity(,android.intent.action.VIEW,,'
            'https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
-           'SMARTEDTV-atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
+           'SMARTEDTV.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
            '&st=p1m6ebvg&dl=1)')
 
     def setUp(self):

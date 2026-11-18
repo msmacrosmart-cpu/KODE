@@ -48,10 +48,10 @@ SITE = 'https://smartedtv-vip.lovable.app/'
 
 # O arquivo publicado no Dropbox tem NOME FIXO: quem mantem o app troca o
 # conteudo por dentro e o link nunca muda. O nome faz parte do contrato.
-APK_NOME = 'SMARTEDTV-atual.apk'
+APK_NOME = 'SMARTEDTV.apk'
 
 # Link da PASTA onde o APK fica publicado. E este link que amarra o download
-# ao NOME do arquivo: o app pede <pasta>/SMARTEDTV-atual.apk, entao basta
+# ao NOME do arquivo: o app pede <pasta>/SMARTEDTV.apk, entao basta
 # trocar o arquivo por dentro (mesmo nome novo conteudo) e nada mais muda.
 # Diferente do /scl/fi/, que fica preso ao ID de UM arquivo.
 DROPBOX_PASTA = ('https://www.dropbox.com/scl/fo/5w6yfp0tvee0xro2wh0m3/'
@@ -64,7 +64,7 @@ DROPBOX_PASTA = ('https://www.dropbox.com/scl/fo/5w6yfp0tvee0xro2wh0m3/'
 # texto da URL diga APK_NOME. resolver_apk_publicado() confere o tamanho e,
 # na duvida, cai para a release do GitHub.
 DROPBOX_URL = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
-               'SMARTEDTV-atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
+               'SMARTEDTV.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
                '&st=p1m6ebvg&dl=0')
 APK = DROPBOX_URL.replace('&dl=0', '&dl=1')
 APK_GITHUB = ('https://github.com/msmacrosmart-cpu/KODE/releases/latest/'
@@ -80,7 +80,7 @@ APK_TAMANHO_MINIMO = 200 * 1024 * 1024
 #   {
 #     "versionName": "1.0.84",
 #     "versionCode": 2103070,
-#     "apkUrl": "https://www.dropbox.com/scl/fi/.../SMARTEDTV-atual.apk?dl=1",
+#     "apkUrl": "https://www.dropbox.com/scl/fi/.../SMARTEDTV.apk?dl=1",
 #     "sha256": "<hash sha-256 do APK>",
 #     "releaseNotes": "Novidades desta versao"
 #   }
@@ -99,7 +99,7 @@ VIP_JSON_ANTIGO = os.path.join(HOME, 'userdata', 'vip.json')
 
 # Pasta de downloads do app (dentro do userdata do Kodi).
 DOWNLOADS_DIR = os.path.join(HOME, 'userdata', 'smartedtv-downloads')
-APK_DOWNLOAD_PATH = os.path.join(DOWNLOADS_DIR, 'SMARTEDTV-atual.apk')
+APK_DOWNLOAD_PATH = os.path.join(DOWNLOADS_DIR, 'SMARTEDTV.apk')
 
 
 def log(mensagem, nivel=xbmc.LOGINFO):
@@ -806,7 +806,7 @@ def url_do_apk_por_nome(nome=None):
     O Dropbox NAO aceita "pasta/nome" no link (testado: cada arquivo tem o
     proprio token). O que da para fazer sem depender de link criado a mao e
     perguntar ao proprio Dropbox, pela pagina publica da pasta, qual e o token
-    do arquivo com o nome combinado. Assim: publicou SMARTEDTV-atual.apk na
+    do arquivo com o nome combinado. Assim: publicou SMARTEDTV.apk na
     pasta -> o app acha e baixa; trocou o conteudo do mesmo nome -> continua
     achando. Devolve None quando nao acha (aí vale o link fixo/reserva).
     """
@@ -848,7 +848,7 @@ def resolver_apk_publicado():
     Ordem das tentativas:
 
     1. pasta publicada + NOME do arquivo (``url_do_apk_por_nome``). E o que
-       amarra o download ao contrato "SMARTEDTV-atual.apk": quem publica
+       amarra o download ao contrato "SMARTEDTV.apk": quem publica
        substitui o arquivo na pasta e nada mais precisa mudar;
     2. o link /scl/fi/ gravado em DROPBOX_URL, quando ele entrega o arquivo
        certo (o /scl/fi/ resolve pelo ID do arquivo criado quando o link

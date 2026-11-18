@@ -16,6 +16,10 @@ install() {
 install "$work/base-v22.apk"
 install -r "$work/SMARTEDTV-universal.apk"
 adb shell dumpsys package "$pkg" > "$work/pacote-instalado.txt"
+# Guardar o que o APARELHO leu do APK instalado: identidade/ABI em uso, para
+# comparar com o badging do arquivo. É evidência, não suposição.
+adb shell dumpsys package "$pkg" | grep -E "versionName|versionCode|primaryCpuAbi|codePath|targetSdk" \
+  | head -8 | sed 's/^ *//' | tee "$work/instalado-resumo.txt"
 grep -E "versionCode=$VERSION_CODE([[:space:]]|$)|primaryCpuAbi=" "$work/pacote-instalado.txt"
 grep -Fq "versionCode=$VERSION_CODE " "$work/pacote-instalado.txt"
 erro() { printf '::error::%s\n' "$(printf '%s' "$*" | tr '\r\n' '  ' | cut -c1-900)"; exit 1; }

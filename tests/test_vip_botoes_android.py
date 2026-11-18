@@ -18,7 +18,7 @@ ADDON = ROOT / 'kodi' / 'addons' / 'script.smartedtv.welcome'
 
 CHECKOUT = 'https://pay.cakto.com.br/nkvbegd_1323120'
 DROPBOX = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
-           'SMARTEDTV-atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
+           'SMARTEDTV.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
            '&st=p1m6ebvg&dl=0')
 APK = DROPBOX.replace('&dl=0', '&dl=1')
 
@@ -110,7 +110,7 @@ class VipBotoesAndroidTest(unittest.TestCase):
         # tamanho e simulado: cai no link direto do arquivo.
         self.vip.url_do_apk_por_nome = lambda nome=None: None
         self.vip._cabecalhos_remotos = lambda url: (
-            287248566, 'SMARTEDTV-atual.apk')
+            287248566, 'SMARTEDTV.apk')
         self.assertTrue(self.vip.open_apk_download())
         self.assertEqual(self.xbmc.BUILTINS,
                          ['StartAndroidActivity(,android.intent.action.VIEW,,%s)'

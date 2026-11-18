@@ -222,11 +222,11 @@ class Simulacao(object):
 class VipFalso(object):
     CHECKOUT = "https://pay.cakto.com.br/nkvbegd_1323120"
     DROPBOX_URL = ("https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/"
-                   "SMARTEDTV-atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j"
+                   "SMARTEDTV.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j"
                    "&st=p1m6ebvg&dl=0")
     APK = DROPBOX_URL.replace("&dl=0", "&dl=1")
     APK_GITHUB = ("https://github.com/msmacrosmart-cpu/KODE/releases/latest/"
-                  "download/SMARTEDTV-atual.apk")
+                  "download/SMARTEDTV.apk")
 
     def __init__(self, sim):
         self.sim = sim
