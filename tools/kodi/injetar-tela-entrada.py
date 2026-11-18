@@ -300,7 +300,9 @@ def main(argv=None):
                             dbg("%s: abre a tela antes da Home" % item.filename)
                         except SystemExit as e:
                             # Skin que nao segue o formato do Startup.xml: o
-                            # build nao publica. Ver simulador de boot.
+                            # build nao publica. O log mostra o motivo real.
+                            dbg("patch_startup FALHOU em %s: %s"
+                                % (item.filename, e))
                             raise SystemExit("%s: %s" % (item.filename, e))
                     elif re.fullmatch(r"assets/addons/([^/]+)/xml/Font\.xml", item.filename):
                         try:
