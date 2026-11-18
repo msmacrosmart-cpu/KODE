@@ -3,7 +3,7 @@ on:
   push:
     branches: [arena/5c219515-kode]
     paths:
-      - 'smartedtv/release/version.env'
+      - 'kodi/addons/service.smarted.bootstrap/smarted_release.py'
       - '.github/workflows/smartedtv-universal.yml'
   workflow_dispatch:
 
@@ -16,6 +16,9 @@ concurrency:
 
 jobs:
   release:
+    if: github.ref == 'refs/heads/arena/5c219515-kode'
+    permissions:
+      contents: write
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     steps:
@@ -26,3 +29,61 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: smartedtv/release/prepare.sh
+      - name: Regressões de tela, controle remoto e overlays
+        run: |
+          python3 tools/kodi/static-check.py
+          python3 -m unittest tests.test_atualizar_apk tests.test_vip_botoes_android \
+            tests.test_tela_entrada.TVBoxStickTest tests.test_tela_entrada.CicloDeVidaTest
+      - name: Montar, alinhar, assinar e verificar o APK final
+        shell: bash
+        run: |
+          if ! smartedtv/release/build.sh > "$RUNNER_TEMP/montagem.log" 2>&1; then
+            tail -30 "$RUNNER_TEMP/montagem.log"
+            echo "::error::$(tail -4 "$RUNNER_TEMP/montagem.log" | tr '\n' ' ')"
+            exit 1
+          fi
+          tail -35 "$RUNNER_TEMP/montagem.log"
+      - name: Habilitar aceleração do emulador
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Instalar v22, atualizar sem desinstalar e abrir nos dois launchers
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        with:
+          api-level: 30
+          arch: x86_64
+          target: google_apis
+          disk-size: 4096M
+          emulator-boot-timeout: 240
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back none
+          disable-animations: true
+          script: bash smartedtv/release/install-smoke.sh
+      - name: Publicar somente SMARTEDTV-universal.apk
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          . kodi/addons/service.smarted.bootstrap/smarted_release.py
+          tag="v${VERSION_NAME}-universal"
+          apk=build/universal/SMARTEDTV-universal.apk
+          # A v22 reutilizou o código da v17; 2103077 é o maior código prévio.
+          # Depois da primeira publicação também conferimos o marcador desta linha.
+          gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .body > "$RUNNER_TEMP/anterior.md"
+          anterior=$(sed -nE 's/.*<!-- smartedtv.full versionCode=([0-9]+) -->.*/\1/p' "$RUNNER_TEMP/anterior.md")
+          (( VERSION_CODE > ${anterior:-2103077} )) || { echo '::error::versionCode não supera a última publicação'; exit 1; }
+          hash=$(sha256sum "$apk" | cut -d' ' -f1)
+          cat > "$RUNNER_TEMP/notas.md" <<NOTAS
+          Baixe apenas **SMARTEDTV-universal.apk**. O Android escolhe entre ARMv7 (32 bits) e ARM64 (64 bits) dentro do mesmo arquivo; não é XAPK, não precisa de instalador de splits.
+
+          - Android 8.0+ (API 26, target 34); celular e Android TV, box, projetor e Fire TV **com sistema Android compatível**. Não inclui x86/Intel, Fire OS 6 ou Vega OS.
+          - Pacote: \`smartedtv.full\` • versão **$VERSION_NAME** • código **$VERSION_CODE**. Mesmo perfil, layouts e bibliotecas do Kodi da v22.
+          - Assinatura v1/v2/v3: mesmo certificado de **teste** do Dropbox, SHA-256 \`855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a\`.
+          - Validação: manifesto, banner de TV, toque opcional, ELF/Dex, alinhamento e boot simulado. No emulador API 30 com tradução ARM: instalação da v22 e atualização sem desinstalar, abertura por LAUNCHER e LEANBACK_LAUNCHER. Não é teste físico de vídeo ou de todos os modelos.
+          - **SHA-256 do APK:** \`$hash\` • $(stat -c %s "$apk") bytes.
+
+          [Build e testes](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID) • commit \`$GITHUB_SHA\`.
+          <!-- smartedtv.full versionCode=$VERSION_CODE -->
+          NOTAS
+          gh release create "$tag" "$apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest \
+            --title "SMARTEDTV $VERSION_NAME — APK universal ARM 32/64 • Android 8+" --notes-file "$RUNNER_TEMP/notas.md"

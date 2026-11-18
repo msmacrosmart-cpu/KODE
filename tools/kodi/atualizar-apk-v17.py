@@ -33,7 +33,7 @@ ADDON_DIR = ROOT / 'kodi' / 'addons' / ADDON_ID
 ADDON_PREFIX = 'assets/addons/%s/' % ADDON_ID
 SERVICO = 'assets/addons/service.smarted.bootstrap/'
 MODULOS = ('service.py', 'menu_smarted.py', 'performance.py', 'vip.py',
-           'smart_ads.py', 'check.py', 'addon.xml')
+           'smart_ads.py', 'smarted_release.py', 'check.py', 'addon.xml')
 KEYMAP_ORIGEM = ROOT / 'kodi' / 'keymaps' / 'smartedtv-voltar.xml'
 KEYMAP_DESTINO = 'assets/system/keymaps/zzz-smartedtv-voltar.xml'
 # XMLs da skin ativa que fazem parte das correcoes desta versao. A Home e o

@@ -169,11 +169,7 @@ run make -C "$KODI_BUILD" -j"$JOBS"
 step "5. Empacotar e assinar o APK"
 # A chave de teste do projeto é usada para manter a MESMA assinatura das
 # instalações de teste anteriores (versionCode maior permite atualizar).
-DEFAULT_KEYSTORE="$PROJECT/dropbox/smarted-tv-test.jks"
-export KODI_ANDROID_STORE_FILE="${KODI_ANDROID_STORE_FILE:-$DEFAULT_KEYSTORE}"
-export KODI_ANDROID_STORE_PASSWORD="${KODI_ANDROID_STORE_PASSWORD:-android}"
-export KODI_ANDROID_KEY_ALIAS="${KODI_ANDROID_KEY_ALIAS:-smarted-tv-test}"
-export KODI_ANDROID_KEY_PASSWORD="${KODI_ANDROID_KEY_PASSWORD:-android}"
+. "$SMARTED/tools/test-signing-env.sh"
 
 if [ ! -f "$KODI_ANDROID_STORE_FILE" ]; then
   echo "chave ausente: $KODI_ANDROID_STORE_FILE" >&2

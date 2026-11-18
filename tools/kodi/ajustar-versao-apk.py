@@ -2,22 +2,10 @@
 # -*- coding: utf-8 -*-
 """Sobe versionName/versionCode do APK sem apktool e sem tocar no resto.
 
-O Android so aceita a atualizacao se o ``versionCode`` for MAIOR que o da
-versao instalada. Varias instaladoras (MIUI, Samsung, Android TV, Fire OS)
-mostram so "Aplicativo nao instalado" quando o APK tem o MESMO codigo da
-versao que ja esta no aparelho. Este passo troca os dois valores no
-AndroidManifest.xml binario (string pool + atributo inteiro), no mesmo estilo
-de tools/kodi/build-release-apk.py, e reescreve o ZIP preservando todas as
-outras entradas.
-
-O APK de saida continua SEM assinatura valida (as assinaturas antigas sao
-removidas): o workflow chama align-apk.py e apksigner logo depois.
-
-Tambem desliga android:debuggable (e testOnly, se existir) no mesmo manifesto.
-O APK base do Kodi vem com debuggable=true; o Play Protect costuma tratar
-build de desenvolvedor como suspeita e cancelar a instalacao sem explicar
-("Aplicativo nao instalado"). O atributo booleano e trocado no lugar, sem
-mexer em offsets do AXML.
+Um versionCode crescente evita downgrade. Edita os atributos AXML tipados,
+sem recompilar recursos/Dex ou substituir inteiros globalmente no binario.
+Opcionalmente eleva o minSdk; nunca reduz a API exigida pela base nativa.
+A saida sem assinatura deve ser alinhada e assinada depois.
 
 Uso:
     python3 tools/kodi/ajustar-versao-apk.py ENTRADA.apk SAIDA.apk \
@@ -59,6 +47,8 @@ def _strings_do_pool(dados: bytes, inicio: int) -> list:
         deslocamento = _u32(dados, inicio + 28 + 4 * indice)
         pos = base_strings + deslocamento
         if utf8:
+            # AXML UTF-8: primeiro o comprimento em UTF-16, depois em bytes.
+            pos += 2 if dados[pos] & 0x80 else 1
             comprimento = dados[pos]
             pos += 1
             if comprimento & 0x80:
@@ -88,67 +78,105 @@ def _chunks_axml(dados: bytes):
         pos += tamanho
 
 
-def desligar_debug(manifesto: bytes) -> tuple:
-    """Troca android:debuggable/testOnly true por false no lugar.
+ANDROID = 'http://schemas.android.com/apk/res/android'
+NO_INDEX = 0xffffffff
 
-    Devolve (manifesto, lista_de_alteracoes, vistos). Nao mexe em tamanho nem
-    em offsets: so no inteiro de valor do atributo (AXML Res_value).
-    """
-    dados = bytearray(manifesto)
+
+def _atributos_android(dados):
     strings = None
-    alterados = []
-    vistos = []
-    for inicio, tipo, _cabecalho, tamanho in _chunks_axml(dados):
-        if tipo == 0x0001 and strings is None:
+    for inicio, tipo, _, tamanho in _chunks_axml(dados):
+        if tipo == 0x0001:
             strings = _strings_do_pool(dados, inicio)
-            continue
         if tipo != 0x0102 or strings is None:  # START_ELEMENT
             continue
-        nome_elemento = strings[_u32(dados, inicio + 20)]
-        atributo_inicio = _u16(dados, inicio + 24)
-        atributo_tamanho = _u16(dados, inicio + 26)
-        total = _u16(dados, inicio + 28)
-        if atributo_tamanho < 20 or total == 0:
-            continue
-        base = inicio + 16 + atributo_inicio
-        for indice in range(total):
-            attr = base + indice * atributo_tamanho
-            if attr + 20 > inicio + tamanho:
-                raise ValueError('atributo AXML passa do chunk')
-            nome = strings[_u32(dados, attr + 4)]
-            if nome not in ('debuggable', 'testOnly'):
-                continue
-            vistos.append((nome_elemento, nome))
-            valor = _u32(dados, attr + 16)
-            if valor:
-                dados[attr + 16:attr + 20] = struct.pack('<I', 0)
-                alterados.append((nome_elemento, nome))
+        elemento = strings[_u32(dados, inicio + 20)]
+        passo = _u16(dados, inicio + 26)
+        base = inicio + 16 + _u16(dados, inicio + 24)
+        for i in range(_u16(dados, inicio + 28)):
+            pos = base + i * passo
+            if passo < 20 or pos + 20 > inicio + tamanho:
+                raise ValueError('atributo AXML invalido')
+            ns = _u32(dados, pos)
+            if ns != NO_INDEX and strings[ns] == ANDROID:
+                yield elemento, strings[_u32(dados, pos + 4)], pos
+
+
+def desligar_debug(manifesto: bytes) -> tuple:
+    dados = bytearray(manifesto)
+    alterados, vistos = [], []
+    for elemento, nome, pos in _atributos_android(dados):
+        if elemento == 'application' and nome in ('debuggable', 'testOnly'):
+            vistos.append((elemento, nome))
+            if _u32(dados, pos + 16):
+                struct.pack_into('<I', dados, pos + 8, NO_INDEX)
+                struct.pack_into('<I', dados, pos + 16, 0)
+                alterados.append((elemento, nome))
     return bytes(dados), alterados, vistos
 
 
+def _versao_no_pool(dados, indice, antigo, novo):
+    # A base assinada usa um pool sem estilos. Conserva índices (inclusive os
+    # do resource map), recalculando offsets para versões como 1.0.100.
+    p, _, header, size = next(c for c in _chunks_axml(dados) if c[1] == 1)
+    if header != 28 or _u32(dados, p + 12) or _u32(dados, p + 24):
+        raise ValueError('pool com estilos nao suportado')
+    if _strings_do_pool(dados, p)[indice] != antigo:
+        raise ValueError('versionName da base inesperado')
+    utf8 = bool(_u32(dados, p + 16) & 0x100)
+
+    def codificar(texto):
+        if not texto.isascii() or not 0 < len(texto) < 128:
+            raise ValueError('versionName deve ser ASCII curto')
+        if utf8:
+            return bytes([len(texto)] * 2) + texto.encode() + b'\0'
+        return struct.pack('<H', len(texto)) + texto.encode('utf-16-le') + b'\0\0'
+
+    offsets = p + header
+    offset = _u32(dados, offsets + indice * 4)
+    pos = p + _u32(dados, p + 20) + offset
+    antes, depois = codificar(antigo), codificar(novo)
+    if dados[pos:pos + len(antes)] != antes:
+        raise ValueError('entrada de versionName invalida')
+    delta = len(depois) - len(antes)
+    for i in range(_u32(dados, p + 8)):
+        ptr = offsets + i * 4
+        n = _u32(dados, ptr)
+        if n > offset:
+            struct.pack_into('<I', dados, ptr, n + delta)
+    dados[pos:pos + len(antes)] = depois
+    end = p + size + delta
+    pad = -end % 4
+    dados[end:end] = bytes(pad)
+    struct.pack_into('<I', dados, p + 4, size + delta + pad)
+    struct.pack_into('<I', dados, p + 16, _u32(dados, p + 16) & ~1)  # SORTED_FLAG
+    struct.pack_into('<I', dados, 4, len(dados))
+
+
 def trocar_manifesto(manifesto: bytes, de_nome: str, para_nome: str,
-                     de_codigo: int, para_codigo: int) -> bytes:
-    if len(para_nome) != len(de_nome):
-        raise SystemExit(
-            'versionName novo (%s) precisa ter o mesmo tamanho de %s (%d)'
-            % (para_nome, de_nome, len(de_nome)))
-    if not 0 <= de_codigo <= 0xFFFFFFFF or not 0 <= para_codigo <= 0xFFFFFFFF:
-        raise SystemExit('versionCode fora da faixa de 32 bits')
-    antigo_nome = de_nome.encode('utf-16-le')
-    novo_nome = para_nome.encode('utf-16-le')
-    antigo_codigo = struct.pack('<I', de_codigo)
-    novo_codigo = struct.pack('<I', para_codigo)
-    for rotulo, antigo in (('versionName', antigo_nome),
-                           ('versionCode', antigo_codigo)):
-        ocorrencias = manifesto.count(antigo)
-        if ocorrencias != 1:
-            raise SystemExit('%s %r aparece %d vezes no manifesto (esperado 1)'
-                             % (rotulo, antigo, ocorrencias))
-    manifesto = manifesto.replace(antigo_nome, novo_nome)
-    manifesto = manifesto.replace(antigo_codigo, novo_codigo)
-    if novo_nome not in manifesto or novo_codigo not in manifesto:
-        raise SystemExit('a troca nao entrou no manifesto')
-    return manifesto
+                     de_codigo: int, para_codigo: int, min_sdk=None) -> bytes:
+    dados = bytearray(manifesto)
+    atributos = list(_atributos_android(dados))
+
+    def atributo(elemento, nome, tipos):
+        posicoes = [p for e, n, p in atributos if (e, n) == (elemento, nome)]
+        if len(posicoes) != 1 or dados[posicoes[0] + 15] not in tipos:
+            raise ValueError('atributo ausente, ambiguo ou tipo inesperado: ' + nome)
+        return posicoes[0]
+
+    def inteiro(elemento, nome, novo, esperado=None):
+        pos = atributo(elemento, nome, (0x10, 0x11))
+        valor = _u32(dados, pos + 16)
+        if esperado is not None and valor != esperado or novo < valor:
+            raise ValueError('valor de origem inesperado ou downgrade: ' + nome)
+        struct.pack_into('<I', dados, pos + 8, NO_INDEX)
+        struct.pack_into('<I', dados, pos + 16, novo)
+
+    inteiro('manifest', 'versionCode', para_codigo, de_codigo)
+    if min_sdk is not None:
+        inteiro('uses-sdk', 'minSdkVersion', min_sdk)
+    pos = atributo('manifest', 'versionName', (3,))
+    _versao_no_pool(dados, _u32(dados, pos + 16), de_nome, para_nome)
+    return bytes(dados)
 
 
 def main() -> int:
@@ -159,6 +187,7 @@ def main() -> int:
     parser.add_argument('--para', required=True)
     parser.add_argument('--de-codigo', type=int, required=True)
     parser.add_argument('--para-codigo', type=int, required=True)
+    parser.add_argument('--min-sdk', type=int, help='elevar a API minima')
     parser.add_argument('--manter-debug', action='store_true',
                         help='nao desliga android:debuggable/testOnly')
     args = parser.parse_args()
@@ -176,7 +205,7 @@ def main() -> int:
         if MANIFESTO not in nomes:
             raise SystemExit('APK sem AndroidManifest.xml')
         manifesto = trocar_manifesto(origem.read(MANIFESTO), args.de, args.para,
-                                     args.de_codigo, args.para_codigo)
+                                     args.de_codigo, args.para_codigo, args.min_sdk)
         if not args.manter_debug:
             manifesto, alterados, vistos = desligar_debug(manifesto)
             if 'debuggable' not in [nome for _elemento, nome in vistos]:

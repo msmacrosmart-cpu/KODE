@@ -55,24 +55,21 @@ DROPBOX_URL = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
                '&st=p1m6ebvg&dl=0')
 APK = DROPBOX_URL.replace('&dl=0', '&dl=1')
 APK_GITHUB = ('https://github.com/msmacrosmart-cpu/KODE/releases/latest/'
-              'download/SMARTEDTV-atual.apk')
+              'download/SMARTEDTV-universal.apk')
 
 # Manifesto de atualizacao remoto (Dropbox). Substituir pelo URL verdadeiro
 # do arquivo JSON de atualizacao quando estiver hospedado no Dropbox.
 # Estrutura esperada:
 #   {
 #     "versionName": "1.0.84",
-#     "versionCode": 84,
+#     "versionCode": 2103070,
 #     "apkUrl": "https://www.dropbox.com/scl/fi/.../SMARTEDTV-atual.apk?dl=1",
 #     "sha256": "<hash sha-256 do APK>",
 #     "releaseNotes": "Novidades desta versao"
 #   }
 MANIFEST_URL = None  # configurar com o URL do manifesto JSON no Dropbox
 
-# Versao atual do app (deve bater com o applicationId/versionCode do APK).
-# Atualizar quando publicar uma nova versao.
-CURRENT_VERSION_NAME = '1.0.87'
-CURRENT_VERSION_CODE = 87
+from smarted_release import VERSION_NAME as CURRENT_VERSION_NAME, VERSION_CODE as CURRENT_VERSION_CODE
 
 # Caminho da licenca ativada (gravada por validar() quando OK).
 # O Java Licenca/SmartAds le exatamente addon_data/service.smarted.bootstrap/

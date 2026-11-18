@@ -9,6 +9,7 @@ import importlib.util
 import sys
 import types
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -67,7 +68,8 @@ def carregar_vip():
     try:
         spec = importlib.util.spec_from_file_location('vip_teste', VIP)
         modulo = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(modulo)
+        with patch.object(sys, 'path', [str(VIP.parent)] + sys.path):
+            spec.loader.exec_module(modulo)
     finally:
         for nome, antigo in salvos.items():
             if antigo is None:
