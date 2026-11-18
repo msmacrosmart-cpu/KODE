@@ -163,6 +163,31 @@ PY
   fi
 fi
 
+note '4b. HOME (blade): subir do hero ate a barra superior'
+# No layout blade o hero fica no meio e a barra superior (busca/ajustes/energia)
+# no topo. Antes, 9121-9123 desciam para o 9000 (que so existe no aurora) e o
+# 9320 subia para a lateral 9100, que subia para si mesma: nao havia caminho.
+tecla 4 1.5
+sleep 2
+estado_layout=$(adb shell "grep -c 'home_layout=blade' /sdcard/Android/data/$app/files/.kodi/userdata/guisettings.xml" 2>/dev/null | tr -d '\r')
+printf 'blade no guisettings: %s\n' "${estado_layout:-?}" >> "$out/home-dpad.txt"
+for _ in 1 2 3 4 5 6 7 8; do tecla 19 0.4; done
+topo_blade=$(controle)
+printf 'apos subir da Home: %s\n' "$topo_blade" >> "$out/home-dpad.txt"
+case "$topo_blade" in
+  9121:*|9122:*|9123:*) ok "subiu do hero para a barra superior ($topo_blade)" ;;
+  *) printf '::warning::foco apos subir na Home (blade): %s (esperado 9121/9122/9123)\n' "$topo_blade" ;;
+esac
+# E descer do topo tem de devolver o foco ao conteudo, nunca a um controle
+# invisivel (9000 nao existe em blade).
+tecla 20 1.0
+abaixo_topo=$(controle)
+printf 'apos descer do topo: %s\n' "$abaixo_topo" >> "$out/home-dpad.txt"
+case "$abaixo_topo" in
+  9*) ok "descer da barra superior leva a conteudo visivel ($abaixo_topo)" ;;
+  *) printf '::warning::descer do topo foi para %s\n' "${abaixo_topo:-?}" ;;
+esac
+
 note '5. D-PAD NA BARRA/GRADE DE AJUSTES'
 # Sai da janela de pastas e vai para a Home, depois Ajustes pela barra superior.
 tecla 4 1.5
