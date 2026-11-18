@@ -20,6 +20,7 @@ import json
 import time
 
 import xbmc
+import xbmcvfs
 
 RESULTADOS = []
 JANELA_ESPERA = 3.0
@@ -70,19 +71,24 @@ def _ids_do_skin():
              'slider', 'mover', 'colorbutton'}
     vistos = []
     for skin in ('skin.estilo.personalizado', 'skin.novatv'):
-        base = os.path.join(xbmc.translatePath('special://home/addons'), skin, 'xml')
+        try:
+            raiz_addons = xbmcvfs.translatePath('special://home/addons')
+        except Exception:
+            raiz_addons = xbmc.translatePath('special://home/addons')
+        base = os.path.join(raiz_addons, skin, 'xml')
         for nome in FOCAVEIS_XML:
             caminho = os.path.join(base, nome)
             try:
                 raiz = ET.parse(caminho).getroot()
-            except Exception:
+            except Exception as erro:
+                _log('SMARTED_PROVA_IDS_ERRO %s: %s' % (caminho, erro))
                 continue
             for controle in raiz.iter('control'):
                 if controle.get('type') in tipos and controle.get('id'):
                     if controle.get('id') not in vistos:
                         vistos.append(controle.get('id'))
     _ID_CACHE.extend(vistos)
-    _log('SMARTED_PROVA_IDS %s' % ','.join(_ID_CACHE[:80]))
+    _log('SMARTED_PROVA_IDS (%d) %s' % (len(_ID_CACHE), ','.join(_ID_CACHE[:100])))
     return _ID_CACHE
 
 
