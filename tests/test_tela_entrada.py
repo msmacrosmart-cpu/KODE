@@ -438,6 +438,12 @@ class VipFake(object):
                    'SMARTEDTV-atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
                    '&st=p1m6ebvg&dl=0')
     APK = DROPBOX_URL.replace('&dl=0', '&dl=1')
+
+    def url_do_apk_por_nome(self):
+        # Sem rede no teste: o vip real descobre o arquivo pelo nome na pasta
+        # publicada; aqui devolve o link direto, que ja basta para a tela.
+        return self.APK
+
     APK_GITHUB = ('https://github.com/msmacrosmart-cpu/KODE/releases/latest/'
                   'download/SMARTEDTV-atual.apk')
 

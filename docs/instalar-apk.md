@@ -134,9 +134,9 @@ de “Mais detalhes”).
 
 ## 5. Compatibilidade do APK
 
-A **v18** é universal:
+A build universal é:
 
-- **minSdk 21** (Android 5.0) — instala em **Android 8, 9, 10, 11, 12, 13, 14 e 15**;
+- **minSdk 21** (Android 5.0) — instala em **Android 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 e 15**;
 - **targetSdk 34**;
 - **ABIs: `arm64-v8a` (64-bit) e `armeabi-v7a` (32-bit)** no mesmo APK;
 - `debuggable: false`, `testOnly` ausente;
@@ -147,7 +147,7 @@ O Android escolhe a ABI sozinho. Para conferir qual o aparelho usa:
 - app **AIDA64** ou **Device Info**: procure “ABI”/“CPU”;
 - ou no PC com adb: `adb shell getprop ro.product.cpu.abilist`.
 
-Se aparecer `arm64-v8a`, `armeabi-v7a` ou os dois, a v18 instala. As builds
+Se aparecer `arm64-v8a`, `armeabi-v7a` ou os dois, o APK instala. As builds
 v12–v15 eram somente arm64; por isso falhavam em aparelho 32-bit.
 
 ## 6. O que **não** é o problema

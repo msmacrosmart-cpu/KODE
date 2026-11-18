@@ -46,16 +46,33 @@ ADDON_ID = ADDON.getAddonInfo('id')
 CHECKOUT = 'https://pay.cakto.com.br/nkvbegd_1323120'
 SITE = 'https://smartedtv-vip.lovable.app/'
 
-# Link verdadeiro do Dropbox: e o mesmo conteudo gravado no QR Code
-# qr_apk.png que acompanha a tela (lido do proprio PNG do pacote). Tem o
-# rlkey; sem ele o link /scl/fi/ nao abre. dl=0 mostra a pagina do Dropbox
-# (com o botao de download); dl=1 baixa o APK direto.
+# O arquivo publicado no Dropbox tem NOME FIXO: quem mantem o app troca o
+# conteudo por dentro e o link nunca muda. O nome faz parte do contrato.
+APK_NOME = 'SMARTEDTV-atual.apk'
+
+# Link da PASTA onde o APK fica publicado. E este link que amarra o download
+# ao NOME do arquivo: o app pede <pasta>/SMARTEDTV-atual.apk, entao basta
+# trocar o arquivo por dentro (mesmo nome novo conteudo) e nada mais muda.
+# Diferente do /scl/fi/, que fica preso ao ID de UM arquivo.
+DROPBOX_PASTA = ('https://www.dropbox.com/scl/fo/5w6yfp0tvee0xro2wh0m3/'
+                 'AKikmSEMGOvGv1QTiKCV8CU?rlkey=3b8m9dnw571waz7vs83n0vn17')
+
+# Link do Dropbox (com rlkey; sem ele o link /scl/fi/ nao abre).
+# dl=0 mostra a pagina do Dropbox; dl=1 baixa o APK direto.
+# ATENCAO: o /scl/fi/ resolve pelo ID do arquivo, nao pelo nome. Se o link for
+# criado em outro arquivo, ele continua baixando aquele arquivo, mesmo que o
+# texto da URL diga APK_NOME. resolver_apk_publicado() confere o tamanho e,
+# na duvida, cai para a release do GitHub.
 DROPBOX_URL = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
                'SMARTEDTV-atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
                '&st=p1m6ebvg&dl=0')
 APK = DROPBOX_URL.replace('&dl=0', '&dl=1')
 APK_GITHUB = ('https://github.com/msmacrosmart-cpu/KODE/releases/latest/'
               'download/SMARTEDTV-universal.apk')
+
+# Um APK do Kodi com as duas ABIs passa de 240 MB. Abaixo disso o arquivo
+# baixado e pagina de erro do Dropbox/HTML com extensao .apk, nao o app.
+APK_TAMANHO_MINIMO = 200 * 1024 * 1024
 
 # Manifesto de atualizacao remoto (Dropbox). Substituir pelo URL verdadeiro
 # do arquivo JSON de atualizacao quando estiver hospedado no Dropbox.
@@ -627,8 +644,19 @@ def share_download_link():
 
 
 def open_apk_download():
-    """Abre o download direto do APK no navegador externo do Android."""
-    return abrir_url(APK, 'download do APK')
+    """Abre o download direto do APK no navegador externo do Android.
+
+    Prefere o arquivo de nome fixo do Dropbox e cai para a release do GitHub
+    quando o link do Dropbox nao entrega o APK completo (link preso a outro
+    arquivo). Nunca abre uma pagina de erro como se fosse o app.
+    """
+    url, motivo = resolver_apk_publicado()
+    if not url:
+        log('nenhum APK confiavel para baixar (%s)' % motivo,
+            xbmc.LOGWARNING)
+        return False
+    log('baixando o APK de %s (%s)' % (motivo, url))
+    return abrir_url(url, 'download do APK')
 
 
 def abrir_url(url, rotulo='link'):
@@ -669,18 +697,38 @@ def check_for_updates():
 def download_update(apk_url):
     """Baixa o APK de atualizacao para a pasta de downloads do Kodi.
 
-    Devolve o caminho local do arquivo ou None em caso de falha.
+    Grava em blocos: o APK tem ~250 MB e ler tudo para a memoria trava em TV
+    box/stick (era uma origem de arquivo truncado). Confere o tamanho final
+    contra o Content-Length; download incompleto e descartado aqui, antes de
+    chegar ao instalador do Android. Devolve o caminho local ou None.
     """
     Request, urlopen = _urlopen_request()
     try:
         if not xbmcvfs.exists(DOWNLOADS_DIR):
             xbmcvfs.mkdir(DOWNLOADS_DIR)
         req = Request(apk_url, headers={'User-Agent': 'SMARTEDTV'})
-        resposta = urlopen(req, timeout=30)
-        dados = resposta.read()
-        with xbmcvfs.File(APK_DOWNLOAD_PATH, 'w') as handle:
-            handle.write(dados)
-        log('APK baixado em %s (%d bytes)' % (APK_DOWNLOAD_PATH, len(dados)))
+        resposta = urlopen(req, timeout=60)
+        esperado = resposta.headers.get('Content-Length')
+        esperado = int(esperado) if esperado else None
+        total = 0
+        with open(APK_DOWNLOAD_PATH, 'wb') as handle:
+            while True:
+                bloco = resposta.read(1024 * 1024)
+                if not bloco:
+                    break
+                handle.write(bloco)
+                total += len(bloco)
+        log('APK baixado em %s (%d bytes%s)' % (
+            APK_DOWNLOAD_PATH, total,
+            ', esperado %d' % esperado if esperado else ''))
+        if total < APK_TAMANHO_MINIMO or (esperado and total != esperado):
+            log('download incompleto: %d de %s bytes' % (total, esperado),
+                xbmc.LOGWARNING)
+            try:
+                os.remove(APK_DOWNLOAD_PATH)
+            except Exception:
+                pass
+            return None
         return APK_DOWNLOAD_PATH
     except Exception as erro:
         log('falha ao baixar atualizacao: %s' % erro, xbmc.LOGWARNING)
@@ -715,12 +763,195 @@ def verify_apk(caminho_apk, sha256_esperado):
         return False
 
 
+def _cabecalhos_remotos(url):
+    """HEAD na URL e devolve (tamanho, nome do arquivo) do servidor."""
+    Request, urlopen = _urlopen_request()
+    try:
+        requisicao = Request(url, headers={'User-Agent': 'SMARTEDTV'},
+                             method='HEAD')
+        resposta = urlopen(requisicao, timeout=15)
+        tamanho = resposta.headers.get('Content-Length')
+        nome = None
+        disposicao = resposta.headers.get('Content-Disposition') or ''
+        achado = re.search(r"filename\*?=(?:UTF-8''|\")?([^\";]+)",
+                           disposicao, re.I)
+        if achado:
+            from urllib.parse import unquote
+            nome = unquote(achado.group(1)).strip()
+        return (int(tamanho) if tamanho else None, nome)
+    except Exception as erro:
+        log('HEAD em %s falhou: %s' % (url, erro), xbmc.LOGWARNING)
+        return (None, None)
+
+
+def _pasta_e_token():
+    """Separa o link da pasta em (id, token, rlkey) para consultar/baixar."""
+    if not DROPBOX_PASTA:
+        return (None, None, None)
+    base, _, consulta = DROPBOX_PASTA.partition('?')
+    partes = [p for p in base.rstrip('/').split('/') if p]
+    # .../scl/fo/<id>/<token>
+    try:
+        indice = partes.index('fo')
+        pasta_id, token = partes[indice + 1], partes[indice + 2]
+    except (ValueError, IndexError):
+        return (None, None, None)
+    achado = re.search(r'(?:^|&)rlkey=([^&]+)', consulta)
+    return (pasta_id, token, achado.group(1) if achado else None)
+
+
+def url_do_apk_por_nome(nome=None):
+    """URL direta para baixar <pasta>/<nome>, resolvendo o nome na pasta.
+
+    O Dropbox NAO aceita "pasta/nome" no link (testado: cada arquivo tem o
+    proprio token). O que da para fazer sem depender de link criado a mao e
+    perguntar ao proprio Dropbox, pela pagina publica da pasta, qual e o token
+    do arquivo com o nome combinado. Assim: publicou SMARTEDTV-atual.apk na
+    pasta -> o app acha e baixa; trocou o conteudo do mesmo nome -> continua
+    achando. Devolve None quando nao acha (aí vale o link fixo/reserva).
+    """
+    nome = nome or APK_NOME
+    pasta_id, token, _ = _pasta_e_token()
+    if not (pasta_id and token):
+        return None
+    Request, urlopen = _urlopen_request()
+    pagina = 'https://www.dropbox.com/scl/fo/%s/%s?dl=0' % (pasta_id, token)
+    try:
+        resposta = urlopen(Request(pagina,
+                                   headers={'User-Agent': 'Mozilla/5.0'}),
+                           timeout=20)
+        html = resposta.read().decode('utf-8', 'replace')
+    except Exception as erro:
+        log('nao consegui listar a pasta do Dropbox: %s' % erro,
+            xbmc.LOGWARNING)
+        return None
+    # A pagina publica traz o token de cada arquivo junto do nome:
+    # /scl/fo/<pasta>/<token-do-arquivo>/<nome>
+    padrao = r'/scl/fo/%s/([A-Za-z0-9_-]+)/%s' % (
+        re.escape(pasta_id), re.escape(nome))
+    achado = re.search(padrao, html)
+    if not achado:
+        return None
+    return ('https://www.dropbox.com/scl/fo/%s/%s/%s?rlkey=%s&dl=1'
+            % (pasta_id, achado.group(1), nome,
+               _pasta_e_token()[2] or ''))
+
+
+def _tamanho_remoto(url):
+    """Content-Length em bytes (int) ou None. Mantido por compatibilidade."""
+    return _cabecalhos_remotos(url)[0]
+
+
+def resolver_apk_publicado():
+    """Escolhe de onde baixar o APK e devolve (url, motivo).
+
+    Ordem das tentativas:
+
+    1. pasta publicada + NOME do arquivo (``url_do_apk_por_nome``). E o que
+       amarra o download ao contrato "SMARTEDTV-atual.apk": quem publica
+       substitui o arquivo na pasta e nada mais precisa mudar;
+    2. o link /scl/fi/ gravado em DROPBOX_URL, quando ele entrega o arquivo
+       certo (o /scl/fi/ resolve pelo ID do arquivo criado quando o link
+       nasceu, foi assim que um link com o nome certo servia a v22 antiga);
+    3. a release do GitHub, como reserva.
+
+    Em todos os casos confere TAMANHO (pagina de erro salva como .apk tem
+    poucos KB) e, quando o servidor informa, o NOME do arquivo entregue.
+    Nunca devolve URL que baixe outra coisa no lugar do app.
+    """
+    motivos = []
+    candidatos = [(url_do_apk_por_nome(), 'dropbox-nome'),
+                  (APK, 'dropbox')]
+    for url, origem in candidatos:
+        if not url:
+            continue
+        tamanho, nome = _cabecalhos_remotos(url)
+        if tamanho is not None and tamanho < APK_TAMANHO_MINIMO:
+            motivos.append('%s: %d bytes, nao e o APK' % (origem, tamanho))
+            log(motivos[-1], xbmc.LOGWARNING)
+            continue
+        if nome and nome.lower() != APK_NOME.lower():
+            # Servidor preso a OUTRO arquivo: baixaria a versao errada.
+            motivos.append('%s entrega %s, nao %s'
+                           % (origem, nome, APK_NOME))
+            log(motivos[-1], xbmc.LOGWARNING)
+            continue
+        log('Dropbox (%s): %s (%s)' % (origem, APK_NOME,
+                                       tamanho or 'tamanho desconhecido'))
+        return (url, origem)
+    if APK_GITHUB:
+        tamanho, _ = _cabecalhos_remotos(APK_GITHUB)
+        if tamanho is None or tamanho >= APK_TAMANHO_MINIMO:
+            log('usando o APK da release no GitHub (%s)' % APK_GITHUB)
+            return (APK_GITHUB, 'github')
+    motivo = '; '.join(motivos) or 'sem link de APK configurado'
+    return (None, motivo)
+
+
+def versao_do_apk(caminho_apk):
+    """Le a versao de dentro do APK baixado, sem SDK e sem parsear AXML.
+
+    O APK carrega `assets/addons/service.smarted.bootstrap/smarted_release.py`
+    em texto puro, com VERSION_NAME/VERSION_CODE - o mesmo descritor que gera
+    o manifesto. Ler dali e mais confiavel do que decodificar o
+    AndroidManifest.xml binario e nao depende de ferramenta externa.
+
+    Devolve (codigo, nome) ou (None, None) quando o arquivo nao for o app -
+    nunca inventa uma versao.
+    """
+    if not xbmcvfs.exists(caminho_apk):
+        return (None, None)
+    try:
+        import zipfile
+        with zipfile.ZipFile(caminho_apk) as apk:
+            nomes = apk.namelist()
+            for nome in nomes:
+                if not nome.endswith('/service.smarted.bootstrap/'
+                                     'smarted_release.py'):
+                    continue
+                texto = apk.read(nome).decode('utf-8', 'replace')
+                achado_nome = re.search(
+                    r'^VERSION_NAME\s*=\s*["\']?([^"\'\s]+)', texto, re.M)
+                achado_codigo = re.search(
+                    r'^VERSION_CODE\s*=\s*["\']?([0-9]+)', texto, re.M)
+                if achado_nome and achado_codigo:
+                    return (int(achado_codigo.group(1)),
+                            achado_nome.group(1))
+        log('o APK nao tem o descritor de versao do SMARTEDTV', xbmc.LOGWARNING)
+        return (None, None)
+    except Exception as erro:
+        log('nao consegui ler a versao do APK baixado: %s' % erro,
+            xbmc.LOGWARNING)
+        return (None, None)
+
+
+def _apk_mais_novo_que_o_instalado(caminho_apk):
+    """True quando o arquivo pode ser instalado por cima sem downgrade.
+
+    Sem versao legivel nao bloqueia (o instalador do Android decide); com
+    versao legivel menor/igual avisa e devolve False, evitando o generico
+    "Aplicativo nao instalado" que o usuario nao consegue interpretar.
+    """
+    codigo, nome = versao_do_apk(caminho_apk)
+    if codigo is None:
+        log('versao do APK baixado desconhecida; deixando o Android decidir')
+        return True
+    log('APK baixado: %s (codigo %d); instalado: %s (codigo %d)' % (
+        nome, codigo, CURRENT_VERSION_NAME, CURRENT_VERSION_CODE))
+    if codigo < CURRENT_VERSION_CODE:
+        log('APK baixado e MAIS ANTIGO que o instalado; nao vou instalar',
+            xbmc.LOGWARNING)
+        return False
+    return True
+
+
 def install_update(caminho_apk):
     """Abre o instalador oficial do Android para o APK.
 
     Usa StartAndroidActivity com ACTION_VIEW e tipo
     application/vnd.android.package-archive. O usuario confirma a instalacao.
     """
+    caminho_apk = str(caminho_apk)
     if not xbmcvfs.exists(caminho_apk):
         log('arquivo nao encontrado para instalacao: %s' % caminho_apk,
             xbmc.LOGWARNING)
@@ -739,8 +970,10 @@ def procurar_atualizacao():
     oferece instalacao. Se o manifesto nao estiver configurado, abre o link do
     Dropbox no navegador (comportamento anterior)."""
     if not MANIFEST_URL:
-        log('MANIFEST_URL nao configurado; abrindo link do Dropbox')
-        return abrir_url(DROPBOX_URL, 'atualização')
+        # Sem manifesto o caminho e o mesmo do botao 122: arquivo de nome
+        # fixo no Dropbox, com a release do GitHub como reserva.
+        log('MANIFEST_URL nao configurado; usando o APK publicado')
+        return open_apk_download()
     tem, manifesto = check_for_updates()
     if not tem:
         xbmcgui.Dialog().notification(
@@ -769,4 +1002,41 @@ def procurar_atualizacao():
             'SMARTEDTV', 'Falha na verificacao de integridade.',
             xbmcgui.NOTIFICATION_ERROR, 4000)
         return False
+    return instalar_apk_baixado(caminho)
+
+
+def instalar_apk_baixado(caminho):
+    """Instala o APK baixado so depois de conferir a versao e o tamanho.
+
+    O Android mostra "Aplicativo nao instalado" tanto para arquivo truncado
+    quanto para versao mais antiga que a instalada. Aqui a causa e dita ao
+    usuario antes de abrir o instalador, em vez de deixar a mensagem generica.
+    """
+    tamanho = _tamanho_do_arquivo(caminho)
+    if not tamanho or tamanho < APK_TAMANHO_MINIMO:
+        log('APK baixado incompleto (%s bytes): nao vou instalar' % tamanho,
+            xbmc.LOGWARNING)
+        xbmcgui.Dialog().notification(
+            'SMARTEDTV',
+            'O download veio incompleto. Baixe de novo.',
+            xbmcgui.NOTIFICATION_ERROR, 6000)
+        return False
+    if not _apk_mais_novo_que_o_instalado(caminho):
+        xbmcgui.Dialog().notification(
+            'SMARTEDTV',
+            'O arquivo publicado ainda e a versao %s. Instale quando sair '
+            'uma atualizacao mais nova.' % CURRENT_VERSION_NAME,
+            xbmcgui.NOTIFICATION_INFO, 6000)
+        return False
     return install_update(caminho)
+
+
+def _tamanho_do_arquivo(caminho):
+    """Tamanho local em bytes ou None se o arquivo nao existir."""
+    try:
+        if not xbmcvfs.exists(caminho):
+            return None
+        return int(os.path.getsize(caminho))
+    except Exception as erro:
+        log('nao consegui medir %s: %s' % (caminho, erro), xbmc.LOGWARNING)
+        return None

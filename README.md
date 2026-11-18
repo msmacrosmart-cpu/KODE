@@ -2,7 +2,7 @@
 
 **[Baixar o APK universal](https://github.com/msmacrosmart-cpu/KODE/releases/latest/download/SMARTEDTV-universal.apk)** · [Releases](https://github.com/msmacrosmart-cpu/KODE/releases)
 
-Um único arquivo para **ARM de 32 e 64 bits**, a partir do **Android 8.0**. O pacote da linha atual é `smartedtv.full`, com launchers para celular e TV. Para compilar por commit, verificar a assinatura e diagnosticar recusas de instalação, veja o **[guia da release universal](docs/release-universal.md)**.
+Um único arquivo para **ARM de 32 e 64 bits**, a partir do **Android 5.0** (API 21). O pacote da linha atual é `smartedtv.full`, com launchers para celular e TV. Para compilar por commit, verificar a assinatura e diagnosticar recusas de instalação, veja o **[guia da release universal](docs/release-universal.md)**.
 
 ---
 

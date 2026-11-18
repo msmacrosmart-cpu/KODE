@@ -8,6 +8,9 @@ from pathlib import Path
 from zipfile import ZIP_STORED, ZipFile
 
 ANDROID = '{http://schemas.android.com/apk/res/android}'
+# Piso de API do Kodi 21.3 e da v21, que instalou no aparelho do usuario.
+# Elevar isto (a 1.0.92 elevou para 26) recusa Android 7 e Fire OS 6.
+MIN_SDK = '21'
 ABIS = {'armeabi-v7a': (1, 40), 'arm64-v8a': (2, 183)}  # ELF class, e_machine
 
 
@@ -21,7 +24,7 @@ def verify_manifest(root, name, code):
     sdk = root.find('uses-sdk')
     require(root.get('package') == 'smartedtv.full' and app is not None, 'pacote inesperado')
     require((root.get(ANDROID+'versionName'), root.get(ANDROID+'versionCode')) == (name, code), 'versão incorreta')
-    require(sdk is not None and sdk.get(ANDROID+'minSdkVersion') == '26' and
+    require(sdk is not None and sdk.get(ANDROID+'minSdkVersion') == MIN_SDK and
             sdk.get(ANDROID+'targetSdkVersion') == '34' and sdk.get(ANDROID+'maxSdkVersion') is None, 'SDK incorreto')
     require(not root.get('split') and root.find('uses-split') is None, 'não é um APK standalone')
     for flag in ('debuggable', 'testOnly', 'isSplitRequired'):
@@ -93,4 +96,4 @@ if __name__ == '__main__':
     base, apk, xml, name, code = sys.argv[1:]
     verify_manifest(ET.parse(xml).getroot(), name, code)
     verify_apk(Path(base), Path(apk))
-    print(f'smartedtv.full {name} ({code}), API 26+, APK standalone, LAUNCHER + LEANBACK_LAUNCHER; Dex e libs intactos.')
+    print(f'smartedtv.full {name} ({code}), API 21+, APK standalone, LAUNCHER + LEANBACK_LAUNCHER; Dex e libs intactos.')

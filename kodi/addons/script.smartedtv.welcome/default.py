@@ -104,10 +104,21 @@ ALARME_SEGURO = 'smartedtv_home_seguro'
 # os mesmos de vip.py: checkout do pacote e o link verdadeiro gravado no QR
 # Code qr_apk.png (com rlkey; sem ele o link /scl/fi/ do Dropbox nao abre).
 CHECKOUT = 'https://pay.cakto.com.br/nkvbegd_1323120'
+APK_NOME = 'SMARTEDTV-atual.apk'
+# Pasta publicada: o download pede o APK PELO NOME, entao trocar o conteudo
+# do arquivo na pasta ja publica versao nova (link de arquivo /scl/fi/ fica
+# preso ao ID do arquivo e pode servir uma versao antiga).
+DROPBOX_PASTA = ('https://www.dropbox.com/scl/fo/5w6yfp0tvee0xro2wh0m3/'
+                 'AKikmSEMGOvGv1QTiKCV8CU?rlkey=3b8m9dnw571waz7vs83n0vn17')
+# Link direto do arquivo (dl=1 baixa em vez de mostrar a pagina). E o reserva
+# usado quando o vip.py nao esta disponivel: o /scl/fi/ fica preso ao arquivo
+# em que o link foi criado, por isso o vip.py tenta antes o nome na pasta.
+APK_DOWNLOAD = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
+                'SMARTEDTV-atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
+                '&st=p1m6ebvg&dl=1')
 DROPBOX_URL = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
                'SMARTEDTV-atual.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
                '&st=p1m6ebvg&dl=0')
-APK_DOWNLOAD = DROPBOX_URL.replace('&dl=0', '&dl=1')
 
 HOME_ID = 10000                 # janela da Home (winnames.xml)
 # Quanto o vigia espera a tela avisar que desenhou antes de abrir a Home.
@@ -604,7 +615,13 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         url = APK_DOWNLOAD
         vip = _vip()
         if vip is not None:
-            url = getattr(vip, 'APK', APK_DOWNLOAD) or APK_DOWNLOAD
+            # Mesmo contrato do vip.py: pede o arquivo PELO NOME na pasta
+            # publicada, entao o link nunca fica preso a uma versao antiga.
+            por_nome = getattr(vip, 'url_do_apk_por_nome', None)
+            if callable(por_nome):
+                url = por_nome() or APK_DOWNLOAD
+            else:
+                url = getattr(vip, 'APK', APK_DOWNLOAD) or APK_DOWNLOAD
             try:
                 if hasattr(vip, 'open_apk_download') and vip.open_apk_download():
                     _log('[SMARTEDTV] Download do APK aberto via vip.')
@@ -633,9 +650,11 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
             except Exception as erro:
                 _log('[SMARTEDTV] vip.procurar_atualizacao falhou: %s' % erro,
                      xbmc.LOGWARNING)
-        # Fallback: abre a pagina do Dropbox no navegador
-        _log('[SMARTEDTV] Fallback: abrindo a pagina do Dropbox no navegador.')
-        if self._intent_navegador(DROPBOX_URL):
+        # Mesmo fallback do botao 122: arquivo de nome fixo do Dropbox com
+        # validacao de nome/tamanho. Abrir DROPBOX_URL cru mostrava a pagina
+        # do arquivo antigo (o /scl/fi/ resolve pelo ID, nao pelo nome).
+        _log('[SMARTEDTV] Fallback: abrindo o download do APK publicado.')
+        if self._intent_navegador(APK_DOWNLOAD):
             return
         self._dialogo('Atualizacao indisponível',
                       'Não consegui verificar atualizacoes neste aparelho.')

@@ -16,7 +16,7 @@ scratch=$(mktemp -d "$work/montagem.XXXXXX")
 trap 'rm -rf "$scratch"' EXIT
 python3 tools/kodi/atualizar-apk-v17.py --apk "$base" --saida "$scratch/overlay.apk"
 python3 tools/kodi/ajustar-versao-apk.py "$scratch/overlay.apk" "$scratch/raw.apk" \
-  --de 1.0.87 --de-codigo 2103073 --para "$VERSION_NAME" --para-codigo "$VERSION_CODE" --min-sdk 26
+  --de 1.0.87 --de-codigo 2103073 --para "$VERSION_NAME" --para-codigo "$VERSION_CODE" --min-sdk 21
 "$bt/zipalign" -P 16 -f 4 "$scratch/raw.apk" "$scratch/aligned.apk"
 "$bt/apksigner" sign --ks "$KODI_ANDROID_STORE_FILE" --ks-key-alias "$KODI_ANDROID_KEY_ALIAS" \
   --ks-pass env:KODI_ANDROID_STORE_PASSWORD --key-pass env:KODI_ANDROID_KEY_PASSWORD \

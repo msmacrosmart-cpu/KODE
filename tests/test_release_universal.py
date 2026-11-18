@@ -17,7 +17,7 @@ spec.loader.exec_module(verify)
 A = verify.ANDROID
 SAMPLE = '''<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="smartedtv.full"
  android:versionName="1.0.87" android:versionCode="2103073">
- <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34"/>
+ <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="34"/>
  <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
  <uses-feature android:name="android.hardware.type.television" android:required="false"/>
  <uses-feature android:name="android.software.leanback" android:required="false"/>
@@ -35,9 +35,26 @@ class Contrato(unittest.TestCase):
     def test_manifesto_celular_e_tv(self):
         verify.verify_manifest(ET.fromstring(SAMPLE), '1.0.87', '2103073')
 
+    def test_piso_de_api_continua_21(self):
+        """Regressao da 1.0.92: elevar o minSdk para 26 recusa Android 7/Fire OS 6.
+
+        A v21 (minSdk 21) instalou no aparelho do relato; o APK tem de manter
+        esse piso. O teste olha o verificador e o build, nao so o manifesto.
+        """
+        self.assertEqual(verify.MIN_SDK, '21')
+        build = (ROOT / 'smartedtv/release/build.sh').read_text()
+        self.assertIn('--min-sdk 21', build)
+        self.assertNotIn('--min-sdk 26', build)
+        # minSdk 21 e aceito; 26 nao e mais o unico valor valido
+        raiz = ET.fromstring(SAMPLE)
+        verify.verify_manifest(raiz, '1.0.87', '2103073')
+        raiz = ET.fromstring(SAMPLE.replace('minSdkVersion="21"', 'minSdkVersion="23"'))
+        with self.assertRaises(ValueError):
+            verify.verify_manifest(raiz, '1.0.87', '2103073')
+
     def test_recusa_filtros_de_instalacao(self):
         for xpath, attr, val in (('.', 'split', 'config.arm64_v8a'),
-                                 ('uses-sdk', A+'minSdkVersion', '27'),
+                                 ('uses-sdk', A+'minSdkVersion', '26'),
                                  ('uses-feature', A+'required', 'true'),
                                  ('application', A+'testOnly', 'true'),
                                  ('application', A+'isSplitRequired', 'true'),
@@ -57,17 +74,17 @@ class Contrato(unittest.TestCase):
             self.skipTest('teste de integração requer AAPT2 e ANDROID_JAR')
         with tempfile.TemporaryDirectory() as tmp:
             work = Path(tmp)
-            xml = SAMPLE.replace('minSdkVersion="26"', 'minSdkVersion="21"').replace('<application ', '<application android:debuggable="true" ')
+            xml = SAMPLE.replace('<application ', '<application android:debuggable="true" ')
             (work/'AndroidManifest.xml').write_text(xml)
             original, final = work/'base.apk', work/'novo.apk'
             subprocess.run([aapt, 'link', '-I', jar, '--manifest', work/'AndroidManifest.xml', '-o', original], check=True)
             cmd = [sys.executable, EDITOR, original, final, '--de', '1.0.87', '--de-codigo', '2103073',
                    '--para', '1.0.100', '--para-codigo', '2103086', '--min-sdk']
             self.assertNotEqual(subprocess.run(cmd+['19'], capture_output=True).returncode, 0)
-            subprocess.run(cmd+['26'], check=True, capture_output=True)
+            subprocess.run(cmd+['21'], check=True, capture_output=True)
             tree = subprocess.check_output([aapt, 'dump', 'xmltree', '--file', 'AndroidManifest.xml', final], text=True)
             self.assertRegex(tree, r'versionName\([^)]*\)="1\.0\.100"')
-            self.assertRegex(tree, r'minSdkVersion\([^)]*\)=26')
+            self.assertRegex(tree, r'minSdkVersion\([^)]*\)=21')
             self.assertRegex(tree, r'versionCode\([^)]*\)=2103086')
             self.assertRegex(tree, r':value\([^)]*\)=2103073')
             self.assertRegex(tree, r'debuggable\([^)]*\)=false')

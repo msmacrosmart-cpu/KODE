@@ -104,10 +104,26 @@ class VipBotoesAndroidTest(unittest.TestCase):
                           % DROPBOX])
 
     def test_122_baixa_o_apk_direto(self):
+        # O arquivo publicado tem nome fixo no Dropbox; a release do GitHub e
+        # o reserva quando o link do Dropbox nao entrega o APK completo.
+        # Sem rede no teste, a descoberta do nome na pasta nao roda e o
+        # tamanho e simulado: cai no link direto do arquivo.
+        self.vip.url_do_apk_por_nome = lambda nome=None: None
+        self.vip._cabecalhos_remotos = lambda url: (
+            287248566, 'SMARTEDTV-atual.apk')
         self.assertTrue(self.vip.open_apk_download())
         self.assertEqual(self.xbmc.BUILTINS,
                          ['StartAndroidActivity(,android.intent.action.VIEW,,%s)'
                           % APK])
+
+    def test_122_cai_para_a_release_quando_o_dropbox_nao_serve(self):
+        self.vip._cabecalhos_remotos = lambda url: (
+            (10, 'erro.html') if 'dropbox' in url
+            else (287248566, 'SMARTEDTV-universal.apk'))
+        self.assertTrue(self.vip.open_apk_download())
+        self.assertEqual(self.xbmc.BUILTINS,
+                         ['StartAndroidActivity(,android.intent.action.VIEW,,%s)'
+                          % self.vip.APK_GITHUB])
 
     def test_nenhum_comando_coloca_a_action_no_lugar_do_pacote(self):
         for funcao in (self.vip.abrir_checkout, self.vip.abrir_dropbox,
