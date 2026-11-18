@@ -79,7 +79,12 @@ falhas=$(grep -c 'SMARTED_PROVA FAIL' "$out/kodi.log" || true)
 grep 'SMARTED_PROVA_ANTES\|SMARTED_PROVA_DEPOIS' "$out/kodi.log" > "$out/filtro-ordens.txt" || true
 coletar
 if [ "${falhas:-0}" -ne 0 ]; then
-  erro "$falhas verificacao(oes) falharam: $(grep 'SMARTED_PROVA FAIL' "$out/kodi.log" | sed 's/.*FAIL //' | paste -sd'; ' - | cut -c1-600)"
+  # Uma unica anotacao: inclui a linha de contexto (ids lidos do skin e o valor
+  # cru de Control.HasFocus(50)) para que a falha seja diagnosticavel sem baixar
+  # o artefato.
+  contexto=$(grep 'SMARTED_PROVA_IDS\|categoria_abre' "$out/kodi.log" | tail -2 | sed 's/.*SMARTED_PROVA[A-Z_]* //' | paste -sd' ; ' - | cut -c1-420)
+  detalhe=$(grep 'SMARTED_PROVA FAIL' "$out/kodi.log" | sed 's/.*FAIL //' | paste -sd'; ' - | cut -c1-380)
+  erro "$falhas falharam: $detalhe | contexto: $contexto"
   exit 1
 fi
 ok 'd-pad nas categorias, filtro A a Z, d-pad de Ajustes e subida hero->barra superior conferidos no aparelho'
