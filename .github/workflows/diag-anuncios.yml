@@ -1,0 +1,71 @@
+name: Diagnostico dos anuncios (DEX real do APK)
+
+on:
+  push:
+    branches: [arena/5c219515-kode]
+    paths: [.github/workflows/diag-anuncios.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspecionar:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Baixar a base v22 (a mesma do pipeline) e a release mais nova
+        run: |
+          set -euo pipefail
+          mkdir -p build/diag
+          gh release download v1.0.87-universal-v22 -R "$GITHUB_REPOSITORY" \
+            --pattern SMARTEDTV-universal.apk --dir build/diag --clobber
+          mv build/diag/SMARTEDTV-universal.apk build/diag/base.apk
+          ls -l build/diag/base.apk
+          sha256sum build/diag/base.apk
+      - name: Extrair DEX e Manifesto
+        run: |
+          set -euo pipefail
+          cd build/diag
+          unzip -o -q base.apk 'classes*.dex' 'AndroidManifest.xml'
+          ls -l classes*.dex
+          TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          "$TOOLS/aapt" dump xmltree base.apk --file AndroidManifest.xml > manifest.txt || true
+          "$TOOLS/aapt" dump badging base.apk > badging.txt || true
+      - name: Procurar as chaves e os arquivos lidos pelos anuncios
+        run: |
+          set -euo pipefail
+          cd build/diag
+          publi() { printf '::notice::%s\n' "$1"; }
+          cat classes*.dex > todos.dex
+          echo "== strings 'ca-app-pub' no DEX ==" 
+          strings -n 6 todos.dex | grep -o 'ca-app-pub-[0-9]*[/~][0-9]*' | sort -u | tee chaves.txt
+          while read -r linha; do publi "DEX ca-app-pub: $linha"; done < chaves.txt || true
+          echo "== meta-data do AdMob no manifesto =="
+          grep -i -A3 'com.google.android.gms.ads' manifest.txt | tee admob-meta.txt || true
+          while read -r linha; do publi "MANIFESTO: $linha"; done < admob-meta.txt || true
+          echo "== SDK do AdMob presente? =="
+          (unzip -l base.apk | grep -i 'gms\|admob' || true) | tee sdk.txt
+          strings -n 8 todos.dex | grep -c 'com/google/android/gms/ads' | tee sdk-dex.txt || true
+          publi "classes com gms/ads no DEX: $(cat sdk-dex.txt)"
+          echo "== nomes de arquivo que o codigo de anuncio le =="
+          strings -n 5 todos.dex | grep -Ei '^(ads?|admob|anuncio|anuncios)[a-z0-9_.-]*\.(txt|json|cfg|ini|properties)$' | sort -u | tee arquivos-ads.txt || true
+          while read -r linha; do publi "ARQUIVO DE CONFIG citado no DEX: $linha"; done < arquivos-ads.txt || true
+          strings -n 5 todos.dex | grep -Ei '(\.kodi|smartedtv|plataforma|vip)\.(txt|json)' | sort -u | head -40 | tee arquivos-kodi.txt || true
+          while read -r linha; do publi "CAMINHO citado: $linha"; done < arquivos-kodi.txt || true
+          echo "== classes de anuncio =="
+          strings -n 8 todos.dex | grep -E '^Lsmartedtv/full/[A-Za-z]*(Ad|Ads|Anuncio|PreRoll|Open)[A-Za-z]*;' | sort -u | tee classes-ads.txt || true
+          while read -r linha; do publi "CLASSE: $linha"; done < classes-ads.txt || true
+          echo "== texto de debug/erro dos anuncios =="
+          strings -n 10 todos.dex | grep -Ei 'anunc|interstic|ads' | grep -v '^L' | sort -u | head -60 | tee mensagens.txt || true
+          while read -r linha; do publi "TEXTO: $linha"; done < mensagens.txt || true
+      - name: Guardar o laudo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diag-anuncios-${{ github.run_id }}
+          path: build/diag/*.txt
+          if-no-files-found: warn
