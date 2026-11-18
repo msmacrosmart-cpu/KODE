@@ -38,19 +38,43 @@ def _log(mensagem):
     xbmc.log(mensagem, xbmc.LOGWARNING)
 
 
+def _info(rotulo):
+    try:
+        return (xbmc.getInfoLabel(rotulo) or '').strip()
+    except Exception:
+        return ''
+
+
 def janela():
-    return str(_rpc('GUI.GetProperties', {'properties': ['currentwindow']})
-               .get('currentwindow', {}).get('label', ''))
+    return _info('System.CurrentWindow')
 
 
 def foco():
-    """(id, rotulo) do controle com foco na janela ativa."""
-    controle = _rpc('GUI.GetProperties', {'properties': ['currentcontrol']}).get('currentcontrol', {})
-    return str(controle.get('id', '')), str(controle.get('label', ''))
+    """(id, rotulo) do controle com foco.
+
+    O JSON-RPC ``GUI.GetProperties(currentcontrol)`` volta vazio nesta versao
+    para controles de skin; as infolabels ``System.CurrentControlID``/
+    ``System.CurrentControl`` sao as que o proprio skin usa e trazem o dado.
+    """
+    return _info('System.CurrentControlID'), _info('System.CurrentControl')
 
 
-def itens():
-    """Rotulos da lista da janela ativa, na ordem em que aparecem."""
+def itens(limite=25):
+    """Rotulos da lista da janela ativa, na ordem em que aparecem.
+
+    ``Container.GetItems`` pela JSON-RPC depende do servidor embutido; as
+    infolabels ``Container(id).ListItemNoWrap(n).Label`` leem direto do
+    container e funcionam mesmo com o servidor desligado.
+    """
+    container = _info('System.CurrentControlID') or '50'
+    rotulos = []
+    for indice in range(limite):
+        valor = _info('Container(%s).ListItemNoWrap(%d).Label' % (container, indice))
+        if not valor:
+            break
+        rotulos.append(valor)
+    if rotulos:
+        return rotulos
     dados = _rpc('Container.GetItems', {'submenu': 'all'}).get('items') or []
     return [(item.get('label') or '').strip() for item in dados]
 
