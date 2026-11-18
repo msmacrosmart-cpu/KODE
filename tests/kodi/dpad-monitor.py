@@ -174,7 +174,13 @@ def prova_categoria():
     abrir('ActivateWindow(Videos,plugin://plugin.video.smarted/?route=series)')
     dentro = janela()
     id_ini = foco()
-    registrar('categoria_abre', True, 'janela=%s foco=%s itens=%d' % (dentro, id_ini, len(itens())))
+    # Diagnostico no proprio resultado: se o foco vier vazio, o detalhe mostra
+    # quantos ids foram lidos do skin e o valor cru de Control.HasFocus(50).
+    ids = _ids_do_skin()
+    registrar('categoria_abre', True,
+              'janela=%s foco=%s itens=%d ids=%d hasFocus50=%r primeiros=%s'
+              % (dentro, id_ini, len(itens()), len(ids),
+                 _info('Control.HasFocus(50)'), ','.join(ids[:12])))
     LISTAS = ('50', '51', '52')
     registrar('categoria_foco_na_lista', id_ini in LISTAS,
               'janela=%s controle inicial=%s (esperado 50/51/52)' % (dentro, id_ini))
