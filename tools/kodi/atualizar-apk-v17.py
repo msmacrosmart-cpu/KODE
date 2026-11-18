@@ -32,6 +32,11 @@ ADDON_ID = 'script.smartedtv.welcome'
 ADDON_DIR = ROOT / 'kodi' / 'addons' / ADDON_ID
 ADDON_PREFIX = 'assets/addons/%s/' % ADDON_ID
 SERVICO = 'assets/addons/service.smarted.bootstrap/'
+# Plugin-ponte: e quem entrega a tela de pastas (rotas pasta/ordenar) e as
+# rotas da Home. Sem ele no APK o filtro/ordenacao nova nao existiria no
+# aparelho, mesmo com o XML da skin atualizado.
+PONTE = 'assets/addons/plugin.video.smarted/'
+PONTE_DIR = ROOT / 'kodi' / 'addons' / 'plugin.video.smarted'
 MODULOS = ('service.py', 'menu_smarted.py', 'performance.py', 'vip.py',
            'smart_ads.py', 'ad_return.py', 'ao_vivo.py', 'smarted_release.py',
            'check.py', 'addon.xml')
@@ -79,6 +84,21 @@ def arquivos_do_addon():
                 'resources/skins/Default/media/bg.png'):
         if ADDON_PREFIX + rel not in arquivos:
             raise SystemExit('addon incompleto: falta %s' % rel)
+    return arquivos
+
+
+def arquivos_da_ponte():
+    """Todo o plugin-ponte (rotas, ordenacao, arte local das categorias)."""
+    arquivos = {}
+    if not PONTE_DIR.is_dir():
+        raise SystemExit('plugin-ponte ausente: %s' % PONTE_DIR)
+    for caminho in sorted(PONTE_DIR.rglob('*')):
+        if not caminho.is_file() or '__pycache__' in caminho.parts or caminho.suffix == '.pyc':
+            continue
+        arquivos[PONTE + caminho.relative_to(PONTE_DIR).as_posix()] = caminho.read_bytes()
+    for rel in ('addon.xml', 'default.py', 'routes.py', 'ordering.py'):
+        if PONTE + rel not in arquivos:
+            raise SystemExit('plugin-ponte incompleto: falta %s' % rel)
     return arquivos
 
 
@@ -256,6 +276,7 @@ def main(argv=None):
 
     extras = arquivos_do_addon()
     extras.update(arquivos_do_servico())
+    extras.update(arquivos_da_ponte())
     dbg('arquivos para atualizar: %d (addon + servico/keymap)' % len(extras))
     arquivos_da_skin = mapa_da_skin()
 
@@ -308,6 +329,11 @@ def main(argv=None):
                     continue
                 if item.filename.startswith(SERVICO) and \
                         item.filename[len(SERVICO):] in MODULOS:
+                    substituidos.add(item.filename)
+                    continue
+                if item.filename in extras and item.filename.startswith(PONTE):
+                    # a copia do APK base e substituida pela do repositorio; um
+                    # arquivo que so exista no APK continua como esta
                     substituidos.add(item.filename)
                     continue
                 if item.filename == KEYMAP_DESTINO:

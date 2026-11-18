@@ -46,6 +46,12 @@ def main():
     if route.startswith('favoritos-'):
         favorites_window(handle, route.split('-', 1)[1])
         return
+    if route == 'pasta':
+        folder_window(handle, params)
+        return
+    if route == 'ordenar':
+        sort_folder(handle, params)
+        return
     entries = items(route)
     if not entries:
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
@@ -132,14 +138,116 @@ def search_channels(handle):
     xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
 
 
+def folder_window(handle, params):
+    """Abre uma pasta do addon nesta janela, com a ordem escolhida aplicada.
+
+    E a rota usada pela barra de filtros do skin. Os itens vem do proprio
+    diretorio do Brazuca (``Files.GetDirectory``) e mantem a URL nativa, entao
+    o OK continua tocando o canal/filme ou abrindo a proxima pasta.
+    """
+    import xbmc
+    from catalogue import directory
+    from ordering import aplicar, normalizar
+
+    url = params.get('url', [''])[0]
+    ordem = normalizar(params.get('ordem', ['todos'])[0])
+    if not url:
+        xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
+        return
+    try:
+        results = [_folder_entry(item) for item in directory(xbmc.executeJSONRPC, url)]
+        results = [item for item in results if item]
+    except Exception:
+        xbmc.log('SMARTED-TV: pasta indisponivel (%s)' % ordem, xbmc.LOGWARNING)
+        xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
+        return
+    xbmc.log('SMARTED-TV: pasta com %d itens, ordem=%s' % (len(results), ordem),
+             xbmc.LOGINFO)
+    _add_folder_items(handle, aplicar(results, ordem))
+
+
+def sort_folder(handle, params):
+    """Troca a ordem da janela atual (botoes da barra de filtros do skin).
+
+    O skin so consegue mandar um builtin: ``RunPlugin`` pedindo esta rota com a
+    ordem desejada. Aqui se le o diretorio que a janela mostra, aplica a ordem
+    e reabre pela rota ``pasta``. Sem pasta do addon na tela, nada e feito.
+    """
+    import xbmc
+    from ordering import etiqueta, normalizar, ordem_da_url, url_da_rota
+
+    ordem = normalizar(params.get('ordem', ['todos'])[0])
+    atual = xbmc.getInfoLabel('Container.FolderPath')
+    destino = url_da_rota(atual, ordem)
+    if not destino:
+        xbmc.log('SMARTED-TV: ordem ignorada, a janela nao e uma pasta do addon '
+                 '(%s)' % (atual or 'vazia'), xbmc.LOGINFO)
+        xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
+        return
+    if ordem_da_url(atual) == ordem:
+        # mesma ordem: so confirma, sem recarregar a pasta a toa
+        xbmc.executebuiltin('Notification(SMARTED,Ordem: %s,2500)' % etiqueta(ordem))
+        xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+        return
+    xbmc.log('SMARTED-TV: ordenando por %s' % ordem, xbmc.LOGINFO)
+    xbmc.executebuiltin('Container.Update(%s)' % destino)
+    xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+
+
+def _folder_entry(item):
+    """Item de pasta do addon (URL nativa preservada)."""
+    from catalogue import _entry
+
+    return _entry(item)
+
+
+def _add_folder_items(handle, results):
+    """Lista os itens de uma pasta do addon (pasta ou midia)."""
+    xbmcplugin.setContent(handle, 'videos')
+    # Ordem ja aplicada aqui: o Kodi nao deve reordenar por conta propria.
+    xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
+    for result in results:
+        item = xbmcgui.ListItem(label=result['label'])
+        art = {'thumb': result.get('thumbnail') or '', 'fanart': result.get('fanart') or ''}
+        poster = result.get('thumbnail') or ''
+        if poster:
+            art['poster'] = poster
+            art['icon'] = poster
+        item.setArt({chave: valor for chave, valor in art.items() if valor})
+        info = item.getVideoInfoTag()
+        info.setTitle(result.get('title') or result['label'])
+        if result.get('plot'):
+            info.setPlot(result['plot'])
+        if result.get('year'):
+            info.setYear(int(result['year']))
+        if result.get('genre'):
+            info.setGenres([nome.strip() for nome in result['genre'].split(',')
+                            if nome.strip()])
+        if result.get('premiered'):
+            info.setPremiered(result['premiered'])
+        if result.get('rating'):
+            info.setRating(result['rating'])
+        if not result['folder']:
+            info.setMediaType('video')
+        item.setProperty('IsPlayable', 'true' if result['playable'] else 'false')
+        xbmcplugin.addDirectoryItem(handle, result['url'], item, isFolder=result['folder'])
+    xbmcplugin.endOfDirectory(handle, succeeded=True, cacheToDisc=False)
+
+
 def _widget_cached(name, fetch, successful):
     # Kodi invokes each widget in an independent Python interpreter. Persist
     # only real successful results and coalesce duplicate same-day requests.
     try:
+        import os
         import xbmcvfs
         from daily_cache import cached
         directory = xbmcvfs.translatePath('special://profile/addon_data/plugin.video.smarted/widget-cache')
     except (ImportError, OSError):
+        return fetch()
+    # Caminho nao resolvido (fora do Kodi, ou perfil sem pasta): nao se grava
+    # cache em caminho relativo - isso criava uma pasta "special:" no diretorio
+    # de trabalho e o widget seguinte lia um resultado velho em vez de falhar.
+    if not os.path.isabs(directory):
         return fetch()
     return cached(directory, name, fetch, successful)
 

@@ -18,9 +18,16 @@ class AjustesFinaisTest(unittest.TestCase):
         self.assertIn('<defaultcontrol always="true">50</defaultcontrol>', texto)
         self.assertIn('<views>50,51,52</views>', texto)
         filtros = texto[texto.index('<control type="grouplist" id="9060">'):]
-        self.assertIn('<visible>Control.IsVisible(50) + !String.Contains(Container.FolderPath,mode=21)</visible>',
+        # A barra vale em qualquer vista (a janela abre na 50, mas a 52 tambem
+        # usa filtro). O filtro em si NAO pode ser Container.SetSortMethod:
+        # em diretorio de plugin o Kodi 21 so aplica metodo declarado pelo
+        # addon, e a pasta do Brazuca declara apenas SortByNone - os botoes
+        # chamavam um id inexistente e nada mudava.
+        self.assertIn('<visible>!String.Contains(Container.FolderPath,mode=21)</visible>',
                       filtros)
-        self.assertEqual(filtros.count('Container.SetSortMethod'), 6)
+        self.assertEqual(filtros.count('Container.SetSortMethod'), 0)
+        for ordem in ('todos', 'az', 'za', 'adicionados', 'votados', 'recentes'):
+            self.assertIn('route=ordenar&amp;ordem=%s' % ordem, filtros)
 
     def test_menu_lateral_sem_icones(self):
         texto = (XML / 'MyVideoNav.xml').read_text(encoding='utf-8')

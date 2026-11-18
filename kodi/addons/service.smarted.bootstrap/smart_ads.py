@@ -66,6 +66,14 @@ ATIVIDADE_PREROLL = 'smartedtv.full.PreRollActivity'
 ACAO_ABERTURA = 'smartedtv.ads.APPOPEN'
 ACAO_PREROLL = 'smartedtv.ads.PREROLL'
 
+# data URI do Intent. O Java da tela de anuncio (AdTela.aplicarIntent) le
+# APENAS getAction()/getDataString(): com data nula ele nao tem o que avaliar
+# e o `ads=` nunca e confirmado. "ads=0"/"teste=0" DESLIGAM o anuncio
+# (SmartAds.aplicarIntent: ligado = !data.endsWith("ads=0")), entao a URI vai
+# sempre sem esses sufixos - e o anuncio aparece em celular, tablet, TV, box,
+# stick e projetor.
+DATA_ANUNCIO = 'smartedtv://ads'
+
 # marcas para o relatorio do boot
 MARKER = 'smartedtv-ads-v2'
 
@@ -241,7 +249,8 @@ def builtin_para(atividade, package=None, acao=None, uri=''):
     """
     if acao is None:
         acao = ACAO_PREROLL if atividade == ATIVIDADE_PREROLL else ACAO_ABERTURA
-    campos = [package or PACKAGE, acao, '', uri, '', '', '', '', atividade]
+    campos = [package or PACKAGE, acao, '', uri or DATA_ANUNCIO,
+              '', '', '', '', atividade]
     return 'StartAndroidActivity(%s)' % ','.join(campos)
 
 

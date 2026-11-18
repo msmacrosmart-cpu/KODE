@@ -77,10 +77,13 @@
 			<top>148</top>
 			<right>60</right>
 			<bottom>40</bottom>
+			<orientation>horizontal</orientation>
 			<itemgap>18</itemgap>
 			<scrolltime>200</scrolltime>
 			<onup>9050</onup>
-			<ondown>noop</ondown>
+			<ondown>9000</ondown>
+			<onleft>9050</onleft>
+			<onright>9051</onright>
 			<include>SettingsTile</include>
 			<content>
 				<item>

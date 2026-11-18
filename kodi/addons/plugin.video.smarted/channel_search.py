@@ -4,11 +4,16 @@ Brazuca's '#todoscanais' route merges its normal channel sources and, when
 configured, its pro source. Pluto has a separate directory, queried separately.
 No streams or channel names are shipped with SMARTED-TV.
 """
+import os
 from urllib.parse import parse_qs, unquote_plus, urlsplit
 
 from search import normalize
 
 ADDON_ID = 'plugin.video.BrazucaPlay.Matrix'
+
+# Card de reserva dos canais sem thumbnail (arquivo local do proprio addon).
+CANAL_ARTE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          'resources', 'categories', 'tv.png')
 
 
 def channel_items(files):
@@ -32,9 +37,16 @@ def channel_items(files):
         if unquote_plus(params.get('url', [''])[0]) == 'here':
             continue
         mode = params.get('mode', [''])[0]
+        # Arte de reserva: muitos canais do addon vem SEM thumbnail e o
+        # ListItem ficava com card vazio na Home/TV ao vivo ("canal sem
+        # imagem"). O PNG da categoria ja vive no addon e e local (nao
+        # depende de rede).
+        arte = item.get('thumbnail') if isinstance(item.get('thumbnail'), str) else ''
+        if not arte.strip():
+            arte = CANAL_ARTE
         matched.append({'label': label, 'url': path, 'folder': kind == 'directory',
                         'playable': kind == 'file' and mode != '11',
-                        'thumb': item.get('thumbnail') if isinstance(item.get('thumbnail'), str) else '',
+                        'thumb': arte,
                         'fanart': item.get('fanart') if isinstance(item.get('fanart'), str) else ''})
     return matched
 
