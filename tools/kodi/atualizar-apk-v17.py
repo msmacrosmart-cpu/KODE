@@ -94,45 +94,125 @@ STARTUP_ONLOAD = ('<onload>AlarmClock(smartedtv_entrada,'
                   '\n\t<onload>RunScript(script.smartedtv.welcome,seguro=1)'
                   '</onload>'
                   '\n\t<onload>AlarmClock(smartedtv_home_seguro,'
-                  'ActivateWindow(Home),00:00:30,silent)</onload>')
+                  'ActivateWindow(Home),00:00:25,silent)</onload>')
+
+# A janela de startup precisa DESENHAR alguma coisa: quando ela fica vazia o
+# usuario ve preto enquanto o Python/addons sobem (TV box lento, cache do APK
+# sendo extraido, primeira abertura depois de atualizar). Este bloco vai para
+# TODAS as skins, inclusive a reserva (skin.estuary).
+STARTUP_CONTROLS = (
+    '<controls>\n'
+    '\t\t<control type="image"><left>0</left><top>0</top>'
+    '<width>100%</width><height>100%</height>'
+    '<texture colordiffuse="pb_dark">pb_white.png</texture></control>\n'
+    '\t\t<control type="image"><left>0</left><top>0</top>'
+    '<width>100%</width><height>100%</height>'
+    '<texture>pb_scrim_v.png</texture></control>\n'
+    '\t\t<control type="label"><left>0</left><top>470</top>'
+    '<width>100%</width><height>56</height><font>font13</font>'
+    '<textcolor>pb_white</textcolor><align>center</align>'
+    '<aligny>center</aligny><label>SMARTEDTV</label></control>\n'
+    '\t\t<control type="label"><left>0</left><top>534</top>'
+    '<width>100%</width><height>36</height><font>font12</font>'
+    '<textcolor>pb_muted</textcolor><align>center</align>'
+    '<aligny>center</aligny><label>Carregando</label></control>\n'
+    '\t</controls>')
+
+
+def _sem_comentarios(texto):
+    """Comentarios fora do caminho: o texto antigo cita <controls /> neles."""
+    return re.sub(r'<!--.*?-->', '', texto, flags=re.DOTALL)
+
+
+def _com_controles(texto):
+    """Troca o <controls> de uma skin pelo da espera (um so por janela)."""
+    achado = re.search(r'<controls\b[^>]*/>|<controls\b[^>]*>.*?</controls>',
+                       texto, re.DOTALL)
+    if achado:
+        return texto[:achado.start()] + STARTUP_CONTROLS + texto[achado.end():]
+    return texto.replace('</window>', '\n' + STARTUP_CONTROLS + '\n</window>', 1)
+
+
+def validar_startup(dados):
+    """Recusa publicar Startup.xml que deixaria o app no preto."""
+    raiz = ET.fromstring(dados)
+    acoes = [(e.text or '').strip() for e in raiz.findall('onload')]
+    if len([a for a in acoes if 'smartedtv_entrada,' in a]) != 1:
+        raise SystemExit('Startup.xml: disparo da tela invalido %r' % acoes)
+    if len([a for a in acoes if 'seguro=1' in a]) != 1:
+        raise SystemExit('Startup.xml: vigia do boot invalido %r' % acoes)
+    if [a for a in acoes if 'ReplaceWindow' in a]:
+        raise SystemExit('Startup.xml: ReplaceWindow do startup nao pode voltar')
+    if len([a for a in acoes if 'smartedtv_home_seguro' in a]) != 1:
+        raise SystemExit('Startup.xml: sem seguro da Home %r' % acoes)
+    controles = raiz.findall('controls')
+    if len(controles) != 1:
+        raise SystemExit('Startup.xml: precisa de exatamente um <controls>')
+    labels = [(e.text or '').strip() for e in controles[0].iter('label')]
+    if 'Carregando' not in labels:
+        raise SystemExit('Startup.xml: janela de boot sem espera visivel')
+    # a espera so pode usar fontes que a skin declarar; o build confere no
+    # simulador, aqui basta nao depender de add-on/rede
+    for rotulo in controles[0].iter('label'):
+        if '$INFO' in (rotulo.text or ''):
+            raise SystemExit('Startup.xml: espera do boot nao pode depender de dados')
+    return True
+
+
+def _nossos(texto, trecho):
+    return ('smartedtv_entrada,' in trecho or 'smartedtv_home_seguro' in trecho
+            or ('seguro=1' in trecho and 'script.smartedtv.welcome' in trecho))
 
 
 def patch_startup(dados):
-    """Troca o salto direto para a Home pelo disparo da tela, em qualquer skin.
+    """Deixa o Startup.xml de qualquer skin no formato do SMARTEDTV.
 
-    O APK da v16 tinha skin.estuary ja corrigida, mas skin.novatv ainda com o
-    ``ReplaceWindow($INFO[System.StartupWindow])`` antigo. O simulador (e o
-    Kodi) abre a tela por todas as skins de Startup; por isso a correcao e
-    aplicada em TODAS, nao so na skin ativa.
+    Aplica em TODAS as skins do APK (inclusive a reserva, skin.estuary): se
+    uma delas ficasse com o `ReplaceWindow($INFO[System.StartupWindow])`
+    antigo e fosse ativada por um perfil antigo, o app abriria no preto.
+
+    Resultado, sempre o mesmo (idempotente):
+    * um disparo da tela de entrada, um vigia `seguro=1` e um alarme de
+      seguranca que abre a Home sem depender de Python;
+    * um unico <controls>, com a espera desenhada (fundo + "Carregando");
+    * nenhum ReplaceWindow do startup e nenhum onload nosso duplicado
+      (builds anteriores somavam o bloco inteiro a um arquivo que ja tinha o
+      `seguro=1`, e o boot abria a tela duas vezes).
     """
-    texto = dados.decode('utf-8')
-    if 'smartedtv_entrada' in texto:
-        if 'smartedtv_home_seguro' in texto:
-            return dados
-        novo = texto.replace('</window>',
-                             '\t<onload>AlarmClock(smartedtv_home_seguro,'
-                             'ActivateWindow(Home),00:00:30,silent)</onload>\n'
-                             '</window>', 1)
-        if novo == texto:
-            return dados
-        ET.fromstring(novo.encode('utf-8'))
-        return novo.encode('utf-8')
-    padroes = (
-        r'<onload[^>]*>\s*ReplaceWindow\(\$INFO\[System\.StartupWindow\]\)\s*</onload>',
-        r'<onload\s*/>\s*ReplaceWindow\(\$INFO\[System\.StartupWindow\]\)',
-        r'ReplaceWindow\(\$INFO\[System\.StartupWindow\]\)',
-    )
-    for padrao in padroes:
-        alvos = re.findall(padrao, texto, re.DOTALL)
-        if len(alvos) == 1:
-            novo = texto.replace(alvos[0], STARTUP_ONLOAD, 1)
-            ET.fromstring(novo.encode('utf-8'))
-            return novo.encode('utf-8')
-    # Skin sem o ReplaceWindow antigo: injeta as duas acoes no inicio da janela.
-    novo = re.sub(r'(<window[^>]*>)', r'\1' + STARTUP_ONLOAD, texto, count=1)
-    if novo == texto:
+    texto = _sem_comentarios(dados.decode('utf-8'))
+    raiz = ET.fromstring(texto)
+    if raiz.tag != 'window':
         raise SystemExit('Startup.xml sem <window> para injetar a tela')
-    ET.fromstring(novo.encode('utf-8'))
+    # 1. remove os onload nossos (de qualquer versao anterior) e o salto antigo
+    def _limpar(match):
+        trecho = match.group(0)
+        # salto direto para a Home no startup tambem sai: quem abre a Home e a
+        # tela de entrada (sem isso o app abria a Home por tras da tela, ou no
+        # preto quando a tela ainda nao existia)
+        if 'ReplaceWindow(' in trecho:
+            return ''
+        return '' if _nossos(texto, trecho) else trecho
+    corpo = re.sub(r'<onload[^>]*>.*?</onload>|<onload\s*/>', _limpar, texto,
+                   flags=re.DOTALL)
+    corpo = re.sub(r'ReplaceWindow\(\$INFO\[System\.StartupWindow\]\)', '',
+                   corpo)
+    # 2. os tres <onload> entram logo no inicio da janela
+    corpo = re.sub(r'(<window[^>]*>)', r'\1\n\t' + STARTUP_ONLOAD, corpo,
+                   count=1)
+    # onload vazio (era o salto antigo, agora sem texto) sai de cena
+    corpo = re.sub(r'[ \t]*<onload\s*>(?:\s*)</onload>\s*\n?', '', corpo)
+    corpo = re.sub(r'[ \t]*<onload\s*/>\s*\n?', '', corpo)
+    # 3. a espera desenhada substitui o <controls> da skin
+    novo = _com_controles(corpo)
+    # linhas que sobraram em branco (eram dos onload remontados) nao ficam
+    novo = re.sub(r'(?m)^[ \t]*\n', '', novo)
+    novo = re.sub(r'\n{2,}', '\n', novo)
+    # <controls> sempre no inicio da linha (o <onload> anterior pode ter ficado
+    # sem quebra quando a skin nao tinha <controls> nenhum)
+    novo = re.sub(r'[ \t]*<controls>', '\n<controls>', novo, count=1)
+    validar_startup(novo.encode('utf-8'))
+    if novo == dados.decode('utf-8'):
+        return dados
     return novo.encode('utf-8')
 
 

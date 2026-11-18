@@ -81,12 +81,20 @@ class AtualizarApkTest(unittest.TestCase):
         self.assertIn(b'smartedtv_entrada,', novo)
         self.assertIn(b'smartedtv_home_seguro,', novo)
         self.assertIn(b'ActivateWindow(Home)', novo)
+        # A janela de boot desenha a espera: startup vazio = tela preta.
+        self.assertIn(b'<label>Carregando</label>', novo)
+        self.assertEqual(novo.count(b'<controls'), 1)
+        self.assertNotIn(b'ReplaceWindow', novo)
         # Uma Startup que ja tem a tela recebe apenas o alarme de seguranca.
         com_tela = (b'<window><onload>RunScript(script.smartedtv.welcome,seguro=1)'
                     b'</onload></window>')
         novo = mod.patch_startup(com_tela)
         self.assertIn(b'smartedtv_home_seguro,', novo)
         self.assertEqual(novo.count(b'smartedtv_home_seguro,'), 1)
+        self.assertEqual(novo.count(b'smartedtv_entrada,'), 1)
+        self.assertEqual(novo.count(b'seguro=1'), 1)
+        # idempotente: o mesmo XML passado de novo nao muda nada
+        self.assertEqual(mod.patch_startup(novo), novo)
         source = (ROOT / 'kodi/addons/script.smartedtv.welcome/default.py').read_text()
         self.assertIn('CancelAlarm(smartedtv_home_seguro,silent)', source)
 
