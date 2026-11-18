@@ -100,20 +100,12 @@ class InjetorTest(unittest.TestCase):
         with zipfile.ZipFile(self.base) as antes, zipfile.ZipFile(self.saida) as depois:
             a, d = set(antes.namelist()), set(depois.namelist())
             novos = sorted(n for n in d - a if not n.startswith('META-INF/'))
-            # addon da tela + keymap + smart_ads.py (o vip.py do base e substituido)
-            self.assertGreaterEqual(len(novos),
-                                    len(modulo.arquivos_do_addon()) + 2)
-            fora = [n for n in novos if not n.startswith(PREFIXO)]
-            self.assertIn(KEYMAP, fora)
-            self.assertIn('assets/addons/service.smarted.bootstrap/smart_ads.py', fora)
-            for nome in fora:
-                self.assertTrue(
-                    nome in (KEYMAP,
-                             'assets/addons/service.smarted.bootstrap/smart_ads.py')
-                    or nome.endswith('/fonts/NotoSans-Regular.ttf'), nome)
-            self.assertTrue(all(n.startswith(PREFIXO) or n in (
-                KEYMAP, 'assets/addons/service.smarted.bootstrap/smart_ads.py')
-                or n.endswith('/fonts/NotoSans-Regular.ttf') for n in novos), novos)
+            # vip.py substitui a cópia da base e usa o descritor de versão irmão.
+            fora = {n for n in novos if not n.startswith(PREFIXO)
+                    and not n.endswith('/fonts/NotoSans-Regular.ttf')}
+            self.assertEqual(fora, {KEYMAP, modulo.SMART_ADS_MODULO, modulo.RELEASE_MODULO})
+            self.assertEqual(depois.read(modulo.RELEASE_MODULO),
+                             (ROOT / 'kodi/addons/service.smarted.bootstrap/smarted_release.py').read_bytes())
             self.assertEqual(sorted(n for n in a - d),
                              ['META-INF/CERT.RSA', 'META-INF/CERT.SF',
                               'META-INF/MANIFEST.MF'])

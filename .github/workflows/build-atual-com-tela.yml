@@ -174,12 +174,14 @@ jobs:
               KEYMAP = 'assets/system/keymaps/zzz-smartedtv-voltar.xml'
               VIP = 'assets/addons/service.smarted.bootstrap/vip.py'
               SMART = 'assets/addons/service.smarted.bootstrap/smart_ads.py'
+              RELEASE = 'assets/addons/service.smarted.bootstrap/smarted_release.py'
               nao_addon = sorted(n for n in novos if not n.startswith(PREFIX))
               fontes_novas = sorted(n for n in nao_addon if n.endswith('/fonts/NotoSans-Regular.ttf'))
               esperados = ([KEYMAP] + fontes_novas +
                            ([VIP] if VIP in novos else []) +
-                           ([SMART] if SMART in novos else []))
-              assert sorted(nao_addon) == esperados, (nao_addon, esperados)
+                           ([SMART] if SMART in novos else []) +
+                           ([RELEASE] if RELEASE in novos else []))
+              assert sorted(nao_addon) == sorted(esperados), (nao_addon, esperados)
               raiz_km = ET.fromstring(depois.read(KEYMAP))
               assert [e.tag for e in raiz_km] == ['Home'], [e.tag for e in raiz_km]
               casa = raiz_km.find('Home')
@@ -198,7 +200,8 @@ jobs:
                   ['assets/addons/%s/xml/Font.xml' % s for s in SKINS
                    if 'assets/addons/%s/xml/Font.xml' % s in a] +
                   ([VIP] if VIP in alterados else []) +
-                  ([SMART] if SMART in alterados else []))
+                  ([SMART] if SMART in alterados else []) +
+                  ([RELEASE] if RELEASE in alterados else []))
               assert alterados == esperado, alterados
               assert VIP in novos or VIP in alterados, 'vip.py nao entrou no APK'
               assert SMART in novos or SMART in alterados, 'smart_ads.py nao entrou no APK'

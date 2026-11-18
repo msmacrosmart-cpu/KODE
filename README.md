@@ -1,4 +1,14 @@
-# SMARTED-TV — APK de teste baseado em Kodi 21.3
+# SMARTEDTV para Android
+
+**[Baixar o APK universal](https://github.com/msmacrosmart-cpu/KODE/releases/latest/download/SMARTEDTV-universal.apk)** · [Releases](https://github.com/msmacrosmart-cpu/KODE/releases)
+
+Um único arquivo para **ARM de 32 e 64 bits**, a partir do **Android 8.0**. O pacote da linha atual é `smartedtv.full`, com launchers para celular e TV. Para compilar por commit, verificar a assinatura e diagnosticar recusas de instalação, veja o **[guia da release universal](docs/release-universal.md)**.
+
+---
+
+## Histórico — APK de teste 1.0.15 baseado em Kodi 21.3
+
+As informações abaixo referem-se **apenas à antiga linha arm64 `org.xbmc.kodi`**, não ao download universal acima.
 
 Este projeto **reempacota binários do Kodi**, não compila o sistema Kodi do código-fonte. Ele preserva o motor, Java/Dex e os add-ons do APK de entrada. A versão de teste atual altera o nome exibido no Android, ícones do launcher, banner da TV, imagens de inicialização e marca principal da interface; define a paleta padrão da Estuary em tons de cinza. Imagens de add-ons, fanart, capas, outras skins e referências internas ao Kodi podem permanecer inalteradas.
 
