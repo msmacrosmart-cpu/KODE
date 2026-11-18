@@ -177,6 +177,22 @@ class NomeFixoTest(unittest.TestCase):
         self.assertTrue(self.vip.instalar_apk_baixado(caminho))
         self.assertTrue(any('package-archive' in b for b in self.xbmc.BUILTINS))
 
+    def test_apk_baixado_fica_legivel_pelo_instalador(self):
+        """O instalador do Android roda em outro processo e precisa LER o APK.
+
+        Sem isto o Android responde "Aplicativo nao instalado" e nem abre a
+        barra de progresso - exatamente o sintoma relatado.
+        """
+        import os
+        import stat
+        caminho = self.tmp / 'baixado.apk'
+        caminho.write_bytes(b'\0' * 10)
+        # o download real passa por download_update; aqui checamos a regra
+        self.assertTrue(self.vip._deixar_legivel(str(caminho)))
+        modo = stat.S_IMODE(os.stat(str(caminho)).st_mode)
+        self.assertEqual(modo, 0o644)
+        self.assertTrue(modo & stat.S_IROTH)
+
     def test_link_do_dropbox_incompleto_cai_para_o_github(self):
         chamadas = []
 

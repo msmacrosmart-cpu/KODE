@@ -694,6 +694,22 @@ def check_for_updates():
         return (False, None)
 
 
+def _deixar_legivel(caminho):
+    """Da leitura do APK ao instalador do Android (outro processo/uid).
+
+    O Kodi grava com 0600; o instalador entao nao consegue abrir o arquivo e o
+    Android responde "Aplicativo nao instalado" sem mostrar a barra de
+    progresso. 0644 deixa o arquivo legivel por quem recebe o file://.
+    """
+    try:
+        os.chmod(caminho, 0o644)
+        return True
+    except Exception as erro:
+        log('nao consegui ajustar a permissao do APK: %s' % erro,
+            xbmc.LOGWARNING)
+        return False
+
+
 def download_update(apk_url):
     """Baixa o APK de atualizacao para a pasta de downloads do Kodi.
 
@@ -721,14 +737,7 @@ def download_update(apk_url):
         log('APK baixado em %s (%d bytes%s)' % (
             APK_DOWNLOAD_PATH, total,
             ', esperado %d' % esperado if esperado else ''))
-        # O Kodi roda com o proprio uid: sem leitura para os outros, o
-        # instalador do Android (outro processo) nao consegue ler o arquivo e
-        # responde so "Aplicativo nao instalado", sem abrir a barra.
-        try:
-            os.chmod(APK_DOWNLOAD_PATH, 0o644)
-        except Exception as erro:
-            log('nao consegui ajustar a permissao do APK: %s' % erro,
-                xbmc.LOGWARNING)
+        _deixar_legivel(APK_DOWNLOAD_PATH)
         if total < APK_TAMANHO_MINIMO or (esperado and total != esperado):
             log('download incompleto: %d de %s bytes' % (total, esperado),
                 xbmc.LOGWARNING)
