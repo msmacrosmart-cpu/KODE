@@ -95,14 +95,25 @@ def _ids_do_skin():
     tipos = {'button', 'radiobutton', 'togglebutton', 'spincontrol', 'list',
              'panel', 'grouplist', 'fixedlist', 'wraplist', 'textbox', 'edit',
              'slider', 'mover', 'colorbutton'}
-    try:
-        raiz_addons = xbmcvfs.translatePath('special://home/addons')
-    except Exception:
-        raiz_addons = xbmc.translatePath('special://home/addons')
+    candidatos = []
+    for base in ('special://home/addons', 'special://xbmc/addons'):
+        try:
+            candidatos.append(xbmcvfs.translatePath(base))
+        except Exception:
+            pass
+    candidatos.append(os.path.join(
+        xbmcvfs.translatePath('special://profile'), '..', 'addons'))
     vistos = []
     for skin in ('skin.estilo.personalizado', 'skin.novatv'):
         for nome in nomes:
-            caminho = os.path.join(raiz_addons, skin, 'xml', nome)
+            caminho = ''
+            for base in candidatos:
+                tentativa = os.path.join(base, skin, 'xml', nome)
+                if os.path.exists(tentativa):
+                    caminho = tentativa
+                    break
+            if not caminho:
+                continue
             try:
                 raiz = ET.parse(caminho).getroot()
             except Exception as erro:
@@ -134,19 +145,16 @@ def foco():
 
 
 def itens(limite=12):
-    """Rotulos da lista da janela ativa, na ordem em que aparecem.
+    """Rotulos da lista, na ordem em que aparecem.
 
-    ``Container.GetItems`` pela JSON-RPC depende do servidor embutido; as
-    infolabels ``Container(id).ListItemNoWrap(n).Label`` leem direto do
-    container e funcionam mesmo com o servidor desligado.
+    ``Container(id)`` e sintaxe de janela; fora dela o Kodi so resolve o
+    container ativo. Como a prova sempre roda com o foco na lista de videos,
+    ``ListItemAbsolute(n)`` (container ativo) e o caminho que funciona.
     """
-    container = foco() if foco() in ('50', '51', '52') else '50'
     rotulos = []
     for indice in range(limite):
-        # ItemIndex(n)/ListItemAbsolute(n) sao as sintaxes que o Kodi 21 aceita;
-        # segunda tentativa para nao depender de uma unica forma.
-        valor = (_info('Container(%s).ListItemAbsolute(%d).Label' % (container, indice))
-                 or _info('Container(%s).ListItemNoWrap(%d).Label' % (container, indice)))
+        valor = (_info('ListItemAbsolute(%d).Label' % indice)
+                 or _info('ListItemNoWrap(%d).Label' % indice))
         if not valor:
             break
         rotulos.append(valor)
