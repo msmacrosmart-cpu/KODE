@@ -64,7 +64,17 @@ PROJETOR_MARCAS = (
 )
 
 # --- advancedsettings.xml ---------------------------------------------------
-ADVANCED_TEMPLATE = """<!-- {marker}: cache agressivo para streams do Brazuca Play -->
+# Projetor com 1-2 GB de RAM: os mesmos 256 MB de cache deixam o aparelho
+# sem memoria para os addons e a Home (o Kodi passa a "carregar" para sempre e
+# pode ficar preto). Cache menor = perfil que carrega.
+CACHE_SETTINGS_PROJETOR = {
+    'filecache.buffermode': 4,
+    'filecache.memorysize': 96,
+    'filecache.readfactor': 600,
+    'filecache.chunksize': 262144,
+}
+
+ADVANCED_TEMPLATE = """<!-- {marker}: cache agressivo para streams do Brazuca Play -->"
 <advancedsettings version="1.0">
     <cache>
         <buffermode>4</buffermode>
@@ -138,12 +148,16 @@ def apply_settings(jsonrpc, log=None, nome_dispositivo=''):
     applied = []
     failed = []
     perfil = video_settings(nome_dispositivo)
+    cache = CACHE_SETTINGS_PROJETOR if eh_projetor(nome_dispositivo) else CACHE_SETTINGS
+    if log and cache is CACHE_SETTINGS_PROJETOR:
+        log('cache: perfil de projetor (%d MB em vez de %d MB)'
+            % (cache['filecache.memorysize'], CACHE_SETTINGS['filecache.memorysize']))
     if log:
         log('video: %s -> %s' % (
             'projetor (sem Surface)'
             if perfil.get('videoplayer.usemediacodecsurface') is False
             else 'padrao (MediaCodec Surface)', perfil))
-    for setting, value in sorted(CACHE_SETTINGS.items()) + sorted(perfil.items()):
+    for setting, value in sorted(cache.items()) + sorted(perfil.items()):
         try:
             response = jsonrpc('Settings.SetSettingValue', {'setting': setting, 'value': value})
             if response.get('error'):

@@ -33,7 +33,7 @@ jobs:
         run: |
           python3 tools/kodi/static-check.py
           python3 -m unittest tests.test_release_universal tests.test_atualizar_apk tests.test_vip_botoes_android \
-            tests.test_apk_nome_fixo \
+            tests.test_apk_nome_fixo tests.test_projetor_addons \
             tests.test_tela_entrada.TVBoxStickTest tests.test_tela_entrada.CicloDeVidaTest
       - name: Montar, alinhar, assinar e verificar o APK final
         shell: bash

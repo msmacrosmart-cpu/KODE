@@ -32,6 +32,15 @@ WAIT_SECONDS = 20
 POLL_SECONDS = 5
 REPAIR_ATTEMPTS = 6
 REPAIR_RETRY_SECONDS = 5
+# Projetor/box lento: o reparo (extrair addons do zip) pode demorar bem mais
+# que a TV. Nesse aparelho a Home tem de abrir MESMO ASSIM, com o conteudo
+# aparecendo depois - antes o boot ficava esperando o reparo e o usuario via
+# uma tela parada em "Carregando" (ou preta).
+BOOT_LENTO_SEGUNDOS = 25
+# Depois que a Home esta na tela, o reparo continua em segundo plano.
+REPARO_EM_SEGUNDO_PLANO = True
+# Uma unica escrita de guisettings.xml no fim do boot (ver _adiar_persistencia).
+GUISETTINGS = 'guisettings.xml'
 UISOUNDS_SILENCIO = 'resource.uisounds.silencio'
 CORE_ADDONS = ('script.smartedtv.welcome', 'service.smarted.bootstrap',
                'plugin.video.smarted', UISOUNDS_SILENCIO)
@@ -163,6 +172,28 @@ def _janela_atual():
         return (xbmc.getInfoLabel('System.CurrentWindow') or '').strip().lower()
     except Exception:
         return ''
+
+
+def esperar_addons_manager(monitor, log=None):
+    """Espera o banco de addons do Kodi responder, sem prender o boot.
+
+    Devolve True quando respondeu dentro de ``WAIT_SECONDS``. Em projetor com
+    armazenamento lento esse passo pode consumir o tempo todo, entao quem chama
+    pode seguir para a Home e terminar o preparo depois.
+    """
+    waited = 0
+    while waited < WAIT_SECONDS:
+        if monitor.abortRequested():
+            return False
+        if addon_manager_ready():
+            return True
+        if monitor.waitForAbort(POLL_SECONDS):
+            return False
+        waited += POLL_SECONDS
+    if log:
+        log('addons: gerenciador nao respondeu em %d s; seguindo para a Home'
+            % WAIT_SECONDS, xbmc.LOGWARNING)
+    return False
 
 
 def garantir_interface_inicial(monitor, log=None, espera=25):
@@ -376,6 +407,64 @@ def repair_until_ready(monitor):
     return report, REPAIR_ATTEMPTS
 
 
+def _liberar_home_agora(log=None):
+    """Abre a Home sem esperar o preparo terminar (devolve (abriu, tentativas))."""
+    for tentativa in (1, 2, 3):
+        if log:
+            log('boot: liberando a Home (tentativa %d)' % tentativa)
+        try:
+            xbmc.executebuiltin('ActivateWindow(Home)')
+        except Exception as erro:
+            if log:
+                log('boot: ActivateWindow(Home) falhou (%s)' % erro,
+                    xbmc.LOGWARNING)
+        time.sleep(1.0)
+        atual = _janela_atual()
+        if atual in ('home', '10000'):
+            return True, tentativa, atual
+    try:
+        xbmc.executebuiltin('ReplaceWindow(Home)')
+    except Exception:
+        pass
+    time.sleep(0.8)
+    return _janela_atual() in ('home', '10000'), 3, _janela_atual()
+
+
+def _preparar_em_segundo_plano(monitor):
+    """Termina addons/perfil/favoritos/menu/skin com a Home ja na tela."""
+    def preparar():
+        try:
+            report, attempts = repair_until_ready(monitor)
+            if report is None:
+                return
+            xbmc.executebuiltin('UpdateLocalAddons()')
+            failed = enable_addons(report['required'])
+            write_favourites()
+            garantir_menu(xbmc, log=log)
+            silenciar_avisos_brazuca(log=log)
+            apply_performance()
+            home = xbmcvfs.translatePath('special://home')
+            ensure_skin(home, log=log)
+            apply_navigation()
+            ensure_home_nodes(home_xml_candidates(os.path.join(home, 'addons')),
+                              os.path.join(home, 'userdata', 'favourites.xml'),
+                              log=log)
+            if report['ok'] and not failed:
+                log('pronto (em segundo plano) após %d tentativa(s)' % attempts)
+                xbmc.executebuiltin(
+                    'Notification(SMARTED, Conteudo pronto para usar, 4000)')
+            else:
+                log('perfil incompleto (segundo plano): %s'
+                    % ', '.join(report['missing'] + failed), xbmc.LOGWARNING)
+        except Exception as erro:  # nunca derrubar o app por causa do preparo
+            log('preparo em segundo plano falhou: %s' % erro, xbmc.LOGWARNING)
+
+    thread = threading.Thread(target=preparar, name='preparo-pos-home',
+                              daemon=True)
+    thread.start()
+    return thread
+
+
 def main():
     monitor = xbmc.Monitor()
     limpar_estado_interface()
@@ -411,13 +500,19 @@ def main():
         log('ads: nao foi possivel iniciar os gatilhos (%s)' % erro,
             xbmc.LOGWARNING)
 
-    waited = 0
-    while waited < WAIT_SECONDS and not monitor.abortRequested():
-        if addon_manager_ready():
-            break
-        if monitor.waitForAbort(POLL_SECONDS):
-            return
-        waited += POLL_SECONDS
+    pronto = esperar_addons_manager(monitor, log=log)
+    if monitor.abortRequested():
+        return
+
+    # Projetor/box lento: NAO segurar a Home esperando a extracao dos addons.
+    # Abre a Home agora (a skin ja desenha, o menu aparece) e termina o reparo
+    # numa thread. Sem isso o aparelho lento ficava parado na espera do boot.
+    if not pronto and REPARO_EM_SEGUNDO_PLANO:
+        log('boot: addons ainda carregando; abrindo a Home e concluindo depois',
+            xbmc.LOGWARNING)
+        _, _, _ = _liberar_home_agora()
+        _preparar_em_segundo_plano(monitor)
+        return
 
     report, attempts = repair_until_ready(monitor)
     if report is None:

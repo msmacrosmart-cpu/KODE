@@ -152,6 +152,25 @@ def _safe_members(archive, addon_id, strip_root=True):
     return members
 
 
+def _checar_espaco(pacote, destino, log, folga=8 * 1024 * 1024):
+    """Avisa (sem abortar) quando o disco do perfil nao comporta a extracao.
+
+    Addon grande extraido em projetor com pouca memoria interna e a causa mais
+    comum de "erro nos addons" e de Home vazia. O aviso vai para o log do
+    bootstrap, e a extracao segue (o sistema ainda pode ter espaco depois).
+    """
+    try:
+        tamanho = os.path.getsize(pacote)
+        livre = shutil.disk_usage(destino).free
+    except Exception:
+        return None
+    if livre < tamanho + folga:
+        _log(log, 'ESPACO BAIXO em %s: %d MB livres, pacote de %d MB'
+             % (destino, livre // (1024 * 1024), tamanho // (1024 * 1024)))
+        return False
+    return True
+
+
 def install_package(packages_dir, addons_dir, addon_id, log):
     """Extrai o pacote oficial do addon para ``addons_dir``. Devolve bool."""
     package = find_package(packages_dir, addon_id)
@@ -159,26 +178,37 @@ def install_package(packages_dir, addons_dir, addon_id, log):
         _log(log, 'SEM PACOTE para %s em %s' % (addon_id, packages_dir))
         return False
     target = os.path.join(addons_dir, addon_id)
+    temporario = target + '.novo'
     try:
         with zipfile.ZipFile(package) as archive:
             members = _safe_members(archive, addon_id)
-            if os.path.isdir(target):
-                shutil.rmtree(target)
-            os.makedirs(target)
+            # Extrai para uma pasta temporaria e so entao troca: se o disco
+            # encher no meio (comum em projetor/box com 8 GB), a pasta antiga
+            # continua inteira em vez de virar um addon pela metade - era isso
+            # que deixava "erro nos addons" no projetor.
+            if os.path.isdir(temporario):
+                shutil.rmtree(temporario)
+            os.makedirs(temporario)
+            _checar_espaco(package, addons_dir, log)
             for entry, relative in members:
-                destination = os.path.join(target, *relative.split('/'))
+                destination = os.path.join(temporario, *relative.split('/'))
                 parent = os.path.dirname(destination)
                 if parent and not os.path.isdir(parent):
                     os.makedirs(parent)
                 with archive.open(entry) as source, open(destination, 'wb') as out:
                     shutil.copyfileobj(source, out, 256 * 1024)
+        if os.path.isdir(target):
+            shutil.rmtree(target)
+        shutil.move(temporario, target)
         ok, reason = addon_status(addons_dir, addon_id)
         _log(log, '%s %s a partir de %s (%s)' % (
             'RESTAURADO' if ok else 'FALHOU', addon_id, os.path.basename(package), reason))
         return ok
     except Exception as error:  # pacote corrompido, permissão, disco cheio...
         _log(log, 'ERRO ao extrair %s: %s' % (addon_id, error))
-        shutil.rmtree(target, ignore_errors=True)
+        shutil.rmtree(temporario, ignore_errors=True)
+        # NAO apagar a versao que ja esta no perfil: um addon antigo que
+        # carrega e melhor do que nenhum addon (tela preta nos addons).
         return False
 
 

@@ -220,6 +220,11 @@ def tocar_anuncio_com_aviso(atividade, log=None):
     if log:
         log('[SmartAds] aviso na tela: %s (%s)'
             % ('enviado' if disparou else 'nao enviado', atividade))
+    if not disparou:
+        # Nada abriu. Em projetor isso deixava a tela no ultimo quadro (preto)
+        # porque o Kodi pausa o player ao abrir a activity e o retorno nao vem.
+        # Se nao ha video rodando, garante uma janela visivel na tela.
+        _garantir_tela_visivel(log)
     if disparou:
         try:
             xbmc.executebuiltin(
@@ -228,6 +233,37 @@ def tocar_anuncio_com_aviso(atividade, log=None):
         except Exception:
             pass
     return disparou
+
+
+def _garantir_tela_visivel(log=None):
+    """Se nada estiver tocando e nao houver janela util, mostra a Home.
+
+    O anuncio abre por cima do Kodi; quando o aparelho (projetor) nao tem a
+    activity ou inventario, o usuario ficava com a tela preta do ultimo quadro.
+    Nao interrompe video: so age quando nao ha midia em reproducao.
+    """
+    try:
+        if xbmc.Player().isPlaying():
+            return False
+    except Exception:
+        pass
+    for condicao in ('Window.IsActive(Home)', 'Window.IsActive(10000)',
+                     'Window.IsVisible(fullscreenvideo)',
+                     'Window.IsActive(fullscreenvideo)'):
+        try:
+            if xbmc.getCondVisibility(condicao):
+                return False
+        except Exception:
+            pass
+    try:
+        xbmc.executebuiltin('ActivateWindow(Home)')
+        if log:
+            log('[SmartAds] nenhuma janela util na tela: Home reaberta')
+        return True
+    except Exception as erro:
+        if log:
+            log('[SmartAds] nao consegui reabrir a Home (%s)' % erro)
+        return False
 
 
 def vip_ativo():
