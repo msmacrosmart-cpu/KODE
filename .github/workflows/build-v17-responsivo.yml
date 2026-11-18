@@ -21,12 +21,12 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       BASE_RELEASE: v1.0.86-tela-inicial-v16
       BASE_ASSET: SMARTEDTV-atual-com-tela-inicial-v16-universal.apk
-      TAG_SAIDA: v1.0.91-instalacao-v21
-      FINAL: SMARTEDTV-atual-v21-instalacao-universal.apk
+      TAG_SAIDA: v1.0.87-reinstalacao-v21b
+      FINAL: SMARTEDTV-atual-v21b-reinstalacao-universal.apk
       VERSAO_DE: '1.0.86'
-      VERSAO_PARA: '1.0.91'
+      VERSAO_PARA: '1.0.87'
       CODIGO_DE: '2103072'
-      CODIGO_PARA: '2103077'
+      CODIGO_PARA: '2103073'
     steps:
       - uses: actions/checkout@v4
 
@@ -159,7 +159,7 @@ jobs:
           fi
           exit "$RC"
 
-      - name: 5. Subir versao 1.0.91 / 2103077
+      - name: 5. Subir versao 1.0.87 / 2103073 (igual a v17 que instalou)
         run: |
           set -euo pipefail
           python3 tools/kodi/ajustar-versao-apk.py build/bruto.apk \
@@ -171,8 +171,8 @@ jobs:
           import struct, zipfile
           with zipfile.ZipFile('build/bruto.apk') as z:
               m = z.read('AndroidManifest.xml')
-          assert '1.0.91'.encode('utf-16-le') in m
-          assert struct.pack('<I', 2103077) in m
+          assert '1.0.87'.encode('utf-16-le') in m
+          assert struct.pack('<I', 2103073) in m
           assert '1.0.86'.encode('utf-16-le') not in m
           assert struct.pack('<I', 2103072) not in m
           import importlib.util
@@ -183,7 +183,7 @@ jobs:
           _, alterados, vistos = mod.desligar_debug(m)
           assert not alterados, alterados
           assert 'debuggable' in [nome for _elemento, nome in vistos], vistos
-          print('OK: 1.0.91/2103077 e debuggable=false')
+          print('OK: 1.0.87/2103073 e debuggable=false')
           PY
 
       - name: 6. Alinhar e assinar com a mesma chave
@@ -225,16 +225,16 @@ jobs:
             --dialogo status --resolucao 1280x720 --saida build/tela-status-720p.png
           ls -lh build/tela-*.png
 
-      - name: 8. Publicar release v21
+      - name: 8. Publicar release v21b
         run: |
           set -euo pipefail
-          NOTAS='v21 (1.0.91, versionCode 2103077), mesmo formato de release da v17 que instalou: UM APK universal, arm64-v8a + armeabi-v7a, assinado v1+v2+v3 com a chave 855de171..., pacote smartedtv.full. Traz todas as edicoes desde a v17: reabertura confiavel, barra VIP, addons, tela de entrada, foco/D-pad, Home, anuncios e saida limpa. Pipeline rapido sobre a base v16, sem recompilar o Kodi. Validacao automatizada e simulacao; nao testado em aparelho fisico nesta rodada.'
+          NOTAS='v21b (1.0.87, versionCode 2103073), MESMA versao e mesmo formato do APK v17 que instalou, com todas as edicoes posteriores. Um APK universal arm64+armv7, v1+v2+v3, chave 855de171..., pacote smartedtv.full. Serve para atualizar por cima da v17 ou instalar do zero. Pipeline rapido da v17, base v16, sem recompilar Kodi. Validacao automatizada; nao testado em aparelho fisico nesta rodada.'
           ASSETS=(
             "build/$FINAL" "build/$FINAL.sha256"
             build/tela-720p.png build/tela-1080p.png build/tela-4k.png
             build/tela-dialogo-720p.png build/tela-status-720p.png
           )
-          TITULO='SMARTEDTV 1.0.91 (v21: APK universal, mesmo formato da v17 que instalou)'
+          TITULO='SMARTEDTV v21b (1.0.87/2103073, mesma identidade da v17 que instalou)'
           if gh release view "$TAG_SAIDA" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG_SAIDA" "${ASSETS[@]}" \
               --repo "$GITHUB_REPOSITORY" --clobber
