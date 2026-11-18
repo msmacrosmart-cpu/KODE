@@ -15,13 +15,8 @@ final="$work/SMARTEDTV-universal.apk"
 scratch=$(mktemp -d "$work/montagem.XXXXXX")
 trap 'rm -rf "$scratch"' EXIT
 python3 tools/kodi/atualizar-apk-v17.py --apk "$base" --saida "$scratch/overlay.apk"
-# Somente a ponte de ciclo de vida; nem Kodi nem o SDK de anúncios são recompilados.
-mkdir -p "$scratch/java" "$scratch/dex"
-jar="$ANDROID_HOME/platforms/android-34/android.jar"
-javac --release 8 -classpath "$jar" -d "$scratch/java" smartedtv/release/AdBreak.java
-"$bt/d8" --min-api 26 --lib "$jar" --output "$scratch/dex" "$scratch/java/smartedtv/full/"*.class
 python3 tools/kodi/ajustar-versao-apk.py "$scratch/overlay.apk" "$scratch/raw.apk" \
-  --de 1.0.87 --de-codigo 2103073 --para "$VERSION_NAME" --para-codigo "$VERSION_CODE" --min-sdk 26 --ad-dex "$scratch/dex/classes.dex"
+  --de 1.0.87 --de-codigo 2103073 --para "$VERSION_NAME" --para-codigo "$VERSION_CODE" --min-sdk 26
 "$bt/zipalign" -P 16 -f 4 "$scratch/raw.apk" "$scratch/aligned.apk"
 "$bt/apksigner" sign --ks "$KODI_ANDROID_STORE_FILE" --ks-key-alias "$KODI_ANDROID_KEY_ALIAS" \
   --ks-pass env:KODI_ANDROID_STORE_PASSWORD --key-pass env:KODI_ANDROID_KEY_PASSWORD \
@@ -35,7 +30,7 @@ for scheme in 1 2 3; do grep -E "^Verified using v$scheme scheme .*: true$" "$wo
 grep -Fx 'Number of signers: 1' "$work/signature.txt"
 grep -F 'certificate SHA-256 digest: 855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a' "$work/signature.txt"
 "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest print "$scratch/signed.apk" > "$work/manifest.xml"
-python3 smartedtv/release/verify.py "$base" "$scratch/signed.apk" "$work/manifest.xml" "$VERSION_NAME" "$VERSION_CODE" "$scratch/dex/classes.dex"
+python3 smartedtv/release/verify.py "$base" "$scratch/signed.apk" "$work/manifest.xml" "$VERSION_NAME" "$VERSION_CODE"
 python3 tools/kodi/simular-boot-tela-entrada.py --apk "$scratch/signed.apk"
 mv "$scratch/signed.apk" "$final"
 sha256sum "$final"

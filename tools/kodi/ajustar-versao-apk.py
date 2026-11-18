@@ -188,7 +188,6 @@ def main() -> int:
     parser.add_argument('--de-codigo', type=int, required=True)
     parser.add_argument('--para-codigo', type=int, required=True)
     parser.add_argument('--min-sdk', type=int, help='elevar a API minima')
-    parser.add_argument('--ad-dex', type=Path, help='DEX adicional do retorno do anúncio (sem alterar os da base)')
     parser.add_argument('--manter-debug', action='store_true',
                         help='nao desliga android:debuggable/testOnly')
     args = parser.parse_args()
@@ -213,14 +212,6 @@ def main() -> int:
                 raise SystemExit('android:debuggable nao encontrado no manifesto')
             print('debug/testOnly vistos: %s' % (vistos,))
             print('debug/testOnly desligados: %s' % (alterados or 'ja estavam false'))
-        if args.ad_dex:
-            import sys
-            sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'smartedtv/release'))
-            from ad_component import register
-            manifesto = register(manifesto, sys.modules[__name__])
-            indices = sorted(int(m[1] or 1) for n in nomes if (m := re.fullmatch(r'classes(\d*)\.dex', n)))
-            if indices != list(range(1, len(indices)+1)):
-                raise ValueError('unexpected multidex numbering')
         args.saida.parent.mkdir(parents=True, exist_ok=True)
         try:
             with zipfile.ZipFile(args.saida, 'w', allowZip64=True) as destino:
@@ -236,9 +227,6 @@ def main() -> int:
                             if not bloco:
                                 break
                             alvo.write(bloco)
-                if args.ad_dex:
-                    destino.writestr('classes%d.dex' % (len(indices)+1), args.ad_dex.read_bytes(),
-                                     compress_type=zipfile.ZIP_STORED)
         except BaseException:
             args.saida.unlink(missing_ok=True)
             raise

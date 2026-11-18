@@ -1,175 +1,239 @@
-"""One in-memory playback hand-off per pre-roll. Disk carries a nonce, never a media URL or VIP data."""
+# -*- coding: utf-8 -*-
+"""Retomada do conteudo depois do anuncio (sem alterar o APK nem o Kodi).
+
+O Kodi do APK e um binario pronto: quando o anuncio abre, o proprio Kodi pausa
+o player (``CXBMCApp::onPause``) e, ao voltar, so manda tocar de novo se foi ele
+que pausou. Nada disso devolve ao Python um recibo de "anuncio exibido".
+
+Por isso este modulo NAO chuta tempo de anuncio e NAO pausa duas vezes:
+
+* antes de disparar, guarda identidade e posicao do item que esta tocando;
+* depois do anuncio, quando o Kodi reinicia a reproducao (``onAVStarted`` do
+  MESMO conteudo), devolve o video para a posicao guardada, se ela tiver se
+  perdido (retomada do zero, por exemplo);
+* a volta NAO pede outro pre-roll;
+* se o conteudo mudou (troca de canal, outro filme, VIP, stop do usuario),
+  nada e tocado.
+
+Isto vale para celular, TV, box, projetor e stick: tudo roda no mesmo player do
+Kodi, sem depender de tela sensivel ao toque.
+"""
+from __future__ import absolute_import, unicode_literals
+
 import json
-import os
 import threading
 import time
-import uuid
 
 import xbmc
-import xbmcvfs
+
+TOLERANCIA = 1.0        # segundos de diferenca que ainda contam como "mesmo ponto"
+ESPERA_MINIMA = 0.6     # o player pode ser recriado depois do anuncio
+ESPERA_MAXIMA = 12.0    # tempo para a posicao ficar legivel
+VIGIA_MAXIMO = 900.0    # desiste depois de 15 min (anuncio longo/erro)
 
 
-def rpc(method, **params):
-    reply = json.loads(xbmc.executeJSONRPC(json.dumps({'jsonrpc': '2.0', 'id': 1,
-                                                       'method': method, 'params': params})))
-    if 'error' in reply:
-        raise RuntimeError(method + ' recusado')
-    return reply['result']
+def _rpc(method, **params):
+    pedido = json.dumps({'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params})
+    resposta = json.loads(xbmc.executeJSONRPC(pedido))
+    if 'error' in resposta:
+        raise RuntimeError('%s recusado' % method)
+    return resposta['result']
 
 
-class KodiVideo:
-    def __init__(self, player):
-        self.player = player
-        self.pid = next(p['playerid'] for p in rpc('Player.GetActivePlayers') if p['type'] == 'video')
-        props = rpc('Player.GetProperties', playerid=self.pid,
-                    properties=['speed', 'canpause', 'canseek', 'live'])
-        self.was_playing = props['speed'] != 0
-        self.can_pause, self.can_seek = props['canpause'], props['canseek']
-        self.path = player.getPlayingFile()
-        self.channel = xbmc.getInfoLabel('VideoPlayer.ChannelName') or ''
-        self.live = props['live'] or bool(self.channel) or self.path.startswith('pvr://')
-        self.channel_id = None
-        self.item = None
-        if self.live and not self.can_pause:
-            item = rpc('Player.GetItem', playerid=self.pid).get('item', {})
-            if item.get('type') == 'channel':
-                self.channel_id = item.get('id')
-            try:
-                self.item = player.getPlayingItem()
-            except (AttributeError, RuntimeError):
-                pass
-        self.position = None
-
-    def same(self):
-        if not self.player.isPlayingVideo():
-            return False
-        path = self.player.getPlayingFile()
-        now = xbmc.getInfoLabel('VideoPlayer.ChannelName') or ''
-        return path == self.path and not (self.channel and now and self.channel != now)
-
-    def hold(self):
-        if self.can_pause and self.was_playing:
-            rpc('Player.PlayPause', playerid=self.pid, play=False)  # never toggle
-        if self.can_seek and self.was_playing:
-            self.position = self.player.getTime()
-
-    def release(self):
-        if self.same() and self.was_playing:
-            if self.position is not None and abs(self.player.getTime() - self.position) > 0.25:
-                self.player.seekTime(self.position)
-            if self.can_pause:
-                rpc('Player.PlayPause', playerid=self.pid, play=True)
-
-    def reopen_live(self):
-        # Never seek a live edge to a movie timestamp. Preserve the resolved ListItem if available.
-        if self.channel_id is not None:
-            rpc('Player.Open', item={'channelid': self.channel_id})
-        elif self.path and self.item is not None:
-            self.player.play(self.path, self.item)
-        elif self.path:
-            self.player.play(self.path)
+def _video_id():
+    for player in _rpc('Player.GetActivePlayers'):
+        if player.get('type') == 'video':
+            return player.get('playerid')
+    return None
 
 
-class Breaks:
-    def __init__(self, log=None):
-        self.log = log or (lambda *args: None)
-        self.lock = threading.RLock()
-        self.current = self.replay = None
-
-    @staticmethod
-    def remove(stem):
-        for ext in ('.pending', '.open', '.returned'):
-            try:
-                os.unlink(stem + ext)
-            except OSError:
-                pass
-
-    def cancel(self):
-        with self.lock:
-            if self.current:
-                self.remove(self.current['stem'])
-            self.current = None
-
-    def stopped(self, ended=False):
-        with self.lock:
-            state = self.current
-            if not ended and state and os.path.isfile(state['stem'] + '.open'):
-                video = state['video']
-                if video.live and not video.can_pause and video.was_playing:
-                    state['stopped_live'] = True
-                    return
-            self.cancel()
-            self.replay = None
-
-    def is_replay(self, path, channel):
-        with self.lock:
-            last, self.replay = self.replay, None
-            return bool(last and time.monotonic() <= last[2] and
-                        ((channel and channel == last[1]) or (path and path == last[0] and
-                         not (channel and last[1] and channel != last[1]))))
-
-    def start(self, video, launch):
-        with self.lock:
-            self.cancel()
-            folder = os.path.join(xbmcvfs.translatePath('special://home'), 'temp', 'smarted-ad')
-            os.makedirs(folder, exist_ok=True)
-            token = uuid.uuid4().hex
-            stem = os.path.join(folder, token)
-            with open(stem + '.pending', 'xb'):
-                pass
-            state = {'video': video, 'stem': stem, 'stopped_live': False}
-            self.current = state
-            try:
-                video.hold()
-                if not launch(token):
-                    self.finish(state)
-                    return False
-                worker = threading.Thread(target=self.wait, args=(state,), name='retorno-anuncio')
-                worker.daemon = True
-                worker.start()
-                return True
-            except Exception:
-                self.finish(state)
-                raise
-
-    def wait(self, state):
-        mon = xbmc.Monitor()
-        until = time.monotonic() + 6
+def _canal():
+    for rotulo in ('VideoPlayer.ChannelName', 'Player.ChannelName'):
         try:
-            while not mon.waitForAbort(0.15):
-                with self.lock:
-                    if self.current is not state:
-                        return
-                    stem = state['stem']
-                    if os.path.isfile(stem + '.returned'):
-                        self.finish(state)
-                        return
-                    # Only expire an intent which Android NEVER opened. A shown ad or an
-                    # external browser doesn't get a guessed time limit from Python.
-                    if time.monotonic() > until and os.path.isfile(stem + '.pending'):
-                        try:
-                            os.unlink(stem + '.pending')  # wins OR loses against Java's rename
-                        except FileNotFoundError:
-                            continue
-                        self.log('[SmartAds] activity não confirmou a abertura; liberando vídeo')
-                        self.finish(state)
-                        return
-        except Exception as exc:
-            self.log('[SmartAds] retorno: %s' % type(exc).__name__)
-        finally:
-            with self.lock:
-                if self.current is state:
-                    self.cancel()  # abort/quit: never resurrect a player
+            valor = xbmc.getInfoLabel(rotulo) or ''
+        except Exception:
+            valor = ''
+        if valor:
+            return valor
+    return ''
 
-    def finish(self, state):
+
+class Retomada(object):
+    """Um ponto de retorno por anuncio; nunca mexe em conteudo que nao seja ele."""
+
+    def __init__(self, log=None):
+        self.log = log or (lambda *a, **k: None)
+        self.lock = threading.RLock()
+        self.pendente = None
+        self.volta = None
+
+    # ---------------------------------------------------------------- armacao
+    def armar(self, player):
+        """Guarda o que esta tocando. Devolve o estado ou ``None``."""
+        try:
+            pid = _video_id()
+            if pid is None or not player.isPlayingVideo():
+                return None
+            caminho = player.getPlayingFile()
+            try:
+                posicao = float(player.getTime()) or 0.0
+            except Exception:
+                posicao = 0.0
+            estado = {
+                'playerid': pid,
+                'caminho': caminho or '',
+                'canal': _canal(),
+                'posicao': posicao,
+                'quando': time.monotonic(),
+            }
+            with self.lock:
+                self.pendente = estado
+            if self.log:
+                self.log('[SmartAds] retomada armada em %.1fs de %r'
+                         % (posicao, (caminho or '')[-60:]))
+            return estado
+        except Exception as erro:
+            if self.log:
+                self.log('[SmartAds] sem ponto de retomada (%s)'
+                         % type(erro).__name__)
+            return None
+
+    def cancelar(self):
         with self.lock:
-            if self.current is not state:
-                return
-            video = state['video']
-            self.cancel()
-            if state['stopped_live'] and not video.player.isPlaying():
-                self.replay = (video.path, video.channel, time.monotonic() + 15)
-                video.reopen_live()
-            else:
-                video.release()
-            self.log('[SmartAds] retorno ao player processado')
+            self.pendente = None
+
+    def guardado(self):
+        with self.lock:
+            return self.pendente
+
+    # --------------------------------------------------------------- retorno
+    def mesmo_conteudo(self, caminho=None, canal=None):
+        with self.lock:
+            estado = self.pendente
+        if not estado:
+            return False
+        canal = _canal() if canal is None else canal
+        if estado['canal'] and canal and estado['canal'] != canal:
+            return False
+        try:
+            caminho = caminho or xbmc.Player().getPlayingFile()
+        except Exception:
+            caminho = ''
+        if estado['caminho'] and caminho and estado['caminho'] != caminho:
+            return False
+        return True
+
+    def consumir(self, player):
+        """Marca a volta do anuncio e devolve o estado (uma vez só)."""
+        with self.lock:
+            estado, self.pendente = self.pendente, None
+        if estado:
+            self.volta = (estado['caminho'], estado['canal'], time.monotonic() + 20)
+        return estado
+
+    def e_volta(self, caminho=None, canal=None):
+        """A reproducao que comecou agora e a volta do anuncio?"""
+        with self.lock:
+            volta, self.volta = self.volta, None
+        if not volta:
+            return False
+        limite = time.monotonic() > volta[2]
+        if limite:
+            return False
+        if volta[1] and canal and volta[1] != canal:
+            return False
+        if volta[0] and caminho and volta[0] != caminho:
+            return False
+        return True
+
+    # ------------------------------------------------------------- vigia
+    def vigiar(self, player, estado):
+        """Acompanha o player ate ele voltar; corrige o ponto se ele se perdeu.
+
+        Nao depende de evento de ciclo de vida: vale igual para celular, TV,
+        box, projetor e stick. Para quando o conteudo muda, quando o usuario
+        para ou quando o video ja voltou sozinho no ponto certo.
+        """
+        limite = time.monotonic() + VIGIA_MAXIMO
+        pausado_visto = False
+        while time.monotonic() < limite:
+            time.sleep(0.5)
+            with self.lock:
+                if self.pendente is not estado:
+                    return None
+            try:
+                if not player.isPlayingVideo():
+                    if pausado_visto:
+                        # stop/troca durante o anuncio: nada a restaurar
+                        self.cancelar()
+                        return None
+                    continue
+                caminho = player.getPlayingFile()
+                canal = _canal()
+                if not self.mesmo_conteudo(caminho, canal):
+                    self.cancelar()
+                    return None
+                try:
+                    pausado = bool(xbmc.getCondVisibility('Player.Paused'))
+                except Exception:
+                    pausado = False
+                atual = float(player.getTime()) or 0.0
+            except Exception:
+                continue
+            if pausado and atual <= estado['posicao'] + TOLERANCIA:
+                pausado_visto = True
+                continue
+            # Player livre de novo: ou continuou no ponto, ou perdeu o ponto.
+            return self.corrigir(player, estado)
+        self.cancelar()
+        return None
+
+    # -------------------------------------------------------------- correcao
+    def corrigir(self, player, estado):
+        """Devolve o player a posicao guardada, se ele perdeu o ponto."""
+        alvo = estado['posicao']
+        if alvo <= 0:
+            return None
+        limite = time.monotonic() + ESPERA_MAXIMA
+        inicio = time.monotonic()
+        while time.monotonic() < limite:
+            if not player.isPlayingVideo():
+                return None
+            try:
+                atual = float(player.getTime()) or 0.0
+            except Exception:
+                atual = 0.0
+            # Posicao 0 pode ser "ainda carregando" ou "reiniciou": so espera
+            # alguns segundos por um valor legivel antes de decidir.
+            if atual <= 0 and time.monotonic() - inicio < 3.0:
+                time.sleep(0.25)
+                continue
+            if abs(atual - alvo) <= TOLERANCIA:
+                return None
+            if abs(atual - alvo) <= 3 and atual > alvo:
+                return None  # alguns segundos a frente e o proprio buffer
+            pausado = False
+            try:
+                pausado = bool(xbmc.getCondVisibility('Player.Paused'))
+            except Exception:
+                pass
+            try:
+                _rpc('Player.Seek', playerid=_video_id(), value={'seconds': alvo})
+            except Exception as erro:
+                try:
+                    player.seekTime(alvo)
+                except Exception:
+                    if self.log:
+                        self.log('[SmartAds] nao foi possivel voltar a %.1fs (%s)'
+                                 % (alvo, type(erro).__name__))
+                    return None
+            if pausado:
+                try:
+                    _rpc('Player.PlayPause', playerid=_video_id(), play=True)
+                except Exception:
+                    pass
+            if self.log:
+                self.log('[SmartAds] retomado em %.1fs (estava em %.1fs)'
+                         % (alvo, atual))
+            return alvo
+        return None

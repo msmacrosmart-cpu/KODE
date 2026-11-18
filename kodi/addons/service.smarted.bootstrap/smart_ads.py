@@ -59,7 +59,6 @@ import xbmcvfs
 PACKAGE = 'smartedtv.full'
 ATIVIDADE_ABERTURA = 'smartedtv.full.AppOpenActivity'
 ATIVIDADE_PREROLL = 'smartedtv.full.PreRollActivity'
-ATIVIDADE_RETORNO = 'smartedtv.full.AdBreak'
 
 # action propria de cada tela: vai na posicao 2 do StartAndroidActivity (o
 # "intent" nao pode ser vazio, senao o Kodi procura o launcher do pacote e
@@ -157,7 +156,7 @@ def builtin_para(atividade, package=None, acao=None, uri=''):
       da visibilidade de pacotes do Android 11+.
     """
     if acao is None:
-        acao = ACAO_PREROLL if atividade in (ATIVIDADE_RETORNO, ATIVIDADE_PREROLL) else ACAO_ABERTURA
+        acao = ACAO_PREROLL if atividade == ATIVIDADE_PREROLL else ACAO_ABERTURA
     campos = [package or PACKAGE, acao, '', uri, '', '', '', '', atividade]
     return 'StartAndroidActivity(%s)' % ','.join(campos)
 
@@ -417,21 +416,39 @@ class MonitorPreRoll(_BasePlayer):
         self.intervalo = intervalo
         self.ultimo_caminho = None
         self.sessao = 0
-        self.breaks = None
+        self.retomada = None
+
+    def _retomada(self):
+        if self.retomada is None:
+            try:
+                from ad_return import Retomada
+                self.retomada = Retomada(self.log)
+            except Exception:
+                self.retomada = False
+        return self.retomada
 
     def _disparar(self, atividade, log):
-        from ad_return import Breaks, KodiVideo
-        if self.breaks is None:
-            self.breaks = Breaks(log)
-        try:
-            video = KodiVideo(self)
-            return self.breaks.start(video, lambda token: abrir_anuncio(
-                ATIVIDADE_RETORNO, log, 'smartedtv://preroll/' + token))
-        except Exception as erro:
-            # Fallback to the original activity and Kodi's native onPause/onResume.
-            if log:
-                log('[SmartAds] player sem hand-off: %s' % type(erro).__name__)
-            return tocar_anuncio(atividade, log)
+        # Guarda o ponto ANTES de a tela do anuncio pausar o player. Sem isso,
+        # a volta do anuncio recomecaria o filme do zero em qualquer aparelho.
+        retomada = self._retomada()
+        if retomada:
+            try:
+                retomada.armar(self)
+            except Exception as erro:
+                if log:
+                    log('[SmartAds] ponto de retomada falhou (%s)'
+                        % type(erro).__name__)
+        disparou = abrir_anuncio(atividade, log)
+        if not disparou:
+            if retomada:
+                retomada.cancelar()
+            return False
+        if retomada:
+            estado = retomada.guardado()
+            if estado:
+                threading.Thread(target=retomada.vigiar, args=(self, estado),
+                                 name='volta-anuncio', daemon=True).start()
+        return True
 
     def _caminho(self):
         try:
@@ -454,8 +471,14 @@ class MonitorPreRoll(_BasePlayer):
             if not _e_video(self):
                 return
             caminho = self._caminho() or self.ultimo_caminho
-            if self.breaks and self.breaks.is_replay(caminho, xbmc.getInfoLabel('VideoPlayer.ChannelName')):
+            retomada = self._retomada()
+            canal = xbmc.getInfoLabel('VideoPlayer.ChannelName') or ''
+            if retomada and retomada.e_volta(caminho, canal):
+                # A reproducao que acabou de comecar e a volta do anuncio: nao
+                # gera outro pre-roll e devolve o video ao ponto guardado.
                 globals()['_ultima_sessao'] = self.sessao
+                if self.log:
+                    self.log('[SmartAds] volta do anuncio: sem novo pre-roll')
                 return
             chave = _chave_conteudo(caminho)
             self.ultimo_caminho = caminho
@@ -469,13 +492,13 @@ class MonitorPreRoll(_BasePlayer):
     # stream. Os dois passam pela mesma janela anti-duplicidade.
     def onPlayBackStarted(self):
         self.sessao += 1
-        if self.breaks:
-            self.breaks.cancel()
         # Wait for AVStarted: the addon may still be resolving/resuming the item.
 
 
     def onAVStarted(self):
         # Mesma sessao de onPlayBackStarted: nao pede o segundo anuncio.
+        # Tambem e aqui que a volta do anuncio e reconhecida (Kodi retoma o
+        # player) e o ponto guardado e restaurado.
         self._talvez_mostrar()
 
     # Compatibilidade com versoes que ainda chamam onPlay.
@@ -483,15 +506,19 @@ class MonitorPreRoll(_BasePlayer):
         self._talvez_mostrar()
 
     def onPlayBackStopped(self):
-        if self.breaks:
-            self.breaks.stopped()
+        self._limpar_retomada()
         self.ultimo_caminho = None
         self.sessao += 1
         esquecer()
 
     def onPlayBackEnded(self):
-        if self.breaks:
-            self.breaks.stopped(ended=True)
+        self._limpar_retomada()
+
+    def _limpar_retomada(self):
+        # Stop/troca de conteudo: nada de ressuscitar player nem posicao.
+        retomada = self._retomada()
+        if retomada:
+            retomada.cancelar()
         self.ultimo_caminho = None
         self.sessao += 1
         esquecer()
