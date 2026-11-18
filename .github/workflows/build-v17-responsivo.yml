@@ -21,8 +21,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       BASE_RELEASE: v1.0.86-tela-inicial-v16
       BASE_ASSET: SMARTEDTV-atual-com-tela-inicial-v16-universal.apk
-      TAG_SAIDA: v1.0.87-reinstalacao-v21b
-      FINAL: SMARTEDTV-atual-v21b-reinstalacao-universal.apk
+      TAG_SAIDA: v1.0.87-universal-v22
+      FINAL: SMARTEDTV-universal.apk
       VERSAO_DE: '1.0.86'
       VERSAO_PARA: '1.0.87'
       CODIGO_DE: '2103072'
@@ -225,16 +225,12 @@ jobs:
             --dialogo status --resolucao 1280x720 --saida build/tela-status-720p.png
           ls -lh build/tela-*.png
 
-      - name: 8. Publicar release v21b
+      - name: 8. Publicar release v22
         run: |
           set -euo pipefail
-          NOTAS='v21b (1.0.87, versionCode 2103073), MESMA versao e mesmo formato do APK v17 que instalou, com todas as edicoes posteriores. Um APK universal arm64+armv7, v1+v2+v3, chave 855de171..., pacote smartedtv.full. Serve para atualizar por cima da v17 ou instalar do zero. Pipeline rapido da v17, base v16, sem recompilar Kodi. Validacao automatizada; nao testado em aparelho fisico nesta rodada.'
-          ASSETS=(
-            "build/$FINAL" "build/$FINAL.sha256"
-            build/tela-720p.png build/tela-1080p.png build/tela-4k.png
-            build/tela-dialogo-720p.png build/tela-status-720p.png
-          )
-          TITULO='SMARTEDTV v21b (1.0.87/2103073, mesma identidade da v17 que instalou)'
+          NOTAS='v22 - UM UNICO ARQUIVO: SMARTEDTV-universal.apk. Nada de arm64/arm32 separados. O mesmo APK contem arm64-v8a + armeabi-v7a, assinatura v1+v2+v3, chave 855de171..., pacote smartedtv.full, versao 1.0.87 / 2103073 (a mesma da v17 que instalou), com todas as edicoes posteriores. Pipeline rapido da v17, base v16, sem recompilar o Kodi. Validacao automatizada; nao testado em aparelho fisico nesta rodada.'
+          ASSETS=( "build/$FINAL" )
+          TITULO='SMARTEDTV 1.0.87 - APK UNICO UNIVERSAL (arm64 + armv7, v1+v2+v3)'
           if gh release view "$TAG_SAIDA" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG_SAIDA" "${ASSETS[@]}" \
               --repo "$GITHUB_REPOSITORY" --clobber
