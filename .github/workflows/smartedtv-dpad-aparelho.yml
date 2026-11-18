@@ -85,8 +85,24 @@ jobs:
             '    </keyboard>' \
             '  </global>' \
             '</keymap>' > assets/system/keymaps/zzz-dpad-teste.xml
-          cd "$work/apk"
-          zip -q -r "$work/patched.apk" . -x 'META-INF/*'
+          # NAO recriar o zip do zero: desde o Android 11 (API 30) o
+          # resources.arsc tem de ficar ARMAZENADO (sem compressao) e alinhado
+          # em 4 bytes; "zip -r" recompactava o arquivo inteiro e o aparelho
+          # recusava o APK (INSTALL_PARSE_FAILED_*). Aqui so os dois arquivos
+          # novos entram, as entradas existentes ficam exatamente como estavam.
+          cp "$RUNNER_TEMP/overlay.apk" "$work/patched.apk"
+          zip -q "$work/patched.apk" \
+            assets/addons/plugin.video.smarted/dpad-monitor.py \
+            assets/system/keymaps/zzz-dpad-teste.xml
+          unzip -l "$work/patched.apk" | grep -E 'dpad-monitor|zzz-dpad-teste'
+          # Confirmar que o resources.arsc continua armazenado (metodo Stored).
+          python3 - "$work/patched.apk" <<'PY'
+          import sys, zipfile
+          with zipfile.ZipFile(sys.argv[1]) as z:
+              info = z.getinfo('resources.arsc')
+          print('resources.arsc compress_type=%d (0 = armazenado)' % info.compress_type)
+          raise SystemExit(0 if info.compress_type == 0 else 1)
+          PY
           echo "apk de teste: $(stat -c %s "$work/patched.apk") bytes"
 
       - name: 4. Alinhar e assinar (chave descartavel do emulador)

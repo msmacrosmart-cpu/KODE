@@ -68,7 +68,19 @@ note '0. Instalar o APK de teste e abrir pelo launcher de TV'
 adb root >/dev/null 2>&1 || true
 adb wait-for-device
 adb logcat -c || true
-adb install -g "$work/SMARTEDTV-dpad-teste.apk" || { err 'instalacao falhou'; coletar; exit 1; }
+# A mensagem do adb e a unica pista quando o aparelho recusa o APK: guardar e
+# publicar nos dois canais (log do passo e anotacao do job).
+instalacao=$(adb install -g "$work/SMARTEDTV-dpad-teste.apk" 2>&1)
+rc_install=$?
+printf '%s\n' "$instalacao" > "$out/instalacao.txt"
+if [ "$rc_install" -ne 0 ]; then
+  err "instalacao falhou (rc=$rc_install): $(printf '%s' "$instalacao" | tr '\r\n' '  ' | cut -c1-800)"
+  adb shell df -h /data 2>&1 | tee "$out/df-data.txt" || true
+  adb shell dumpsys package "$app" 2>/dev/null | head -5 | tee "$out/pacote.txt" || true
+  coletar
+  exit 1
+fi
+printf '::notice::APK de teste instalado: %s\n' "$(printf '%s' "$instalacao" | tr -d '\r' | tail -1)"
 adb shell appops set "$app" MANAGE_EXTERNAL_STORAGE allow >/dev/null 2>&1 || true
 comp=$(adb shell cmd package resolve-activity --brief --user 0 \
   -a android.intent.action.MAIN -c android.intent.category.LEANBACK_LAUNCHER -p "$app" \
