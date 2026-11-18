@@ -48,7 +48,7 @@ def expected_skin_version() -> str:
             return match.group(1)
     except OSError:
         pass
-    return "1.0.3"
+    return "1.0.18"
 
 
 def sha256_bytes(data: bytes) -> str:

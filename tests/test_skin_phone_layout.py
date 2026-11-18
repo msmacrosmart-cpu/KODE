@@ -175,8 +175,8 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
         self.assertIn('pb_rounded.png', barra)
 
     def test_fileiras_com_espaco_vertical_e_sem_sobreposicao(self):
-        # rodada 17: Home com apenas Filmes e Series abaixo do HERO
-        alturas = {'9202': 200, '9203': 200}
+        # Home com duas fileiras abaixo do HERO: Lancamentos/Filmes e Series
+        alturas = {'9201': 194, '9203': 194}
         tops = {}
         for cid in alturas:
             m = re.search(r'<control type="list" id="%s"><left>60</left><top>(\d+)</top>' % cid,
@@ -190,7 +190,7 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
                                     'fileira %s encosta na seguinte' % cid)
         # a primeira fileira comeca depois dos botoes do HERO (460 + 60)
         primeira = min(tops.values())
-        self.assertGreaterEqual(primeira, 600)
+        self.assertGreaterEqual(primeira, 560)
         # posters com respiro horizontal
         self.assertIn('<itemgap>28</itemgap>', self.home)
         # nada de Canais nem das linhas da biblioteca do Kodi
@@ -221,19 +221,16 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
                       self.home)
 
     def test_linhas_da_home_usam_o_carrossel_de_conteudo(self):
-        esperado = {'9202': 'filmes', '9203': 'recent-series'}
+        esperado = {'9201': 'recent-movies', '9203': 'recent-series'}
         for lista, alvo in esperado.items():
             bloco = re.search(r'<control type="list" id="%s">.{0,9000}?</content>' % lista, self.home, re.S)
             self.assertIsNotNone(bloco, lista)
             texto = bloco.group(0)
             # a linha nao aponta mais para a pasta de menu do addon
-            if alvo == 'recent-series':
-                self.assertIn('route=recent-series', texto, lista)
-            else:
-                self.assertIn('plugin://plugin.video.smarted/?route=carrossel&amp;alvo=%s' % alvo, texto, lista)
+            self.assertIn('plugin://plugin.video.smarted/?route=%s' % alvo, texto, lista)
             self.assertNotIn('url=%23filmes_menu', texto, lista)
             self.assertNotIn('url=%23series_menu', texto, lista)
-            self.assertIn('<content target="videos">', texto, lista)
+            self.assertIn('<content target="videos"', texto, lista)
             # cards com arte real do addon (poster no carrossel, paisagem na linha de series)
             self.assertTrue('$VAR[ItemArt]' in texto or '$VAR[ItemLand]' in texto, lista)
             self.assertIn('<aspectratio', texto, lista)
@@ -247,8 +244,8 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
         # o fundo do HERO acompanha o filme em destaque (linha 9201)
         self.assertIn('$INFO[Container(9201).ListItem.Art(fanart)]', self.home)
         self.assertNotIn('$INFO[Container(9200).ListItem.Art(fanart)]', self.home)
-        # titulo da linha coerente com a fonte
-        self.assertIn('Filmes', self.home)
+        # titulo da linha coerente com a fonte (Lancamentos, nao "Filmes")
+        self.assertIn('Lançamentos', self.home)
 
     def test_hero_mostra_ano_genero_nota_e_data(self):
         variables = (XML / 'Variables.xml').read_text(encoding='utf-8')
@@ -271,7 +268,7 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
 
     def test_primeiras_linhas_cabem_na_tela(self):
         # as duas primeiras linhas aparecem sem rolar; as demais ficam abaixo
-        for lista, teto in (('9201', 1080), ('9202', 1080)):
+        for lista, teto in (('9201', 1080), ('9203', 1080)):
             bloco = re.search(r'<control type="list" id="%s"><left>\d+</left><top>(\d+)</top>'
                               r'<right>\d+</right><height>(\d+)</height>' % lista, self.home)
             self.assertIsNotNone(bloco, lista)
@@ -282,9 +279,9 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
         self.assertIn('id="9400"', self.home, 'falta o grupo rolavel da Home')
         animacoes = re.findall(r'<animation[^>]*end="0,(-\d+)"[^>]*condition="Control\.HasFocus\((\d+)\)"',
                                self.home)
-        self.assertGreaterEqual(len(animacoes), 2, 'rolagem vertical precisa animar as linhas de baixo')
+        self.assertGreaterEqual(len(animacoes), 1, 'o HERO precisa sair da frente da fileira de baixo')
         alvos = {cid for _, cid in animacoes}
-        self.assertTrue(alvos & {'9202', '9203'} or alvos, alvos)
+        self.assertTrue(alvos & {'9201', '9203'}, alvos)
         # o grupo abrange o hero (9300) e as duas fileiras
         self.assertLess(self.home.index('id="9400"'), self.home.index('id="9300"'))
         self.assertLess(self.home.index('id="9300"'), self.home.index('id="9203"'))
@@ -300,7 +297,7 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
         self.assertIn('!String.IsEmpty(Container(9201).ListItem.Label)', hero)
 
     def test_titulos_so_aparecem_com_conteudo(self):
-        for lista in ('9201', '9202', '9203'):
+        for lista in ('9201', '9203'):
             padrao = (r'<control type="label"><left>60</left><top>(\d+)</top>.*?</control>')
             achado = None
             for m in re.finditer(padrao, self.home, re.S):

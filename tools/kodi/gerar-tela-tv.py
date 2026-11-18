@@ -32,6 +32,7 @@ RODAPE = {
     "60": "903",     # "Já é assinante?"
     "61": "940",     # dica (trocada abaixo)
     "62": "905",     # divisor
+    "63": "903", "64": "903", "65": "903",
     "310": "903",    # campo do código
     "311": "903",    # Ativar
     "312": "903",    # Assistir com anúncios

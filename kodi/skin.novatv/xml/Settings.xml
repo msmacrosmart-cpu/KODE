@@ -1,125 +1,205 @@
-<?xml version='1.0' encoding='UTF-8'?>
+<?xml version="1.0" encoding="UTF-8"?>
 <window>
-  <defaultcontrol always="true">9000</defaultcontrol>
-  <onunload condition="Window.Next(Home) + String.IsEqual(Skin.String(SmartedUnlock),8) + !Skin.HasSetting(SmartedFullMode)">Skin.SetString(SmartedUnlock,9)</onunload>
-  <onunload condition="Window.Next(Home) + String.IsEqual(Skin.String(SmartedUnlock),9) + !Skin.HasSetting(SmartedFullMode)">Skin.SetBool(SmartedFullMode)</onunload>
-  <include>Anim</include>
-  <controls>
-    <include>Bg</include>
-    <control type="label">
-      <left>60</left>
-      <top>90</top>
-      <width>1800</width>
-      <height>80</height>
-      <font>font_title</font>
-      <textcolor>white</textcolor>
-      <aligny>center</aligny>
-      <label>$LOCALIZE[5]</label>
-    </control>
-    <control type="list" id="9000">
-      <left>60</left>
-      <top>200</top>
-      <width>1800</width>
-      <height>820</height>
-      <orientation>vertical</orientation>
-      <scrolltime>200</scrolltime>
-      <onup>9000</onup>
-      <ondown>9000</ondown>
-      <itemlayout height="72" width="1800">
-        <control type="image">
-          <left>0</left>
-          <top>3</top>
-          <width>1800</width>
-          <height>66</height>
-          <texture colordiffuse="panel2" border="16">rounded.png</texture>
-        </control>
-        <control type="label">
-          <left>24</left>
-          <width>1752</width>
-          <height>72</height>
-          <font>font_main</font>
-          <textcolor>text</textcolor>
-          <aligny>center</aligny>
-          <label>$INFO[ListItem.Label]</label>
-        </control>
-      </itemlayout>
-      <focusedlayout height="72" width="1800">
-        <control type="image">
-          <left>0</left>
-          <top>3</top>
-          <width>1800</width>
-          <height>66</height>
-          <texture colordiffuse="accent" border="16">rounded.png</texture>
-        </control>
-        <control type="label">
-          <left>24</left>
-          <width>1752</width>
-          <height>72</height>
-          <font>font_main</font>
-          <textcolor>ontext</textcolor>
-          <aligny>center</aligny>
-          <label>$INFO[ListItem.Label]</label>
-        </control>
-      </focusedlayout>
-      <content>
-        <item>
-          <label>$LOCALIZE[14200]</label>
-          <onclick>ActivateWindow(PlayerSettings)</onclick>
-        </item>
-        <item>
-          <label>$LOCALIZE[14211]</label>
-          <onclick>ActivateWindow(MediaSettings)</onclick>
-          <visible>Skin.HasSetting(SmartedFullMode)</visible>
-        </item>
-        <item>
-          <label>$LOCALIZE[14204]</label>
-          <onclick>ActivateWindow(PVRSettings)</onclick>
-          <visible>Skin.HasSetting(SmartedFullMode)</visible>
-        </item>
-        <item>
-          <label>$LOCALIZE[14036]</label>
-          <onclick>ActivateWindow(ServiceSettings)</onclick>
-          <visible>Skin.HasSetting(SmartedFullMode)</visible>
-        </item>
-        <item>
-          <label>$LOCALIZE[15016]</label>
-          <onclick>ActivateWindow(GameSettings)</onclick>
-          <visible>Skin.HasSetting(SmartedFullMode) + [System.GetBool(gamesgeneral.enable)]</visible>
-        </item>
-        <item>
-          <label>$LOCALIZE[14206]</label>
-          <onclick>ActivateWindow(InterfaceSettings)</onclick>
-        </item>
-        <item>
-          <label>$LOCALIZE[13200]</label>
-          <onclick>ActivateWindow(Profiles)</onclick>
-          <visible>Skin.HasSetting(SmartedFullMode)</visible>
-        </item>
-        <item>
-          <label>$LOCALIZE[13000]</label>
-          <onclick>ActivateWindow(SystemSettings)</onclick>
-        </item>
-        <item>
-          <label>$LOCALIZE[24001]</label>
-          <onclick>ActivateWindow(AddonBrowser)</onclick>
-          <visible>Skin.HasSetting(SmartedFullMode)</visible>
-        </item>
-        <item>
-          <label>$LOCALIZE[10003]</label>
-          <onclick>ActivateWindow(FileManager)</onclick>
-          <visible>Skin.HasSetting(SmartedFullMode)</visible>
-        </item>
-        <item>
-          <label>$LOCALIZE[138]</label>
-          <onclick>ActivateWindow(SystemInfo)</onclick>
-          <visible>Skin.HasSetting(SmartedFullMode)</visible>
-        </item>
-        <item>
-          <label>$LOCALIZE[31067]</label>
-          <onclick>ActivateWindow(EventLog)</onclick>
-          <visible>Skin.HasSetting(SmartedFullMode)</visible>
-        </item>
-      </content>
-    </control>
-  </controls>
+	<!-- Ciclo de Ajustes: o contador do unlock secreto e incrementado pelo addon
+	     service.smarted.bootstrap (nenhum builtin do Kodi soma valores de skin). -->
+	<onload>RunScript(service.smarted.bootstrap,secret-cycle)</onload>
+	<defaultcontrol always="true">9000</defaultcontrol>
+	<backgroundcolor>background</backgroundcolor>
+	<controls>
+		<include>DefaultBackground</include>
+
+		<!-- fundo cheio: 100% da tela em qualquer resolucao -->
+		<control type="image">
+			<left>0</left>
+			<top>0</top>
+			<width>100%</width>
+			<height>100%</height>
+			<texture colordiffuse="pb_dark">pb_white.png</texture>
+		</control>
+
+		<!-- cabecalho -->
+		<control type="button" id="9050">
+			<left>60</left>
+			<top>40</top>
+			<width>150</width>
+			<height>52</height>
+			<font>font_flag</font>
+			<align>center</align>
+			<aligny>center</aligny>
+			<label>Voltar</label>
+			<texturefocus colordiffuse="pb_white" border="16">pb_rounded.png</texturefocus>
+			<texturenofocus colordiffuse="pb_panel2" border="16">pb_rounded.png</texturenofocus>
+			<onclick>Action(Back)</onclick>
+			<onright>9051</onright>
+			<ondown>9000</ondown>
+		</control>
+
+		<control type="label">
+			<left>240</left>
+			<top>40</top>
+			<width>600</width>
+			<height>52</height>
+			<font>font13</font>
+			<textcolor>pb_white</textcolor>
+			<aligny>center</aligny>
+			<label>AJUSTES</label>
+		</control>
+
+		<control type="label"><right>270</right><top>40</top><width>240</width><height>52</height><font>font10</font><textcolor>pb_muted</textcolor><align>right</align><aligny>center</aligny><label>Modo avançado ativo</label><visible>Skin.HasSetting(secret_unlocked)</visible></control>
+		<control type="button" id="9051">
+			<right>60</right>
+			<top>40</top>
+			<width>180</width>
+			<height>52</height>
+			<font>font_flag</font>
+			<align>center</align>
+			<aligny>center</aligny>
+			<label>Buscar</label>
+			<texturefocus colordiffuse="pb_white" border="16">pb_rounded.png</texturefocus>
+			<texturenofocus colordiffuse="pb_panel2" border="16">pb_rounded.png</texturenofocus>
+			<onclick>ActivateWindow(1107)</onclick>
+			<onleft>9050</onleft>
+			<ondown>9000</ondown>
+		</control>
+
+		<!-- divisor -->
+		<control type="image">
+			<left>60</left>
+			<top>108</top>
+			<right>60</right>
+			<height>1</height>
+			<texture colordiffuse="30FFFFFF">pb_white.png</texture>
+		</control>
+
+		<!-- grade de categorias: ancorada nas 4 bordas, sem corte em nenhuma resolucao -->
+		<control type="panel" id="9000">
+			<left>60</left>
+			<top>148</top>
+			<right>60</right>
+			<bottom>40</bottom>
+			<itemgap>18</itemgap>
+			<scrolltime>200</scrolltime>
+			<onup>9050</onup>
+			<ondown>noop</ondown>
+			<include>SettingsTile</include>
+			<content>
+				<item>
+					<label>File Manager</label>
+					<onclick>ActivateWindow(filemanager)</onclick>
+					<icon>icons/settings/filemanager.png</icon>
+									<visible>Skin.HasSetting(secret_unlocked)</visible>
+				</item>
+				<item>
+					<label>Add-ons</label>
+					<onclick>ActivateWindow(addonbrowser)</onclick>
+					<icon>icons/settings/addons.png</icon>
+				</item>
+				<item>
+					<label>Informações do Sistema</label>
+					<onclick>ActivateWindow(systeminfo)</onclick>
+					<icon>icons/settings/sysinfo.png</icon>
+									<visible>Skin.HasSetting(secret_unlocked)</visible>
+				</item>
+				<item>
+					<label>Event Log</label>
+					<onclick>ActivateWindow(eventlog)</onclick>
+					<icon>icons/settings/eventlog.png</icon>
+									<visible>Skin.HasSetting(secret_unlocked)</visible>
+				</item>
+				<item>
+					<label>Aparência</label>
+					<onclick>ActivateWindow(SkinSettings)</onclick>
+					<icon>icons/settings/appearance.png</icon>
+				</item>
+				<item>
+					<label>Interface</label>
+					<onclick>ActivateWindow(InterfaceSettings)</onclick>
+					<icon>icons/settings/interface.png</icon>
+				</item>
+				<item>
+					<label>Reprodutor</label>
+					<onclick>ActivateWindow(PlayerSettings)</onclick>
+					<icon>icons/settings/player.png</icon>
+				</item>
+				<item>
+					<label>Mídia</label>
+					<onclick>ActivateWindow(MediaSettings)</onclick>
+					<icon>icons/settings/media.png</icon>
+				</item>
+				<item>
+					<label>TV ao vivo</label>
+					<onclick>ActivateWindow(PVRSettings)</onclick>
+					<icon>icons/settings/livetv.png</icon>
+				</item>
+				<item>
+					<label>Serviços</label>
+					<onclick>ActivateWindow(ServiceSettings)</onclick>
+					<icon>icons/settings/network.png</icon>
+				</item>
+				<item>
+					<label>Jogos</label>
+					<onclick>ActivateWindow(GameSettings)</onclick>
+					<icon>icons/settings/games.png</icon>
+					<visible>System.GetBool(gamesgeneral.enable)</visible>
+				</item>
+				<item>
+					<label>Perfis</label>
+					<onclick>ActivateWindow(Profiles)</onclick>
+					<icon>icons/settings/profiles.png</icon>
+									<visible>Skin.HasSetting(secret_unlocked)</visible>
+				</item>
+				<item>
+					<label>Sistema</label>
+					<onclick>ActivateWindow(SystemSettings)</onclick>
+					<icon>icons/settings/system.png</icon>
+									<visible>Skin.HasSetting(secret_unlocked)</visible>
+				</item>
+				<item>
+					<label>Configurações Avançadas</label>
+					<onclick>ActivateWindow(SkinSettings)</onclick>
+					<icon>icons/settings/skin.png</icon>
+					<visible>Skin.HasSetting(secret_unlocked)</visible>
+				</item>
+				<item>
+					<label>Diagnóstico SMARTED</label>
+					<onclick>RunScript(service.smarted.bootstrap,diagnostico)</onclick>
+					<icon>icons/settings/diagnostics.png</icon>
+					<visible>(System.HasAddon(service.smarted.bootstrap)) + Skin.HasSetting(secret_unlocked)</visible>
+				</item>
+					<item>
+					<label>Testar anúncio</label>
+					<onclick>RunScript(service.smarted.bootstrap,anuncio-teste)</onclick>
+					<icon>icons/settings/diagnostics.png</icon>
+					<visible>(System.HasAddon(service.smarted.bootstrap)) + Skin.HasSetting(secret_unlocked)</visible>
+				</item>
+				<item>
+					<label>LibreELEC</label>
+					<onclick>RunAddon(service.libreelec.settings)</onclick>
+					<icon>icons/settings/libreelec.png</icon>
+					<visible>(System.AddonIsEnabled(service.libreelec.settings)) + Skin.HasSetting(secret_unlocked)</visible>
+				</item>
+				<item>
+					<label>Favoritos</label>
+					<onclick>ActivateWindow(10060)</onclick>
+					<icon>icons/settings/favourites.png</icon>
+				</item>
+				<item>
+					<label>Add-ons de vídeo</label>
+					<onclick>ActivateWindow(10040)</onclick>
+					<icon>icons/settings/addons.png</icon>
+				</item>
+				<item>
+					<label>Restaurar atalhos</label>
+					<onclick>RunScript(service.smarted.bootstrap,favoritos)</onclick>
+					<icon>icons/settings/refresh.png</icon>
+					<visible>(System.HasAddon(service.smarted.bootstrap)) + Skin.HasSetting(secret_unlocked)</visible>
+				</item>
+				<item>
+					<label>Energia</label>
+					<onclick>ActivateWindow(ShutdownMenu)</onclick>
+					<icon>icons/settings/energy.png</icon>
+				</item>
+			</content>
+		</control>
+	</controls>
 </window>

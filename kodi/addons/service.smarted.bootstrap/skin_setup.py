@@ -175,6 +175,10 @@ def ensure_home_nodes(home_xml_paths=None, favourites_path=None, log=None):
         except (OSError, IOError):
             continue
         lidos += 1
+        # A Home Classica/Aurora publica as pastas reais em Skin.String
+        # (sync-nav) em vez de URLs fixas: barra dinamica = rotas presentes.
+        if 'smarted_nav_url_1' in texto:
+            continue
         for rotulo, mode, url in HOME_NODES:
             if not _rota_presente(texto, mode, url):
                 falta_home.append(rotulo)

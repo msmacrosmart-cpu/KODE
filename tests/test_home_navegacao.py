@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
-"""Home ativa (skin.novatv): HERO -> grades e grades -> HERO no D-pad."""
+"""Home ativa (skin.novatv = Classica/Aurora): HERO -> Lancamentos/Series e volta."""
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 HOME = ROOT / 'kodi' / 'skin.novatv' / 'xml' / 'Home.xml'
+ACOES = ('9000', '9121', '9122', '9123', '9201', '9203', '9300', '9301', '9302',
+         '9303')
 
 
 class HomeNavegacaoTest(unittest.TestCase):
@@ -21,35 +23,48 @@ class HomeNavegacaoTest(unittest.TestCase):
     def test_defaultcontrol_continua_na_barra_superior(self):
         self.assertEqual(self.raiz.findtext('defaultcontrol'), '9000')
 
-    def test_hero_desce_para_a_primeira_grade(self):
-        hero = self.controle('9100')
+    def test_hero_desce_para_as_fileiras_visiveis(self):
+        hero = self.controle('9300')
         descidas = [(c.text or '').strip() for c in hero.findall('ondown')]
-        self.assertTrue(any('9500' in d for d in descidas), descidas)
-        self.assertTrue(any('hide_widgets' in (c.get('condition') or '')
-                            for c in hero.findall('ondown')
-                            if (c.text or '').strip() == '9500'), descidas)
-        # fallback quando as grades estao escondidas: botoes do HERO
-        self.assertIn('9110', descidas)
-        self.assertIn('9000', [(c.text or '').strip()
-                               for c in hero.findall('onup')])
+        self.assertIn('9201', descidas)
+        self.assertIn('9203', descidas)
+        self.assertNotIn('9202', descidas, '9202 nao existe na Aurora')
 
-    def test_grades_sobem_para_o_hero(self):
-        grades = self.controle('9500')
-        subidas = grades.findall('onup')
-        self.assertTrue(any((c.text or '').strip() == '9100' and
-                            'hide_hero' in (c.get('condition') or '')
-                            for c in subidas), [c.text for c in subidas])
-        self.assertIn('9000', [(c.text or '').strip() for c in subidas])
+    def test_fileiras_sobem_para_as_acoes_do_hero(self):
+        for ident in ('9201', '9203'):
+            subidas = [(c.text or '').strip() for c in self.controle(ident).findall('onup')]
+            self.assertIn('9300', subidas, ident)
 
-    def test_botoes_do_hero_sobem_para_o_hero(self):
-        for ident in ('9110', '9111', '9112'):
+    def test_acoes_do_hero_sobem_para_a_barra(self):
+        for ident in ('9301', '9302', '9303'):
             self.assertEqual((self.controle(ident).findtext('onup') or '').strip(),
-                             '9100', ident)
+                             '9300', ident)
 
-    def test_primeira_grade_nao_foi_deslocada(self):
-        grades = self.controle('9500')
-        self.assertEqual((grades.findtext('top') or '').strip(), '650')
-        self.assertEqual((grades.findtext('height') or '').strip(), '430')
+    def test_lancamentos_e_series_ficam_lado_a_lado_no_grafo(self):
+        self.assertEqual((self.controle('9201').findtext('top') or '').strip(), '570')
+        self.assertEqual((self.controle('9203').findtext('top') or '').strip(), '822')
+        descidas = [(e.text or '').strip() for e in self.controle('9201').findall('ondown')]
+        self.assertIn('9203', descidas)
+        subidas = [(e.text or '').strip() for e in self.controle('9203').findall('onup')]
+        self.assertIn('9300', subidas)
+        self.assertIn('9201', subidas)
+
+    def test_nenhum_alvo_de_dpad_aponta_para_controle_inexistente(self):
+        ids = {c.get('id') for c in self.raiz.iter('control') if c.get('id')}
+        for tag in ('onup', 'ondown', 'onleft', 'onright', 'defaultcontrol', 'onclick'):
+            for elemento in self.raiz.iter(tag):
+                valor = (elemento.text or '').strip()
+                if valor.isdigit() and tag != 'onclick':
+                    self.assertIn(valor, ids, '%s -> %s ausente' % (tag, valor))
+
+    def test_ids_nao_se_repetem(self):
+        vistos = {}
+        for elemento in self.raiz.iter('control'):
+            ident = elemento.get('id')
+            if ident:
+                vistos[ident] = vistos.get(ident, 0) + 1
+        repetidos = {k: v for k, v in vistos.items() if v > 1}
+        self.assertEqual(repetidos, {})
 
 
 if __name__ == '__main__':

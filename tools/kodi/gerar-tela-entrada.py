@@ -492,6 +492,30 @@ def xml_imagem(cid, x, y, w, h, textura, aspecto=None):
     return el
 
 
+def campo_codigo(x, y, w, h, fonte, raio):
+    # CGUIEditControl alinha o valor à direita se o próprio edit tiver um label.
+    # Uma superfície, duas áreas de texto sem interseção e só um foco (310).
+    fundos = []
+    for ident, imagem, visivel in ((63, "field.png", "!Control.HasFocus(310)"),
+                                   (64, "field_focus.png", "Control.HasFocus(310)")):
+        fundo = xml_imagem(ident, x, y, w, h, imagem, "stretch")
+        fundo.find("texture").set("border", str(raio))
+        ET.SubElement(fundo, "visible").text = visivel
+        fundos.append(fundo)
+    reserva = 205
+    edit = ET.Element("control", {"type": "edit", "id": "310"})
+    for tag, valor in (("left", x), ("top", y), ("width", w - reserva), ("height", h),
+                       ("font", fonte), ("textoffsetx", 16), ("align", "left"),
+                       ("aligny", "center"), ("textcolor", "FFFFFFFF"),
+                       ("disabledcolor", "FF747474")):
+        ET.SubElement(edit, tag).text = str(valor)
+    for tag in ("label", "texturefocus", "texturenofocus"):
+        ET.SubElement(edit, tag)
+    nome = xml_label(65, x + w - reserva, y, reserva - 18, h, "Código de ativação",
+                     fonte, "FFFFFFFF", align="right", aligny="center")
+    return fundos + [edit, nome]
+
+
 def xml_botao(cid, x, y, w, h, rotulo, fonte_nome, cor_texto, normal, foco,
               cor_foco=None, border=0, pad_x=0):
     """Botao da skin; `pad_x` empurra o texto (usado nos botoes com icone)."""
@@ -799,17 +823,7 @@ def main(argv=None):
                                "btn_ghost_focus.png", cor_foco=escuro,
                                border=med.raio_btn))
 
-    edit = ET.Element("control", {"type": "edit", "id": "310"})
-    for tag, valor in (("left", field_x), ("top", by), ("width", field_w),
-                       ("height", btn_h)):
-        ET.SubElement(edit, tag).text = str(valor)
-    ET.SubElement(edit, "label").text = "Código de ativação"
-    ET.SubElement(edit, "font").text = estilos["field"]
-    ET.SubElement(edit, "textcolor").text = "FFFFFFFF"
-    ET.SubElement(edit, "disabledcolor").text = "FF747474"
-    ET.SubElement(edit, "texturefocus", {"border": str(med.raio_btn)}).text = "field_focus.png"
-    ET.SubElement(edit, "texturenofocus", {"border": str(med.raio_btn)}).text = "field.png"
-    controles.append(edit)
+    controles.extend(campo_codigo(field_x, by, field_w, btn_h, estilos["field"], med.raio_btn))
     controles.append(xml_botao(311, ativar_x, by, ativar_w, btn_h, ativar_txt,
                                estilos["btn"], escuro, "btn_primary.png",
                                "btn_primary_focus.png", border=med.raio_btn))

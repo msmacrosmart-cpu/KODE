@@ -1,2 +1,263 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<settings version="1"><section id="skin.novatv"><category id="home" label="31100"><group id="1"><setting id="hero_autoscroll" type="boolean" label="31101"><level>0</level><default>true</default><control type="toggle"/></setting><setting id="hide_hero" type="boolean" label="31102"><level>0</level><default>false</default><control type="toggle"/></setting><setting id="hide_widgets" type="boolean" label="31103"><level>0</level><default>false</default><control type="toggle"/></setting></group></category></section></settings>
+<!--
+  Definições de settings da skin.
+  Esta skin é empacotada como o addon skin.novatv (id que o launcher do dex
+  aplica no primeiro boot), portanto a section id deve permanecer skin.novatv.
+  Formato padrão de resources/settings.xml de addons de Kodi 21.
+-->
+<settings version="1">
+  <section id="skin.novatv">
+    <category id="home" label="Início">
+      <group id="1">
+        <setting id="home_layout" type="string" label="Layout da tela inicial">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="pb_hide_hero" type="boolean" label="Ocultar hero da tela inicial">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="pb_hide_clock" type="boolean" label="Ocultar relógio da tela inicial">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="no_fanart" type="boolean" label="Sem fanart na tela inicial">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="touchmode" type="boolean" label="Modo touchscreen">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="show_profileavatar" type="boolean" label="Mostrar avatar do perfil">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="show_profilename" type="boolean" label="Mostrar nome do perfil">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="show_weatherinfo" type="boolean" label="Mostrar informações de clima">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="show_musicvideoposter" type="boolean" label="Mostrar poster de videoclipes">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="hide_mediaflags" type="boolean" label="Ocultar flags de mídia">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="hide_background_fanart" type="boolean" label="Ocultar fanart de fundo">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="animate_background_fanart" type="boolean" label="Animar fanart de fundo">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="no_slide_animations" type="boolean" label="Desativar animações de transição">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="circle_rating" type="boolean" label="Avaliação em círculo">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="circle_userrating" type="boolean" label="Avaliação do usuário em círculo">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="AutoScroll" type="boolean" label="Auto-rolagem automática">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="autoscroll" type="boolean" label="Auto-rolagem">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="background_overlay" type="string" label="Overlay do fundo">
+          <level>0</level>
+          <default>1</default>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="HomeFanart.path" type="string" label="Caminho do fanart da tela inicial">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="HomeFanart.ext" type="string" label="Extensão do fanart da tela inicial">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="HomeFanart.name" type="string" label="Nome do fanart da tela inicial">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="MovieGenreFanart.path" type="string" label="Caminho do fanart de gênero">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="MovieGenreFanart.ext" type="string" label="Extensão do fanart de gênero">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="MovieGenreFanart.Name" type="string" label="Nome do fanart de gênero">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="WeatherFanart.path" type="string" label="Caminho do fanart do clima">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="WeatherFanart.ext" type="string" label="Extensão do fanart do clima">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="WeatherFanart.name" type="string" label="Nome do fanart do clima">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="weatherfanart.path" type="string" label="Caminho do fanart do clima (minúsculo)">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="weatherfanart.ext" type="string" label="Extensão do fanart do clima (minúsculo)">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="LyricScript_Path" type="string" label="Caminho do script de letras">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="OSDAutoClose" type="boolean" label="Auto-fechar OSD">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="OSDAutoCloseTime" type="string" label="Tempo de auto-fechar OSD">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string"/>
+        </setting>
+      </group>
+    </category>
+    <category id="onclick" label="Ações por clique">
+      <group id="1">
+        <setting id="album_onclick_browse" type="boolean" label="Álbum: abrir">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="album_onclick_play" type="boolean" label="Álbum: reproduzir">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="album_onclick_playnext" type="boolean" label="Álbum: reproduzir próximo">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="album_onclick_queue" type="boolean" label="Álbum: adicionar à fila">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="movieset_onclick_browse" type="boolean" label="Coleção: abrir">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="movieset_onclick_continuewatching" type="boolean" label="Coleção: continuar assistindo">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="movieset_onclick_playfrombeginning" type="boolean" label="Coleção: reproduzir do início">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="movieset_onclick_playnext" type="boolean" label="Coleção: reproduzir próximo">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="movieset_onclick_queue" type="boolean" label="Coleção: adicionar à fila">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="tvshow_onclick_browse" type="boolean" label="Série: abrir">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="tvshow_onclick_continuewatching" type="boolean" label="Série: continuar assistindo">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="tvshow_onclick_playfrombeginning" type="boolean" label="Série: reproduzir do início">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="tvshow_onclick_playnext" type="boolean" label="Série: reproduzir próximo">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="tvshow_onclick_queue" type="boolean" label="Série: adicionar à fila">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+      </group>
+    </category>
+    <category id="secrets" label="Desbloqueio secreto">
+      <group id="1">
+        <setting id="secret_click_count" type="string" label="Contador de cliques secretos">
+          <level>0</level>
+          <default>0</default>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="secret_settings_cycle" type="string" label="Ciclo de acessar configurações">
+          <level>0</level>
+          <default>0</default>
+          <control type="edit" format="string"/>
+        </setting>
+      </group>
+    </category>
+  </section>
+</settings>

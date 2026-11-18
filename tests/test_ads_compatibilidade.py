@@ -38,7 +38,7 @@ class AnunciosTest(unittest.TestCase):
         self.mod.vip_ativo = lambda: False
         self.aviso_original = self.mod.tocar_anuncio_com_aviso
         self.mod.tocar_anuncio_com_aviso = (
-            lambda atividade, log=None: self.chamadas.append(atividade) or True)
+            lambda atividade, log=None, uri='': self.chamadas.append(atividade) or True)
 
     def tearDown(self):
         for nome, antigo in self.mod._salvos.items():
@@ -69,7 +69,7 @@ class AnunciosTest(unittest.TestCase):
 
     def test_aviso_na_tela_so_quando_o_builtin_foi_enviado(self):
         self.falhas = []
-        self.mod.tocar_anuncio = lambda atividade, log=None: False
+        self.mod.tocar_anuncio = lambda atividade, log=None, uri='': False
         self.mod.xbmc.executebuiltin = lambda *a, **k: self.falhas.append(a)
         self.aviso_original(
             self.mod.ATIVIDADE_PREROLL, log=lambda *a, **k: None)
@@ -77,6 +77,7 @@ class AnunciosTest(unittest.TestCase):
 
     def test_monitor_chama_uma_vez_por_inicio(self):
         monitor = self.mod.MonitorPreRoll(log=None, intervalo=10)
+        monitor._disparar = self.mod.tocar_anuncio_com_aviso
         self.mod._e_video = lambda _p: True
         monitor._caminho = lambda: None
         monitor.onPlayBackStarted()
@@ -84,6 +85,7 @@ class AnunciosTest(unittest.TestCase):
         self.assertEqual(len(self.chamadas), 1)
         monitor.onPlayBackStopped()
         monitor.onPlayBackStarted()
+        monitor.onAVStarted()
         self.assertEqual(len(self.chamadas), 2)
 
 

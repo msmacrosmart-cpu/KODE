@@ -408,20 +408,52 @@
       <onleft>311</onleft>
       <onup>122</onup>
     </control>
-    <control type="edit" id="310">
+    <control type="image" id="63">
       <left>714</left>
       <top>920</top>
       <width>700</width>
       <height>57</height>
-      <label>Código de ativação</label>
+      <texture border="11">field.png</texture>
+      <aspectratio>stretch</aspectratio>
+      <visible>!Control.HasFocus(310)</visible>
+    </control>
+    <control type="image" id="64">
+      <left>714</left>
+      <top>920</top>
+      <width>700</width>
+      <height>57</height>
+      <texture border="11">field_focus.png</texture>
+      <aspectratio>stretch</aspectratio>
+      <visible>Control.HasFocus(310)</visible>
+    </control>
+    <control type="edit" id="310">
+      <left>714</left>
+      <top>920</top>
+      <width>495</width>
+      <height>57</height>
       <font>wf17</font>
+      <textoffsetx>16</textoffsetx>
+      <align>left</align>
+      <aligny>center</aligny>
       <textcolor>FFFFFFFF</textcolor>
       <disabledcolor>FF747474</disabledcolor>
-      <texturefocus border="11">field_focus.png</texturefocus>
-      <texturenofocus border="11">field.png</texturenofocus>
+      <label />
+      <texturefocus />
+      <texturenofocus />
       <onleft>123</onleft>
       <onright>311</onright>
       <onup>120</onup>
+    </control>
+    <control type="label" id="65">
+      <left>1209</left>
+      <top>920</top>
+      <width>187</width>
+      <height>57</height>
+      <label>Código de ativação</label>
+      <font>wf17</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <align>right</align>
+      <aligny>center</aligny>
     </control>
     <control type="button" id="311">
       <left>1426</left>

@@ -33,19 +33,18 @@ ADDON_DIR = ROOT / 'kodi' / 'addons' / ADDON_ID
 ADDON_PREFIX = 'assets/addons/%s/' % ADDON_ID
 SERVICO = 'assets/addons/service.smarted.bootstrap/'
 MODULOS = ('service.py', 'menu_smarted.py', 'performance.py', 'vip.py',
-           'smart_ads.py', 'smarted_release.py', 'check.py', 'addon.xml')
+           'smart_ads.py', 'ad_return.py', 'smarted_release.py', 'check.py', 'addon.xml')
 KEYMAP_ORIGEM = ROOT / 'kodi' / 'keymaps' / 'smartedtv-voltar.xml'
 KEYMAP_DESTINO = 'assets/system/keymaps/zzz-smartedtv-voltar.xml'
-# XMLs da skin ativa que fazem parte das correcoes desta versao. A Home e o
-# menu Energia sao do skin.novatv; se a base nao tiver o arquivo, ele fica
-# intocado (nada e inventado).
+# O *ID embarcado* não é a origem: o monólito copia a Clássica para skin.novatv.
+# A skin homônima da árvore Kodi usa outro vocabulário de IDs/fontes/texturas.
+SKINS = ('skin.novatv', 'skin.smartedtv.classic')
+SKIN_PREFIX = tuple('assets/addons/%s/' % skin for skin in SKINS)
+CLASSICA = ROOT / 'kodi/skin.estilo.personalizado/xml'
 SKIN_ARQUIVOS = {
-    'assets/addons/skin.novatv/xml/Home.xml':
-        ROOT / 'kodi' / 'skin.novatv' / 'xml' / 'Home.xml',
-    'assets/addons/skin.novatv/xml/DialogButtonMenu.xml':
-        ROOT / 'kodi' / 'skin.novatv' / 'xml' / 'DialogButtonMenu.xml',
-    'assets/addons/skin.novatv/xml/ShutdownMenu.xml':
-        ROOT / 'kodi' / 'skin.novatv' / 'xml' / 'ShutdownMenu.xml',
+    'assets/addons/%s/xml/%s' % (skin, nome): CLASSICA / nome
+    for skin in SKINS
+    for nome in ('Home.xml',)
 }
 SIG = re.compile(r'^META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC))$', re.I)
 STARTUP = re.compile(r'assets/addons/([^/]+)/xml/Startup\.xml$')
@@ -137,6 +136,31 @@ def patch_startup(dados):
     return novo.encode('utf-8')
 
 
+def mapa_da_skin():
+    """Todos os arquivos da skin Classica, no caminho de cada skin do APK.
+
+    ``skin.novatv`` é a skin ATIVA (o dex grava esse id no perfil) e
+    ``skin.smartedtv.classic`` é a cópia visível em Aparência > Skin.
+    """
+    mapa = {}
+    fonte = ROOT / 'kodi/skin.estilo.personalizado'
+    if not fonte.is_dir():
+        raise SystemExit('skin Classica ausente: %s' % fonte)
+    for caminho in sorted(fonte.rglob('*')):
+        if not caminho.is_file() or '__pycache__' in caminho.parts or caminho.suffix == '.pyc':
+            continue
+        rel = caminho.relative_to(fonte).as_posix()
+        dados = caminho.read_bytes()
+        for skin in SKINS:
+            # O addon.xml precisa declarar o id da PASTA (Kodi recusa id diverge).
+            if rel == 'addon.xml':
+                dados = (caminho.read_text(encoding='utf-8')
+                         .replace('id="skin.estilo.personalizado"', 'id="%s"' % skin)
+                         .encode('utf-8'))
+            mapa['assets/addons/%s/%s' % (skin, rel)] = dados
+    return mapa
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--apk', required=True, type=Path)
@@ -148,11 +172,28 @@ def main(argv=None):
     extras = arquivos_do_addon()
     extras.update(arquivos_do_servico())
     dbg('arquivos para atualizar: %d (addon + servico/keymap)' % len(extras))
+    arquivos_da_skin = mapa_da_skin()
 
     perfil = {}
     substituidos = set()
     startups = 0
     skins = 0
+    arvore = 0
+    with zipfile.ZipFile(args.apk) as _z:
+        existentes = _z.namelist()
+    nomes_skin = {n for n in existentes if n.startswith(SKIN_PREFIX)}
+    # Addon registrado no addon-manifest.xml? Skin ausente da base não é criada
+    # pela metade (o Kodi ignoraria a pasta e o item de Aparência sumiria).
+    presentes = {skin for skin in SKINS
+                 if 'assets/addons/%s/addon.xml' % skin in existentes}
+    if 'skin.novatv' not in presentes:
+        raise SystemExit('APK base sem a skin ativa skin.novatv')
+    arquivos_da_skin = {n: d for n, d in arquivos_da_skin.items()
+                        if n.split('/')[2] in presentes}
+    ignorados = sorted(set(arquivos_da_skin) - nomes_skin)
+    extras.update({n: d for n, d in arquivos_da_skin.items() if n not in nomes_skin})
+    dbg('skin: %d arquivo(s) da Classica para %s (%d fora do zip)'
+        % (len(arquivos_da_skin), '/'.join(SKINS), len(ignorados)))
     with zipfile.ZipFile(args.apk) as origem:
         nomes = set(origem.namelist())
         for exigido in EXIGIDOS:
@@ -170,6 +211,13 @@ def main(argv=None):
                     raise SystemExit('entrada duplicada: %s' % item.filename)
                 vistos.add(item.filename)
                 dados = origem.read(item)
+                if item.filename.startswith(SKIN_PREFIX):
+                    # A Home inteira vem da skin Classica (home + janelas + media).
+                    # O mapa SKIN_ARQUIVOS continua valendo para outros caminhos.
+                    novo = arquivos_da_skin.get(item.filename)
+                    if novo is not None and novo != dados:
+                        dados = novo
+                        arvore += 1
                 if item.filename.startswith(ADDON_PREFIX):
                     substituidos.add(item.filename)
                     continue
@@ -180,7 +228,7 @@ def main(argv=None):
                 if item.filename == KEYMAP_DESTINO:
                     substituidos.add(item.filename)
                     continue
-                if item.filename in SKIN_ARQUIVOS:
+                if item.filename in SKIN_ARQUIVOS and item.filename not in arquivos_da_skin:
                     novo_skin = SKIN_ARQUIVOS[item.filename].read_bytes()
                     if novo_skin != dados:
                         dados = novo_skin

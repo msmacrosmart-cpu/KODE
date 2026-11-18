@@ -166,6 +166,12 @@
 					<icon>icons/settings/diagnostics.png</icon>
 					<visible>(System.HasAddon(service.smarted.bootstrap)) + Skin.HasSetting(secret_unlocked)</visible>
 				</item>
+					<item>
+					<label>Testar anúncio</label>
+					<onclick>RunScript(service.smarted.bootstrap,anuncio-teste)</onclick>
+					<icon>icons/settings/diagnostics.png</icon>
+					<visible>(System.HasAddon(service.smarted.bootstrap)) + Skin.HasSetting(secret_unlocked)</visible>
+				</item>
 				<item>
 					<label>LibreELEC</label>
 					<onclick>RunAddon(service.libreelec.settings)</onclick>

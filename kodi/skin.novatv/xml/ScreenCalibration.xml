@@ -1,2 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<window><include>Anim</include><controls><control type="image"><left>0</left><top>0</top><width>1920</width><height>1080</height><texture colordiffuse="bg">white.png</texture></control><control type="label"><left>0</left><top>480</top><width>1920</width><height>80</height><font>font_large</font><textcolor>white</textcolor><aligny>center</aligny><align>center</align><label>Calibração de tela</label></control></controls></window>

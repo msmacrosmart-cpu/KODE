@@ -1,2 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<window type="dialog"><include>Anim</include><controls><control type="image"><left>0</left><top>600</top><width>1920</width><height>480</height><texture>scrim_v.png</texture></control><control type="label"><left>60</left><top>760</top><width>1500</width><height>60</height><font>font_large_bold</font><textcolor>white</textcolor><aligny>center</aligny><label>$INFO[VideoPlayer.Title]</label></control><control type="textbox"><left>60</left><top>830</top><width>1500</width><height>150</height><font>font_main</font><textcolor>text</textcolor><autoscroll delay="3000" time="2000" repeat="5000">true</autoscroll><label>$INFO[VideoPlayer.Plot]</label></control></controls></window>
+<window>
+	<defaultcontrol always="true">999</defaultcontrol>
+	<controls>
+		<control type="button" id="999">
+			<left>0</left>
+			<top>0</top>
+			<width>100%</width>
+			<height>100%</height>
+			<texturefocus />
+			<texturenofocus />
+			<onright>StepForward</onright>
+			<onleft>StepBack</onleft>
+			<onup>ChapterOrBigStepForward</onup>
+			<ondown>ChapterOrBigStepBack</ondown>
+			<onclick>OSD</onclick>
+		</control>
+	</controls>
+</window>

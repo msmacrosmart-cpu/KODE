@@ -59,6 +59,7 @@ import xbmcvfs
 PACKAGE = 'smartedtv.full'
 ATIVIDADE_ABERTURA = 'smartedtv.full.AppOpenActivity'
 ATIVIDADE_PREROLL = 'smartedtv.full.PreRollActivity'
+ATIVIDADE_RETORNO = 'smartedtv.full.AdBreak'
 
 # action propria de cada tela: vai na posicao 2 do StartAndroidActivity (o
 # "intent" nao pode ser vazio, senao o Kodi procura o launcher do pacote e
@@ -144,7 +145,7 @@ def android():
         return False
 
 
-def builtin_para(atividade, package=None, acao=None):
+def builtin_para(atividade, package=None, acao=None, uri=''):
     """Builtin com os 9 parametros na ordem do Kodi.
 
     (package, intent, dataType, dataURI, flags, extras, action, category,
@@ -156,12 +157,12 @@ def builtin_para(atividade, package=None, acao=None):
       da visibilidade de pacotes do Android 11+.
     """
     if acao is None:
-        acao = ACAO_PREROLL if atividade == ATIVIDADE_PREROLL else ACAO_ABERTURA
-    campos = [package or PACKAGE, acao, '', '', '', '', '', '', atividade]
+        acao = ACAO_PREROLL if atividade in (ATIVIDADE_RETORNO, ATIVIDADE_PREROLL) else ACAO_ABERTURA
+    campos = [package or PACKAGE, acao, '', uri, '', '', '', '', atividade]
     return 'StartAndroidActivity(%s)' % ','.join(campos)
 
 
-def tocar_anuncio(atividade, log=None):
+def tocar_anuncio(atividade, log=None, uri=''):
     """Abre a tela de anuncio do app SMARTEDTV Ads.
 
     Tenta o componente explicito (className) e, se o app tiver launcher, o data
@@ -171,7 +172,7 @@ def tocar_anuncio(atividade, log=None):
         if log:
             log('[SmartAds] ignorado (nao e Android)')
         return False
-    builtin = builtin_para(atividade)
+    builtin = builtin_para(atividade, uri=uri)
     try:
         xbmc.executebuiltin(builtin)
     except Exception as erro:
@@ -188,6 +189,27 @@ def tocar_anuncio(atividade, log=None):
     return True
 
 
+def _kodi_em_foco(limite=2.5, passo=0.1):
+    """Espera o Kodi recuperar o foco da janela (volta do anuncio/browser)."""
+    fim = time.time() + limite
+    while time.time() < fim:
+        try:
+            if xbmc.getCondVisibility('System.HasFocus | Window.IsActive(10000)'):
+                return True
+        except Exception:
+            return True
+        time.sleep(passo)
+    return False
+
+
+def abrir_anuncio(atividade, log=None, uri=''):
+    """Dispara a tela e espera o Kodi voltar a frente antes de liberar o video."""
+    disparou = tocar_anuncio(atividade, log, uri)
+    if disparou:
+        _kodi_em_foco()
+    return disparou
+
+
 def tocar_anuncio_com_aviso(atividade, log=None):
     """Igual a tocar_anuncio, mas avisa na tela do Kodi (fica no log e na TV).
 
@@ -195,7 +217,7 @@ def tocar_anuncio_com_aviso(atividade, log=None):
     aparecia tambem quando o Android recusava o componente e o usuario via
     "Abrindo anuncio" sem anuncio nenhum (tela vazia) no projetor.
     """
-    disparou = tocar_anuncio(atividade, log)
+    disparou = abrir_anuncio(atividade, log)
     if log:
         log('[SmartAds] aviso na tela: %s (%s)'
             % ('enviado' if disparou else 'nao enviado', atividade))
@@ -248,7 +270,7 @@ def esquecer():
 
 
 def mostrar_preroll(log=None, intervalo=None, agora=None, caminho=None,
-                    chave=None, sessao=None):
+                    chave=None, sessao=None, disparar=None, forcar=False):
     """Intersticial em TODA troca de conteudo (exceto VIP).
 
     ``intervalo`` e so a janela anti-duplicidade do MESMO inicio: o Kodi avisa
@@ -268,53 +290,38 @@ def mostrar_preroll(log=None, intervalo=None, agora=None, caminho=None,
     # o mesmo inicio. Sem caminho/canal (alguns projetores/PVR nao entregam
     # metadados) a chave era '?' e o anuncio NUNCA era pedido. A sessao resolve
     # o mesmo inicio sem depender dos metadados.
-    if sessao is not None:
+    if forcar:
+        # Botao "Testar anuncio" dos Ajustes: mesmo caminho do player, sem
+        # inventar exibicao (o retorno do Java ainda e o unico recibo).
+        sessao = None
+        chave = 'teste:%d' % agora
+    elif sessao is not None:
         if sessao == globals().get('_ultima_sessao'):
             if log:
                 log('[SmartAds] mesmo inicio de reproducao (sessao %s), sem anuncio'
                     % sessao)
             return False
-    if chave == '?':
-        if log:
-            log('[SmartAds] stream sem metadados; usando a sessao de reproducao')
-    anterior = globals().get('_ultimo_momento', 0.0)
-    ultima_chave = globals().get('_ultimo_caminho_preroll')
-    ultimo_caminho = globals().get('_ultimo_caminho_base')
-    # O MESMO inicio chega em onPlayBackStarted e onAVStarted; as vezes o
-    # canal/titulo so aparece no segundo callback (chave vira caminho|canal).
-    # Nesse caso a chave anterior e prefixo da nova: mesmo inicio. Ja
-    # caminho|Canal A -> caminho|Canal B e troca de canal de verdade.
-    mesmo_inicio = bool(ultima_chave) and (
-        chave == ultima_chave
-        or chave.startswith(ultima_chave + '|')
-        or ultima_chave.startswith(chave + '|'))
-    if mesmo_inicio and agora - anterior < intervalo:
-        if log:
-            log('[SmartAds] mesmo inicio de stream (anti-duplicidade), sem anuncio')
-        # Guarda a chave MAIS COMPLETA (a do onAVStarted, com canal/titulo):
-        # sem isso a troca de canal seguinte seria confundida com prefixo dela.
-        if len(chave) > len(ultima_chave or ''):
-            globals()['_ultimo_caminho_preroll'] = chave
-            globals()['_ultimo_caminho_base'] = caminho
-            globals()['_ultimo_momento'] = agora
+    elif chave == globals().get('_ultimo_caminho_preroll') and agora - globals().get('_ultimo_momento', 0) < intervalo:
         return False
-    if chave == ultima_chave and chave != '?' and agora - anterior < intervalo:
-        if log:
-            log('[SmartAds] mesmo inicio de stream (anti-duplicidade), sem anuncio')
-        return False
-    if chave == '?' and ultima_chave == '?' and agora - anterior < intervalo:
-        if log:
-            log('[SmartAds] mesmo inicio sem metadados (anti-duplicidade), sem anuncio')
-        return False
-    disparou = tocar_anuncio_com_aviso(ATIVIDADE_PREROLL, log)
-    globals()['_ultimo_momento'] = agora
-    globals()['_ultimo_caminho_preroll'] = chave
-    globals()['_ultimo_caminho_base'] = caminho
-    globals()['_ultima_sessao'] = sessao
+    disparou = (disparar or tocar_anuncio_com_aviso)(ATIVIDADE_PREROLL, log)
+    if disparou:
+        globals()['_ultimo_momento'] = agora
+        globals()['_ultimo_caminho_preroll'] = chave
+        globals()['_ultima_sessao'] = sessao
     if log:
-        log('[SmartAds] intersticial pedido na troca de conteudo (%s): %s'
-            % (chave, 'disparado' if disparou else 'nao disparado'))
+        log('[SmartAds] pré-roll: %s (sessão %s)' % ('pedido' if disparou else 'indisponível', sessao))
     return disparou
+
+
+def testar_anuncio(log=None):
+    """Pede UM pré-roll pelo mesmo builtin, para conferir no aparelho/log."""
+    if vip_ativo():
+        if log:
+            log('[SmartAds] teste ignorado: VIP ativo')
+        return False
+    # forcar=True ignora a janela anti-duplicidade, mas usa o MESMO caminho do
+    # player (ponte + retorno). Sem player tocando, so o disparo é testado.
+    return bool(mostrar_preroll(log, sessao=None, forcar=True))
 
 
 def mostrar_abertura(log=None):
@@ -410,6 +417,21 @@ class MonitorPreRoll(_BasePlayer):
         self.intervalo = intervalo
         self.ultimo_caminho = None
         self.sessao = 0
+        self.breaks = None
+
+    def _disparar(self, atividade, log):
+        from ad_return import Breaks, KodiVideo
+        if self.breaks is None:
+            self.breaks = Breaks(log)
+        try:
+            video = KodiVideo(self)
+            return self.breaks.start(video, lambda token: abrir_anuncio(
+                ATIVIDADE_RETORNO, log, 'smartedtv://preroll/' + token))
+        except Exception as erro:
+            # Fallback to the original activity and Kodi's native onPause/onResume.
+            if log:
+                log('[SmartAds] player sem hand-off: %s' % type(erro).__name__)
+            return tocar_anuncio(atividade, log)
 
     def _caminho(self):
         try:
@@ -432,10 +454,13 @@ class MonitorPreRoll(_BasePlayer):
             if not _e_video(self):
                 return
             caminho = self._caminho() or self.ultimo_caminho
+            if self.breaks and self.breaks.is_replay(caminho, xbmc.getInfoLabel('VideoPlayer.ChannelName')):
+                globals()['_ultima_sessao'] = self.sessao
+                return
             chave = _chave_conteudo(caminho)
             self.ultimo_caminho = caminho
             mostrar_preroll(self.log, self.intervalo, caminho=caminho,
-                            chave=chave, sessao=self.sessao)
+                            chave=chave, sessao=self.sessao, disparar=self._disparar)
         except Exception as erro:  # nunca derrubar o servico por causa do anuncio
             if self.log:
                 self.log('[SmartAds] pre-roll falhou (%s)' % erro, xbmc.LOGWARNING)
@@ -444,7 +469,10 @@ class MonitorPreRoll(_BasePlayer):
     # stream. Os dois passam pela mesma janela anti-duplicidade.
     def onPlayBackStarted(self):
         self.sessao += 1
-        self._talvez_mostrar()
+        if self.breaks:
+            self.breaks.cancel()
+        # Wait for AVStarted: the addon may still be resolving/resuming the item.
+
 
     def onAVStarted(self):
         # Mesma sessao de onPlayBackStarted: nao pede o segundo anuncio.
@@ -455,11 +483,15 @@ class MonitorPreRoll(_BasePlayer):
         self._talvez_mostrar()
 
     def onPlayBackStopped(self):
+        if self.breaks:
+            self.breaks.stopped()
         self.ultimo_caminho = None
         self.sessao += 1
         esquecer()
 
     def onPlayBackEnded(self):
+        if self.breaks:
+            self.breaks.stopped(ended=True)
         self.ultimo_caminho = None
         self.sessao += 1
         esquecer()

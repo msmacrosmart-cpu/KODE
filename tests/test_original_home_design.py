@@ -1,27 +1,22 @@
-"""Lock the supplied NovaTV row card layouts against redesign.
+# -*- coding: utf-8 -*-
+"""Trava os cards das duas fileiras da Home Classica/Aurora contra redesenho.
 
-The hero is intentionally changed at the user’s request to remove the band.
-
-Hashes were calculated from skin.novatv.zip SHA-256
-86b9808741bdc00f498dd7d83192518251a455b034eb667e90442e4182df1acb.
-Whitespace, the Home data sources and navigation are not part of these hashes.
+Estes hashes sao os da Home Clássica distribuida como skin.novatv nas versões
+até a 1.0.86 (67974c2): cards 300x170 com anel de foco e titulo. Fonte, dados e
+navegação não entram no hash — só a aparência do card.
 """
 import hashlib
 import json
-from pathlib import Path
 import unittest
+from pathlib import Path
 from xml.etree import ElementTree as ET
 
-HOME = Path(__file__).resolve().parents[1] / 'kodi/skin.novatv/xml/Home.xml'
+HOME = Path(__file__).resolve().parents[1] / 'kodi/skin.estilo.personalizado/xml/Home.xml'
 EXPECTED = {
-    ('9200','itemlayout'): 'dd8f347c2e70b5c45065654bc1fa2d1fd382f2b5bfb4f712849c579f2f0a3477',
-    ('9200','focusedlayout'): 'd517bd256b12fef6e19bc509183ddbef6d6f20e27726b2ebd4df35f630e92296',
-    ('9210','itemlayout'): '3877b5233f8da889136afb4db201a4f87dec6fba9dfd5ba2c0c9a9aab3d7b3c8',
-    ('9210','focusedlayout'): 'ca60938ffdc42c4bc565f59f234eeb22488329a7c492d0a331a2395c36b56990',
-    ('9220','itemlayout'): 'dd8f347c2e70b5c45065654bc1fa2d1fd382f2b5bfb4f712849c579f2f0a3477',
-    ('9220','focusedlayout'): 'd517bd256b12fef6e19bc509183ddbef6d6f20e27726b2ebd4df35f630e92296',
-    ('9230','itemlayout'): '3877b5233f8da889136afb4db201a4f87dec6fba9dfd5ba2c0c9a9aab3d7b3c8',
-    ('9230','focusedlayout'): 'ca60938ffdc42c4bc565f59f234eeb22488329a7c492d0a331a2395c36b56990',
+    ('9201', 'itemlayout'): 'd8b773f055bf6c843f28e3d0ea929843f19a186f9cb80a889db43bd9f4b48716',
+    ('9201', 'focusedlayout'): '9f7f0e267c6799e120c25566c1a7c1975f9922e5b1cb4e59eb3a2defe3df478d',
+    ('9203', 'itemlayout'): 'd8b773f055bf6c843f28e3d0ea929843f19a186f9cb80a889db43bd9f4b48716',
+    ('9203', 'focusedlayout'): '9f7f0e267c6799e120c25566c1a7c1975f9922e5b1cb4e59eb3a2defe3df478d',
 }
 
 
@@ -31,13 +26,31 @@ def canonical(element):
 
 
 class OriginalHomeDesignTest(unittest.TestCase):
-    def test_original_card_appearances(self):
-        root=ET.parse(HOME).getroot()
-        for (ident, layout), expected in EXPECTED.items():
-            with self.subTest(control=ident,layout=layout):
-                node=root.find(".//control[@id='%s']/%s" % (ident,layout))
-                self.assertIsNotNone(node)
-                data=json.dumps(canonical(node),ensure_ascii=False,separators=(',',':')).encode()
-                self.assertEqual(hashlib.sha256(data).hexdigest(),expected)
+    @classmethod
+    def setUpClass(cls):
+        cls.root = ET.parse(HOME).getroot()
 
-if __name__=='__main__': unittest.main()
+    def test_cards_das_fileiras_da_home_original(self):
+        for (ident, layout), expected in EXPECTED.items():
+            with self.subTest(control=ident, layout=layout):
+                node = self.root.find(".//control[@id='%s']/%s" % (ident, layout))
+                self.assertIsNotNone(node)
+                dados = json.dumps(canonical(node), ensure_ascii=False,
+                                   separators=(',', ':')).encode()
+                self.assertEqual(hashlib.sha256(dados).hexdigest(), expected)
+
+    def test_geometria_da_home_original(self):
+        # Lançamentos e Séries visíveis ao mesmo tempo, 570 e 822 de altura.
+        for ident, topo in (('9201', '570'), ('9203', '822')):
+            lista = self.root.find(".//control[@id='%s']" % ident)
+            self.assertEqual((lista.findtext('top') or '').strip(), topo)
+            self.assertEqual((lista.findtext('height') or '').strip(), '194')
+        # Hero: selo LANÇAMENTO, título, metadados, plot e as ações.
+        labels = [(e.text or '').strip() for e in self.root.iter('label')]
+        self.assertIn('LANÇAMENTO', labels)
+        self.assertIn('Assistir', labels)
+        self.assertIn('Informações', labels)
+
+
+if __name__ == '__main__':
+    unittest.main()

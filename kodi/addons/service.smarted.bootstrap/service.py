@@ -272,7 +272,7 @@ def apply_navigation():
     plugin.video.smarted; aqui disparamos com force=1 para o boot sempre
     refazer o mapeamento e gravar o cache do dia.
     """
-    xbmc.executebuiltin('RunPlugin(plugin://plugin.video.smarted/?route=sync-nav&force=1)')
+    xbmc.executebuiltin('RunPlugin(plugin://plugin.video.smarted/?route=sync-nav)')
 
 
 HERO_ROTATION = 8.0      # segundos entre um lancamento e outro
@@ -287,7 +287,7 @@ def _hero_livre():
         return False
     if xbmc.getCondVisibility('Control.HasFocus(%d) | Control.HasFocus(9300) | '
                               'Control.HasFocus(9301) | Control.HasFocus(9302) | '
-                              'Control.HasFocus(9303)' % HERO_CONTROL):
+                              'Control.HasFocus(9303) | Control.HasFocus(9203) | System.HasActiveModalDialog' % HERO_CONTROL):
         return False
     return bool(xbmc.getInfoLabel('Container(%d).ListItem.Label' % HERO_CONTROL))
 
@@ -306,13 +306,8 @@ def _avanca_hero():
     time.sleep(0.4)
     if _posicao_hero() != antes:
         return 'move'
-    # alguns builds do Kodi so movem o cursor de um container com foco: usa o
-    # foco por um instante (fora dos controles do HERO) e devolve na hora
-    atual = xbmc.getInfoLabel('System.CurrentControlId') or ''
-    xbmc.executebuiltin('SetFocus(%d)' % HERO_CONTROL)
-    xbmc.executebuiltin('Action(Right)')
-    xbmc.executebuiltin('SetFocus(%s)' % (atual if atual.isdigit() else '9000'))
-    return 'foco'
+    return 'sem movimento'  # nunca roubar o foco para simular uma seta
+
 
 
 def rotate_hero(monitor, intervalo=HERO_ROTATION):
@@ -403,6 +398,19 @@ def main():
             xbmc.LOGWARNING)
     xbmc.executebuiltin('Notification(SMARTED, Preparando o conteudo..., 4000)')
 
+    # Anuncios: o gancho de pre-roll precisa existir ANTES de qualquer video
+    # (canal/filme/serie). Sem esta chamada o MonitorPreRoll nunca era criado e
+    # nenhum anuncio era pedido, em nenhum aparelho. O app-open espera a Home.
+    try:
+        smart_ads.iniciar_monitor(log)
+        abertura = threading.Thread(target=smart_ads.abertura_depois_do_boot,
+                                    args=(monitor, log), name='ads-abertura')
+        abertura.daemon = True
+        abertura.start()
+    except Exception as erro:  # nunca derrubar o boot por causa de anuncio
+        log('ads: nao foi possivel iniciar os gatilhos (%s)' % erro,
+            xbmc.LOGWARNING)
+
     waited = 0
     while waited < WAIT_SECONDS and not monitor.abortRequested():
         if addon_manager_ready():
@@ -420,33 +428,15 @@ def main():
     failed = enable_addons(report['required'])
     apply_silencio()
     write_favourites()
-    apply_navigation()
     garantir_menu(xbmc, log=log)
     silenciar_avisos_brazuca(log=log)
-    # teste real dos botoes da barra: passa por cada pasta e registra o resultado
-    navegacao = rodar_validacao_navegacao(log)
-    if navegacao is not None:
-        falhas = [linha for linha in navegacao if linha.startswith('FALHA')]
-        log('nav-check: %d destinos testados, %d falha(s)' % (len(navegacao), len(falhas)))
     performance = apply_performance()
-
-    # Anuncios: o gancho de pre-roll precisa existir ANTES de qualquer video
-    # (canal/filme/serie). Sem esta chamada o MonitorPreRoll nunca era criado e
-    # nenhum anuncio era pedido, em nenhum aparelho. O app-open espera a Home.
-    try:
-        smart_ads.iniciar_monitor(log)
-        abertura = threading.Thread(target=smart_ads.abertura_depois_do_boot,
-                                    args=(monitor, log), name='ads-abertura')
-        abertura.daemon = True
-        abertura.start()
-    except Exception as erro:  # nunca derrubar o boot por causa de anuncio
-        log('ads: nao foi possivel iniciar os gatilhos (%s)' % erro,
-            xbmc.LOGWARNING)
 
     # 1º arranque: skin SMARTEDTV ativa + nós da Home ligados às rotas do addon
     home = xbmcvfs.translatePath('special://home')
     addons_dir = os.path.join(home, 'addons')
     skin = ensure_skin(home, log=log)
+    apply_navigation()  # depois de fixar a skin, publica a barra antes dos nós
     nodes = ensure_home_nodes(
         home_xml_candidates(addons_dir),
         os.path.join(home, 'userdata', 'favourites.xml'),
@@ -466,6 +456,17 @@ def main():
             'Notification(SMARTED, Conteudo incompleto: veja userdata/smarted-bootstrap.log, 8000)')
 
     # o HERO alterna sozinho entre os lancamentos enquanto a Home esta aberta
+    def checar_navegacao():
+        # Files.GetDirectory nos 7 destinos e caro (rede): o boot nao espera.
+        if monitor.waitForAbort(45):
+            return
+        try:
+            rodar_validacao_navegacao(log)
+        except Exception as erro:  # noqa: BLE001
+            log('nav-check: falhou (%s)' % erro, xbmc.LOGWARNING)
+
+    threading.Thread(target=checar_navegacao, name='nav-check', daemon=True).start()
+
     rotacao = threading.Thread(target=rotate_hero, args=(monitor,), name='hero-rotate')
     rotacao.daemon = True
     rotacao.start()

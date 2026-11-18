@@ -95,6 +95,18 @@ def handle_skin_command(command):
         return bool(ensure_home_nodes(
             home_xml_candidates(os.path.join(home, 'addons')),
             os.path.join(home, 'userdata', 'favourites.xml'))['ok'])
+    if command == 'anuncio-teste':
+        import smart_ads
+        enviado = smart_ads.testar_anuncio(service.log)
+        xbmcgui.Dialog().notification(
+            'SMARTEDTV Anúncios',
+            'Anúncio solicitado' if enviado else 'Anúncio não solicitado (VIP ou fora do Android)',
+            xbmcgui.NOTIFICATION_INFO if enviado else xbmcgui.NOTIFICATION_WARNING, 5000)
+        return True
+    if command == 'nav-check':
+        from menu_smarted import rodar_validacao_navegacao
+        rodar_validacao_navegacao(service.log)
+        return True
     if command == 'performance':
         return apply_performance()
     if command == 'favoritos':

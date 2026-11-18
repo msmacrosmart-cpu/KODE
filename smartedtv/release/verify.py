@@ -11,6 +11,12 @@ ANDROID = '{http://schemas.android.com/apk/res/android}'
 ABIS = {'armeabi-v7a': (1, 40), 'arm64-v8a': (2, 183)}  # ELF class, e_machine
 
 
+def _classe_dex(nome):
+    import re
+    achado = re.fullmatch(r'classes(\d*)\.dex', nome)
+    return None if not achado else int(achado.group(1) or 1)
+
+
 def require(ok, message):
     if not ok:
         raise ValueError(message)
@@ -41,7 +47,7 @@ def verify_manifest(root, name, code):
             'launcher celular, launcher TV ou banner ausente')
 
 
-def verify_apk(base, final):
+def verify_apk(base, final, bridge=None):
     def code_files(z):
         return {n for n in z.namelist() if n.startswith('lib/') or re.fullmatch(r'classes\d*\.dex|resources\.arsc', n)}
 
@@ -50,7 +56,17 @@ def verify_apk(base, final):
         require(len(names) == len(set(names)) and apk.testzip() is None, 'ZIP duplicado ou corrompido')
         require(apk.getinfo('resources.arsc').compress_type == ZIP_STORED, 'resources.arsc comprimido')
         require({n.split('/')[1] for n in names if n.startswith('lib/')} == ABIS.keys(), 'conjunto de ABIs incorreto')
-        require(code_files(before) == code_files(apk), 'sumiu código da v22')
+        # O único Dex aceito a mais é UM classesN.dex novo (a ponte do anúncio,
+        # compilada do fonte). Kodi, libs e o resto do código continuam iguais.
+        antigos = code_files(before)
+        novos = code_files(apk)
+        extras = novos - antigos
+        require(antigos <= novos, 'sumiu código da v22')
+        if extras:
+            antigos_dex = sorted(_classe_dex(n) for n in antigos if n.endswith('.dex'))
+            numeros = sorted(_classe_dex(n) for n in extras if n.endswith('.dex'))
+            require(len(extras) == 1 and numeros == [max(antigos_dex) + 1] and
+                    extras == {'classes%d.dex' % numeros[0]}, 'Dex extra inesperado: %s' % extras)
         for path in code_files(apk):
             contents = apk.read(path)
             require(contents == before.read(path), 'código diferente da base: '+path)
@@ -58,6 +74,11 @@ def verify_apk(base, final):
                 abi = path.split('/')[1]
                 require(contents[:4] == b'\x7fELF' and contents[5] == 1 and
                         (contents[4], struct.unpack_from('<H', contents, 18)[0]) == ABIS[abi], 'ELF incompatível: '+path)
+        if bridge is not None:
+            novo = sorted(extras)[0]
+            require(apk.read(novo) == bridge.read_bytes(),
+                    'a ponte compilada não é o Dex novo do APK')
+            print('ponte do anúncio: %s (%d B)' % (novo, len(bridge.read_bytes())))
         for abi in ABIS:
             require(f'lib/{abi}/libkodi.so' in names, 'motor ausente: '+abi)
             print(abi, sum(n.startswith(f'lib/{abi}/') and n.endswith('.so') for n in names), 'bibliotecas verificadas')
@@ -66,7 +87,8 @@ def verify_apk(base, final):
 
 
 if __name__ == '__main__':
-    base, apk, xml, name, code = sys.argv[1:]
+    base, apk, xml, name, code = sys.argv[1:6]
     verify_manifest(ET.parse(xml).getroot(), name, code)
-    verify_apk(Path(base), Path(apk))
-    print(f'smartedtv.full {name} ({code}), API 26+, APK standalone, LAUNCHER + LEANBACK_LAUNCHER; Dex e libs intactos.')
+    verify_apk(Path(base), Path(apk), Path(sys.argv[6]) if len(sys.argv) > 6 else None)
+    print(f'smartedtv.full {name} ({code}), API 26+, APK standalone, LAUNCHER + LEANBACK_LAUNCHER; '
+          'Dex do Kodi e libs intactos; só a ponte do anúncio é Dex novo.')
