@@ -98,8 +98,11 @@ def url_da_pasta(url):
         dados = parse_qs(urlsplit(texto).query, keep_blank_values=True)
         if dados.get('route', [''])[0] == 'pasta':
             return dados.get('url', [''])[0]
-        return ''
-    return texto
+    # Qualquer diretorio de plugin e ordenavel: a pasta do Brazuca (uso real) e
+    # as proprias rotas deste addon (util para conferir no aparelho sem rede).
+    if texto.startswith('plugin://'):
+        return texto
+    return ''
 
 
 def url_da_rota(url, ordem):

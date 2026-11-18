@@ -83,10 +83,16 @@ class OrdenacaoTest(unittest.TestCase):
         self.assertEqual(segunda.count('route=pasta'), 1)
         self.assertNotIn('ordem=az', segunda)
 
-    def test_paginas_do_addon_nao_sao_reordenadas(self):
-        # rota propria do app (ex.: filmes, busca) nao e pasta do Brazuca
-        self.assertEqual(self.ordering.url_da_rota(
-            'plugin://plugin.video.smarted/?route=movies', 'az'), '')
+    def test_rotas_de_plugin_tambem_sao_ordenaveis(self):
+        # as rotas do proprio app sao diretorios de plugin: uteis para conferir
+        # a ordenacao no aparelho mesmo sem a pasta do Brazuca aberta
+        destino = self.ordering.url_da_rota(
+            'plugin://plugin.video.smarted/?route=movies', 'az')
+        self.assertIn('route=pasta', destino)
+        self.assertIn('ordem=az', destino)
+
+    def test_caminho_de_arquivo_nao_e_reordenado(self):
+        self.assertEqual(self.ordering.url_da_rota('special://xbmc/media', 'az'), '')
 
 
 class RotasDoPluginTest(unittest.TestCase):
@@ -145,8 +151,8 @@ class RotasDoPluginTest(unittest.TestCase):
         self.assertIn('route=pasta', atualizacoes[0])
         self.assertIn('ordem=az', atualizacoes[0])
 
-    def test_ordenar_fora_de_pasta_do_addon_nao_faz_nada(self):
-        self.pasta = 'plugin://plugin.video.smarted/?route=movies'
+    def test_ordenar_fora_de_diretorio_de_plugin_nao_faz_nada(self):
+        self.pasta = 'special://xbmc/media'
         with patch.dict(sys.modules, self.modules):
             self._default().sort_folder(1, {'ordem': ['az']})
         self.assertEqual([c for c in self.chamadas if c.startswith('Container.Update(')], [])

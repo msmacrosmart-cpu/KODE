@@ -1,0 +1,131 @@
+name: SMARTEDTV - provar d-pad e filtro no aparelho
+# Teste FUNCIONAL no emulador: aperta KEYCODE_DPAD_* de verdade dentro do Kodi
+# e compara o que a janela mostra (JSON-RPC) antes e depois do filtro.
+#
+# O APK testado recebe exatamente os mesmos assets do APK de producao
+# (tools/kodi/atualizar-apk-v17.py, o mesmo passo do release) e mais nada alem
+# do script de observacao e de uma tecla de atalho que o dispara. Nenhuma
+# correcao e validada "por leitura de XML".
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/5c219515-kode]
+    paths:
+      - '.github/workflows/smartedtv-dpad-aparelho.yml'
+      - 'smartedtv/release/dpad-aparelho.sh'
+      - 'tests/kodi/dpad-monitor.py'
+
+permissions:
+  contents: read
+
+jobs:
+  aparelho:
+    name: d-pad e filtro no emulador (API 30, x86_64)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    env:
+      APP_ID: smartedtv.full
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Montar o APK com os assets de producao
+        run: |
+          set -euo pipefail
+          mkdir -p build/universal
+          gh release download v1.0.87-universal-v22 -R "$GITHUB_REPOSITORY" \
+            --pattern '*.apk' --dir build/universal
+          apk=$(find build/universal -name '*.apk' | head -1)
+          [ -n "$apk" ] || { echo '::error::base v22 indisponivel'; exit 1; }
+          echo "base: $apk ($(stat -c %s "$apk") bytes)"
+          sha256sum "$apk"
+          # mesma base conferida pelo release (sha256 fixo no prepare.sh).
+          # A tag v22 tem historico de nomes: comparar o conteudo, nao o nome.
+          if ! printf '%s  %s\n' \
+              18d95307a015d4e15d5d8b2c07d6f228a7a47c487b0c5891b9e55b4c5cccaaf0 "$apk" \
+              | sha256sum -c -; then
+            echo '::error::a base baixada nao e a v22 conferida pelo release'
+            exit 1
+          fi
+          mv "$apk" build/universal/base-v22.apk
+          python3 tools/kodi/atualizar-apk-v17.py \
+            --apk build/universal/base-v22.apk \
+            --saida "$RUNNER_TEMP/overlay.apk"
+
+      - name: 2. Rotas novas dentro do APK (auditoria antes de instalar)
+        run: |
+          set -euo pipefail
+          unzip -p "$RUNNER_TEMP/overlay.apk" \
+            assets/addons/plugin.video.smarted/ordering.py > "$RUNNER_TEMP/ordering.py"
+          grep -q 'route=pasta' "$RUNNER_TEMP/ordering.py"
+          unzip -p "$RUNNER_TEMP/overlay.apk" \
+            assets/addons/plugin.video.smarted/default.py > "$RUNNER_TEMP/default.py"
+          grep -q "route == 'ordenar'" "$RUNNER_TEMP/default.py"
+          grep -q "route == 'pasta'" "$RUNNER_TEMP/default.py"
+          echo '::notice::o APK montado contem as rotas pasta/ordenar do filtro'
+
+      - name: 3. Adicionar somente o observador e a tecla de atalho
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/work"
+          rm -rf "$work"; mkdir -p "$work/apk"
+          cd "$work/apk"
+          unzip -q "$RUNNER_TEMP/overlay.apk"
+          mkdir -p assets/addons/plugin.video.smarted assets/system/keymaps
+          cp "$GITHUB_WORKSPACE/tests/kodi/dpad-monitor.py" \
+             assets/addons/plugin.video.smarted/dpad-monitor.py
+          # F10 dispara o observador. Nenhuma tecla do app e alterada e o
+          # perfil embarcado (assets/smarted/profile) fica intacto.
+          printf '%s\n' \
+            '<keymap>' \
+            '  <global>' \
+            '    <keyboard>' \
+            '      <f10>RunScript(special://xbmc/addons/plugin.video.smarted/dpad-monitor.py)</f10>' \
+            '    </keyboard>' \
+            '  </global>' \
+            '</keymap>' > assets/system/keymaps/zzz-dpad-teste.xml
+          cd "$work/apk"
+          zip -q -r "$work/patched.apk" . -x 'META-INF/*'
+          echo "apk de teste: $(stat -c %s "$work/patched.apk") bytes"
+
+      - name: 4. Alinhar e assinar (chave descartavel do emulador)
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/work"
+          tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          "$tools/zipalign" -f -p 4 "$work/patched.apk" "$work/aligned.apk"
+          keytool -genkeypair -keystore "$work/emu.jks" -alias emu \
+            -dname 'CN=Disposable Emulator' -keyalg RSA -keysize 2048 -validity 2 \
+            -storepass android -keypass android
+          "$tools/apksigner" sign --ks "$work/emu.jks" --ks-pass pass:android \
+            --key-pass pass:android --out "$work/SMARTEDTV-dpad-teste.apk" "$work/aligned.apk"
+          "$tools/apksigner" verify "$work/SMARTEDTV-dpad-teste.apk"
+          echo '::notice::APK de teste assinado com chave descartavel (nao vai para release)'
+
+      - name: 5. Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: 6. Instalar e apertar o d-pad de verdade
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          disk-size: 4096M
+          emulator-boot-timeout: 300
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back none
+          disable-animations: true
+          script: bash smartedtv/release/dpad-aparelho.sh
+
+      - name: 7. Guardar evidencias
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dpad-aparelho-${{ github.run_id }}
+          path: ${{ runner.temp }}/dpad-aparelho/
+          if-no-files-found: warn
+          retention-days: 7
