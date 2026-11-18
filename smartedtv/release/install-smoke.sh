@@ -94,31 +94,27 @@ else
 fi
 abrir LEANBACK_LAUNCHER
 # --- INSTALADOR PELO CAMINHO DO APP ----------------------------------------
-# "Aplicativo nao instalado" sem barra de progresso acontece antes da tela do
-# instalador: o pacote que abre o APK pelo file:// nao consegue ler o arquivo.
-# Aqui o APK e copiado para o armazenamento do app (como o download do botao
-# Atualizar faz), com a permissao que o app usa, e instalado por esse caminho.
-adbc() {
-  local caminho
-  caminho=$(adb shell pm path "$pkg" | tr -d '\r' | sed 's/^package://' | head -1)
-  [[ -n $caminho ]] || return 1
-  adb push build/universal/SMARTEDTV-universal.apk /data/local/tmp/SMARTEDTV.apk >/dev/null
-  adb shell run-as "$pkg" sh -c "mkdir -p files/userdata/smartedtv-downloads && cat /data/local/tmp/SMARTEDTV.apk > files/userdata/smartedtv-downloads/SMARTEDTV.apk && chmod 644 files/userdata/smartedtv-downloads/SMARTEDTV.apk" >/dev/null
-  echo "$(dirname "$(dirname "$caminho")")/files/userdata/smartedtv-downloads/SMARTEDTV.apk"
-}
-baixado=$(adbc) || { echo '::error::nao consegui simular o download dentro do app'; exit 1; }
-echo "::notice::APK baixado pelo app em: $baixado"
-# O instalador do Android precisa conseguir ABRIR o arquivo (read habilitado).
-adb shell run-as "$pkg" ls -l files/userdata/smartedtv-downloads/SMARTEDTV.apk | tr -d '\r' | tee "$work/apk-do-app.txt"
-if ! adb shell run-as "$pkg" ls -l files/userdata/smartedtv-downloads/SMARTEDTV.apk | grep -q '^-rw-'; then
-  erro 'o APK baixado pelo app nao esta legivel pelo instalador'
-fi
-# E o instalador tem de aceitar exatamente esse arquivo.
-resultado=$(adb shell pm install -r -d "$baixado" 2>&1) || true
-echo "$resultado" | tr -d '\r' | tee "$work/install-do-app.txt"
+# "Aplicativo nao instalado" sem abrir a barra de progresso acontece ANTES da
+# tela do instalador: quem abre o file:// nao conseguiu ler o arquivo, ou nao
+# ha atividade que atenda a intent. Testamos exatamente esses dois pontos.
+adb push build/universal/SMARTEDTV-universal.apk /sdcard/Download/SMARTEDTV.apk >/dev/null
+adbshell() { adb shell "$@" | tr -d '\r'; }
+# 1) O app grava o APK baixado com leitura para os outros (chmod 644).
+adbshell run-as "$pkg" sh -c "mkdir -p files/userdata/smartedtv-downloads && cat /sdcard/Download/SMARTEDTV.apk > files/userdata/smartedtv-downloads/SMARTEDTV.apk && chmod 644 files/userdata/smartedtv-downloads/SMARTEDTV.apk"
+baixado=$(adbshell run-as "$pkg" ls -l files/userdata/smartedtv-downloads/SMARTEDTV.apk)
+echo "$baixado" | tee "$work/apk-do-app.txt"
+grep -q '^-rw-r--r--' <<< "$baixado" || erro "APK do app nao esta legivel pelo instalador: $baixado"
+# 2) Existe atividade que atenda ao file:// do instalador (senao nada abre).
+resolvido=$(adbshell cmd package resolve-activity --brief -a android.intent.action.VIEW \
+  -d file:///sdcard/Download/SMARTEDTV.apk -t application/vnd.android.package-archive)
+echo "$resolvido" | tee "$work/intent-instalador.txt"
+grep -q '/' <<< "$resolvido" || erro "nenhuma atividade atende ao file:// do instalador: $resolvido"
+# 3) O pacote instalador aceita ESTE arquivo (prova que o APK e instalavel).
+resultado=$(adbshell pm install -r -d /sdcard/Download/SMARTEDTV.apk 2>&1) || true
+echo "$resultado" | tee -a "$work/install-do-app.txt"
 grep -q 'Success' <<< "$resultado" || erro "instalador recusou o APK do app: $resultado"
-echo '::notice::APK do app aprovado pelo instalador (pm install -r -d)'
-adb shell rm -f /data/local/tmp/SMARTEDTV.apk >/dev/null 2>&1 || true
+echo '::notice::APK do app legivel (644), intent do instalador resolvida e pacote aceito.'
+adb shell rm -f /sdcard/Download/SMARTEDTV.apk >/dev/null 2>&1 || true
 if adb logcat -b crash -d | grep -E 'Process: smartedtv\.full,|>>> smartedtv\.full <<<' ; then
   erro 'Crash do SMARTEDTV no primeiro arranque'
 fi
