@@ -49,13 +49,41 @@ def janela():
     return _info('System.CurrentWindow')
 
 
-# Controles focaveis do skin (Home e MyVideoNav/Configuracoes).
-IDS_CONHECIDOS = ['50', '51', '52', '9000', '9030', '9031', '9032', '9033',
-                  '9034', '9035', '9036', '9037', '9038', '9039', '9050',
-                  '9051', '9052', '9053', '9060', '9061todos', '9061az',
-                  '9061za', '9061adicionados', '9061votados', '9061recentes',
-                  '9100', '9117', '9121', '9122', '9123', '9201', '9203',
-                  '9210', '9220', '9300', '9301', '9302', '9320', '9050']
+# Controles focaveis: descobertos dos XMLs do skin em tempo de execucao, em vez
+# de uma lista fixa. Numa execucao real o foco caiu em ids que a lista fixa nao
+# cobria (ex.: 9030 no menu lateral), e o teste acusava "semo foco" sem haver
+# defeito. Lendo os XMLs, o conjunto e exatamente o do skin que esta rodando.
+FOCAVEIS_XML = ('Home.xml', 'MyVideoNav.xml', 'Settings.xml',
+                'DialogButtonMenu.xml', 'Startup.xml')
+_ID_CACHE = []
+
+
+def _ids_do_skin():
+    if _ID_CACHE:
+        return _ID_CACHE
+    import os
+    import re
+    import xml.etree.ElementTree as ET
+
+    tipos = {'button', 'radiobutton', 'togglebutton', 'spincontrol', 'list',
+             'panel', 'grouplist', 'fixedlist', 'wraplist', 'textbox', 'edit',
+             'slider', 'mover', 'colorbutton'}
+    vistos = []
+    for skin in ('skin.estilo.personalizado', 'skin.novatv'):
+        base = os.path.join(xbmc.translatePath('special://home/addons'), skin, 'xml')
+        for nome in FOCAVEIS_XML:
+            caminho = os.path.join(base, nome)
+            try:
+                raiz = ET.parse(caminho).getroot()
+            except Exception:
+                continue
+            for controle in raiz.iter('control'):
+                if controle.get('type') in tipos and controle.get('id'):
+                    if controle.get('id') not in vistos:
+                        vistos.append(controle.get('id'))
+    _ID_CACHE.extend(vistos)
+    _log('SMARTED_PROVA_IDS %s' % ','.join(_ID_CACHE[:80]))
+    return _ID_CACHE
 
 
 def foco():
@@ -63,17 +91,12 @@ def foco():
 
     ``System.CurrentControlID`` volta vazio para botoes/containers deste skin e
     ``GUI.GetProperties(currentcontrol)`` tambem; ``Control.HasFocus(id)`` e o
-    teste que o proprio skin usa nas condicoes ``<visible>`` e responde sempre.
+    teste que o proprio skin usa nas condicoes ``<visible>`` e sempre responde.
     """
-    for cid in IDS_CONHECIDOS:
+    for cid in _ids_do_skin():
         if _info('Control.HasFocus(%s)' % cid) in ('true', '1'):
             return cid
-    atual = _info('System.CurrentControlID')
-    return atual or '?'
-
-
-def romano(valor):
-    return valor
+    return '?'
 
 
 def itens(limite=25):
@@ -202,7 +225,7 @@ def prova_home_topo():
         acao('Up', 0.45)
         atual = foco()
         trilha.append(atual)
-        if atual.startswith('912'):
+        if atual in ('9121', '9122', '9123'):
             break
     topo = foco()
     registrar('home_sobe_para_barra', topo in ('9121', '9122', '9123'),
