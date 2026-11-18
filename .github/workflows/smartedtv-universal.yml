@@ -82,6 +82,11 @@ jobs:
               echo 'apksigner verify: FALHOU'
             fi
             echo
+            echo "== providers e politica de arquivo (manifesto decodificado) =="
+            grep -oE 'android:name="[^"]*FileProvider"' build/universal/manifest.xml | head -5 || true
+            grep -oE 'android:authorities="[^"]*"' build/universal/manifest.xml | head -5 || true
+            grep -oE 'requestLegacyExternalStorage="[^"]*"|usesCleartextTraffic="[^"]*"' build/universal/manifest.xml | head -3 || true
+            echo
             echo "== identidade instalada (antes desta build) =="
             { grep -E "versionName|versionCode|primaryCpuAbi|codePath" build/universal/pacote-instalado.txt 2>/dev/null || echo "(sem dumpsys nesta etapa)"; } | head -8
           } | tee "$RUNNER_TEMP/laudo-apk.txt"
