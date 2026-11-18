@@ -102,8 +102,10 @@ class ReaberturaDepoisDeSairTest(unittest.TestCase):
                         abertura.index('_pasta_da_tela()'))
         # a decisao exige a licenca, nao apenas o arquivo-marca
         decisao = _trecho(fonte, 'def ativacao_concluida')
-        self.assertIn('entrada_ja_vista()', decisao)
         self.assertIn('vip.ativa()', decisao)
+        # a marca e apenas registro: nao pode ser a unica condicao da Home
+        self.assertNotIn('return entrada_ja_vista()', decisao)
+        self.assertNotIn('entrada_ja_vista() or', decisao)
 
     def test_marca_de_saida_sobrevive_ao_processo(self):
         fonte = WELCOME.read_text(encoding='utf-8')

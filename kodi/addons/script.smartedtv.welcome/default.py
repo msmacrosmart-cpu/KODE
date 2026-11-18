@@ -1241,17 +1241,18 @@ def entrada_ja_vista():
 def ativacao_concluida():
     """Abrir direto na Home? So com codigo de ativacao ativado e valido.
 
-    Duas condicoes, nesta ordem:
-      1. a tela de ativacao ja concluiu uma ativacao neste aparelho (marca);
-      2. `vip.ativa()` confirma licenca gravada e dentro do prazo.
-    Se o usuario saiu pela tela SEM ativar, a marca nao existe e a tela volta
-    na proxima abertura. Se a licenca venceu, a tela volta tambem.
+    A prova e o `vip.ativa()`: licenca gravada em vip.json e dentro do prazo -
+    ou seja, um codigo de ativacao foi aceito pelo servidor neste aparelho.
+    Sem licenca (aparelho novo, ou quem saiu pela tela sem ativar) a tela de
+    ativacao aparece. Licenca vencida tambem traz a tela de volta.
+
+    A marca `smarted-entrada-vista` NAO libera nada sozinha: ela existe como
+    registro de quando a ativacao concluiu neste aparelho (fica no log e serve
+    para diagnostico), mas quem decide e a licenca.
     """
-    if not entrada_ja_vista():
-        return False
     vip = _vip()
     if vip is None or not callable(getattr(vip, 'ativa', None)):
-        # sem o modulo de licenca nao da para confirmar: mantem a tela
+        # sem o modulo de licenca nao ha como confirmar ativacao: mantem a tela
         return False
     try:
         return bool(vip.ativa())

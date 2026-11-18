@@ -318,9 +318,11 @@ class ReaberturaTest(unittest.TestCase):
         # 1) aparelho novo, nenhuma licenca
         self.assertFalse(self.modulo.entrada_ja_vista())
         self.assertFalse(self.modulo.ativacao_concluida())
-        # 2) a marca sozinha nao basta se a licenca nao estiver ativa
+        # 2) a marca sozinha nao basta: sem licenca ativa continua na tela
         self.assertTrue(self.modulo.marcar_entrada_vista())
         self.assertTrue(self.modulo.entrada_ja_vista())
+        self.assertFalse(self.modulo.ativacao_concluida())
+        # gravada a marca com a licenca ja apagada (upgrade/cache limpo)
         self.assertFalse(self.modulo.ativacao_concluida())
         # 3) marca + licenca valida = abre na Home
         self.kodi.licenca_ativa = True
