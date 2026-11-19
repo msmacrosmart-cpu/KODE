@@ -1,0 +1,27 @@
+name: Diagnostico da tag VAST (temporario)
+on:
+  push:
+    paths:
+      - '.github/workflows/diag-vast-tag.yml'
+jobs:
+  medir:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pedir a tag como o app pede e como um navegador pede
+        run: |
+          TAG='https://vapid-size.com/dEmwF.zYdOGYNKvRZ/GoUG/beLmU9TuDZrUJl/koPpTRcX2iNbDMED3/NzDLkpt/N/zFYf0/MsTEcv1sMXwC'
+          for UA in 'SMARTEDTV/VAST' 'Mozilla/5.0 (Linux; Android 9; AFTMM Build/PS7624; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0 Mobile Safari/537.36'; do
+            echo "======================= UA: $UA"
+            echo "--- cabecalhos"
+            curl -sS -L --max-time 25 -A "$UA" -D - -o /tmp/corpo.txt "$TAG" | head -20 || echo "curl falhou"
+            echo "--- bytes: $(wc -c < /tmp/corpo.txt)"
+            echo "--- primeiros 1200 bytes"
+            head -c 1200 /tmp/corpo.txt; echo
+            echo "--- marcas encontradas"
+            for marca in '<VAST' 'InLine' 'Wrapper' 'MediaFile' 'VMAP' 'AdTagURI' '<html' 'iframe' '<script' 'vast'; do
+              n=$(grep -o -i -F "$marca" /tmp/corpo.txt 2>/dev/null | wc -l)
+              echo "$marca = $n"
+            done
+            echo "--- URLs http no corpo (2 primeiras)"
+            grep -o -E 'https?://[^"'"'"'<> ]+' /tmp/corpo.txt | head -2
+          done
