@@ -78,8 +78,8 @@ ADVANCED_TEMPLATE = """<!-- {marker}: cache agressivo para streams do Brazuca Pl
 <advancedsettings version="1.0">
     <cache>
         <buffermode>4</buffermode>
-        <memorysize>268435456</memorysize>
-        <readfactor>10.0</readfactor>
+        <memorysize>{memorysize}</memorysize>
+        <readfactor>{readfactor}</readfactor>
     </cache>
     <network>
         <curlclienttimeout>20</curlclienttimeout>
@@ -87,6 +87,12 @@ ADVANCED_TEMPLATE = """<!-- {marker}: cache agressivo para streams do Brazuca Pl
     </network>
 </advancedsettings>
 """
+
+# Projetor/box/stick com pouca RAM (1-2 GB): 256 MB de cache deixa o aparelho
+# sem memoria para os addons e para a Home - a interface passa a "carregar
+# para sempre" e o player engasga. O mesmo numero do perfil de projetor vale
+# aqui, no arquivo que o Kodi le ANTES de subir os addons.
+ADVANCED_CACHE_PROJETOR = (96 * 1024 * 1024, '6.0')
 
 
 def _sem_acento(texto):
@@ -127,8 +133,13 @@ def advanced_path(home):
     return os.path.join(home, 'userdata', ADVANCEDSETTINGS)
 
 
-def write_advancedsettings(home, log=None):
-    """Escreve o advancedsettings.xml otimizado (nunca sobrescreve o do usuário)."""
+def write_advancedsettings(home, log=None, nome_dispositivo=''):
+    """Escreve o advancedsettings.xml otimizado (nunca sobrescreve o do usuário).
+
+    O cache acompanha o aparelho: TV/box/stick/celular com RAM suficiente usam
+    256 MB; projetor (e aparelho que ja provou precisar do perfil leve) usa
+    96 MB, para nao ficar sem memoria para a Home e para os addons.
+    """
     path = advanced_path(home)
     if os.path.isfile(path):
         try:
@@ -140,7 +151,14 @@ def write_advancedsettings(home, log=None):
             if log:
                 log('advancedsettings.xml do usuário preservado')
             return False
-    body = ADVANCED_TEMPLATE.format(marker=MARKER)
+    cache_pequeno = eh_projetor(nome_dispositivo) or perfil_ja_aprendido()
+    memorysize, readfactor = (ADVANCED_CACHE_PROJETOR if cache_pequeno
+                              else (256 * 1024 * 1024, '10.0'))
+    if log and cache_pequeno:
+        log('advancedsettings: cache de %d MB (perfil do aparelho)'
+            % (memorysize // (1024 * 1024)))
+    body = ADVANCED_TEMPLATE.format(marker=MARKER, memorysize=memorysize,
+                                    readfactor=readfactor)
     folder = os.path.dirname(path)
     if folder and not os.path.isdir(folder):
         os.makedirs(folder)
@@ -206,7 +224,7 @@ def apply_settings(jsonrpc, log=None, nome_dispositivo=''):
 
 def ensure_performance(home, jsonrpc, log=None, nome_dispositivo=''):
     """Roda as duas camadas e devolve o resumo usado nos testes/relatório."""
-    wrote = write_advancedsettings(home, log)
+    wrote = write_advancedsettings(home, log, nome_dispositivo=nome_dispositivo)
     applied, failed = apply_settings(jsonrpc, log, nome_dispositivo=nome_dispositivo)
     return {'advancedsettings': wrote, 'applied': applied, 'failed': failed,
             'projetor': eh_projetor(nome_dispositivo)}

@@ -28,7 +28,11 @@ PAYLOAD_DIR = os.path.join(ADDON_PATH, 'payload')
 
 # O perfil semeado pode ainda estar sendo copiado no primeiro boot: tentamos
 # o reparo várias vezes antes de desistir (nada de esperar 90s para começar).
-WAIT_SECONDS = 20
+# TV box/stick com armazenamento lento: 20 s esperando o banco de addons era
+# tempo de TELA SEM INTERFACE (o Startup ja saiu e a Home ainda nao veio). A
+# espera cai para 8 s; se o gerenciador nao responder nesse tempo, o boot segue
+# para a Home e o preparo termina em segundo plano (que ja existia).
+WAIT_SECONDS = 8
 POLL_SECONDS = 5
 REPAIR_ATTEMPTS = 6
 REPAIR_RETRY_SECONDS = 5
@@ -67,12 +71,69 @@ def addon_manager_ready():
     return 'result' in jsonrpc('Addons.GetAddons', {'enabled': True})
 
 
-def enable_addons(addon_ids):
-    """Habilita os addons no Kodi (idempotente) e devolve os que falharam."""
+# Quanto esperar o Kodi registrar no banco do addon que acabou de ser
+# extraido. Em TV box/stick (armazenamento interno lento) o UpdateLocalAddons
+# leva mais que no celular.
+ADDON_SCAN_SECONDS = 12
+ADDON_SCAN_POLL = 1
+
+
+def addon_registrado(addon_id):
+    """O addon ja aparece no banco do Kodi (e habilitado)?"""
+    response = jsonrpc('Addons.GetAddonDetails',
+                       {'addonid': addon_id, 'properties': ['enabled']})
+    detalhe = (response or {}).get('result', {}).get('addon') or {}
+    return bool(detalhe.get('enabled'))
+
+
+def esperar_addon_registrado(addon_id, limite=ADDON_SCAN_SECONDS, monitor=None):
+    """Espera o banco de addons enxergar ``addon_id`` (sem prender o boot).
+
+    O ``UpdateLocalAddons()`` e assincrono: pedir
+    ``Addons.SetAddonEnabled`` no mesmo instante devolve erro porque o addon
+    ainda nao existe para o Kodi - era o "addon com erro" em TV box/stick logo
+    depois de uma atualizacao, com o pacote ja extraido no perfil.
+
+    A espera usa ``monitor.waitForAbort`` quando ha monitor (o mesmo padrao do
+    resto do bootstrap: acorda na hora se o app estiver saindo).
+    """
+    waited = 0
+    while waited < limite:
+        if addon_registrado(addon_id):
+            return True
+        if monitor is not None:
+            try:
+                if monitor.waitForAbort(ADDON_SCAN_POLL):
+                    return addon_registrado(addon_id)
+            except Exception:
+                time.sleep(ADDON_SCAN_POLL)
+        else:
+            time.sleep(ADDON_SCAN_POLL)
+        waited += ADDON_SCAN_POLL
+    return addon_registrado(addon_id)
+
+
+def enable_addons(addon_ids, esperar=False, monitor=None, recem_instalados=None):
+    """Habilita os addons no Kodi (idempotente) e devolve os que falharam.
+
+    ``esperar=True`` faz uma pausa (com confirmacao no banco de addons) so
+    para os addons em ``recem_instalados`` - os que ESTE boot acabou de
+    extrair para o perfil. E neles que o ``SetAddonEnabled`` falhava em TV
+    box/stick: o zip era descompactado e o pedido de habilitar chegava antes de
+    o Kodi reler a pasta de addons. Addon que ja estava instalado nao precisa
+    de espera nenhuma, entao o boot nao fica mais lento por causa disso.
+    """
     failed = []
+    recem = set(recem_instalados or ())
     jsonrpc('Addons.SetAddonEnabled', {'addonid': 'metadata.local', 'enabled': True})
     xbmc.executebuiltin('UpdateLocalAddons()')
     for addon_id in addon_ids:
+        if esperar and addon_id in recem and not esperar_addon_registrado(
+                addon_id, monitor=monitor):
+            # Ainda nao apareceu no banco: registra e tenta habilitar mesmo
+            # assim (o SetAddonEnabled pode funcionar quando o addon chega).
+            log('addon %s ainda nao aparece no banco apos %d s; tentando habilitar'
+                % (addon_id, ADDON_SCAN_SECONDS), xbmc.LOGWARNING)
         response = jsonrpc('Addons.SetAddonEnabled', {'addonid': addon_id, 'enabled': True})
         if response.get('error'):
             # já habilitado / sem permissão: só registra, não interrompe o boot
@@ -434,11 +495,27 @@ def _preparar_em_segundo_plano(monitor):
     """Termina addons/perfil/favoritos/menu/skin com a Home ja na tela."""
     def preparar():
         try:
+            # A HOME JA ESTA NA TELA. Antes de mexer em addon (que pode demorar
+            # em TV box/stick), espera o gerenciador responder: extrair pacote
+            # com o banco de addons ainda montando era o "addon com erro" e a
+            # Home vazia nesses aparelhos. Aqui a espera NAO atrasa a Home.
+            if not esperar_addons_manager(monitor, log=log):
+                log('preparo: gerenciador de addons nao respondeu; tentando o '
+                    'reparo mesmo assim', xbmc.LOGWARNING)
             report, attempts = repair_until_ready(monitor)
             if report is None:
                 return
+            # O advancedsettings.xml e o cache de rede/video precisam valer ja
+            # NESTE boot (nao no proximo): e o que evita a Home "carregando
+            # para sempre" em box/stick e o canal engasgado. Idempotente.
+            apply_performance()
             xbmc.executebuiltin('UpdateLocalAddons()')
-            failed = enable_addons(report['required'])
+            # Espera o banco enxergar cada addon recem-extraido (TV box/stick
+            # levam mais que o celular): sem isso o SetAddonEnabled devolvia
+            # erro e o addon ficava desabilitado, com a Home sem conteudo.
+            failed = enable_addons(report['required'], esperar=True,
+                                   monitor=monitor,
+                                   recem_instalados=report['repaired'])
             write_favourites()
             garantir_menu(xbmc, log=log)
             silenciar_avisos_brazuca(log=log)
@@ -481,6 +558,9 @@ def main():
     # ficou com ele desabilitado numa atualizacao, o Startup.xml chama
     # RunScript e nada aparece (tela preta). Habilita os addons do app antes.
     try:
+        # Caminho de BOOT: nao espera o banco de addons (a Home ainda vai
+        # abrir). A espera com confirmacao fica nos caminhos de reparo, que
+        # rodam com a Home ja na tela - ver `enable_addons`.
         enable_addons(CORE_ADDONS)
     except Exception as erro:
         log('addons: falha ao habilitar os addons do app (%s)' % erro,

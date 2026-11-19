@@ -48,6 +48,14 @@ class AnunciosTest(unittest.TestCase):
                 sys.modules[nome] = antigo
 
     def test_stream_sem_metadados_pede_anuncio_uma_vez_por_sessao(self):
+        """Sem metadados (projetor/PVR) a sessao resolve o mesmo inicio.
+
+        A frequencia e a de `ads_regra`: depois de um anuncio exibido passam
+        2 minutos sem anuncio, mesmo que o conteudo mude (era o defeito do
+        "anuncio a cada video"). A sessao continua evitando o anuncio dobrado
+        do par onPlayBackStarted/onAVStarted.
+        """
+        intervalo = self.mod.ads_regra.INTERVALO
         # Alguns projetores/PVR nao entregam caminho/titulo (chave '?').
         self.assertTrue(self.mod.mostrar_preroll(
             chave='?', sessao=1, agora=100, intervalo=10))
@@ -56,9 +64,13 @@ class AnunciosTest(unittest.TestCase):
         self.assertFalse(self.mod.mostrar_preroll(
             chave='?', sessao=1, agora=100, intervalo=10))
         self.assertEqual(len(self.chamadas), 1)
-        # Nova reproducao (sessao nova) pede de novo mesmo sem metadados.
-        self.assertTrue(self.mod.mostrar_preroll(
+        # Sessao nova 20 s depois: ainda dentro dos 2 minutos, sem anuncio.
+        self.assertFalse(self.mod.mostrar_preroll(
             chave='?', sessao=2, agora=120, intervalo=10))
+        self.assertEqual(len(self.chamadas), 1)
+        # Passados os 2 minutos, a sessao nova pede de novo (sem metadados).
+        self.assertTrue(self.mod.mostrar_preroll(
+            chave='?', sessao=3, agora=100 + intervalo + 5, intervalo=10))
         self.assertEqual(len(self.chamadas), 2)
 
     def test_vip_nao_recebe_anuncio(self):
@@ -79,11 +91,22 @@ class AnunciosTest(unittest.TestCase):
         monitor = self.mod.MonitorPreRoll(log=None, intervalo=10)
         monitor._disparar = self.mod.tocar_anuncio_com_aviso
         self.mod._e_video = lambda _p: True
+        # Este teste e sobre o GATILHO do anuncio, nao sobre a imagem do canal
+        # ao vivo: sem o no-op, o caminho de `_vigiar_imagem` importava
+        # `ao_vivo` com o xbmc falso e deixava o modulo contaminado para as
+        # outras suites (o "canal" virava ao vivo e a retomada era ignorada).
+        monitor._vigiar_imagem = lambda _c: None
         monitor._caminho = lambda: None
         monitor.onPlayBackStarted()
         monitor.onAVStarted()
         self.assertEqual(len(self.chamadas), 1)
         monitor.onPlayBackStopped()
+        monitor.onPlayBackStarted()
+        monitor.onAVStarted()
+        # ...mas so depois do intervalo de 2 minutos (regra central): parar e
+        # abrir outro video em seguida NAO gera anuncio.
+        self.assertEqual(len(self.chamadas), 1)
+        self.mod.ads_regra._MEMORIA.clear()      # passaram os 2 minutos
         monitor.onPlayBackStarted()
         monitor.onAVStarted()
         self.assertEqual(len(self.chamadas), 2)

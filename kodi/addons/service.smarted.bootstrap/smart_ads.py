@@ -35,9 +35,15 @@ Dois gatilhos:
 
 1. ABERTURA — uma unica vez, poucos segundos depois de a Home carregar
    (bloco ca-app-pub-2066014755407744/4214378379);
-2. PRE-ROLL — sempre que um canal, filme ou serie comeca a tocar
-   (bloco ca-app-pub-2066014755407744/3572039686). A tela do anuncio cobre o
-   player enquanto o buffer acontece atras.
+2. PRE-ROLL — na TROCA de conteudo (bloco
+   ca-app-pub-2066014755407744/3572039686). A tela do anuncio cobre o player
+   enquanto o buffer acontece atras.
+
+   Frequencia (regra unica em ``ads_regra``), tres estados separados:
+   conteudo atual, intervalo entre anuncios e troca real de conteudo.
+   Um anuncio por conteudo por sessao de reproducao, mais o intervalo de 2
+   minutos depois de um anuncio exibido. O mesmo conteudo que continua
+   tocando, que e retomado ou que e recarregado nao pede outro anuncio.
 
 Nada aqui pode quebrar a reproducao: se o app de anuncios nao estiver
 instalado, se o Kodi nao for Android ou se o builtin falhar, o video segue
@@ -50,6 +56,21 @@ import time
 
 import xbmc
 import xbmcvfs
+
+try:
+    import ads_regra
+except ImportError:
+    # Importado de fora do addon (harness/testes): carrega o arquivo vizinho
+    # SEM mexer em sys.path. Inserir a pasta do addon ali deixava modulos do
+    # addon (``ao_vivo``, por exemplo) importaveis em contextos onde eles nao
+    # existem, e isso mudava o comportamento de outros caminhos do app.
+    import importlib.util as _il
+
+    _spec = _il.spec_from_file_location(
+        'ads_regra', os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  'ads_regra.py'))
+    ads_regra = _il.module_from_spec(_spec)
+    _spec.loader.exec_module(ads_regra)
 
 # PACKAGE = applicationId do app de anuncios (android/smarted-ads/app-id.txt).
 # Precisa ser um pacote proprio: org.xbmc.kodi e o pacote do Kodi e o Android
@@ -80,15 +101,26 @@ MARKER = 'smartedtv-ads-v2'
 # quanto esperar a Home desenhar antes do pop-up de abertura
 ABERTURA_DELAY = 6
 
-# O intersticial e OBRIGATORIO em toda troca de conteudo (1.0.73): nao existe
-# mais intervalo minimo entre anuncios. O que fica e so uma janela curta
-# anti-duplicidade: o Kodi chama onPlay e onAVStarted para o MESMO inicio de
-# stream, e sem essa janela o mesmo filme levaria dois anuncios seguidos.
+# Frequencia: quem decide e ``ads_regra`` (um unico lugar, com estado em disco).
+# Regra: anuncio so na TROCA de conteudo, e depois de um anuncio exibido ha um
+# intervalo de 2 minutos em que nenhum conteudo recebe anuncio.
+#
+# Ate a 1.0.119 este modulo tratava TODO inicio de reproducao como troca e so
+# tinha uma janela anti-duplicidade de ~10 s (o par onPlayBackStarted /
+# onAVStarted do MESMO stream). O resultado era anuncio a cada canal aberto,
+# em cima de canal, e a reproducao normal dos canais nao acontecia. Agora:
+#   * os dois avisos do mesmo inicio continuam contando como um so (aqui);
+#   * troca de conteudo passa pela regra central (intervalo de 2 min);
+#   * falha/indisponibilidade do anuncio NAO consome o intervalo e nao trava.
 PREROLL_INTERVALO = 10
 
 
 def intervalo_configurado(padrao=PREROLL_INTERVALO):
-    """Janela anti-duplicidade (segundos) — configurável em ads_intervalo."""
+    """Janela anti-duplicidade do MESMO inicio (segundos).
+
+    Continua sendo a protecao contra o par onPlayBackStarted/onAVStarted, e
+    nao a frequencia entre conteudos (essa fica em ``ads_regra.INTERVALO``).
+    """
     try:
         import xbmcaddon
         bruto = xbmcaddon.Addon().getSetting('ads_intervalo')
@@ -440,21 +472,40 @@ def _chave_conteudo(caminho=None):
 
 
 def esquecer():
-    """Zera a memoria do ultimo conteudo (parar/terminar libera o proximo)."""
+    """Zera a memoria do ultimo inicio de reproducao (stop/troca).
+
+    Tambem fecha o CONTEUDO da sessao em ``ads_regra``: depois de parar, abrir
+    de novo e uma troca real de conteudo (mesmo que seja o mesmo arquivo).
+    O intervalo de 2 minutos desde o ultimo anuncio exibido NAO e apagado -
+    ele continua valendo entre conteudos, e vive em disco justamente para
+    sobreviver a reinicio do servico.
+    """
     globals()['_ultimo_momento'] = 0.0
     globals()['_ultimo_caminho_preroll'] = None
     globals()['_ultimo_caminho_base'] = None
     globals()['_ultima_sessao'] = None
+    try:
+        ads_regra.encerrar_conteudo()
+    except Exception:
+        pass
 
 
 def mostrar_preroll(log=None, intervalo=None, agora=None, caminho=None,
                     chave=None, sessao=None, disparar=None, forcar=False):
-    """Intersticial em TODA troca de conteudo (exceto VIP).
+    """Anuncio na TROCA de conteudo, respeitando o intervalo de 2 minutos.
 
-    ``intervalo`` e so a janela anti-duplicidade do MESMO inicio: o Kodi avisa
-    ``onPlayBackStarted`` e ``onAVStarted`` para o mesmo stream (as vezes com
-    segundos de buffer entre os dois). Troca de canal, filme, episodio ou serie
-    tem chave diferente e dispara na hora, mesmo dentro da janela.
+    Duas coisas diferentes, que antes estavam misturadas:
+
+    * ``intervalo`` -> janela anti-duplicidade do MESMO inicio. O Kodi avisa
+      ``onPlayBackStarted`` e ``onAVStarted`` para o mesmo stream, as vezes com
+      segundos de buffer entre os dois; isso nao e troca de conteudo;
+    * ``ads_regra`` -> frequencia entre conteudos: so ha anuncio em troca de
+      conteudo e, depois de um anuncio EXIBIDO, nenhum outro pelos proximos
+      2 minutos.
+
+    A funcao nunca bloqueia a reproducao: quando a resposta e "nao", o video
+    segue na hora. Falha do anuncio nao consome o intervalo (a proxima troca
+    tenta de novo) e nao interrompe nada.
     """
     if intervalo is None:
         intervalo = intervalo_configurado()
@@ -464,30 +515,46 @@ def mostrar_preroll(log=None, intervalo=None, agora=None, caminho=None,
             log('[SmartAds] VIP ativo: nenhum anuncio')
         return False
     chave = chave or _chave_conteudo(caminho)
-    # Sessao de reproducao: o Kodi chama onPlayBackStarted E onAVStarted para
-    # o mesmo inicio. Sem caminho/canal (alguns projetores/PVR nao entregam
-    # metadados) a chave era '?' e o anuncio NUNCA era pedido. A sessao resolve
-    # o mesmo inicio sem depender dos metadados.
+    # 1) Mesmo inicio de reproducao (onPlayBackStarted + onAVStarted).
     if forcar:
-        # Botao "Testar anuncio" dos Ajustes: mesmo caminho do player, sem
-        # inventar exibicao (o retorno do Java ainda e o unico recibo).
+        # Botao "Testar anuncio" dos Ajustes: caminho identico ao do player,
+        # sem consumir o intervalo (nao e reproducao real do usuario).
         sessao = None
         chave = 'teste:%d' % agora
-    elif sessao is not None:
-        if sessao == globals().get('_ultima_sessao'):
-            if log:
-                log('[SmartAds] mesmo inicio de reproducao (sessao %s), sem anuncio'
-                    % sessao)
-            return False
-    elif chave == globals().get('_ultimo_caminho_preroll') and agora - globals().get('_ultimo_momento', 0) < intervalo:
+    elif sessao is not None and sessao == globals().get('_ultima_sessao'):
+        if log:
+            log('[SmartAds] mesmo inicio de reproducao (sessao %s), sem anuncio'
+                % sessao)
         return False
+    # 2) Frequencia: um anuncio por conteudo por sessao + intervalo de 2 min.
+    #    Uma unica regra para todos os gatilhos (nada de anuncio duplicado).
+    if not forcar:
+        ads_regra.abrir_troca(chave)
+        pode, motivo = ads_regra.pode_anunciar(chave, agora)
+        if not pode:
+            if log:
+                log('[SmartAds] sem anuncio: %s' % motivo)
+            ads_regra.marcar_conteudo(chave)
+            globals()['_ultima_sessao'] = sessao
+            return False
     disparou = (disparar or tocar_anuncio_com_aviso)(ATIVIDADE_PREROLL, log)
-    if disparou:
-        globals()['_ultimo_momento'] = agora
-        globals()['_ultimo_caminho_preroll'] = chave
-        globals()['_ultima_sessao'] = sessao
+    if disparou and not forcar:
+        # O disparo foi ENVIADO: a tela do anuncio abre e o Java e quem sabe se
+        # ele foi exibido. O intervalo de 2 minutos comeca aqui - e a unica
+        # leitura possivel sem inventar recibo - e continua valendo mesmo que o
+        # usuario feche o anuncio na hora.
+        ads_regra.registrar_anuncio(chave, agora)
+    elif not disparou and not forcar:
+        # Nada abriu (sem inventario, sem rede, app sem permissao): nao
+        # consome o intervalo e nao deixa marca de "conteudo ja anunciado".
+        ads_regra.cancelar_anuncio(chave)
+    globals()['_ultimo_momento'] = agora
+    globals()['_ultimo_caminho_preroll'] = chave
+    globals()['_ultima_sessao'] = sessao
     if log:
-        log('[SmartAds] pré-roll: %s (sessão %s)' % ('pedido' if disparou else 'indisponível', sessao))
+        log('[SmartAds] pre-roll: %s (sessao %s, intervalo %d s)'
+            % ('pedido' if disparou else 'indisponivel', sessao,
+               ads_regra.INTERVALO))
     return disparou
 
 
@@ -497,8 +564,10 @@ def testar_anuncio(log=None):
         if log:
             log('[SmartAds] teste ignorado: VIP ativo')
         return False
-    # forcar=True ignora a janela anti-duplicidade, mas usa o MESMO caminho do
-    # player (ponte + retorno). Sem player tocando, so o disparo é testado.
+    # forcar=True ignora a regra de frequencia (e um teste, nao reproducao) e
+    # usa o MESMO caminho do player (ponte + retorno). O intervalo do usuario
+    # NAO e consumido: testar o anuncio nos Ajustes nao pode tirar o anuncio
+    # do proximo conteudo nem liberar anuncio fora de hora.
     return bool(mostrar_preroll(log, sessao=None, forcar=True))
 
 
@@ -582,10 +651,10 @@ class MonitorPreRoll(_BasePlayer):
     Vale para canal de TV, filme e serie, venha do Brazuca ou de outro addon:
     o gancho e o proprio xbmc.Player, nao a rota do addon.
 
-    Regra: TODO inicio de reproducao conta como troca de conteudo e pede
-    anuncio — canal->canal, filme->filme, serie->filme e voltar para o MESMO
-    conteudo depois de parar. O unico filtro e o par
-    ``onPlayBackStarted``/``onAVStarted`` do mesmo inicio (janela curta).
+    Regra: cada inicio de reproducao e um candidato a anuncio, mas quem decide
+    e ``ads_regra`` — troca de conteudo + intervalo de 2 minutos desde o ultimo
+    anuncio exibido. O par ``onPlayBackStarted``/``onAVStarted`` do MESMO inicio
+    conta como um so, e a volta do anuncio nunca pede outro.
     """
 
     def __init__(self, log=None, intervalo=None):
@@ -656,6 +725,13 @@ class MonitorPreRoll(_BasePlayer):
                 # A reproducao que acabou de comecar e a volta do anuncio: nao
                 # gera outro pre-roll e devolve o video ao ponto guardado.
                 globals()['_ultima_sessao'] = self.sessao
+                # Recibo de "anuncio concluido ou pulado": a tela do anuncio
+                # saiu e o conteudo voltou a tocar. O intervalo de 2 minutos
+                # comeca AQUI (e nao no disparo), como pedido.
+                try:
+                    ads_regra.concluir_anuncio()
+                except Exception:
+                    pass
                 if self.log:
                     self.log('[SmartAds] volta do anuncio: sem novo pre-roll')
                 return

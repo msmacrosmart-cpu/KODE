@@ -1504,6 +1504,22 @@ def abrir_tela_entrada():
         _limpar_marca_de_saida()
         _ir_para_home('abertura normal')
         return True
+    # REENTRADA (saiu e abriu de novo ha instantes) sem ativacao concluida:
+    # a tela de ativacao NAO pode ser reaberta por cima de uma sessao que
+    # acabou de sair. Era este o caminho da "tela preta ao sair e entrar":
+    # o `Quit` derruba o Kodi, o Android recria a Activity, o Startup.xml
+    # dispara o script e a tela (doModal) subia enquanto o startup ainda estava
+    # morrendo - quadro preto sem Home e sem tela. `_veio_de_uma_saida()`
+    # responde isso pela marca `smarted-saindo` (escrita por
+    # `sair_do_aplicativo` e apagada aqui, depois de usada). Indo para a Home,
+    # o usuario continua de onde estava e VOLTAR na Home reabre a ativacao
+    # quando ele quiser.
+    if _veio_de_uma_saida():
+        _log('abertura: reentrada apos SAIR (sem ativacao concluida); indo para '
+             'a Home em vez de reabrir a tela de ativacao')
+        _limpar_marca_de_saida()
+        _ir_para_home('reentrada apos saida')
+        return True
     pasta = _pasta_da_tela()
     if not pasta:
         _log('pasta da tela nao encontrada', xbmc.LOGERROR)
