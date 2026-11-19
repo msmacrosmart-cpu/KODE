@@ -116,13 +116,21 @@ def modo_de_teste():
 
 
 def tag_de_teste():
-    """Tag de TESTE oficial do Google (VAST demo).
+    """Tag de TESTE oficial do Google - a de ANUNCIO UNICO (VAST).
 
-    Usada apenas quando o dono do app liga o modo de validacao; nao gera
-    trafego invalido porque e o inventario de teste do proprio Google.
+    A tag que estava aqui era ``external/vmap/single_ad_samples``: o corpus
+    ``vmap`` devolve um **VMAP** (``<vmap:VMAP><vmap:AdBreak>...``), nao um
+    VAST. O nosso leitor procura ``<Ad><InLine>``; num VMAP nao existe nenhum,
+    entao o caminho caia em ``vast-sem-criativo`` e NENHUM anuncio tocava no
+    "Testar anuncio" - exatamente o "nunca consegui ver um anuncio na TV".
+
+    A tag abaixo e do mesmo inventario de teste do Google e responde VAST de
+    verdade. A leitura de VMAP tambem foi adicionada em ``escolher_anuncio``,
+    para que uma tag VMAP do dono do app (o caso comum no Ad Manager) funcione
+    em vez de ser descartada.
     """
     return ('https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/'
-            'external/vmap/single_ad_samples&sz=640x480&cust_params='
+            'external/single_ad_samples&sz=640x480&cust_params='
             'sample_ct%3Dlinear&ciu_szs=300x250&gdfp_req=1&output=vast'
             '&unviewed_position_start=1&env=vp&impl=s&correlator=')
 
@@ -244,6 +252,33 @@ def tag_do_wrapper(xml):
             valor = (alvo.text or '').strip()
             if valor.startswith(('http://', 'https://')):
                 return valor
+    return ''
+
+
+def tag_do_vmap(xml):
+    """URL do primeiro ``<AdBreak>`` de um VMAP ('' quando nao e VMAP).
+
+    O Ad Manager entrega playlist de anuncios em VMAP por padrao. O criativo
+    continua sendo VAST: a URL de cada AdBreak aponta para a tag VAST daquele
+    intervalo. Sem este passo um VMAP era descartado como "sem criativo".
+    """
+    if not xml:
+        return ''
+    if isinstance(xml, bytes):
+        xml = xml.decode('utf-8', 'replace')
+    try:
+        import xml.etree.ElementTree as ET
+        raiz = ET.fromstring(xml.strip())
+    except Exception:
+        return ''
+    if 'VMAP' not in (raiz.tag.split('}')[-1] or ''):
+        return ''
+    for alvo in raiz.iter():
+        if alvo.tag.split('}')[-1] != 'AdTagURI':
+            continue
+        valor = (alvo.text or '').strip()
+        if valor.startswith(('http://', 'https://')):
+            return valor
     return ''
 
 
@@ -446,12 +481,18 @@ def exibir(log=None, tag='', altura_tela=0, tempo_maximo=TEMPO_MAXIMO_ANUNCIO,
     anuncio = escolher_anuncio(dados, altura_tela)
     nivel = 0
     while not anuncio and nivel < PROFUNDIDADE_WRAPPER:
-        alvo = tag_do_wrapper(dados)
+        # VMAP (playlist de intervalos do Ad Manager) e Wrapper (mediacao) sao
+        # os dois jeitos de "o anuncio esta em outra tag". Antes so o Wrapper
+        # era seguido, e uma tag VMAP acabava em "sem criativo".
+        e_wrapper = bool(tag_do_wrapper(dados))
+        alvo = tag_do_wrapper(dados) or tag_do_vmap(dados)
         if not alvo:
             break
         nivel += 1
         if log:
-            log('[SmartAds] VAST: seguindo wrapper (nivel %d)' % nivel)
+            log('[SmartAds] VAST: seguindo %s (nivel %d)'
+                % ('wrapper' if e_wrapper else 'VMAP - AdBreak do Ad Manager',
+                   nivel))
         dados = baixar_tag(alvo)
         if not dados:
             break

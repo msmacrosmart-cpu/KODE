@@ -39,9 +39,25 @@ PONTE = 'assets/addons/plugin.video.smarted/'
 PONTE_DIR = ROOT / 'kodi' / 'addons' / 'plugin.video.smarted'
 # ``variante.py`` decide MOBILE x TV (pasta do Dropbox, pacote, anuncio); sem
 # ele no APK o app cai no padrao mobile e as duas versoes baixariam o mesmo APK.
+#
+# ``ads_regra.py`` e ``ads_vast.py`` FALTAVAM nesta lista, e isso quebrava o
+# servico no aparelho: ``smart_ads.py`` faz ``import ads_regra`` no topo, o
+# modulo nao existia no APK e o Python abortava o ``service.py`` inteiro com
+# FileNotFoundError (log real de 2026-11-19: "No such file or directory:
+# .../service.smarted.bootstrap/ads_regra.py"). Resultado: notificacao de erro
+# no boot e NENHUM dos trabalhos do servico (reparo, favoritos, skin, anuncio)
+# rodava. ``ads_vast.py`` tem o mesmo risco: e importado por smart_ads.py para o
+# anuncio de video da TV. Todo modulo do addon que e importado precisa entrar
+# aqui; os testes comparam a pasta com esta lista para nao faltar de novo.
 MODULOS = ('service.py', 'menu_smarted.py', 'performance.py', 'vip.py',
-           'variante.py', 'smart_ads.py', 'ad_return.py', 'ao_vivo.py',
-           'smarted_release.py', 'check.py', 'addon.xml')
+           'variante.py', 'smart_ads.py', 'ads_regra.py', 'ads_vast.py',
+           'ad_return.py', 'ao_vivo.py', 'smarted_release.py', 'check.py',
+           # ``service.py`` tambem importa estes tres no topo (repair,
+           # favourites, skin_setup). Sem eles o servico morre no import - o
+           # mesmo caminho de falha do ads_regra, so que parando ainda mais
+           # cedo: nada de reparo, favoritos, skin nem anuncio.
+           'repair.py', 'favourites.py', 'skin_setup.py',
+           'addon.xml')
 
 # Marcador lido por ``variante.py`` dentro do APK: diz QUAL versao e este APK
 # (celular ou TV). O App Armor nao tem fonte neste repositorio - o build so

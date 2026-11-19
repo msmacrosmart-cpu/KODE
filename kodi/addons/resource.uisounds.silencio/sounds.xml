@@ -1,3 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Tema de sons VAZIO: o objetivo do addon e nao tocar nada.
+
+  Fica com um elemento <actions> vazio (e nao com o arquivo vazio) porque o
+  carregador do Kodi (xbmc/guilib/GUIAudioManager.cpp) faz
+  ``TiXmlElement* pRoot = xmlDoc.RootElement();`` e em seguida
+  ``pRoot->Value()`` SEM checar nulo. Um arquivo sem nenhum elemento - ou
+  somente com comentario - faz o carregamento falhar e ainda deixa o ponteiro
+  nulo; com <actions> vazio o parser le o XML inteiro, nao encontra nenhum som
+  e simplesmente nao toca nada, que e o comportamento desejado.
+-->
 <sounds version="2">
+  <actions/>
 </sounds>

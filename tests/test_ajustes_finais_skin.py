@@ -43,7 +43,13 @@ class AjustesFinaisTest(unittest.TestCase):
         self.assertIn('kodi.resource.uisounds', pontos)
         sons = ET.parse(addon / 'sounds.xml').getroot()
         self.assertEqual(sons.tag, 'sounds')
-        self.assertEqual(list(sons), [])  # nenhum som definido
+        # O arquivo tem de ter um ELEMENTO raiz valido: o carregador do Kodi
+        # (GUIAudioManager.cpp) usa xmlDoc.RootElement()->Value() sem checar
+        # nulo. Arquivo sem elemento nenhum (era o caso) falhava a leitura no
+        # aparelho: "resource://resource.uisounds.silencio/sounds.xml, Line 0
+        # Failed to open file". <actions> vazio = zero sons, que e o objetivo.
+        self.assertEqual([c.tag for c in sons], ['actions'])
+        self.assertEqual(list(sons[0]), [])  # nenhum som definido
         servico = (ROOT / 'kodi/addons/service.smarted.bootstrap/service.py').read_text(encoding='utf-8')
         self.assertIn("lookandfeel.soundskin", servico)
         self.assertIn('resource.uisounds.silencio', servico)

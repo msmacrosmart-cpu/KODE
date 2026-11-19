@@ -47,7 +47,13 @@ class HomeNavegacaoTest(unittest.TestCase):
         self.assertIn('9203', descidas)
         subidas = [(e.text or '').strip() for e in self.controle('9203').findall('onup')]
         self.assertIn('9300', subidas)
-        self.assertIn('9201', subidas)
+        # 9203 NAO sobe para 9201: subir tem de sair da fileira e ir para o
+        # hero (9300). O 9203 -> 9201 veio da troca de 873542f por d91326f e
+        # era um dos tres <onup> incondicionais que deixavam o primeiro vencer
+        # por acidente (e travavam o foco quando o hero estava oculto).
+        # A subida da fileira de baixo para a de cima NAO e perdida: e feita
+        # pelo hero (9300), que fica entre elas.
+        self.assertNotIn('9201', subidas)
 
     def test_nenhum_alvo_de_dpad_aponta_para_controle_inexistente(self):
         ids = {c.get('id') for c in self.raiz.iter('control') if c.get('id')}

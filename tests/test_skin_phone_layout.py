@@ -358,9 +358,16 @@ class NavegacaoCompletaTest(unittest.TestCase):
             self.assertIn(rota, self.navegacao)
 
     def test_barra_superior_tem_so_busca_ajustes_e_sair(self):
-        # botao de addons removido a pedido (rodada 15)
-        self.assertIsNone(re.search(r'id="9124">', self.home))
+        # Botao de addons removido a pedido (rodada 15). O 9124 hoje e o botao
+        # de BUSCA: id antigo, funcao nova. O que a regra proibe e o atalho de
+        # addons reaparecer (janela 10040 / icone de addons), nao o numero.
+        assertiva = re.search(r'<control type="button" id="9124">(.{0,400}?)</control>',
+                               self.home, re.S)
+        self.assertIsNotNone(assertiva, 'botao 9124 ausente')
+        self.assertIn('ActivateWindow(1107)', assertiva.group(1),
+                      '9124 tem de ser a Busca (1107)')
         self.assertNotIn('ActivateWindow(10040)', self.home)
+        self.assertNotIn('icons/settings/addons.png', self.home)
 
     def test_skin_nao_embute_catalogo(self):
         # nada de canais/filmes ficticios na skin: o conteudo vem do addon
