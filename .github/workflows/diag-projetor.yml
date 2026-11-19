@@ -7,6 +7,7 @@ on:
       - 'smartedtv/release/projetor-smoke.sh'
       - 'tools/kodi/analisar-kodi-log.py'
       - 'tools/kodi/publicar-log-inteiro.sh'
+      # (comentario para re-disparar quando so a release muda)
 permissions:
   contents: write
   actions: read
@@ -23,7 +24,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          for tentativa in $(seq 1 10); do
+          # o build do APK leva ~6 min: esperar ate 15 min pela release
+          for tentativa in $(seq 1 45); do
             if gh release view v1.0.137-universal -R msmacrosmart-cpu/KODE >/dev/null 2>&1; then
               echo "::notice::release v1.0.137-universal disponivel"; exit 0
             fi
