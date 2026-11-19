@@ -20,14 +20,18 @@ erro() { printf '::error::%s\n' "$*"; }
 falhas=0
 
 KODI_LOG="/sdcard/Android/data/$app/files/.kodi/temp/kodi.log"
+# O observador grava em arquivo proprio: o kodi.log e rotacionado quando o app
+# reinicia o Kodi, e ler por ele devolvia zero linhas (falha falsa).
+OBS_LOG="/sdcard/Android/data/$app/files/.kodi/temp/dpad-observador.log"
 ler_log() { adb shell "cat $KODI_LOG" 2>/dev/null | tr -d '\r'; }
+ler_obs() { adb shell "cat $OBS_LOG" 2>/dev/null | tr -d '\r'; }
 tecla() { adb shell input keyevent "$1" >/dev/null 2>&1; sleep "${2:-0.8}"; }
 coletar() {
   adb exec-out screencap -p > "$out/tela-final.png" 2>/dev/null || true
   ler_log > "$out/kodi.log" 2>/dev/null || true
   adb logcat -d -v brief > "$out/logcat.txt" 2>/dev/null || true
 }
-ultimo_snap() { ler_log | grep 'SMARTED_DPAD_SNAP' | tail -1 | sed 's/.*SMARTED_DPAD_SNAP //'; }
+ultimo_snap() { ler_obs | grep 'SMARTED_DPAD_SNAP' | tail -1 | sed 's/.*SMARTED_DPAD_SNAP //'; }
 campo() { ultimo_snap | awk -F'|' -v c="$1" '{print $c}'; }
 
 # esperar <campo> <valor esperado como prefixo> <tentativas> -> 0 se chegou
@@ -80,7 +84,7 @@ for tentativa in $(seq 1 6); do
   adb shell input keyevent 140 >/dev/null 2>&1 || true
   for _ in $(seq 1 12); do
     sleep 2
-    if ler_log | grep -q 'SMARTED_DPAD_INICIO'; then iniciou=1; break; fi
+    if ler_obs | grep -q 'SMARTED_DPAD_INICIO'; then iniciou=1; break; fi
   done
   [ "$iniciou" -eq 1 ] && { ok "observador ligado (tentativa $tentativa)"; break; }
   adb shell input keyevent 4 >/dev/null 2>&1 || true
@@ -184,9 +188,10 @@ case "$abaixo" in
   *)        checar 'home_topo_desce_visivel' 0 "desceu para $abaixo" ;;
 esac
 
+ler_obs > "$out/observador.log"
 ler_log > "$out/kodi.log"
 note '7. Resultado'
-grep 'SMARTED_DPAD_SNAP' "$out/kodi.log" | tail -5 | sed 's/.*SMARTED_DPAD_SNAP //' > "$out/ultimas-leituras.txt"
+grep 'SMARTED_DPAD_SNAP' "$out/observador.log" | tail -5 | sed 's/.*SMARTED_DPAD_SNAP //' > "$out/ultimas-leituras.txt"
 cat "$out/ultimas-leituras.txt"
 coletar
 if [ "$falhas" -ne 0 ]; then

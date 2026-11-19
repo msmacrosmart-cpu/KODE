@@ -111,10 +111,27 @@ def itens():
     return rotulos
 
 
-_log('SMARTED_DPAD_INICIO')
+# Arquivo proprio: o kodi.log e ROTACIONADO quando o app reinicia o Kodi e a
+# leitura por ele voltava vazia (a prova lia zero linhas e acusava defeito).
+try:
+    ARQUIVO = xbmcvfs.translatePath('special://temp/dpad-observador.log')
+except Exception:
+    ARQUIVO = '/sdcard/dpad-observador.log'
+
+
+def _gravar(linha):
+    _log(linha)
+    try:
+        with open(ARQUIVO, 'a', encoding='utf-8') as fluxo:
+            fluxo.write(linha + '\n')
+    except Exception:
+        pass
+
+
+_gravar('SMARTED_DPAD_INICIO arquivo=%s' % ARQUIVO)
 fim = time.time() + DURACAO
 while time.time() < fim and not xbmc.abortRequested:
-    _log('SMARTED_DPAD_SNAP %s|%s|%d|%s'
-         % (janela(), foco(), len(itens()), '|'.join(itens())))
+    _gravar('SMARTED_DPAD_SNAP %s|%s|%d|%s'
+            % (janela(), foco(), len(itens()), '|'.join(itens())))
     time.sleep(PASSO)
-_log('SMARTED_DPAD_FIM')
+_gravar('SMARTED_DPAD_FIM')
