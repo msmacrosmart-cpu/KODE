@@ -13,6 +13,7 @@ A correcao usa o instante exato (``expira_em``) quando ele existe e mantem a
 data pura em ``expira``. Estes testes travam o comportamento.
 """
 import importlib.util
+import calendar
 import json
 import os
 import sys
@@ -117,9 +118,14 @@ class PrazoDoContratoTest(Base):
         self._servidor({'active': True, 'expiresAt': _iso(3600)})
         self.assertTrue(self.vip.validar('PLANO-HORA')[0])
         dados = self.vip.estado()
-        self.assertEqual(dados['expira'], time.strftime('%Y-%m-%d'),
-                         'data do dia do vencimento')
         hora = dados['expira_em']
+        # A data gravada e a do INSTANTE de vencimento (que pode cair no dia
+        # seguinte quando o teste roda perto da meia-noite UTC) - derivar do
+        # mesmo instante evita um teste que falha so por causa da hora.
+        esperado = time.strftime('%Y-%m-%d', time.gmtime(
+            calendar.timegm(time.strptime(hora.rstrip('Z'), '%Y-%m-%dT%H:%M:%S'))))
+        self.assertEqual(dados['expira'], esperado,
+                         'data do dia do vencimento')
         self.assertEqual(self.vip.dentro_do_prazo(hora), True)
         # e o instante gravado e o que o servidor mandou (nao "fim do dia")
         self.assertTrue(hora.endswith('Z'))
