@@ -165,6 +165,50 @@ class PerfilSemTerceirosTest(unittest.TestCase):
         self.aparelho.modulo.limpar_repositorios_de_terceiros()
         self.assertIn('UpdateLocalAddons()', self.aparelho.chamados)
 
+    def test_limpeza_repetida_ate_o_perfil_ficar_limpo(self):
+        """O Kodi reabre no MESMO boot os addons de servico antigos.
+
+        Medido no projetor: a limpeza apagava YouTube/OpenWizard e o Kodi, que
+        leu a lista antes, reabria os dois no mesmo boot ->
+        [plugin.video.youtube] ModuleNotFoundError: youtube_plugin.kodion.items.*
+        [COLOR limegreen]OpenWizard: [First Run] Skipping Save Data Settings
+        Por isso a limpeza roda em rodadas ate nao sobrar terceiro.
+        """
+        servico = self.aparelho.modulo
+        rodadas = []
+
+        class Monitor(object):
+            def abortRequested(self):
+                return False
+
+            def waitForAbort(self, segundos):
+                return False
+
+        original = servico.limpar_repositorios_de_terceiros
+        real = original
+
+        def limpar(log=None):
+            rodadas.append(1)
+            if len(rodadas) == 1:
+                # o Kodi recria a pasta do YouTube antes da 2a rodada
+                caminho = os.path.join(self.aparelho.addons, 'plugin.video.youtube')
+                os.makedirs(caminho, exist_ok=True)
+                return []
+            return real(log)
+
+        servico.limpar_repositorios_de_terceiros = limpar
+        try:
+            registros = []
+            servico.garantir_perfil_sem_terceiros(Monitor(), registros.append)
+        finally:
+            servico.limpar_repositorios_de_terceiros = original
+        self.assertGreaterEqual(len(rodadas), 2,
+                                'a limpeza precisa repetir ate ficar limpo')
+        self.assertFalse(os.path.isdir(os.path.join(
+            self.aparelho.addons, 'plugin.video.youtube')))
+        self.assertTrue(any('perfil limpo' in linha for linha in registros),
+                        'cada rodada precisa ficar no log')
+
     def test_estagio_de_semeadura_com_terceiros_e_apagado(self):
         """O APK instala o perfil por um estagio .smarted-seed-*; se ele sobra,
         o YouTube/OpenWizard voltam a ser carregados dali."""

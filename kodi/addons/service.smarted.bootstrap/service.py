@@ -980,6 +980,69 @@ def _preparar_em_segundo_plano(monitor):
     return thread
 
 
+# Janela em que um addon de terceiro que volta a aparecer no perfil ainda e
+# considerado "voltando". Medido no emulador de projetor: a limpeza roda no
+# boot e o Kodi, no MESMO boot, reabre os addons de servico antigos (ele leu a
+# lista antes da limpeza) e o modulo deles ja nao existe:
+#   [plugin.video.youtube] ModuleNotFoundError: youtube_plugin.kodion.items.*
+#   [COLOR limegreen]OpenWizard: [First Run] Skipping Save Data Settings
+TENTATIVAS_ATE_LIMPO = 6
+ESPERA_ENTRE_TENTATIVAS = 10
+
+
+def garantir_perfil_sem_terceiros(monitor, log):
+    """Repete a limpeza ate o perfil ficar sem addon de terceiro.
+
+    O Kodi recarrega a lista de addons depois de ``UpdateLocalAddons``; um
+    addon que o servico tentou iniciar antes da limpeza pode recriar pasta ou
+    ser relido do banco. Cada rodada registra no log o que tirou.
+    """
+    base = _pasta_de_addons_do_perfil()
+    for tentativa in range(1, TENTATIVAS_ATE_LIMPO + 1):
+        if monitor is not None and monitor.abortRequested():
+            return []
+        retirados = limpar_repositorios_de_terceiros(log)
+        quebrados = limpar_addons_quebrados(log)
+        restantes = []
+        if base and os.path.isdir(base):
+            restantes = [n for n in sorted(os.listdir(base))
+                         if n in ADDONS_DE_TERCEIROS_DO_PERFIL or
+                         n in REPOSITORIOS_DE_TERCEIROS or
+                         n in ADDONS_QUE_RODAM_NO_BOOT_E_FALHAM]
+        log('perfil limpo (rodada %d): %d retirado(s), %d sem codigo, restantes=%s'
+            % (tentativa, len(retirados), len(quebrados),
+               ', '.join(restantes) or 'nenhum'))
+        if not restantes:
+            return retirados
+        if monitor is not None and monitor.waitForAbort(ESPERA_ENTRE_TENTATIVAS):
+            return retirados
+    return []
+
+
+def vigiar_addons_que_voltam(monitor, log):
+    """Depois da limpeza, observa o perfil ate o fim deste boot.
+
+    Se um addon de terceiro reaparecer (o Kodi recria a pasta ao tentar
+    inicia-lo), ele sai de novo na hora - sem esperar a proxima abertura.
+    """
+    vistos = set()
+    while monitor is not None and not monitor.abortRequested():
+        if monitor.waitForAbort(30):
+            return
+        base = _pasta_de_addons_do_perfil()
+        if not base or not os.path.isdir(base):
+            continue
+        voltaram = [n for n in sorted(os.listdir(base))
+                    if n in ADDONS_DE_TERCEIROS_DO_PERFIL]
+        if voltaram:
+            novos = [n for n in voltaram if n not in vistos]
+            vistos.update(voltaram)
+            if novos:
+                log('addon de terceiro reapareceu no perfil: %s; retirando'
+                    % ', '.join(novos), xbmc.LOGWARNING)
+            limpar_repositorios_de_terceiros(log)
+
+
 def main():
     monitor = xbmc.Monitor()
     limpar_estado_interface()
@@ -1038,16 +1101,19 @@ def main():
     # codigo (esse e o que vira a tela "Add-on com erro"). Cada remocao fica
     # registrada; nada e escondido.
     try:
-        retirados = limpar_repositorios_de_terceiros(log)
+        # repete ate o perfil ficar limpo: o Kodi reabre no MESMO boot os
+        # addons de servico que ja estavam na lista (YouTube/OpenWizard) e
+        # isso recria a pasta deles.
+        retirados = garantir_perfil_sem_terceiros(monitor, log)
         log('limpeza de terceiros: %d addon(s) do perfil antigo (%s)'
             % (len(retirados), ', '.join(retirados) or 'nenhum'))
+        vigia_addons = threading.Thread(target=vigiar_addons_que_voltam,
+                                        args=(monitor, log),
+                                        name='addons-terceiros', daemon=True)
+        vigia_addons.start()
     except Exception as erro:
         log('limpeza de repositorios de terceiros falhou (%r)'
             % erro, xbmc.LOGWARNING)
-    try:
-        limpar_addons_quebrados(log)
-    except Exception as erro:
-        log('limpeza de addons sem codigo falhou (%r)' % erro, xbmc.LOGWARNING)
 
     pronto = esperar_addons_manager(monitor, log=log)
     if monitor.abortRequested():

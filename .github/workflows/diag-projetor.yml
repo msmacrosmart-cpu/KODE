@@ -26,13 +26,13 @@ jobs:
           set -euo pipefail
           # o build do APK leva ~6 min: esperar ate 15 min pela release
           for tentativa in $(seq 1 45); do
-            if gh release view v1.0.140-universal -R msmacrosmart-cpu/KODE >/dev/null 2>&1; then
-              echo "::notice::release v1.0.140-universal disponivel"; exit 0
+            if gh release view v1.0.141-universal -R msmacrosmart-cpu/KODE >/dev/null 2>&1; then
+              echo "::notice::release v1.0.141-universal disponivel"; exit 0
             fi
             sleep 20
           done
-          echo '::error::release v1.0.140-universal nao existe'; exit 1
-      - name: Baixar o APK publicado (1.0.140) para provar a correcao
+          echo '::error::release v1.0.141-universal nao existe'; exit 1
+      - name: Baixar o APK publicado (1.0.141) para provar a correcao
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -42,7 +42,7 @@ jobs:
           # tentar ate 15 min e conferir o tamanho antes de seguir
           baixou=0
           for tentativa in $(seq 1 30); do
-            if gh release download v1.0.140-universal -R msmacrosmart-cpu/KODE \
+            if gh release download v1.0.141-universal -R msmacrosmart-cpu/KODE \
                  --pattern SMARTEDTV-universal.apk \
                  --output build/universal/SMARTEDTV-universal.apk --clobber 2>/dev/null; then
               tamanho=$(stat -c %s build/universal/SMARTEDTV-universal.apk 2>/dev/null || echo 0)
@@ -51,14 +51,14 @@ jobs:
             fi
             sleep 30
           done
-          [ "$baixou" = 1 ] || { echo '::error::nao foi possivel baixar o APK 1.0.140 completo'; exit 1; }
+          [ "$baixou" = 1 ] || { echo '::error::nao foi possivel baixar o APK 1.0.141 completo'; exit 1; }
           ls -l build/universal
       - name: Habilitar aceleracao
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Projetor Android TV (leanback, sem toque) com o APK 1.0.140
+      - name: Projetor Android TV (leanback, sem toque) com o APK 1.0.141
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
         with:
           api-level: 30
