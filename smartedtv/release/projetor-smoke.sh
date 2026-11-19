@@ -29,6 +29,11 @@ grep -F 'Success' <<< "$resultado" || erro "instalacao sem Success: $resultado"
 adb shell appops set "$pkg" MANAGE_EXTERNAL_STORAGE allow >/dev/null 2>&1 || true
 adb shell pm grant "$pkg" android.permission.READ_EXTERNAL_STORAGE >/dev/null 2>&1 || true
 adb shell pm grant "$pkg" android.permission.WRITE_EXTERNAL_STORAGE >/dev/null 2>&1 || true
+# O shell nao le /sdcard/Android/data/... sem root (Android 11+). No emulador da
+# CI o root e permitido e e o que permite ler o kodi.log do aparelho.
+adb root >/dev/null 2>&1 || true
+adb wait-for-device >/dev/null 2>&1 || true
+sleep 2
 etapa '1/5 APK instalado no aparelho'
 
 # 2) abrir como a TV abre (LEANBACK_LAUNCHER), deixar o Kodi iniciar e desenhar
@@ -46,27 +51,25 @@ etapa "2/5 app aberto por LEANBACK_LAUNCHER ($componente); esperando o Kodi escr
 perfil=""
 candidatos_de_perfil() {
   printf '%s\n' \
-    /sdcard/Android/data/org.xbmc.kodi/files/.kodi \
     /sdcard/Android/data/smartedtv.full/files/.kodi \
-    /storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi \
-    /storage/emulated/0/Android/data/smartedtv.full/files/.kodi
+    /data/media/0/Android/data/smartedtv.full/files/.kodi \
+    /sdcard/Android/data/org.xbmc.kodi/files/.kodi \
+    /data/media/0/Android/data/org.xbmc.kodi/files/.kodi
 }
+# ``adb shell test -f`` nega leitura dentro de Android/data; o find como root
+# acha o arquivo de verdade. Preferir o find.
 procurar_log() {
-  while IFS= read -r pasta; do
-    for sub in temp userdata; do
-      for arquivo in kodi.log kodi.old.log; do
-        if adb shell "test -f '$pasta/$sub/$arquivo'" >/dev/null 2>&1; then
-          perfil=$pasta
-          printf '%s\n' "$pasta/$sub/$arquivo"
-          return 0
-        fi
-      done
-    done
-  done < <(candidatos_de_perfil)
-  return 1
+  local achado
+  achado=$(adb shell "find /sdcard/Android/data /data/media/0/Android/data -maxdepth 8 -name 'kodi.log' 2>/dev/null | head -1" 2>/dev/null | tr -d '\r' || true)
+  if [[ -z $achado ]]; then
+    achado=$(adb shell "find /data/data/smartedtv.full -maxdepth 8 -name 'kodi.log' 2>/dev/null | head -1" 2>/dev/null | tr -d '\r' || true)
+  fi
+  [[ -n $achado ]] || return 1
+  perfil=${achado%/temp/kodi.log}
+  printf '%s\n' "$achado"
 }
 log_remoto=""
-for tentativa in $(seq 1 30); do
+for tentativa in $(seq 1 40); do
   log_remoto=$(procurar_log || true)
   [[ -n $log_remoto ]] && break
   sleep 4
