@@ -71,7 +71,14 @@ if [[ -z $log_remoto ]]; then
     adb shell "ls -la /data/data/$pkg/files 2>&1" | tr -d '\r'
   } > "$diag" 2>&1 || true
   adb logcat -d > "$work/logcat.txt" 2>/dev/null || true
-  grep -iE "smartedtv|kodi|python|profile|seed" "$work/logcat.txt" | tail -60 | while IFS= read -r l; do aviso "$l"; done
+  # Uma anotacao por linha do diagnostico: os artefatos do run nao baixam fora
+  # do runner, entao o que precisa ser lido vai para as anotacoes.
+  head -50 "$diag" | while IFS= read -r l; do aviso "diag: $l"; done
+  pid_app=$(adb shell pidof "$pkg" 2>/dev/null | tr -d '\r' | awk '{print $1}')
+  if [[ -n $pid_app ]]; then
+    { grep " $pid_app " "$work/logcat.txt" || grep -F "smartedtv" "$work/logcat.txt"; } \
+      | tail -70 | while IFS= read -r l; do aviso "logcat: $l"; done
+  fi
   erro 'sem kodi.log: o Kodi nao chegou a iniciar neste aparelho'
 fi
 aviso "kodi.log do aparelho: $log_remoto"
