@@ -114,19 +114,27 @@ if [[ -z $log_remoto ]]; then
   echo '::notice::diagnostico completo publicado como comentario do commit (tools/kodi/publicar-diag.sh)' 
   erro 'sem kodi.log: o Kodi nao chegou a iniciar neste aparelho'
 fi
+perfil=$(printf '%s' "$log_remoto" | sed -E 's#/(temp|userdata)/kodi(\.old)?\.log$##')
 aviso "kodi.log do aparelho: $log_remoto (perfil: $perfil)"
 
-# 3) esperar a Home: o app escreve "pronto" ou liberou a Home; 90 s e teto de AVD
-for _ in $(seq 1 18); do
+# 3) esperar o servico do app concluir o preparo e a Home ser liberada.
+# Sem isso o log copiado e o comeco do boot (o Kodi escreve centenas de linhas
+# depois), e a analise nao ve o que interessa.
+marcas='pronto apos|liberando a Home|perfil incompleto|addons de terceiros retirados|Perfil inicial preparado'
+pronto_em=0
+for tentativa in $(seq 1 30); do
   sleep 5
-  if adb shell "grep -qE 'pronto apos|liberando a Home|Perfil existente preservado|Perfil inicial preparado' '$log_remoto'" >/dev/null 2>&1; then
+  if adb shell "grep -qE '$marcas' '$log_remoto'" >/dev/null 2>&1; then
+    pronto_em=$tentativa
     break
   fi
 done
-etapa '3/5 Home liberada (ou tempo esgotado); lendo o log do aparelho' 
-sleep 10
+[[ $pronto_em -gt 0 ]] && aviso "servico do app terminou o preparo na checagem $pronto_em" \
+  || aviso 'servico do app nao escreveu a marca de pronto no tempo; o log vai como esta'
+sleep 8
 adb shell pidof "$pkg" >/dev/null || erro "o app nao esta rodando depois do boot: $(adb logcat -b crash -d -t 20 | tr -d '\r')"
 adb exec-out screencap -p > "$work/projetor-home.png" 2>/dev/null || true
+etapa '3/5 Home liberada (ou tempo esgotado); lendo o log do aparelho'
 
 # 4) trazer o log do aparelho e analisar DE VERDADE
 mkdir -p "$work"
@@ -134,8 +142,17 @@ adb pull "$log_remoto" "$work/kodi.log" >/dev/null 2>&1 || adb shell "cat '$log_
 [[ -s "$work/kodi.log" ]] || erro 'nao foi possivel copiar o kodi.log do aparelho'
 etapa '4/5 kodi.log copiado do aparelho'
 wc -l "$work/kodi.log" | sed 's/^/linhas gravadas pelo Kodi: /'
-# O Kodi reescreve o log quando reinicia; guarda tambem o rotativo anterior.
-adb pull "${log_remoto%.log}.old.log" "$work/kodi-anterior.log" >/dev/null 2>&1 || true
+# O Kodi reescreve o log quando reinicia; o rotativo anterior tem a sessao que
+# terminou (e o servico que rodou nela). Copiar e ANALISAR os dois.
+anterior="${log_remoto%.log}.old.log"
+adb pull "$anterior" "$work/kodi-anterior.log" >/dev/null 2>&1 \
+  || adb shell "cat '$anterior'" > "$work/kodi-anterior.log" 2>/dev/null || true
+if [[ -s "$work/kodi-anterior.log" ]]; then
+  aviso "log da sessao anterior copiado: $(wc -l < "$work/kodi-anterior.log") linhas"
+  cat "$work/kodi-anterior.log" "$work/kodi.log" > "$work/kodi.log.ambos"
+  mv "$work/kodi.log.ambos" "$work/kodi.log"
+  aviso "analise conjunta: $(wc -l < "$work/kodi.log") linhas"
+fi
 # grep sem resultado NAO pode derrubar o script (pipefail): log sem essas
 # linhas e o resultado bom, nao um erro.
 { grep -nE 'Add-on com erro|Failed to load addon|Unable to load addon|Perfil existente|Perfil inicial|liberando a Home|pronto apos|\[SmartAds\]|skin=' \
