@@ -49,6 +49,11 @@ jobs:
             exit 1
           fi
           tail -35 "$RUNNER_TEMP/montagem.log"
+      - name: O servico do addon importa com os modulos do APK
+        # Reproduz o erro que apareceu no projetor (ads_regra.py ausente:
+        # FileNotFoundError no import e o servico inteiro morto). Aqui o
+        # service.py e IMPORTADO de verdade com o addon que vai no APK.
+        run: python3 tools/kodi/simular-servico.py
       - name: Auditoria do APK (laudo de evidências)
         run: |
           set -euo pipefail

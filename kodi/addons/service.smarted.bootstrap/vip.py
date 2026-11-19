@@ -367,10 +367,19 @@ def dentro_do_prazo(expira):
 
 
 def ativa():
-    """True somente com licenca gravada e ainda dentro do prazo."""
+    """True somente com licenca gravada e ainda dentro do prazo.
+
+    O prazo EXATO (``expira_em``, com hora - o que o servidor devolveu) manda;
+    ``expira`` (so o dia) fica como reserva para licencas antigas, gravadas
+    quando apenas a data era guardada. Sem isso, quem tem 1 hora de acesso
+    ficaria liberado ate o fim do dia.
+    """
     dados = estado()
     if not dados.get('ativo'):
         return False
+    exato = (dados.get('expira_em') or '').strip()
+    if exato:
+        return dentro_do_prazo(exato)
     return dentro_do_prazo(dados.get('expira'))
 
 
@@ -544,7 +553,7 @@ def _gravar_licenca(codigo, expira, rota):
     # Licenca/SmartAds le; `expira_em` guarda o instante exato para o Python.
     dados = {'ativo': True,
              'codigo_hash': _hash_codigo(codigo),
-             'expira': (expira or '')[:10],
+             'expira': _data_do_prazo(expira),
              'expira_em': expira,
              'origem': 'site',
              'rota': rota,
@@ -553,6 +562,29 @@ def _gravar_licenca(codigo, expira, rota):
     if salvou:
         log('licenca VIP salva (codigo %s, expira %s)' % (_mascarar(codigo), expira))
     return salvou
+
+
+def _data_do_prazo(expira):
+    """``AAAA-MM-DD`` correspondente ao INSTANTE de expiracao (UTC).
+
+    A chave ``expira`` e lida como DATA por quem acompanha o vip.json. Gravar
+    o mesmo texto de ``expira_em`` dentro dela (data + hora) fazia a leitura
+    de data falhar; aqui o instante exato vira a data do prazo, e a hora fica
+    em ``expira_em``.
+    """
+    texto = (expira or '').strip()
+    if len(texto) == 10:
+        return texto
+    import calendar
+    try:
+        limpo = texto.replace(' ', 'T').rstrip('Z')
+        if '.' in limpo:
+            limpo = limpo.split('.', 1)[0]
+        return time.strftime('%Y-%m-%d',
+                             time.gmtime(calendar.timegm(
+                                 time.strptime(limpo, '%Y-%m-%dT%H:%M:%S'))))
+    except Exception:
+        return texto[:10]
 
 
 def lembrar_rota(rota):
