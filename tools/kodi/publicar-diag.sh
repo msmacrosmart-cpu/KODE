@@ -18,5 +18,6 @@ proc = subprocess.run(['gh', 'api', '-X', 'POST',
                        '--input', '-'],
                       input=json.dumps({'body': corpo}), text=True,
                       capture_output=True)
-print(proc.stdout[-300:] or proc.stderr[-300:])
+saida = (proc.stdout or '') + (proc.stderr or '')
+print('::notice::comentario publicado' if proc.returncode == 0 else '::error::falha ao publicar: ' + saida[-300:])
 PY
