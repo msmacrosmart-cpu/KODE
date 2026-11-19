@@ -129,4 +129,36 @@ if adb logcat -b crash -d | grep -E 'Process: smartedtv\.full,|>>> smartedtv\.fu
   erro 'Crash do SMARTEDTV no primeiro arranque'
 fi
 primary_clean=$(adb shell dumpsys package "$pkg" | sed -n 's/.*primaryCpuAbi=//p' | tr -d '\r')
+
+# --- ADDON DENTRO DO APARELHO (o servico roda mesmo?) ----------------------
+# Em 19/11 o APK publicado saiu sem ads_regra.py: o import no topo derrubava o
+# service.py e o projetor mostrava notificacao de erro Python. Aqui a prova e
+# feita no APK INSTALADO no AVD, nao no arquivo do runner.
+addons_apk=/data/local/tmp/ver-addons
+adb shell rm -rf "$addons_apk" >/dev/null 2>&1 || true
+if adb shell pm path "$pkg" >/dev/null 2>&1; then
+  caminho_apk=$(adb shell pm path "$pkg" | tr -d '\r' | sed -n 's/^package://p' | head -1)
+  if adb shell "mkdir -p $addons_apk && cd $addons_apk && unzip -o -q '$caminho_apk' 'assets/addons/service.smarted.bootstrap/*' >/dev/null 2>&1"; then
+    faltando=""
+    for modulo in $(python3 -c "import ast,pathlib; a=ast.parse(pathlib.Path('tools/kodi/atualizar-apk-v17.py').read_text()); print(' '.join(ast.literal_eval(n.value) for n in a.body if isinstance(n, ast.Assign) and any(getattr(x,'id',None)=='MODULOS' for x in n.targets)))"); do
+      adb shell "test -f $addons_apk/assets/addons/service.smarted.bootstrap/$modulo" \
+        || faltando="$faltando $modulo"
+    done
+    if [[ -n $faltando ]]; then
+      erro "modulos ausentes no APK INSTALADO:$faltando"
+    fi
+    echo '::notice::todos os modulos do addon estao no APK instalado'
+    adb shell rm -rf "$addons_apk" >/dev/null 2>&1 || true
+  else
+    echo '::warning::nao foi possivel extrair o addon do APK instalado (unzip ausente na imagem)'
+  fi
+fi
+# O servico tem de iniciar sem excecao de Python. O log do Kodi no AVD fica no
+# armazenamento do app: o que da para provar aqui e que nao houve erro de
+# importacao nem traceback no servico durante o boot.
+if adb logcat -d 2>/dev/null | grep -E "ModuleNotFoundError|No such file or directory.*service.smarted.bootstrap|PythonToCppException.*smarted.bootstrap"; then
+  erro 'o servico do addon falhou no boot (import/traceback)'
+else
+  echo '::notice::nenhum erro de import/traceback do service.smarted.bootstrap no boot'
+fi
 echo "::notice::AVD API $(adb shell getprop ro.build.version.sdk | tr -d '\r'): atualização ($primary), instalação limpa ($primary_clean) e os dois launchers aprovados. ABIs do AVD: $abi"
