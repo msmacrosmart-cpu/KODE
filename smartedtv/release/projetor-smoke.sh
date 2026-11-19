@@ -31,18 +31,29 @@ adb shell am force-stop "$pkg" >/dev/null 2>&1 || true
 adb shell am start -W -n "$componente" >/dev/null 2>&1 || true
 etapa "2/5 app aberto por LEANBACK_LAUNCHER ($componente); esperando o Kodi escrever o log"
 
-# O projetor e lento: espera o kodi.log aparecer no perfil do app, dentro do
-# armazenamento externo do proprio pacote (mesma pasta que o Kodi usa).
-perfil=/sdcard/Android/data/smartedtv.full/files/.kodi
+# Onde o motor grava o perfil: este APK traz o Kodi com o diretorio do pacote
+# antigo (org.xbmc.kodi) quando o armazenamento externo esta liberado; em
+# outros aparelhos cai no pacote do proprio app. Nao adivinhar: procurar.
+perfil=""
+candidatos_de_perfil() {
+  printf '%s\n' \
+    /sdcard/Android/data/org.xbmc.kodi/files/.kodi \
+    /sdcard/Android/data/smartedtv.full/files/.kodi \
+    /storage/emulated/0/Android/data/org.xbmc.kodi/files/.kodi \
+    /storage/emulated/0/Android/data/smartedtv.full/files/.kodi
+}
 procurar_log() {
-  for candidato in "$perfil/temp/kodi.log" \
-                   "$perfil/userdata/kodi.log" \
-                   "$perfil/temp/kodi.old.log"; do
-    if adb shell "test -f '$candidato'" >/dev/null 2>&1; then
-      printf '%s\n' "$candidato"
-      return 0
-    fi
-  done
+  while IFS= read -r pasta; do
+    for sub in temp userdata; do
+      for arquivo in kodi.log kodi.old.log; do
+        if adb shell "test -f '$pasta/$sub/$arquivo'" >/dev/null 2>&1; then
+          perfil=$pasta
+          printf '%s\n' "$pasta/$sub/$arquivo"
+          return 0
+        fi
+      done
+    done
+  done < <(candidatos_de_perfil)
   return 1
 }
 log_remoto=""
@@ -57,18 +68,18 @@ if [[ -z $log_remoto ]]; then
   diag="$work/diag-aparelho.txt"
   {
     echo "== processo: $(adb shell pidof $pkg 2>/dev/null | tr -d '\r')"
-    echo "== /sdcard/Android/data/$pkg"
-    adb shell "ls -la /sdcard/Android/data/$pkg 2>&1" | tr -d '\r'
-    echo "== /sdcard/Android/data/$pkg/files"
-    adb shell "ls -la /sdcard/Android/data/$pkg/files 2>&1" | tr -d '\r'
-    echo "== find kodi.log (externo e interno)"
     adb root >/dev/null 2>&1 || true
     sleep 3
-    adb shell "find /sdcard/Android/data/$pkg /data/data/$pkg /data/media/0/Android/data/$pkg -name 'kodi*.log' 2>/dev/null" | tr -d '\r'
-    echo "== /data/data/$pkg"
-    adb shell "ls -la /data/data/$pkg 2>&1" | tr -d '\r'
-    echo "== /data/data/$pkg/files"
-    adb shell "ls -la /data/data/$pkg/files 2>&1" | tr -d '\r'
+    echo "== /sdcard/Android/data"
+    adb shell "ls -la /sdcard/Android/data 2>&1" | tr -d '\r'
+    echo "== find kodi*.log (todos os caminhos)"
+    adb shell "find /sdcard/Android/data /data/data /data/media/0/Android/data -maxdepth 7 -name 'kodi*.log' 2>/dev/null" | tr -d '\r'
+    for pacote in org.xbmc.kodi smartedtv.full; do
+      echo "== $pacote: /sdcard/Android/data/$pacote/files"
+      adb shell "ls -la /sdcard/Android/data/$pacote/files 2>&1" | tr -d '\r'
+      echo "== $pacote: /data/data/$pacote/files"
+      adb shell "ls -la /data/data/$pacote/files 2>&1" | tr -d '\r'
+    done
   } > "$diag" 2>&1 || true
   adb logcat -d > "$work/logcat.txt" 2>/dev/null || true
   # Uma anotacao por linha do diagnostico: os artefatos do run nao baixam fora
