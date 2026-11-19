@@ -195,11 +195,19 @@ def _pasta_de_addons_do_perfil():
         return ''
 
 
+# Pastas que moram dentro de ``addons/`` e NAO sao addons: ``packages`` guarda
+# os zips do reparo (apagar aqui deixaria o aparelho sem como se recuperar).
+PASTAS_RESERVADAS = ('packages', 'temp', 'addon_data')
+
+
 def _addon_esta_quebrado(pasta):
     """Addon sem codigo, ou com o ``library`` do addon.xml faltando."""
     if not os.path.isdir(pasta):
         return False
-    if os.path.basename(pasta) in ADDONS_DE_TERCEIROS:
+    nome = os.path.basename(pasta)
+    if nome in PASTAS_RESERVADAS or '.' not in nome:
+        return False                     # nao e pasta de addon
+    if nome in ADDONS_DE_TERCEIROS:
         return True
     xml = os.path.join(pasta, 'addon.xml')
     if not os.path.exists(xml):
