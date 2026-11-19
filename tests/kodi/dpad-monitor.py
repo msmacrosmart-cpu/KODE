@@ -129,9 +129,19 @@ def _gravar(linha):
 
 
 _gravar('SMARTED_DPAD_INICIO arquivo=%s' % ARQUIVO)
+# xbmc.abortRequested foi REMOVIDO no Kodi 19: acessar o atributo levantava
+# AttributeError e o observador morria logo depois do INICIO, deixando a prova
+# sem nenhuma leitura (falha falsa em todas as verificacoes). O caminho atual e
+# o Monitor.
+monitor = xbmc.Monitor()
 fim = time.time() + DURACAO
-while time.time() < fim and not xbmc.abortRequested:
-    _gravar('SMARTED_DPAD_SNAP %s|%s|%d|%s'
-            % (janela(), foco(), len(itens()), '|'.join(itens())))
+leituras = 0
+while time.time() < fim and not monitor.abortRequested():
+    try:
+        _gravar('SMARTED_DPAD_SNAP %s|%s|%d|%s'
+                % (janela(), foco(), len(itens()), '|'.join(itens())))
+        leituras += 1
+    except Exception as erro:
+        _gravar('SMARTED_DPAD_ERRO leitura %d: %s' % (leituras, erro))
     time.sleep(PASSO)
-_gravar('SMARTED_DPAD_FIM')
+_gravar('SMARTED_DPAD_FIM leituras=%d' % leituras)
