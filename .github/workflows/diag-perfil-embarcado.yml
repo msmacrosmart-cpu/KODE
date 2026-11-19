@@ -1,0 +1,71 @@
+name: Diagnostico do perfil embarcado
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/diag-perfil-embarcado.yml']
+jobs:
+  ver:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Baixar a base e o APK publicado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p base
+          gh release download v1.0.87-universal-v22 -R msmacrosmart-cpu/KODE --pattern SMARTEDTV-universal.apk --output base/base.apk
+          gh release download v1.0.133-universal -R msmacrosmart-cpu/KODE --pattern SMARTEDTV-universal.apk --output base/atual.apk
+      - name: O que o perfil embarcado instala no aparelho
+        run: |
+          set -euo pipefail
+          aviso() { printf '::notice::%s\n' "$(printf '%s' "$*" | tr '\r\n' '  ' | cut -c1-900)"; }
+          cd base
+          unzip -q atual.apk 'assets/smarted/profile/*' -d perfil
+          echo "--- arvore do perfil"
+          find perfil/assets/smarted/profile -maxdepth 3 | head -40
+          echo "--- arquivos do perfil"
+          find perfil/assets/smarted/profile -type f | sed 's|perfil/assets/smarted/profile/||' | sort > "$RUNNER_TEMP/perfil-arquivos.txt"
+          wc -l < "$RUNNER_TEMP/perfil-arquivos.txt"
+          head -40 "$RUNNER_TEMP/perfil-arquivos.txt"
+          aviso "perfil embarcado: $(wc -l < "$RUNNER_TEMP/perfil-arquivos.txt") arquivos"
+          python3 - <<'PY'
+          import os, sqlite3, shutil, tempfile
+          raiz = 'perfil/assets/smarted/profile'
+          for pasta, _, arquivos in os.walk(raiz):
+              for nome in arquivos:
+                  caminho = os.path.join(pasta, nome)
+                  if not nome.endswith('.db'):
+                      continue
+                  temp = os.path.join(tempfile.mkdtemp(), nome)
+                  shutil.copy(caminho, temp)
+                  try:
+                      con = sqlite3.connect(temp)
+                      tabelas = [r[0] for r in con.execute("select name from sqlite_master where type='table'")]
+                      print('::notice::DB %s tabelas=%s' % (caminho.replace(raiz + '/', ''), tabelas[:12]))
+                      for tabela in ('repo','addon','installed','blacklist','version'):
+                          if tabela not in tabelas:
+                              continue
+                          try:
+                              linhas = con.execute('select * from "%s" limit 40' % tabela).fetchall()
+                              cols = [d[0] for d in con.execute('select * from "%s" limit 1' % tabela).description]
+                              print('::notice::  %s cols=%s' % (tabela, cols))
+                              for linha in linhas[:25]:
+                                  print('::notice::  %s -> %s' % (tabela, str(linha)[:250]))
+                          except Exception as e:
+                              print('::notice::  %s erro %r' % (tabela, e))
+                      con.close()
+                  except Exception as e:
+                      print('::notice::DB %s ilegivel: %r' % (nome, e))
+          PY
+      - name: settings do perfil que apontam para fora
+        run: |
+          set -euo pipefail
+          aviso() { printf '::notice::%s\n' "$(printf '%s' "$*" | tr '\r\n' '  ' | cut -c1-900)"; }
+          cd base/perfil/assets/smarted/profile
+          grep -hoE '<setting id="[^"]+"[^>]*>[^<]{1,120}' userdata/guisettings.xml 2>/dev/null | head -40
+          echo "--- fontes/servidores"
+          cat userdata/sources.xml 2>/dev/null | head -30 || true
+          echo "--- servicos ligados"
+          grep -oE '<setting id="(services\.[^"]+|network\.[^"]+|general\.[^"]+)"[^>]*>[^<]*' userdata/guisettings.xml 2>/dev/null | head -30
+          aviso "perfil: $(ls userdata 2>/dev/null | tr '\n' ' ')"
