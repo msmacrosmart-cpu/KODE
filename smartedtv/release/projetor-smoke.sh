@@ -136,8 +136,10 @@ etapa '4/5 kodi.log copiado do aparelho'
 wc -l "$work/kodi.log" | sed 's/^/linhas gravadas pelo Kodi: /'
 # O Kodi reescreve o log quando reinicia; guarda tambem o rotativo anterior.
 adb pull "${log_remoto%.log}.old.log" "$work/kodi-anterior.log" >/dev/null 2>&1 || true
-grep -nE 'Add-on com erro|Failed to load addon|Unable to load addon|Perfil existente|Perfil inicial|liberando a Home|pronto apos|\[SmartAds\]|skin=' \
-  "$work/kodi.log" | tail -40 | while IFS= read -r linha; do aviso "${linha}"; done
+# grep sem resultado NAO pode derrubar o script (pipefail): log sem essas
+# linhas e o resultado bom, nao um erro.
+{ grep -nE 'Add-on com erro|Failed to load addon|Unable to load addon|Perfil existente|Perfil inicial|liberando a Home|pronto apos|\[SmartAds\]|skin=' \
+  "$work/kodi.log" | tail -40 || true; } | while IFS= read -r linha; do aviso "${linha}"; done
 
 # 5) o perfil do aparelho TEM os addons que o Kodi viu? (o defeito do projetor)
 { adb shell "ls -1 $perfil/addons 2>/dev/null" 2>/dev/null | tr -d '\r' | sort > "$work/addons-no-aparelho.txt"; } || true
