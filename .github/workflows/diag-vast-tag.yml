@@ -1,8 +1,15 @@
-name: Diagnostico da tag VAST (temporario)
+name: Diagnostico da tag VAST
+# Verifica, com o modulo REAL do app, o caminho da tag VAST do projeto:
+# tag -> VAST -> criativo -> arquivo de video -> player. Roda neste runner
+# (que tem internet) porque o VAST nao e alcancavel de dentro do sandbox.
+# Use "Run workflow" sempre que a tag do projeto mudar.
 on:
+  workflow_dispatch:
   push:
     paths:
       - '.github/workflows/diag-vast-tag.yml'
+      - 'tools/kodi/diag-vast-tag.py'
+      - 'kodi/addons/service.smarted.bootstrap/ads_vast.py'
 jobs:
   medir:
     runs-on: ubuntu-latest
