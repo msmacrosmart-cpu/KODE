@@ -77,8 +77,11 @@ class AdsFalso(object):
 
 class BaseAds(unittest.TestCase):
     def setUp(self):
+        # 'variante' e 'smart_ads' tambem: o modulo os importa e, se ficarem no
+        # sys.modules, o proximo teste herdaria o "aparelho" falso daqui.
         self.guardados = {n: sys.modules.get(n)
-                          for n in ('xbmc', 'xbmcvfs', 'xbmcgui')}
+                          for n in ('xbmc', 'xbmcvfs', 'xbmcgui', 'variante',
+                                    'smart_ads')}
         sys.path.insert(0, str(BOOTSTRAP))
         self.modulo = None
 
@@ -89,6 +92,17 @@ class BaseAds(unittest.TestCase):
                 sys.modules.pop(nome, None)
             else:
                 sys.modules[nome] = antigo
+
+    def _como_tv(self, tv=True):
+        """Faz a variante responder tv/mobile sem depender do aparelho.
+
+        Em producao quem decide e o marcador gravado no APK (ou o sinal do
+        Kodi). Aqui a variante e substituida para o teste ser deterministico.
+        """
+        if self.modulo is None:
+            return
+        self.modulo._variante = types.SimpleNamespace(
+            e_tv=lambda: tv, e_mobile=lambda: not tv)
 
     def _carregar(self, kodi):
         xbmc = types.ModuleType('xbmc')
@@ -152,43 +166,58 @@ class DeteccaoTest(BaseAds):
 
 
 class RoteamentoTest(BaseAds):
-    """Anuncio AdMob em TODOS os aparelhos: celular, TV, box, stick e projetor.
+    """Celular anuncia por AdMob; TV NAO usa AdMob.
 
-    Pedido explicito do usuario: manter os anuncios do celular e passar a exibir
-    tambem em TV, Box, Stick e Projetor. O mesmo builtin (com o className do
-    anuncio) e usado em qualquer aparelho.
+    Rodada anterior pedia AdMob em todos os aparelhos. O usuario observou no
+    projetor que o anuncio nao aparece: o Google Mobile Ads (AdMob) nao tem
+    formato suportado em Android TV, e a activity abria pausando o video para
+    voltar sem nada. Contrato agora:
+
+    * celular: AdMob como sempre;
+    * TV: so anuncio de video (VAST/IMA); sem o SDK compilado no APK nada e
+      pedido, fica registrado no log o que falta e o video segue.
     """
 
     def test_celular_dispara_a_activity_admob_do_apk(self):
         kodi = AdsFalso(condicoes={'System.Platform.Android.Mobile',
                                    'System.Platform.Android'})
         modulo = self._carregar(kodi)
+        self._como_tv(False)
         self.assertTrue(modulo.tocar_anuncio(modulo.ATIVIDADE_PREROLL))
         envios = [b for b in kodi.builtins if b.startswith('StartAndroidActivity')]
         self.assertEqual(len(envios), 1, kodi.builtins)
         self.assertIn(modulo.ATIVIDADE_PREROLL, envios[0])
 
-    def test_tv_box_stick_projetor_tambem_disparam_admob(self):
-        for condicoes, nome in (
-                ({'System.Platform.Android.TV', 'System.Platform.Android'}, 'TV'),
-                ({'System.Platform.Android', 'System.FriendlyName'}, 'box'),
-                ({'System.Platform.Android'}, 'stick/projetor')):
-            kodi = AdsFalso(condicoes=condicoes,
-                            nomes={'System.FriendlyName': 'Fire TV Stick'})
-            modulo = self._carregar(kodi)
-            self.assertTrue(modulo.tocar_anuncio(modulo.ATIVIDADE_PREROLL), nome)
-            envios = [b for b in kodi.builtins
-                      if b.startswith('StartAndroidActivity')]
-            self.assertEqual(len(envios), 1, (nome, kodi.builtins))
-            self.assertIn(modulo.ATIVIDADE_PREROLL, envios[0], nome)
-
-    def test_abertura_tambem_vale_na_tv(self):
+    def test_tv_nao_dispara_activity_admob(self):
+        """AdMob nao tem formato para Android TV: nada e pedido."""
         kodi = AdsFalso(condicoes={'System.Platform.Android.TV',
                                    'System.Platform.Android'})
         modulo = self._carregar(kodi)
-        self.assertTrue(modulo.tocar_anuncio(modulo.ATIVIDADE_ABERTURA))
+        self._como_tv(True)
+        self.assertFalse(modulo.tocar_anuncio(modulo.ATIVIDADE_PREROLL))
+        self.assertFalse(modulo.tocar_anuncio(modulo.ATIVIDADE_ABERTURA))
         envios = [b for b in kodi.builtins if b.startswith('StartAndroidActivity')]
-        self.assertIn(modulo.ATIVIDADE_ABERTURA, envios[0])
+        self.assertEqual(envios, [], kodi.builtins)
+
+    def test_tv_registra_o_que_falta_em_vez_de_simular(self):
+        kodi = AdsFalso(condicoes={'System.Platform.Android.TV',
+                                   'System.Platform.Android'})
+        modulo = self._carregar(kodi)
+        self._como_tv(True)
+        logs = []
+        modulo.tocar_anuncio(modulo.ATIVIDADE_PREROLL, log=logs.append)
+        texto = ' '.join(logs)
+        self.assertIn('IMA', texto)
+        self.assertIn('VAST', texto)
+
+    def test_abertura_na_tv_nao_abre_admob(self):
+        kodi = AdsFalso(condicoes={'System.Platform.Android.TV',
+                                   'System.Platform.Android'})
+        modulo = self._carregar(kodi)
+        self._como_tv(True)
+        self.assertFalse(modulo.mostrar_abertura())
+        self.assertEqual([b for b in kodi.builtins
+                          if b.startswith('StartAndroidActivity')], [])
 
     def test_vast_nunca_e_simulado(self):
         kodi = AdsFalso(condicoes={'System.Platform.Android.TV',

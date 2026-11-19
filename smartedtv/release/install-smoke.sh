@@ -15,6 +15,9 @@ install() {
 }
 install "$work/base-v22.apk"
 install -r "$work/SMARTEDTV-universal.apk"
+# A versao de TV e instalada POR CIMA da mesma base e no mesmo pacote: as duas
+# convivem no repositorio, mas nao ao mesmo tempo no aparelho (mesmo app).
+install -r "$work/SMARTEDTV-tv.apk"
 adb shell dumpsys package "$pkg" > "$work/pacote-instalado.txt"
 # Guardar o que o APARELHO leu do APK instalado: identidade/ABI em uso, para
 # comparar com o badging do arquivo. É evidência, não suposição.

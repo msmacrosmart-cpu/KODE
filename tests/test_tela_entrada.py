@@ -337,7 +337,12 @@ class StartupAntesDaHomeTest(unittest.TestCase):
         self.assertEqual(len(controles), 1, 'um <controls> por janela')
         labels = [(e.text or '').strip() for e in controles[0].iter('label')]
         self.assertIn('Carregando', labels)
-        self.assertIn('SMARTEDTV', labels)
+        # A marca da abertura e a LOGO do app, nao o texto "SMARTEDTV" (pedido:
+        # trocar o logo na Splash, mantendo a identidade da Home intacta).
+        texturas = [(e.text or '').strip()
+                    for e in controles[0].iter('texture')]
+        self.assertIn('smarted_splash_logo.png', texturas)
+        self.assertNotIn('SMARTEDTV', labels)
         fundos = [c for c in controles[0].iter('control')
                   if (c.findtext('texture') or '').endswith('pb_white.png')]
         self.assertTrue(fundos, 'sem fundo solido = tela preta')
@@ -599,6 +604,14 @@ class CicloDeVidaTest(unittest.TestCase):
         JanelaFake.ultima = None
         JanelaFake.falhar_modal = False
         JanelaFake.interacao = None
+        # Os cliques usam o mesmo modulo `vip` falso: o `import vip` do addon
+        # consulta o sys.modules ANTES da pasta temporaria, entao um `vip` real
+        # carregado por outro teste do mesmo processo venceria o dublê (era o
+        # que fazia o botao 120 falhar so na suite inteira).
+        sys.modules.pop('vip', None)
+        sys.modules.pop('_smarted_vip_stub', None)
+        self.addCleanup(sys.modules.pop, 'vip', None)
+        self.addCleanup(sys.modules.pop, '_smarted_vip_stub', None)
         self.vip = VipFake()
         self.modulo, self.xbmc, self.xbmcgui = carregar_default(self.vip)
         self.addCleanup(sys.modules.pop, '_smarted_vip_stub', None)
@@ -1010,6 +1023,11 @@ class BotoesAndroidTest(unittest.TestCase):
         self.vip.open_apk_download = lambda: False
         self.vip.abrir_url = lambda *a, **k: False
         self.vip.procurar_atualizacao = lambda: False
+        # O `import vip` do addon consulta primeiro o sys.modules: um `vip`
+        # real carregado por outro teste do mesmo processo venceria o dublê e
+        # o botao cairia no fallback (falhava so na suite inteira).
+        sys.modules.pop('vip', None)
+        sys.modules.pop('_smarted_vip_stub', None)
         self.modulo, self.xbmc, self.xbmcgui = carregar_default(self.vip)
         self.addCleanup(sys.modules.pop, '_smarted_vip_stub', None)
         self.addCleanup(sys.modules.pop, 'vip', None)

@@ -37,9 +37,17 @@ SERVICO = 'assets/addons/service.smarted.bootstrap/'
 # aparelho, mesmo com o XML da skin atualizado.
 PONTE = 'assets/addons/plugin.video.smarted/'
 PONTE_DIR = ROOT / 'kodi' / 'addons' / 'plugin.video.smarted'
+# ``variante.py`` decide MOBILE x TV (pasta do Dropbox, pacote, anuncio); sem
+# ele no APK o app cai no padrao mobile e as duas versoes baixariam o mesmo APK.
 MODULOS = ('service.py', 'menu_smarted.py', 'performance.py', 'vip.py',
-           'smart_ads.py', 'ad_return.py', 'ao_vivo.py', 'smarted_release.py',
-           'check.py', 'addon.xml')
+           'variante.py', 'smart_ads.py', 'ad_return.py', 'ao_vivo.py',
+           'smarted_release.py', 'check.py', 'addon.xml')
+
+# Marcador lido por ``variante.py`` dentro do APK: diz QUAL versao e este APK
+# (celular ou TV). O App Armor nao tem fonte neste repositorio - o build so
+# reempacota assets - entao a variante viaja como arquivo, e nao por um pacote
+# Android diferente.
+MARCADOR_VARIANTE = 'assets/smartedtv-variante.txt'
 KEYMAP_ORIGEM = ROOT / 'kodi' / 'keymaps' / 'smartedtv-voltar.xml'
 KEYMAP_DESTINO = 'assets/system/keymaps/zzz-smartedtv-voltar.xml'
 # O *ID embarcado* não é a origem: o monólito copia a Clássica para skin.novatv.
@@ -133,11 +141,13 @@ STARTUP_CONTROLS = (
     '\t\t<control type="image"><left>0</left><top>0</top>'
     '<width>100%</width><height>100%</height>'
     '<texture>pb_scrim_v.png</texture></control>\n'
-    '\t\t<control type="label"><left>0</left><top>470</top>'
-    '<width>100%</width><height>56</height><font>font13</font>'
-    '<textcolor>pb_white</textcolor><align>center</align>'
-    '<aligny>center</aligny><label>SMARTEDTV</label></control>\n'
-    '\t\t<control type="label"><left>0</left><top>534</top>'
+    # Logo do app no lugar do texto "SMARTEDTV": a marca desenhada e a
+    # primeira coisa que o usuario ve (mesma imagem do launcher).
+    '<control type="image"><left>0</left><top>430</top>'
+    '<width>100%</width><height>132</height>'
+    '<aspectratio align="center" aligny="center">keep</aspectratio>'
+    '<texture>smarted_splash_logo.png</texture></control>\n'
+    '\t\t<control type="label"><left>0</left><top>580</top>'
     '<width>100%</width><height>36</height><font>font12</font>'
     '<textcolor>pb_muted</textcolor><align>center</align>'
     '<aligny>center</aligny><label>Carregando</label></control>\n'
@@ -270,6 +280,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--apk', required=True, type=Path)
     parser.add_argument('--saida', required=True, type=Path)
+    parser.add_argument(
+        '--variante', choices=('mobile', 'tv'), default=None,
+        help='grava assets/smartedtv-variante.txt dentro do APK (mobile|tv)')
     args = parser.parse_args(argv)
     if args.apk.resolve() == args.saida.resolve():
         raise SystemExit('entrada e saida precisam ser diferentes')
@@ -277,6 +290,12 @@ def main(argv=None):
     extras = arquivos_do_addon()
     extras.update(arquivos_do_servico())
     extras.update(arquivos_da_ponte())
+    if args.variante:
+        extras[MARCADOR_VARIANTE] = (
+            '# versao desta instalacao: mobile = celular/tablet, '
+            'tv = Android TV/box/stick/projetor\n%s\n' % args.variante
+        ).encode('utf-8')
+        dbg('variante gravada no APK: %s' % args.variante)
     dbg('arquivos para atualizar: %d (addon + servico/keymap)' % len(extras))
     arquivos_da_skin = mapa_da_skin()
 

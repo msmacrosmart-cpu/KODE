@@ -242,8 +242,12 @@ class ReaberturaTest(unittest.TestCase):
         self.assertIsNotNone(controles)
         self.assertGreaterEqual(len(list(controles)), 3)
         labels = [(e.text or '').strip() for e in controles.iter('label')]
-        self.assertIn('SMARTEDTV', labels)
         self.assertIn('Carregando', labels)
+        # A marca do boot e a LOGO (image), no lugar do texto "SMARTEDTV": a
+        # troca de logo pedida foi na abertura, nao na Home.
+        self.assertIn('smarted_splash_logo.png',
+                      [(e.text or '').strip()
+                       for e in controles.iter('texture')])
         # fundo desenhado: sem isto a janela e o preto puro
         fundos = [c for c in controles.iter('control')
                   if (c.findtext('texture') or '').endswith('pb_white.png')]

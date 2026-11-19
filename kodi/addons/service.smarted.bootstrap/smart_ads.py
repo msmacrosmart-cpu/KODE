@@ -58,6 +58,11 @@ import xbmc
 import xbmcvfs
 
 try:
+    import variante as _variante
+except ImportError:
+    _variante = None
+
+try:
     import ads_regra
 except ImportError:
     # Importado de fora do addon (harness/testes): carrega o arquivo vizinho
@@ -303,8 +308,16 @@ def tocar_anuncio(atividade, log=None, uri=''):
     # O perfil do aparelho fica registrado no log para diagnostico, mas NAO
     # decide mais se ha anuncio: todos os aparelhos recebem.
     perfil, motivo = perfil_dispositivo()
+    if e_tv() and not anuncio_de_video_disponivel():
+        # AdMob nao tem formato para Android TV: abrir a activity aqui so
+        # pausava o video e voltava sem nada (a "tela preta" do projetor).
+        if log:
+            log('[SmartAds] TV sem anuncio de video disponivel: nada pedido')
+        explicar_anuncio_tv(log)
+        return False
     if log:
-        log('[SmartAds] aparelho: %s (%s) - anuncio AdMob' % (perfil, motivo))
+        log('[SmartAds] aparelho: %s (%s) - anuncio %s'
+            % (perfil, motivo, 'video (TV)' if e_tv() else 'AdMob'))
     builtin = builtin_para(atividade, uri=uri)
     try:
         xbmc.executebuiltin(builtin)
@@ -337,6 +350,66 @@ def _kodi_em_foco(limite=2.5, passo=0.1):
 
 # Bloco/tag VAST. Fica aqui porque e o mesmo contrato que o SDK IMA usa.
 VAST_TAG_PADRAO = ''  # preencher com a tag VAST/IMA; vazio = nao pedir anuncio
+
+
+# ---------------------------------------------------------------------------
+# ANUNCIO NA TV (Android TV / projetor / stick / box)
+# ---------------------------------------------------------------------------
+# Por que o AdMob nao aparece na TV:
+#
+# * o Google NAO suporta o Google Mobile Ads (AdMob) em Android TV. Em celular
+#   o InterstitialAd do APK funciona; em Android TV o SDK nao tem atividade de
+#   tela cheia que o Leanback aceite e o inventario simplesmente nao preenche -
+#   nao e um bloco novo no AdMob que resolve, e o formato que nao existe;
+# * o formato suportado em TV e o ANUNCIO DE VIDEO linear (VAST/VMAP) exibido
+#   pelo Google IMA SDK junto do player (media3-exoplayer-ima). Isso exige o
+#   SDK compilado dentro do app Android, com o video passando pelo player do
+#   app - nao pelo player do Kodi.
+#
+# O que este APK tem hoje: o Kodi compilado e' um binario pronto e o dex do
+# app de anuncios nao tem o IMA (docs/diag-ads-java.txt). Injetar o SDK exige
+# recompilar o app Android inteiro, o que esta fora do escopo desta entrega
+# (nao alterar o metodo de compilacao). Entao, na TV:
+#
+#   1. se houver tag VAST configurada E o SDK no APK -> usa (abrir_anuncio_vast);
+#   2. sem SDK/tag -> NAO pede anuncio, registra no log o que falta e libera o
+#      video na hora. Nada de tela preta, nada de anuncio simulado.
+#
+# Regra de frequencia: a decisao continua sendo exclusivamente de ``ads_regra``
+# (mostrar_preroll). Quando a TV nao tem como exibir, a tentativa e cancelada
+# (cancelar_anuncio) e o conteudo segue - igual a qualquer falha de anuncio.
+
+def e_tv():
+    """True quando esta rodando a versao de TV (ver ``variante.py``)."""
+    if _variante is None:
+        return False
+    try:
+        return bool(_variante.e_tv())
+    except Exception:
+        return False
+
+
+def anuncio_de_video_disponivel():
+    """A TV so anuncia com video (VAST/IMA) e o SDK precisa estar no APK."""
+    return vast_disponivel()
+
+
+def explicar_anuncio_tv(log=None):
+    """Uma linha no log dizendo por que a TV anuncia (ou nao) e o que falta."""
+    if not log:
+        return None
+    if not e_tv():
+        return None
+    if anuncio_de_video_disponivel():
+        texto = ('TV: anuncio de video (VAST/IMA) disponivel '
+                 '(tag configurada e SDK no APK)')
+    else:
+        texto = ('TV: sem anuncio de video - falta compilar o Google IMA SDK '
+                 'no app Android e configurar a tag VAST (VAST_TAG_PADRAO); '
+                 'o AdMob do celular nao tem formato para Android TV. '
+                 'Reproducao segue sem anuncio.')
+    log('[SmartAds] ' + texto)
+    return texto
 
 
 def vast_disponivel():

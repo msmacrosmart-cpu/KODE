@@ -173,6 +173,31 @@ def _pasta_do_servico():
     return None
 
 
+def _link_do_dropbox_desta_versao(vip=None):
+    """Link da pasta do Dropbox DESTA versao (TV: SMARTEDTV-ON).
+
+    A separacao mora no ``vip.py`` (``pastas_dropbox``); aqui so perguntamos,
+    para o botao Dropbox nunca abrir a pasta da outra versao. Devolve None
+    quando nao ha como decidir - e no MOBILE isso e sempre, para o link
+    historico (o que ja funcionava) continuar valendo sem nenhuma mudanca.
+    """
+    try:
+        if vip is None:
+            vip = _vip()
+        eh_tv = getattr(vip, 'eh_tv', None)
+        if not (callable(eh_tv) and eh_tv()):
+            return None
+        pastas = getattr(vip, 'pastas_dropbox', None)
+        if callable(pastas):
+            links = pastas() or []
+            if links:
+                return links[0]
+    except Exception as erro:
+        _log('nao consegui resolver a pasta do Dropbox: %s' % erro,
+             xbmc.LOGWARNING)
+    return None
+
+
 def _vip():
     """Modulo de licenca VIP que ja existe no projeto (sem duplicar logica)."""
     pasta = _pasta_do_servico()
@@ -556,7 +581,8 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         url = DROPBOX_URL
         vip = _vip()
         if vip is not None:
-            url = getattr(vip, 'DROPBOX_URL', DROPBOX_URL) or DROPBOX_URL
+            url = (_link_do_dropbox_desta_versao(vip)
+                   or getattr(vip, 'DROPBOX_URL', DROPBOX_URL) or DROPBOX_URL)
             try:
                 if hasattr(vip, 'abrir_dropbox') and vip.abrir_dropbox():
                     _log('[SMARTEDTV] Dropbox aberto via vip.abrir_dropbox(): %s'
@@ -611,10 +637,29 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
                       'Não consegui abrir o compartilhamento neste aparelho.')
 
     def _baixar_apk(self):
-        """ID 122 - Abre o download direto do APK no navegador do Android."""
+        """ID 122 - Abre o download direto do APK no navegador do Android.
+
+        O arquivo vem SEMPRE da pasta desta versao. Se a pasta ainda nao foi
+        publicada (caso da TV antes de existir ``SMARTEDTV-ON``), o aviso diz
+        o que falta - nunca cai no APK da outra versao.
+        """
         url = APK_DOWNLOAD
         vip = _vip()
         if vip is not None:
+            try:
+                if hasattr(vip, 'dropbox_configurado') and not vip.dropbox_configurado():
+                    pasta = getattr(vip, 'pasta_nome', lambda: '?')()
+                    _log('[SMARTEDTV] download: pasta %s nao configurada' % pasta,
+                         xbmc.LOGWARNING)
+                    self._dialogo(
+                        'Atualizacao nao configurada',
+                        'Esta versao consulta a pasta %s do Dropbox, que ainda '
+                        'nao foi publicada. Nada sera baixado para nao instalar '
+                        'a versao errada.' % pasta)
+                    return
+            except Exception as erro:
+                _log('[SMARTEDTV] checagem da pasta do Dropbox falhou: %s'
+                     % erro, xbmc.LOGWARNING)
             # Mesmo contrato do vip.py: pede o arquivo PELO NOME na pasta
             # publicada, entao o link nunca fica preso a uma versao antiga.
             por_nome = getattr(vip, 'url_do_apk_por_nome', None)

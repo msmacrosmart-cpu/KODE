@@ -54,8 +54,40 @@ APK_NOME = 'SMARTEDTV.apk'
 # ao NOME do arquivo: o app pede <pasta>/SMARTEDTV.apk, entao basta
 # trocar o arquivo por dentro (mesmo nome novo conteudo) e nada mais muda.
 # Diferente do /scl/fi/, que fica preso ao ID de UM arquivo.
+#
+# DUAS VERSOES, DUAS PASTAS (pedido da separacao mobile/TV):
+#
+#   Dropbox/SMARTEDTV-MOBILE/SMARTEDTV.apk   <- versao do celular (smartedtv.full)
+#   Dropbox/SMARTEDTV-ON/SMARTEDTV.apk       <- versao de TV  (smartedtv.tv)
+#
+# A versao que esta rodando escolhe a pasta em ``pastas_dropbox()`` e NAO tem
+# como cair na pasta da outra: o link da pasta e o contrato (id + rlkey), e um
+# APK baixado da pasta errada e recusado no fim por
+# ``conferir_pacote_do_apk()``.
+#
+# A pasta historica do celular e a mesma que ja estava publicada - por isso o
+# link abaixo continua identico e a atualizacao do MOBILE nao muda de lugar.
 DROPBOX_PASTA = ('https://www.dropbox.com/scl/fo/5w6yfp0tvee0xro2wh0m3/'
                  'AKikmSEMGOvGv1QTiKCV8CU?rlkey=3b8m9dnw571waz7vs83n0vn17')
+
+# Pasta da versao TV. Precisa ser criada no Dropbox com o nome SMARTEDTV-ON e
+# compartilhada com link; o valor entra aqui (ou em settings) quando existir,
+# no mesmo formato do link acima. Vazio = a versao TV NAO baixa nada de outro
+# lugar: avisa que falta configuracao e o conteudo continua funcionando.
+DROPBOX_PASTA_TV = ''
+
+# Nome da pasta de cada versao (rotulo humano, usado nos avisos e no log).
+PASTA_NOME_MOBILE = 'SMARTEDTV-MOBILE'
+PASTA_NOME_TV = 'SMARTEDTV-ON'
+
+# Pacote de cada APK publicado. Serve para RECUSAR o arquivo da outra versao.
+PACOTE_MOBILE = 'smartedtv.full'
+PACOTE_TV = 'smartedtv.tv'
+
+try:
+    import variante as _variante
+except Exception:      # importado de fora do addon (testes/harness)
+    _variante = None
 
 # Link do Dropbox (com rlkey; sem ele o link /scl/fi/ nao abre).
 # dl=0 mostra a pagina do Dropbox; dl=1 baixa o APK direto.
@@ -801,11 +833,54 @@ def _cabecalhos_remotos(url):
         return (None, None)
 
 
-def _pasta_e_token():
+def eh_tv():
+    """Esta rodando a versao de Android TV?"""
+    if _variante is not None:
+        try:
+            return bool(_variante.e_tv())
+        except Exception:
+            pass
+    return False
+
+
+def pasta_nome():
+    """Nome da pasta do Dropbox desta versao (contrato com quem publica)."""
+    return PASTA_NOME_TV if eh_tv() else PASTA_NOME_MOBILE
+
+
+def pacote_desta_versao():
+    return PACOTE_TV if eh_tv() else PACOTE_MOBILE
+
+
+def pastas_dropbox():
+    """Links de pasta que ESTA versao pode consultar, do mais novo ao reserva.
+
+    Nunca devolve a pasta da outra versao: TV le SO ``SMARTEDTV-ON``; mobile le
+    SO ``SMARTEDTV-MOBILE`` (a pasta historica, que ja esta publicada).
+    """
+    if eh_tv():
+        return [u for u in (DROPBOX_PASTA_TV,) if u]
+    return [u for u in (DROPBOX_PASTA,) if u]
+
+
+def dropbox_configurado():
+    """False quando falta configurar a pasta desta versao.
+
+    E o caso da versao TV enquanto ninguem criar a pasta SMARTEDTV-ON: o app
+    continua funcionando e o aviso diz exatamente o que falta, em vez de
+    baixar (e instalar) o APK da outra versao.
+    """
+    return bool(pastas_dropbox())
+
+
+def _pasta_e_token(link=None):
     """Separa o link da pasta em (id, token, rlkey) para consultar/baixar."""
-    if not DROPBOX_PASTA:
+    if link is None:
+        candidatos = pastas_dropbox()
+        link = candidatos[0] if candidatos else ''
+    if not link:
         return (None, None, None)
-    base, _, consulta = DROPBOX_PASTA.partition('?')
+    base, _, consulta = link.partition('?')
     partes = [p for p in base.rstrip('/').split('/') if p]
     # .../scl/fo/<id>/<token>
     try:
@@ -828,7 +903,11 @@ def url_do_apk_por_nome(nome=None):
     achando. Devolve None quando nao acha (aí vale o link fixo/reserva).
     """
     nome = nome or APK_NOME
-    pasta_id, token, _ = _pasta_e_token()
+    links = pastas_dropbox()
+    if not links:
+        return None
+    pasta_link = links[0]
+    pasta_id, token, rlkey = _pasta_e_token(pasta_link)
     if not (pasta_id and token):
         return None
     Request, urlopen = _urlopen_request()
@@ -850,8 +929,7 @@ def url_do_apk_por_nome(nome=None):
     if not achado:
         return None
     return ('https://www.dropbox.com/scl/fo/%s/%s/%s?rlkey=%s&dl=1'
-            % (pasta_id, achado.group(1), nome,
-               _pasta_e_token()[2] or ''))
+            % (pasta_id, achado.group(1), nome, rlkey or ''))
 
 
 def _tamanho_remoto(url):
@@ -876,9 +954,17 @@ def resolver_apk_publicado():
     poucos KB) e, quando o servidor informa, o NOME do arquivo entregue.
     Nunca devolve URL que baixe outra coisa no lugar do app.
     """
+    if not dropbox_configurado():
+        log('atualizacao: a pasta do Dropbox desta versao (%s) ainda nao foi '
+            'configurada; nada sera baixado' % pasta_nome(), xbmc.LOGWARNING)
+        return (None, 'pasta-nao-configurada')
     motivos = []
-    candidatos = [(url_do_apk_por_nome(), 'dropbox-nome'),
-                  (APK, 'dropbox')]
+    candidatos = [(url_do_apk_por_nome(), 'dropbox-nome')]
+    # O link direto /scl/fi/ so vale para a versao MOBILE: ele resolve para o
+    # arquivo historico, que e o APK do celular. A versao TV jamais cai nele,
+    # senao baixaria o APK errado.
+    if not eh_tv():
+        candidatos.append((APK, 'dropbox'))
     for url, origem in candidatos:
         if not url:
             continue
@@ -896,7 +982,9 @@ def resolver_apk_publicado():
         log('Dropbox (%s): %s (%s)' % (origem, APK_NOME,
                                        tamanho or 'tamanho desconhecido'))
         return (url, origem)
-    if APK_GITHUB:
+    if APK_GITHUB and not eh_tv():
+        # A release do GitHub publica o APK MOBILE (smartedtv.full). A versao
+        # TV nao usa esse atalho para nao instalar o pacote errado.
         tamanho, _ = _cabecalhos_remotos(APK_GITHUB)
         if tamanho is None or tamanho >= APK_TAMANHO_MINIMO:
             log('usando o APK da release no GitHub (%s)' % APK_GITHUB)
@@ -942,6 +1030,57 @@ def versao_do_apk(caminho_apk):
         return (None, None)
 
 
+def pacote_do_apk(caminho_apk):
+    """applicationId gravado no APK baixado, ou None se nao der para ler.
+
+    O contrato das duas versoes e o NOME da pasta, mas quem garante que o
+    arquivo e MESMO desta versao e o pacote. Ler o AXML binario aqui seria
+    caro; o addon leva ``smartedtv-variante.txt`` em texto puro dentro de
+    ``assets/`` (o mesmo marcador que o app usa para se identificar), entao a
+    checagem e barata e offline.
+    """
+    if not xbmcvfs.exists(caminho_apk):
+        return None
+    try:
+        import zipfile
+        with zipfile.ZipFile(caminho_apk) as apk:
+            with apk.open('assets/smartedtv-variante.txt') as marcador:
+                texto = marcador.read().decode('utf-8', 'replace').strip().lower()
+    except Exception:
+        return None
+    if texto.startswith('tv'):
+        return PACOTE_TV
+    if texto.startswith('mobile'):
+        return PACOTE_MOBILE
+    return None
+
+
+def apk_serve_para_esta_versao(caminho_apk):
+    """True quando o APK baixado e o desta versao (nunca instala o da outra).
+
+    APK sem marcador (publicado antes da separacao) e aceito apenas na versao
+    MOBILE: era exatamente o APK que o celular ja baixava. Na TV ele e
+    recusado, porque o unico APK sem marcador que existe e o do celular.
+    """
+    esperado = pacote_desta_versao()
+    achado = pacote_do_apk(caminho_apk)
+    if achado is None:
+        if eh_tv():
+            log('APK sem marcador de variante na pasta %s: recusado na versao '
+                'TV (nao da para provar que e o APK da TV)' % pasta_nome(),
+                xbmc.LOGERROR)
+            return False
+        log('APK sem marcador de variante; aceitando pelo contrato da pasta %s'
+            % pasta_nome())
+        return True
+    if achado != esperado:
+        log('APK publicado em %s e do pacote %s, mas esta versao e %s: '
+            'download recusado' % (pasta_nome(), achado, esperado),
+            xbmc.LOGERROR)
+        return False
+    return True
+
+
 def _apk_mais_novo_que_o_instalado(caminho_apk):
     """True quando o arquivo pode ser instalado por cima sem downgrade.
 
@@ -949,6 +1088,8 @@ def _apk_mais_novo_que_o_instalado(caminho_apk):
     versao legivel menor/igual avisa e devolve False, evitando o generico
     "Aplicativo nao instalado" que o usuario nao consegue interpretar.
     """
+    if not apk_serve_para_esta_versao(caminho_apk):
+        return False
     codigo, nome = versao_do_apk(caminho_apk)
     if codigo is None:
         log('versao do APK baixado desconhecida; deixando o Android decidir')

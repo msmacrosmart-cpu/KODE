@@ -30,15 +30,20 @@ NOME_FIXO = 'SMARTEDTV.apk'
 
 def carregar_vip():
     """Carrega vip.py com stubs de xbmc* e um filesystem local."""
+    # 'variante' entra na lista: vip.py o importa no load e, se ficar em cache,
+    # o proximo teste herdaria o "aparelho" do stub anterior (foi assim que a
+    # suite inteira passou a ver a variante de TV).
     salvos = {n: sys.modules.get(n) for n in
-              ('xbmc', 'xbmcgui', 'xbmcaddon', 'xbmcvfs')}
+              ('xbmc', 'xbmcgui', 'xbmcaddon', 'xbmcvfs', 'variante')}
     xbmc = types.ModuleType('xbmc')
     xbmc.LOGINFO, xbmc.LOGWARNING, xbmc.LOGERROR = 1, 3, 4
     xbmc.LOGS = []
     xbmc.log = lambda msg, level=1: xbmc.LOGS.append((level, msg))
     xbmc.BUILTINS = []
     xbmc.executebuiltin = lambda cmd: xbmc.BUILTINS.append(cmd)
-    xbmc.getCondVisibility = lambda cond: True
+    # 'False' como o Kodi de um CELULAR: com tudo verdadeiro a deteccao de
+    # variante acharia Android TV e o contrato testado seria o da TV.
+    xbmc.getCondVisibility = lambda cond: False
 
     xbmcgui = types.ModuleType('xbmcgui')
     xbmcgui.NOTIFICACOES = []

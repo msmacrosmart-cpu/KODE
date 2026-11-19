@@ -353,7 +353,9 @@ def write_favourites():
         log('não foi possível gravar os favoritos: %s' % error, xbmc.LOGWARNING)
         return []
     if added:
-        xbmc.executebuiltin('Notification(SMARTED, Atalhos adicionados aos favoritos, 3000)')
+        # Fica so no log: e um detalhe de manutencao do perfil, nao uma acao
+        # do usuario, e a notificacao aparecia por cima da tela de entrada.
+        log('atalhos adicionados aos favoritos (%d)' % len(added))
     return added
 
 
@@ -632,10 +634,14 @@ def main():
         xbmc.executebuiltin(
             'Notification(SMARTED, Conteudo pronto para usar, 4000)')
     else:
+        # Perfil incompleto NAO vira aviso na tela: o texto tecnico ("veja
+        # userdata/smarted-bootstrap.log") interrompia o uso na TV, onde o
+        # usuario nao tem como abrir log nenhum. O reparo continua rodando em
+        # segundo plano e o problema fica registrado no log interno; a Home
+        # ja esta liberada (_liberar_home_agora) e os addons que faltam sao
+        # recriados no proximo ciclo de reparo.
         problems = report['missing'] + failed
         log('perfil incompleto: %s' % ', '.join(problems), xbmc.LOGWARNING)
-        xbmc.executebuiltin(
-            'Notification(SMARTED, Conteudo incompleto: veja userdata/smarted-bootstrap.log, 8000)')
 
     # o HERO alterna sozinho entre os lancamentos enquanto a Home esta aberta
     def checar_navegacao():

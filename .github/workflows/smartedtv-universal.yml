@@ -160,16 +160,27 @@ jobs:
           (( VERSION_CODE > ${anterior:-2103077} )) || { echo '::error::versionCode não supera a última publicação'; exit 1; }
           hash=$(sha256sum "$apk" | cut -d' ' -f1)
           cat > "$RUNNER_TEMP/notas.md" <<NOTAS
-          Baixe apenas **SMARTEDTV-universal.apk**. O Android escolhe entre ARMv7 (32 bits) e ARM64 (64 bits) dentro do mesmo arquivo; não é XAPK, não precisa de instalador de splits.
+          **SMARTEDTV-universal.apk = CELULAR** (celular/tablet). **SMARTEDTV-tv.apk = TV** (Android TV, TV Box, TV Stick, projetor com Android TV).
+
+          Os dois são o mesmo app, com o mesmo certificado, as mesmas ABIs e a mesma versão-base do Kodi; mudam apenas o marcador de versão embutido (`assets/smartedtv-variante.txt`), que define a pasta do Dropbox consultada, o anúncio e o comportamento da Home. O Android escolhe entre ARMv7 (32 bits) e ARM64 (64 bits) dentro do mesmo arquivo; não é XAPK, não precisa de instalador de splits.
+
+          - **Dropbox:** o celular consulta `SMARTEDTV-MOBILE/SMARTEDTV.apk`; a TV consulta `SMARTEDTV-ON/SMARTEDTV.apk`. Nenhuma versão baixa o APK da outra.
+          - **Anúncios:** celular mantém o AdMob de sempre; na TV o AdMob não tem formato suportado, então a versão de TV não pede anúncio até o SDK de vídeo (Google IMA/VAST) ser configurado — a reprodução nunca é bloqueada e a regra de frequência continua valendo.
 
           - Android 5.0+ (API 21, target 34); celular e Android TV, box, projetor e Fire TV **com sistema Android compatível**. Não inclui x86/Intel ou Vega OS.
-          - Pacote: \`smartedtv.full\` • versão **$VERSION_NAME** • código **$VERSION_CODE**. Mesmo perfil, layouts e bibliotecas do Kodi da v22.
+          - Pacote Android dos dois arquivos: \`smartedtv.full\` (identificador histórico do app, preservado); a versão é identificada pelo marcador embutido, não por um pacote diferente. Versão **$VERSION_NAME** • código **$VERSION_CODE**. Mesmo perfil, layouts e bibliotecas do Kodi da v22.
           - Assinatura v1/v2/v3: mesmo certificado de **teste** do Dropbox, SHA-256 \`855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a\`.
           - Validação: manifesto, banner de TV, toque opcional, ELF/Dex, alinhamento e boot simulado. No emulador API 30 com tradução ARM: instalação limpa e atualização da v22 sem desinstalar, abertura por LAUNCHER e LEANBACK_LAUNCHER. Não é teste físico de vídeo ou de todos os modelos.
-          - **SHA-256 do APK:** \`$hash\` • $(stat -c %s "$apk") bytes.
+          - **SHA-256 (celular):** \`$hash\` • $(stat -c %s "$apk") bytes.
+          - **SHA-256 (TV):** \`$(sha256sum build/universal/SMARTEDTV-tv.apk | cut -d' ' -f1)\` • $(stat -c %s build/universal/SMARTEDTV-tv.apk) bytes.
 
           [Build e testes](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID) • commit \`$GITHUB_SHA\`.
           <!-- smartedtv.full versionCode=$VERSION_CODE -->
           NOTAS
-          gh release create "$tag" "$apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest \
-            --title "SMARTEDTV $VERSION_NAME — APK universal ARM 32/64 • Android 5.0+" --notes-file "$RUNNER_TEMP/notas.md"
+          # Duas versoes do mesmo projeto: o APK do celular (identificador
+          # historico SMARTEDTV-universal.apk) e o da TV. Sao byte a byte o
+          # mesmo app, com marcadores diferentes em assets/smartedtv-variante.txt.
+          apk_tv=build/universal/SMARTEDTV-tv.apk
+          sha256sum "$apk_tv"
+          gh release create "$tag" "$apk" "$apk_tv" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest \
+            --title "SMARTEDTV $VERSION_NAME — dois APKs (celular e TV) ARM 32/64 • Android 5.0+" --notes-file "$RUNNER_TEMP/notas.md"
