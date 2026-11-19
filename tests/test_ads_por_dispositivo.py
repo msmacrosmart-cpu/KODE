@@ -81,7 +81,7 @@ class BaseAds(unittest.TestCase):
         # sys.modules, o proximo teste herdaria o "aparelho" falso daqui.
         self.guardados = {n: sys.modules.get(n)
                           for n in ('xbmc', 'xbmcvfs', 'xbmcgui', 'variante',
-                                    'smart_ads')}
+                                    'smart_ads', 'ads_vast')}
         sys.path.insert(0, str(BOOTSTRAP))
         self.modulo = None
 
@@ -200,23 +200,42 @@ class RoteamentoTest(BaseAds):
         self.assertEqual(envios, [], kodi.builtins)
 
     def test_tv_registra_o_que_falta_em_vez_de_simular(self):
-        """Sem tag VAST o log diz exatamente o que falta (nada e simulado).
+        """A TV anuncia por video (VAST) e nunca pela activity do AdMob.
 
         A 1.0.122 dizia que faltava compilar o Google IMA SDK. O caminho
-        mudou: o anuncio de video e tocado pelo player do Kodi (VAST), entao o
-        que falta agora e a TAG. O teste antigo exigia a palavra IMA; o que
-        importa e: registra o motivo, nao inventa anuncio, nao chama AdMob.
+        mudou: o anuncio de video e tocado pelo player do Kodi (VAST) e a tag
+        do projeto agora existe (MagSrv, ``VAST_TAG_PADRAO``). O que o log tem
+        de mostrar e o motivo real quando NAO ha anuncio - nunca um simulado e
+        nunca a activity do AdMob.
         """
         kodi = AdsFalso(condicoes={'System.Platform.Android.TV',
                                    'System.Platform.Android'})
         modulo = self._carregar(kodi)
         self._como_tv(True)
+        # ads_vast de mentira: o teste e de ROTEAMENTO, nao de rede. Sem este
+        # stub o caso com tag configurada faria um pedido HTTP de verdade.
+        recebido = {}
+
+        def exibir_falso(log=None, tag='', altura_tela=0):
+            recebido['tag'] = tag
+            return {'exibido': False, 'motivo': 'tag-sem-resposta'}
+
+        verdadeiro = modulo._ads_vast()
+        sys.modules['ads_vast'] = types.SimpleNamespace(
+            VAST_TAG_PADRAO=verdadeiro.VAST_TAG_PADRAO,
+            tag_configurada=verdadeiro.tag_configurada,
+            exibir_e_devolver=exibir_falso,
+            resumo=lambda r: 'VAST nao exibido (%s)' % r.get('motivo'))
         logs = []
         modulo.tocar_anuncio(modulo.ATIVIDADE_PREROLL, log=logs.append)
         texto = ' '.join(logs)
+        # o caminho de video recebeu a tag do projeto (MagSrv)
+        self.assertEqual(recebido.get('tag'),
+                         'https://s.magsrv.com/v1/vast.php?idz=6096742')
         self.assertIn('VAST', texto)
-        self.assertIn('AdMob', texto)
-        self.assertIn('tag', texto.lower())
+        # com ou sem log, a TV NAO abre a activity do AdMob
+        self.assertEqual([b for b in kodi.builtins
+                          if b.startswith('StartAndroidActivity')], [])
 
     def test_abertura_na_tv_nao_abre_admob(self):
         kodi = AdsFalso(condicoes={'System.Platform.Android.TV',
@@ -228,12 +247,23 @@ class RoteamentoTest(BaseAds):
                           if b.startswith('StartAndroidActivity')], [])
 
     def test_vast_nunca_e_simulado(self):
+        """A tag padrao e a do dono do app (MagSrv) e a mesma nos dois modulos.
+
+        Antes este teste exigia ``VAST_TAG_PADRAO == ''`` (nao havia tag). A
+        tag real foi configurada, entao o que se prova agora e: a URL vem de
+        UM lugar (``ads_vast.VAST_TAG_PADRAO``), nao e inventada no
+        ``smart_ads``, e sem tag (vazia) nada e pedido.
+        """
         kodi = AdsFalso(condicoes={'System.Platform.Android.TV',
                                    'System.Platform.Android'})
         modulo = self._carregar(kodi)
-        self.assertEqual((modulo.VAST_TAG_PADRAO or '').strip(), '',
-                         'sem tag VAST nao se inventa uma')
-        self.assertFalse(modulo.vast_disponivel())
+        sys.modules['ads_vast'] = modulo._ads_vast()
+        self.assertEqual(modulo.VAST_TAG_PADRAO,
+                         'https://s.magsrv.com/v1/vast.php?idz=6096742')
+        self.assertEqual(modulo.VAST_TAG_PADRAO,
+                         sys.modules['ads_vast'].VAST_TAG_PADRAO)
+        # sem tag: nao pede nada e nao abre a activity do AdMob
+        modulo.VAST_TAG_PADRAO = ''
         self.assertFalse(modulo.abrir_anuncio_vast(modulo.ATIVIDADE_PREROLL))
         self.assertEqual([b for b in kodi.builtins
                           if b.startswith('StartAndroidActivity')], [])

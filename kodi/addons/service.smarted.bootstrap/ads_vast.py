@@ -68,6 +68,18 @@ PROFUNDIDADE_WRAPPER = 2
 # sao lugares para LER a tag que o dono do app configurou.
 PROPRIEDADE_TAG = 'smartedtv.vast.tag'
 
+# Tag VAST padrao do projeto (formato de video do MagSrv).
+#
+# Fica AQUI, no modulo de anuncio de video, e e o valor usado pelo
+# ``smart_ads.VAST_TAG_PADRAO`` (que passa a ler daqui em vez de repetir a URL).
+# Um lugar so para trocar a tag do dono do app - nada de duas copias.
+#
+# Restricao de uso: este fluxo VAST e o anuncio de VIDEO da TV (Android TV,
+# TV Box, stick e projetor Android). Quem decide isso continua sendo o
+# ``eh_tv()`` de ``variante.py``: no celular/tablet o anuncio e o AdMob da
+# activity nativa e este modulo nao e chamado.
+VAST_TAG_PADRAO = 'https://s.magsrv.com/v1/vast.php?idz=6096742'
+
 
 def _agora():
     """Relogio unico do modulo (os testes trocam sem esperar de verdade)."""
@@ -80,8 +92,10 @@ def _agora():
 def tag_configurada(padrao=''):
     """Tag VAST a usar: do dono do app (janela), do modulo ou de teste.
 
-    A tag de TESTE oficial do Google so entra com o modo de validacao ligado.
-    Fora dele, sem tag configurada, devolve '' - nunca inventa URL.
+    Ordem: propriedade da janela (permite trocar a tag sem atualizar o APK) ->
+    ``padrao`` recebido (hoje o ``VAST_TAG_PADRAO`` deste modulo, a tag do
+    MagSrv) -> tag de TESTE oficial, e essa apenas com o modo de validacao
+    ligado. Sem nada disso devolve '' - nunca inventa URL.
     """
     try:
         da_janela = xbmc.getInfoLabel('Window(10000).Property(%s)' % PROPRIEDADE_TAG)

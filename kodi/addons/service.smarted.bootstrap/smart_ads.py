@@ -348,7 +348,15 @@ def _kodi_em_foco(limite=2.5, passo=0.1):
 
 
 # Bloco/tag VAST. Fica aqui porque e o mesmo contrato que o SDK IMA usa.
-VAST_TAG_PADRAO = ''  # preencher com a tag VAST/IMA; vazio = nao pedir anuncio
+#
+# ATENCAO a ordem: ``VAST_TAG_PADRAO`` e atribuido DEPOIS de ``_ads_vast()``
+# (logo abaixo da funcao), porque le a URL de ``ads_vast.VAST_TAG_PADRAO`` e
+# chamar a funcao antes da definicao daria NameError no import do servico.
+#
+# A tag do projeto fica em UM lugar so - ``ads_vast.VAST_TAG_PADRAO``, a URL
+# MagSrv. Este nome continua existindo porque e o que o resto do modulo usa e
+# o que o dono do app pode substituir em tempo de execucao. Vazio = nao pedir
+# anuncio (nunca inventa tag).
 
 
 def _ads_vast():
@@ -368,6 +376,12 @@ def _ads_vast():
         return modulo
     except Exception:
         return None
+
+
+# Tag do projeto: a mesma de ``ads_vast`` (Modulo VAST MagSrv). Resolvida na
+# hora do import, com o modulo ja definido. Se o modulo nao carregar, fica ''
+# e o fluxo de TV registra no log que falta a tag - nunca um anuncio simulado.
+VAST_TAG_PADRAO = getattr(_ads_vast(), 'VAST_TAG_PADRAO', '') or ''
 
 
 def tocar_anuncio_de_video(log=None):
