@@ -18,16 +18,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Baixar o APK publicado (1.0.136) para provar a correcao
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          mkdir -p build/universal
-          gh release download v1.0.136-universal -R msmacrosmart-cpu/KODE \
-            --pattern SMARTEDTV-universal.apk --output build/universal/SMARTEDTV-universal.apk
-          ls -l build/universal
-      - name: Confirmar que a release existe antes de instalar
+      - name: Esperar a release desta versao publicar antes de baixar
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -39,6 +30,15 @@ jobs:
             sleep 20
           done
           echo '::error::release v1.0.136-universal nao existe'; exit 1
+      - name: Baixar o APK publicado (1.0.136) para provar a correcao
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/universal
+          gh release download v1.0.136-universal -R msmacrosmart-cpu/KODE \
+            --pattern SMARTEDTV-universal.apk --output build/universal/SMARTEDTV-universal.apk
+          ls -l build/universal
       - name: Habilitar aceleracao
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
