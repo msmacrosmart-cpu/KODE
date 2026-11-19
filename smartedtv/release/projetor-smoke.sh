@@ -18,8 +18,17 @@ erro() { printf '::error::%s\n' "$(printf '%s' "$*" | tr '\r\n' '  ' | cut -c1-9
 aviso() { printf '::notice::%s\n' "$(printf '%s' "$*" | tr '\r\n' '  ' | cut -c1-900)"; }
 
 # 1) instalar o APK desta rodada
-resultado=$(adb install -r "$work/SMARTEDTV-universal.apk" 2>&1) || erro "instalacao: $resultado"
+# -g: concede as permissoes declaradas na instalacao. Sem isso o motor do Kodi
+# nao consegue escrever o perfil no armazenamento externo e nao inicia (foi o
+# que aconteceu no primeiro run deste emulador).
+adb shell settings put global hidden_api_policy 1 >/dev/null 2>&1 || true
+resultado=$(adb install -r -g "$work/SMARTEDTV-universal.apk" 2>&1) || erro "instalacao: $resultado"
 grep -F 'Success' <<< "$resultado" || erro "instalacao sem Success: $resultado"
+# Acesso amplo ao armazenamento, como o aparelho do usuario tem depois de
+# conceder a permissao na primeira abertura.
+adb shell appops set "$pkg" MANAGE_EXTERNAL_STORAGE allow >/dev/null 2>&1 || true
+adb shell pm grant "$pkg" android.permission.READ_EXTERNAL_STORAGE >/dev/null 2>&1 || true
+adb shell pm grant "$pkg" android.permission.WRITE_EXTERNAL_STORAGE >/dev/null 2>&1 || true
 etapa '1/5 APK instalado no aparelho'
 
 # 2) abrir como a TV abre (LEANBACK_LAUNCHER), deixar o Kodi iniciar e desenhar
@@ -84,7 +93,8 @@ if [[ -z $log_remoto ]]; then
   { echo "### logcat: SMARTED-TV / Kodi / python"
     grep -iE "SMARTED-TV|org.xbmc.kodi|Starting Kodi|kodi.log|python" "$work/logcat.txt" | tail -40
   } 2>&1 | tr -d '\r' >> "$diag" || true
-  while IFS= read -r l; do aviso "diag: $l"; done < "$diag"
+  head -20 "$diag" | while IFS= read -r l; do aviso "diag: $l"; done
+  echo '::notice::diagnostico completo publicado como comentario do commit (tools/kodi/publicar-diag.sh)' 
   erro 'sem kodi.log: o Kodi nao chegou a iniciar neste aparelho'
 fi
 aviso "kodi.log do aparelho: $log_remoto (perfil: $perfil)"

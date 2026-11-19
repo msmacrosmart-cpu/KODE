@@ -42,7 +42,14 @@ jobs:
             -camera-back none -prop ro.build.characteristics=tv
             -prop ro.hardware.type.television=true
           disable-animations: true
-          script: bash smartedtv/release/projetor-smoke.sh
+          script: |
+            set +e
+            bash smartedtv/release/projetor-smoke.sh
+            rc=$?
+            bash tools/kodi/publicar-diag.sh build/universal/diag-aparelho.txt || true
+            exit $rc
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Guardar kodi.log e capturas
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
