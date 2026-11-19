@@ -6,8 +6,8 @@ O pedido do usuario nesta rodada:
 * duas versoes no mesmo repositorio (celular e TV), com o maximo de codigo
   compartilhado - nada de duplicar o projeto;
 * a versao MOBILE que ja funciona nao pode mudar de comportamento;
-* a TV consulta SO a pasta ``SMARTEDTV-ON`` do Dropbox e o celular SO a
-  ``SMARTEDTV-MOBILE``; nenhuma versao baixa o APK da outra;
+* com o APK UNIVERSAL as duas variantes consultam a MESMA pasta do Dropbox
+  (``SMARTEDTV UNIVERSAL``) e o mesmo ``SMARTEDTV.apk``;
 * o botao de baixar/atualizar dentro do app respeita a mesma separacao.
 
 Estes testes travam o contrato em ``variante.py`` (a unica fonte da verdade) e
@@ -119,13 +119,17 @@ class MarcadorTest(BaseVariante):
 
 
 class PastasTest(BaseVariante):
-    def test_cada_versao_tem_a_sua_pasta(self):
+    def test_apk_universal_usa_uma_pasta_so(self):
+        """Rodada de finalizacao: um APK, uma pasta, um nome de arquivo.
+
+        Celular e TV leem a MESMA pasta (SMARTEDTV UNIVERSAL) e o MESMO
+        SMARTEDTV.apk; o que muda e so qual anuncio o aparelho usa.
+        """
         modulo = self.carregar(KodiFalso(), marcador='tv')
-        self.assertEqual(modulo.pasta_dropbox(), 'SMARTEDTV-ON')
-        self.assertEqual(modulo.pacote(), 'smartedtv.tv')
+        self.assertEqual(modulo.pasta_dropbox(), 'SMARTEDTV UNIVERSAL')
         modulo = self.carregar(KodiFalso(), marcador='mobile')
-        self.assertEqual(modulo.pasta_dropbox(), 'SMARTEDTV-MOBILE')
-        self.assertEqual(modulo.pacote(), 'smartedtv.full')
+        self.assertEqual(modulo.pasta_dropbox(), 'SMARTEDTV UNIVERSAL')
+        self.assertEqual(modulo.PASTA_MOBILE, modulo.PASTA_TV)
 
     def test_mobile_preserva_o_identificador_historico(self):
         modulo = self.carregar(KodiFalso(), marcador='mobile')
@@ -183,7 +187,7 @@ class VipTest(unittest.TestCase):
         sys.modules['variante'] = types.SimpleNamespace(
             e_tv=lambda: tv, e_mobile=lambda: not tv,
             pacote=lambda: 'smartedtv.tv' if tv else 'smartedtv.full',
-            pasta_dropbox=lambda: 'SMARTEDTV-ON' if tv else 'SMARTEDTV-MOBILE',
+            pasta_dropbox=lambda: 'SMARTEDTV UNIVERSAL',
             resumo=lambda: 'teste')
         # vip.py importa smarted_release do proprio addon: colocar a pasta no
         # path SO durante o exec_module (o projeto nunca mexe em sys.path).
@@ -201,36 +205,46 @@ class VipTest(unittest.TestCase):
                     sys.modules.pop(nome, None)
         return modulo
 
-    def test_mobile_usa_a_pasta_historica(self):
+    def test_mobile_usa_a_pasta_publicada(self):
         vip = self._vip(False)
         self.assertFalse(vip.eh_tv())
-        self.assertEqual(vip.pasta_nome(), 'SMARTEDTV-MOBILE')
+        self.assertEqual(vip.pasta_nome(), 'SMARTEDTV UNIVERSAL')
         self.assertTrue(vip.dropbox_configurado())
 
-    def test_tv_sem_pasta_nao_baixa_nada(self):
-        vip = self._vip(True)
-        self.assertTrue(vip.eh_tv())
-        self.assertEqual(vip.pasta_nome(), 'SMARTEDTV-ON')
-        self.assertFalse(vip.dropbox_configurado(),
-                         'pasta da TV nao foi publicada: nao pode haver link')
-        caminho, motivo = vip.resolver_apk_publicado()
-        self.assertIsNone(caminho)
-        self.assertEqual(motivo, 'pasta-nao-configurada')
+    def test_tv_e_celular_usam_a_mesma_pasta(self):
+        tv = self._vip(True)
+        celular = self._vip(False)
+        self.assertTrue(tv.eh_tv())
+        self.assertEqual(tv.pasta_nome(), 'SMARTEDTV UNIVERSAL')
+        self.assertEqual(celular.pasta_nome(), 'SMARTEDTV UNIVERSAL')
+        self.assertTrue(tv.dropbox_configurado())
+        self.assertEqual(tv.pastas_dropbox(), celular.pastas_dropbox())
 
-    def test_tv_nao_cai_no_link_fixo_nem_no_github(self):
+    def test_pasta_universal_aponta_para_a_pasta_criada(self):
         vip = self._vip(True)
-        self.assertEqual(vip.pastas_dropbox(), [])
+        link = vip.pastas_dropbox()[0]
+        self.assertIn('/scl/fo/0f1ux2r4p8mooqyeswy0y/', link)
+        self.assertIn('rlkey=', link)
+        self.assertEqual(vip.APK_NOME, 'SMARTEDTV.apk')
 
     def test_mobile_continua_com_os_links_que_funcionam(self):
         vip = self._vip(False)
         self.assertTrue(vip.pastas_dropbox())
         self.assertIn('SMARTEDTV.apk', vip.APK_NOME)
 
-    def test_recusa_apk_da_outra_versao(self):
+    def test_aceita_o_apk_universal(self):
+        """APK universal nao tem marcador: e o caso NORMAL, nao um erro.
+
+        Antes (duas versoes publicadas) "sem marcador" era recusado na TV. Com
+        um APK so, recusar impediria a TV de se atualizar pelo app.
+        """
         vip = self._vip(True)
-        # pacote_do_apk le o marcador de dentro do zip; sem APK real, o
-        # contrato e: None nunca aprova como "serve".
-        self.assertFalse(vip.apk_serve_para_esta_versao('/nao/existe.apk'))
+        self.assertTrue(vip.apk_serve_para_esta_versao('/nao/existe.apk'))
+
+    def test_arquivo_inexistente_nao_e_apk(self):
+        """O download so chama o instalador com arquivo real."""
+        vip = self._vip(False)
+        self.assertFalse(vip.pacote_do_apk('/nao/existe.apk') is not None)
 
 
 if __name__ == '__main__':

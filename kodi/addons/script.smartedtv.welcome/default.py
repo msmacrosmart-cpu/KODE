@@ -174,12 +174,11 @@ def _pasta_do_servico():
 
 
 def _link_do_dropbox_desta_versao(vip=None):
-    """Link da pasta do Dropbox DESTA versao (TV: SMARTEDTV-ON).
+    """Link da pasta do Dropbox (``SMARTEDTV UNIVERSAL``).
 
-    A separacao mora no ``vip.py`` (``pastas_dropbox``); aqui so perguntamos,
-    para o botao Dropbox nunca abrir a pasta da outra versao. Devolve None
-    quando nao ha como decidir - e no MOBILE isso e sempre, para o link
-    historico (o que ja funcionava) continuar valendo sem nenhuma mudanca.
+    Com o APK universal ha UMA pasta para celular e TV. Quem manda continua
+    sendo o ``vip.py`` (``pastas_dropbox``); aqui so perguntamos, para o botao
+    nunca abrir um link diferente do que o app usa para se atualizar.
     """
     try:
         if vip is None:
@@ -639,9 +638,9 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
     def _baixar_apk(self):
         """ID 122 - Abre o download direto do APK no navegador do Android.
 
-        O arquivo vem SEMPRE da pasta desta versao. Se a pasta ainda nao foi
-        publicada (caso da TV antes de existir ``SMARTEDTV-ON``), o aviso diz
-        o que falta - nunca cai no APK da outra versao.
+        O arquivo vem SEMPRE da pasta publicada (``SMARTEDTV UNIVERSAL``). Se
+        ela nao estiver configurada, o aviso diz o que falta - nada e baixado
+        de lugar desconhecido.
         """
         url = APK_DOWNLOAD
         vip = _vip()

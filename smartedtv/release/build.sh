@@ -11,18 +11,18 @@ bt="${ANDROID_HOME:?}/build-tools/35.0.0"
 # Reutilizar as convenções de assinatura da linha de teste; nunca gerar chave.
 . smartedtv/tools/test-signing-env.sh
 base="$work/base-v22.apk"
-# Duas versoes do MESMO projeto: o celular (linha historica) e a TV. A receita
-# abaixo e a mesma para as duas - muda so o marcador que o app le em
-# ``variante.py`` e o nome do arquivo publicado. Nada de recompilar o Kodi.
+# UM UNICO APK universal (rodada de finalizacao): o mesmo arquivo tem de rodar
+# em celular E em Android TV/box/stick/projetor. Quem decide o anuncio (AdMob
+# no celular, video VAST na TV) e a deteccao por aparelho do ``variante.py``
+# (``e_tv()``), que ja roda quando NAO existe marcador embutido. Por isso o
+# marcador NAO e gravado: um valor fixo faria a TV se achar celular.
 final="$work/SMARTEDTV-universal.apk"
-final_tv="$work/SMARTEDTV-tv.apk"
 
-montar() {  # $1 = mobile|tv  $2 = arquivo final
-  local variante=$1 saida=$2
+montar() {  # $1 = arquivo final
+  local saida=$1
   local scratch
   scratch=$(mktemp -d "$work/montagem.XXXXXX")
-  python3 tools/kodi/atualizar-apk-v17.py --apk "$base" --saida "$scratch/overlay.apk" \
-    --variante "$variante"
+  python3 tools/kodi/atualizar-apk-v17.py --apk "$base" --saida "$scratch/overlay.apk"
 # Receita IDENTICA a da v22/v21, que instalou no aparelho: o manifesto muda
 # so versao/codigo (o minSdk fica o da base) e o alinhamento e feito pelo
 # align-apk.py, o mesmo daquela entrega. Nao elevar nem reduzir minSdk aqui.
@@ -36,23 +36,25 @@ montar() {  # $1 = mobile|tv  $2 = arquivo final
   "$bt/zipalign" -c -P 16 4 "$scratch/signed.apk"
   "$bt/apksigner" verify "$scratch/signed.apk"
   # A partir de API 26 o verificador normalmente pula o v1: testar também a faixa v1.
-  "$bt/apksigner" verify --min-sdk-version 21 --verbose --print-certs "$scratch/signed.apk" > "$work/signature-$variante.txt"
-  for scheme in 1 2 3; do grep -E "^Verified using v$scheme scheme .*: true$" "$work/signature-$variante.txt"; done
-  grep -Fx 'Number of signers: 1' "$work/signature-$variante.txt"
-  grep -F 'certificate SHA-256 digest: 855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a' "$work/signature-$variante.txt"
+  "$bt/apksigner" verify --min-sdk-version 21 --verbose --print-certs "$scratch/signed.apk" > "$work/signature.txt"
+  for scheme in 1 2 3; do grep -E "^Verified using v$scheme scheme .*: true$" "$work/signature.txt"; done
+  grep -Fx 'Number of signers: 1' "$work/signature.txt"
+  grep -F 'certificate SHA-256 digest: 855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a' "$work/signature.txt"
   "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest print "$scratch/signed.apk" > "$work/manifest.xml"
   python3 smartedtv/release/verify.py "$base" "$scratch/signed.apk" "$work/manifest.xml" "$VERSION_NAME" "$VERSION_CODE"
-  # O marcador tem de estar NO APK assinado e legivel: e o que decide a pasta
-  # do Dropbox, o pacote logico e o anuncio de cada versao.
-  unzip -p "$scratch/signed.apk" assets/smartedtv-variante.txt | grep -qx "$variante"
+  # APK universal: NAO pode haver marcador de variante. Com o marcador, a
+  # deteccao por aparelho (e_tv()) seria anulada e a TV usaria AdMob.
+  if unzip -l "$scratch/signed.apk" assets/smartedtv-variante.txt | grep -q 'smartedtv-variante'; then
+    echo '::error::o APK universal tem marcador de variante (a TV ficaria como celular)' >&2
+    exit 1
+  fi
   python3 tools/kodi/simular-boot-tela-entrada.py --apk "$scratch/signed.apk"
   mv "$scratch/signed.apk" "$saida"
   rm -rf "$scratch"
   sha256sum "$saida"
 }
 
-montar mobile "$final"
-# A TV sai do MESMO APK base, com o mesmo certificado e as mesmas ABIs: o que
-# muda e o marcador embutido (variante.py) - pasta SMARTEDTV-ON, anuncio de
-# video e nada de AdMob.
-montar tv "$final_tv"
+# Uma montagem so. A versao de TV nao e mais publicada em arquivo separado: o
+# mesmo APK traz AdMob (celular) e anuncio de video (TV), decididos no
+# aparelho por ``variante.py``.
+montar "$final"

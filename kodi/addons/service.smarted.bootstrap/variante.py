@@ -5,12 +5,14 @@ O app e o MESMO codigo; o que muda entre as duas versoes e um punhado de
 decisoes. Este modulo e a UNICA fonte dessa verdade - nada de espalhar
 ``if tv`` pelo projeto:
 
-``mobile``  celular/tablet, pacote ``smartedtv.full``, anuncia pelo AdMob que
-            ja existe no APK, olha a pasta ``SMARTEDTV-MOBILE`` do Dropbox e
-            mantem exatamente o comportamento de hoje.
-``tv``      Android TV, projetor com Android TV, stick e TV box compativel,
-            pacote ``smartedtv.tv``, consulta a pasta ``SMARTEDTV-ON`` do
-            Dropbox e usa o anuncio para TV (ver ``ads_tv.py``).
+``mobile``  celular/tablet, anuncia pelo AdMob que ja existe no APK.
+``tv``      Android TV, projetor com Android TV, stick e TV box compativel:
+            usa o anuncio de video (VAST) tocado pelo player do Kodi
+            (ver ``ads_vast.py``).
+
+Com o APK UNIVERSAL nao ha marcador embutido: a variante e decidida pelo
+aparelho (``variante_do_aparelho``). As duas variantes consultam a MESMA pasta
+do Dropbox (``SMARTEDTV UNIVERSAL``) e o mesmo arquivo ``SMARTEDTV.apk``.
 
 Como o aparelho e reconhecido
 -----------------------------
@@ -50,9 +52,15 @@ TV = 'tv'
 # Nome do arquivo que o build grava dentro do APK.
 MARCADOR = 'smartedtv-variante.txt'
 
-# Pastas do Dropbox: cada versao consulta SO a sua.
-PASTA_MOBILE = 'SMARTEDTV-MOBILE'
-PASTA_TV = 'SMARTEDTV-ON'
+# Pasta do Dropbox: UMA so, para o APK universal.
+#
+# A separacao em SMARTEDTV-MOBILE / SMARTEDTV-ON existiu enquanto havia dois
+# arquivos publicados. Com um unico APK (rodada de finalizacao) ha uma pasta e
+# um nome de arquivo so - as duas constantes ficam apontando para o mesmo
+# lugar para nao quebrar quem ja as le.
+PASTA_UNIVERSAL = 'SMARTEDTV UNIVERSAL'
+PASTA_MOBILE = PASTA_UNIVERSAL
+PASTA_TV = PASTA_UNIVERSAL
 
 # Pacotes das duas versoes.
 PACOTE_MOBILE = 'smartedtv.full'

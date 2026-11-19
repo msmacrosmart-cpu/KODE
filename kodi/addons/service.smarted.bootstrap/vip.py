@@ -55,30 +55,24 @@ APK_NOME = 'SMARTEDTV.apk'
 # trocar o arquivo por dentro (mesmo nome novo conteudo) e nada mais muda.
 # Diferente do /scl/fi/, que fica preso ao ID de UM arquivo.
 #
-# DUAS VERSOES, DUAS PASTAS (pedido da separacao mobile/TV):
+# UMA PASTA, UM APK (rodada de finalizacao):
 #
-#   Dropbox/SMARTEDTV-MOBILE/SMARTEDTV.apk   <- versao do celular (smartedtv.full)
-#   Dropbox/SMARTEDTV-ON/SMARTEDTV.apk       <- versao de TV  (smartedtv.tv)
+#   Dropbox/SMARTEDTV UNIVERSAL/SMARTEDTV.apk   <- APK universal (celular + TV)
 #
-# A versao que esta rodando escolhe a pasta em ``pastas_dropbox()`` e NAO tem
-# como cair na pasta da outra: o link da pasta e o contrato (id + rlkey), e um
-# APK baixado da pasta errada e recusado no fim por
-# ``conferir_pacote_do_apk()``.
-#
-# A pasta historica do celular e a mesma que ja estava publicada - por isso o
-# link abaixo continua identico e a atualizacao do MOBILE nao muda de lugar.
-DROPBOX_PASTA = ('https://www.dropbox.com/scl/fo/5w6yfp0tvee0xro2wh0m3/'
-                 'AKikmSEMGOvGv1QTiKCV8CU?rlkey=3b8m9dnw571waz7vs83n0vn17')
+# O link da pasta e o contrato (id + rlkey) e o arquivo e procurado PELO NOME
+# dentro dela, entao trocar o APK publicado nao exige mexer no codigo - o nome
+# continua ``SMARTEDTV.apk``.
+DROPBOX_PASTA = ('https://www.dropbox.com/scl/fo/0f1ux2r4p8mooqyeswy0y/'
+                 'AFHlvKmq-qedIwSWQLDoUGY?rlkey=q92lngn8lu7gqojbcref69ikb')
 
-# Pasta da versao TV. Precisa ser criada no Dropbox com o nome SMARTEDTV-ON e
-# compartilhada com link; o valor entra aqui (ou em settings) quando existir,
-# no mesmo formato do link acima. Vazio = a versao TV NAO baixa nada de outro
-# lugar: avisa que falta configuracao e o conteudo continua funcionando.
-DROPBOX_PASTA_TV = ''
+# Mantida por compatibilidade de leitura: o APK universal usa a MESMA pasta
+# para celular e para TV.
+DROPBOX_PASTA_TV = DROPBOX_PASTA
 
-# Nome da pasta de cada versao (rotulo humano, usado nos avisos e no log).
-PASTA_NOME_MOBILE = 'SMARTEDTV-MOBILE'
-PASTA_NOME_TV = 'SMARTEDTV-ON'
+# Nome da pasta (rotulo humano, usado nos avisos e no log). Uma so.
+PASTA_NOME_UNIVERSAL = 'SMARTEDTV UNIVERSAL'
+PASTA_NOME_MOBILE = PASTA_NOME_UNIVERSAL
+PASTA_NOME_TV = PASTA_NOME_UNIVERSAL
 
 # Pacote de cada APK publicado. Serve para RECUSAR o arquivo da outra versao.
 PACOTE_MOBILE = 'smartedtv.full'
@@ -844,8 +838,8 @@ def eh_tv():
 
 
 def pasta_nome():
-    """Nome da pasta do Dropbox desta versao (contrato com quem publica)."""
-    return PASTA_NOME_TV if eh_tv() else PASTA_NOME_MOBILE
+    """Nome da pasta do Dropbox (uma so, para o APK universal)."""
+    return PASTA_NOME_UNIVERSAL
 
 
 def pacote_desta_versao():
@@ -855,20 +849,16 @@ def pacote_desta_versao():
 def pastas_dropbox():
     """Links de pasta que ESTA versao pode consultar, do mais novo ao reserva.
 
-    Nunca devolve a pasta da outra versao: TV le SO ``SMARTEDTV-ON``; mobile le
-    SO ``SMARTEDTV-MOBILE`` (a pasta historica, que ja esta publicada).
+    APK universal: celular e TV leem a MESMA pasta (``SMARTEDTV UNIVERSAL``).
     """
-    if eh_tv():
-        return [u for u in (DROPBOX_PASTA_TV,) if u]
     return [u for u in (DROPBOX_PASTA,) if u]
 
 
 def dropbox_configurado():
     """False quando falta configurar a pasta desta versao.
 
-    E o caso da versao TV enquanto ninguem criar a pasta SMARTEDTV-ON: o app
-    continua funcionando e o aviso diz exatamente o que falta, em vez de
-    baixar (e instalar) o APK da outra versao.
+    Se a pasta nao estiver configurada, o app continua funcionando e o aviso
+    diz exatamente o que falta, em vez de baixar de um lugar desconhecido.
     """
     return bool(pastas_dropbox())
 
@@ -1056,27 +1046,29 @@ def pacote_do_apk(caminho_apk):
 
 
 def apk_serve_para_esta_versao(caminho_apk):
-    """True quando o APK baixado e o desta versao (nunca instala o da outra).
+    """True quando o APK baixado pode substituir o que esta instalado.
 
-    APK sem marcador (publicado antes da separacao) e aceito apenas na versao
-    MOBILE: era exatamente o APK que o celular ja baixava. Na TV ele e
-    recusado, porque o unico APK sem marcador que existe e o do celular.
+    APK UNIVERSAL (rodada de finalizacao): o arquivo publicado nao leva
+    marcador de variante - e de proposito, porque e o mesmo para celular e TV.
+    Portanto "sem marcador" passou a ser o caso NORMAL, nas duas variantes, e
+    nao mais motivo de recusa: a pasta (``SMARTEDTV UNIVERSAL``) e o nome fixo
+    (``SMARTEDTV.apk``) sao o contrato, e o pacote Android continua o mesmo
+    (``smartedtv.full``), entao a atualizacao por cima funciona.
+
+    APK COM marcador da OUTRA variante continua sendo recusado: e um arquivo
+    antigo de outra linha, nao o universal.
     """
-    esperado = pacote_desta_versao()
     achado = pacote_do_apk(caminho_apk)
     if achado is None:
-        if eh_tv():
-            log('APK sem marcador de variante na pasta %s: recusado na versao '
-                'TV (nao da para provar que e o APK da TV)' % pasta_nome(),
-                xbmc.LOGERROR)
-            return False
-        log('APK sem marcador de variante; aceitando pelo contrato da pasta %s'
-            % pasta_nome())
+        log('APK sem marcador de variante na pasta %s: aceito (APK universal '
+            'nao leva marcador)' % pasta_nome())
         return True
     if achado != esperado:
-        log('APK publicado em %s e do pacote %s, mas esta versao e %s: '
-            'download recusado' % (pasta_nome(), achado, esperado),
-            xbmc.LOGERROR)
+        # Marcador de variante num APK universal: arquivo antigo de outra
+        # linha. Recusa, mas com o motivo certo no log.
+        log('APK publicado em %s tem marcador de variante %s (esperado: APK '
+            'universal, sem marcador): download recusado'
+            % (pasta_nome(), achado), xbmc.LOGERROR)
         return False
     return True
 

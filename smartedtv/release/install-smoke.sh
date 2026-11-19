@@ -15,9 +15,11 @@ install() {
 }
 install "$work/base-v22.apk"
 install -r "$work/SMARTEDTV-universal.apk"
-# A versao de TV e instalada POR CIMA da mesma base e no mesmo pacote: as duas
-# convivem no repositorio, mas nao ao mesmo tempo no aparelho (mesmo app).
-install -r "$work/SMARTEDTV-tv.apk"
+# Um unico APK (rodada de finalizacao): nao ha mais arquivo de TV para testar.
+# A versao de TV e o MESMO arquivo, decidindo o anuncio no aparelho por
+# ``variante.py`` (e_tv()); o emulador API 30 e celular, entao aqui se prova o
+# caminho AdMob. O caminho VAST tem cobertura automatizada em
+# tests/test_ads_vast_tv.py.
 adb shell dumpsys package "$pkg" > "$work/pacote-instalado.txt"
 # Guardar o que o APARELHO leu do APK instalado: identidade/ABI em uso, para
 # comparar com o badging do arquivo. É evidência, não suposição.
