@@ -87,8 +87,11 @@ except Exception:      # importado de fora do addon (testes/harness)
 # dl=0 mostra a pagina do Dropbox; dl=1 baixa o APK direto.
 # ATENCAO: o /scl/fi/ resolve pelo ID do arquivo, nao pelo nome. Se o link for
 # criado em outro arquivo, ele continua baixando aquele arquivo, mesmo que o
-# texto da URL diga APK_NOME. resolver_apk_publicado() confere o tamanho e,
-# na duvida, cai para a release do GitHub.
+# texto da URL diga APK_NOME. Foi o que aconteceu: este link entrega hoje
+# ``SMARTEDTV-2atual.apk`` (a v22), nao o ``SMARTEDTV.apk`` da pasta nova.
+# Por isso ele e apenas reserva: resolver_apk_publicado() confere o NOME
+# informado pelo servidor e recusa o que nao for APK_NOME, e ainda confere o
+# tamanho; a reserva final e a release do GitHub, que publica o universal.
 DROPBOX_URL = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
                'SMARTEDTV.apk?rlkey=yp1ijxk6fdtcqm93gzi24ig5j'
                '&st=p1m6ebvg&dl=0')
