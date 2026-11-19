@@ -156,11 +156,15 @@ class LimpezaNoPerfilTest(unittest.TestCase):
     def test_apaga_addon_sem_codigo_e_preserva_o_sadio(self):
         registros = []
         removidos = self.aparelho.modulo.limpar_addons_quebrados(registros.append)
-        self.assertEqual(['plugin.program.resto', 'plugin.video.semlib',
-                          'plugin.video.youtube'], removidos)
+        # "plugin.program.resto" (pasta sem addon.xml) NAO sai: a heuristica
+        # apagou addons do motor do Kodi no APK e derrubou o CAddonMgr.
+        self.assertEqual(['plugin.video.semlib', 'plugin.video.youtube'],
+                         removidos)
         restantes = sorted(os.listdir(self.aparelho.addons))
-        self.assertEqual(['packages', 'plugin.video.bom'], restantes,
-                         'a pasta packages (zips do reparo) nao pode ser apagada')
+        self.assertEqual(['packages', 'plugin.program.resto', 'plugin.video.bom'],
+                         restantes,
+                         'packages (zips do reparo) e pasta solta ficam: '
+                         'a heuristica de pasta sem addon.xml derrubava o motor')
         self.assertTrue(any('retirados do perfil' in linha for linha in registros),
                         'a remocao precisa ficar registrada no log')
 

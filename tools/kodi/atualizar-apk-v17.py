@@ -281,6 +281,27 @@ def patch_startup(dados):
 #   * addon que a skin cita e o app NAO entrega -> sai do zip (a Home usa
 #     ``System.HasAddon`` para ele, entao o botao simplesmente nao aparece);
 #   * nada de esconder erro: o build lista o que saiu no log.
+# Addons EMBUTIDOS do motor do Kodi (nao sao desta entrega nem de terceiros).
+# O motor nao inicia sem varios deles; nenhuma limpeza jamais os toca.
+EMBUTIDOS_DO_KODI = (
+    'audioencoder.kodi.builtin.',
+    'screensaver.xbmc.builtin.',
+    'kodi.binary.',
+    'kodi.resource',
+    'xbmc.',
+    'game.controller.',
+    'metadata.',
+    'resource.language.',
+    'resource.uisounds.',
+    'resource.images.',
+    'webinterface.',
+    'vfs.',
+    'inputstream.',
+    'skin.',
+    'script.module.',
+    'service.subtitles.',
+)
+
 ADDONS_QUE_NAO_VEM = (
     'plugin.video.youtube',           # skin cita a busca do YouTube
     'plugin.program.openwizard2',
@@ -377,28 +398,36 @@ def addons_exigidos(existentes, zip_aberto):
 
 
 def addons_sem_entrega(existentes, zip_aberto):
-    """(removidos, motivos) - addons que saem do APK nesta montagem."""
-    quebrados, pastas = addons_anunciados_sem_codigo(existentes, zip_aberto)
-    motivos = {addon: 'declarado no APK e sem o codigo que carrega'
-               for addon in quebrados}
-    # Pasta de addon sem addon.xml: o Kodi nem carrega, mas ocupa o perfil e
-    # aparece em Ajuda > Informacoes; tambem sai (nao e addon desta entrega).
-    for addon, prefixo in pastas.items():
-        if (prefixo + 'addon.xml') not in existentes:
-            quebrados.add(addon)
-            motivos[addon] = 'pasta sem addon.xml'
+    """(removidos, motivos) - addons de TERCEIRO que saem do APK.
+
+    A remocao e SOMENTE por lista de nomes comprovados no aparelho, nunca por
+    heuristica. Ja se tentou heuristica ("addon.xml sem o arquivo que carrega",
+    "pasta sem addon.xml") e o resultado foi catastrofico: a 1.0.135 e a 1.0.136
+    sairam sem ``audioencoder.kodi.builtin.aac``/``.wma`` e sem
+    ``screensaver.xbmc.builtin.*`` - addons EMBUTIDOS do Kodi, que as regras
+    genericas classificaram como "quebrados". Sem o audioencoder o Kodi nem
+    inicia:
+        critical: addon 'audioencoder.kodi.builtin.aac' not installed or not enabled.
+        critical: CServiceManager::InitStageTwo: Unable to start CAddonMgr
+    (medido no emulador de projetor: tela sem GUI e Home sem dados).
+    """
+    pastas = pastas_de_addons(existentes)
+    removidos = []
+    motivos = {}
     for addon in ADDONS_QUE_NAO_VEM:
         if addon in pastas:
-            quebrados.add(addon)
-            motivos.setdefault(addon, 'addon de terceiro que a entrega nao inclui')
-    # Nada que outro addon do APK exige pode sair: sem a dependencia o Kodi
-    # nem inicia o gerenciador de addons (foi o que aconteceu com o
-    # audioencoder.kodi.builtin.aac na 1.0.135).
-    exigidos = addons_exigidos(existentes, zip_aberto)
-    for addon in sorted(quebrados & exigidos):
-        quebrados.discard(addon)
-        motivos.pop(addon, None)
-    return sorted(quebrados), motivos
+            removidos.append(addon)
+            motivos[addon] = 'addon de terceiro comprovado no perfil (evidencia no projetor)'
+    # Cinto de seguranca: mesmo que alguem acrescente um nome por engano, nada
+    # que seja do motor do Kodi, dependencia obrigatoria ou skin sai do zip.
+    protegidos = addons_exigidos(existentes, zip_aberto)
+    finais = []
+    for addon in removidos:
+        if addon in protegidos or addon.startswith(EMBUTIDOS_DO_KODI):
+            motivos.pop(addon, None)
+            continue
+        finais.append(addon)
+    return sorted(finais), motivos
 
 
 def mapa_da_skin():

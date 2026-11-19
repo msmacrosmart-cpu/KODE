@@ -211,7 +211,11 @@ def _addon_esta_quebrado(pasta):
         return True
     xml = os.path.join(pasta, 'addon.xml')
     if not os.path.exists(xml):
-        return True                      # pasta solta: o Kodi nem carrega
+        # Pasta solta. NAO remover so por isso: varios addons embutidos do
+        # motor do Kodi tem addon.xml em outro formato/ausente e o Kodi nao
+        # inicia sem eles (audioencoder.kodi.builtin.aac -> CAddonMgr). Fica
+        # para o historico do usuario decidir em Ajuda > Informacoes.
+        return False
     try:
         raiz = ET.parse(xml).getroot()
     except Exception:
