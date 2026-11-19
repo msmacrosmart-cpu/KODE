@@ -63,36 +63,31 @@ for tentativa in $(seq 1 30); do
   sleep 4
 done
 if [[ -z $log_remoto ]]; then
-  # Diagnostico completo do aparelho (fica no artefato do run): onde o Kodi
-  # gravou, o que o app escreveu e por que o log nao apareceu.
+  # Diagnostico: onde o motor gravou, o que o app escreveu e por que nao veio
+  # o log. Vai para as anotacoes porque artefato do run nao baixa fora dele.
+  adb root >/dev/null 2>&1 || true
+  sleep 3
   diag="$work/diag-aparelho.txt"
-  {
-    echo "== processo: $(adb shell pidof $pkg 2>/dev/null | tr -d '\r')"
-    adb root >/dev/null 2>&1 || true
-    sleep 3
-    echo "== /sdcard/Android/data"
-    adb shell "ls -la /sdcard/Android/data 2>&1" | tr -d '\r'
-    echo "== find kodi*.log (todos os caminhos)"
-    adb shell "find /sdcard/Android/data /data/data /data/media/0/Android/data -maxdepth 7 -name 'kodi*.log' 2>/dev/null" | tr -d '\r'
+  : > "$diag"
+  { echo "### find kodi*.log"
+    adb shell "find /sdcard/Android/data /data/data /data/media/0/Android/data -maxdepth 8 -name 'kodi*.log' 2>/dev/null"
+    echo "### pacotes com dados no cartao"
+    adb shell "ls -1 /sdcard/Android/data 2>/dev/null"
     for pacote in org.xbmc.kodi smartedtv.full; do
-      echo "== $pacote: /sdcard/Android/data/$pacote/files"
-      adb shell "ls -la /sdcard/Android/data/$pacote/files 2>&1" | tr -d '\r'
-      echo "== $pacote: /data/data/$pacote/files"
-      adb shell "ls -la /data/data/$pacote/files 2>&1" | tr -d '\r'
+      echo "### $pacote /sdcard/Android/data/$pacote/files"
+      adb shell "ls -la /sdcard/Android/data/$pacote/files 2>&1"
+      echo "### $pacote /data/data/$pacote/files"
+      adb shell "ls -la /data/data/$pacote/files 2>&1"
     done
-  } > "$diag" 2>&1 || true
+  } 2>&1 | tr -d '\r' >> "$diag" || true
   adb logcat -d > "$work/logcat.txt" 2>/dev/null || true
-  # Uma anotacao por linha do diagnostico: os artefatos do run nao baixam fora
-  # do runner, entao o que precisa ser lido vai para as anotacoes.
-  head -50 "$diag" | while IFS= read -r l; do aviso "diag: $l"; done
-  pid_app=$(adb shell pidof "$pkg" 2>/dev/null | tr -d '\r' | awk '{print $1}')
-  if [[ -n $pid_app ]]; then
-    { grep " $pid_app " "$work/logcat.txt" || grep -F "smartedtv" "$work/logcat.txt"; } \
-      | tail -70 | while IFS= read -r l; do aviso "logcat: $l"; done
-  fi
+  { echo "### logcat: SMARTED-TV / Kodi / python"
+    grep -iE "SMARTED-TV|org.xbmc.kodi|Starting Kodi|kodi.log|python" "$work/logcat.txt" | tail -40
+  } 2>&1 | tr -d '\r' >> "$diag" || true
+  while IFS= read -r l; do aviso "diag: $l"; done < "$diag"
   erro 'sem kodi.log: o Kodi nao chegou a iniciar neste aparelho'
 fi
-aviso "kodi.log do aparelho: $log_remoto"
+aviso "kodi.log do aparelho: $log_remoto (perfil: $perfil)"
 
 # 3) esperar a Home: o app escreve "pronto" ou liberou a Home; 90 s e teto de AVD
 for _ in $(seq 1 18); do
