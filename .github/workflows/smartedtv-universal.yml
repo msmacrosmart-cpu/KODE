@@ -4,6 +4,11 @@ on:
     branches: [arena/5c219515-kode]
     paths:
       - 'kodi/addons/service.smarted.bootstrap/smarted_release.py'
+      # entradas da montagem: antes uma mudanca aqui nao gerava release
+      - 'kodi/addons/service.smarted.bootstrap/vip.py'
+      - 'kodi/addons/service.smarted.bootstrap/variante.py'
+      - 'smartedtv/release/build.sh'
+      - 'smartedtv/release/install-smoke.sh'
       - '.github/workflows/smartedtv-universal.yml'
   workflow_dispatch:
 
