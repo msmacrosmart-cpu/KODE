@@ -68,7 +68,7 @@ PROFUNDIDADE_WRAPPER = 2
 # sao lugares para LER a tag que o dono do app configurou.
 PROPRIEDADE_TAG = 'smartedtv.vast.tag'
 
-# Tag VAST padrao do projeto (formato de video do MagSrv).
+# Tag VAST padrao do projeto (HilltopAds).
 #
 # Fica AQUI, no modulo de anuncio de video, e e o valor usado pelo
 # ``smart_ads.VAST_TAG_PADRAO`` (que passa a ler daqui em vez de repetir a URL).
@@ -78,7 +78,8 @@ PROPRIEDADE_TAG = 'smartedtv.vast.tag'
 # TV Box, stick e projetor Android). Quem decide isso continua sendo o
 # ``eh_tv()`` de ``variante.py``: no celular/tablet o anuncio e o AdMob da
 # activity nativa e este modulo nao e chamado.
-VAST_TAG_PADRAO = 'https://s.magsrv.com/v1/vast.php?idz=6096742'
+VAST_TAG_PADRAO = ('https://vapid-size.com/dEmwF.zYdOGYNKvRZ/GoUG/beLmU9TuDZrUJl/'
+                   'koPpTRcX2iNbDMED3/NzDLkpt/N/zFYf0/MsTEcv1sMXwC')
 
 
 def _agora():
@@ -94,7 +95,7 @@ def tag_configurada(padrao=''):
 
     Ordem: propriedade da janela (permite trocar a tag sem atualizar o APK) ->
     ``padrao`` recebido (hoje o ``VAST_TAG_PADRAO`` deste modulo, a tag do
-    MagSrv) -> tag de TESTE oficial, e essa apenas com o modo de validacao
+    projeto) -> tag de TESTE oficial, e essa apenas com o modo de validacao
     ligado. Sem nada disso devolve '' - nunca inventa URL.
     """
     try:
@@ -247,12 +248,35 @@ def _duracao_texto(bruto):
     return int(horas) * 3600 + int(minutos) * 60 + float(segundos)
 
 
-def tag_do_wrapper(xml):
-    """URL que um ``<Wrapper>`` manda seguir ('' quando nao e wrapper)."""
+def sem_namespace(xml):
+    """XML com as tags sem namespace, antes de qualquer busca.
+
+    O ElementTree devolve ``{uri}Ad`` para todo elemento de um XML que declara
+    namespace default - e ``raiz.iter('Ad')`` nao encontra NADA. O VAST do
+    HilltopAds (a tag do projeto) vem exatamente assim:
+
+        <VAST version="3.0" xmlns="http://www.w3.org/2001/XMLSchema">
+          <Ad id="567581"><InLine><Linear><MediaFile>...
+
+    Sem este passo um VAST perfeitamente valido era lido como "sem criativo"
+    e nenhum anuncio tocava na TV. Aqui os ``xmlns`` sao removidos e os
+    prefixos (``vmap:AdBreak``) tambem, para a busca por nome simples
+    funcionar nos dois formatos. Devolve o texto ('' quando nao houver).
+    """
     if not xml:
         return ''
     if isinstance(xml, bytes):
         xml = xml.decode('utf-8', 'replace')
+    texto = re.sub(r'\sxmlns(:[\w.-]+)?="[^"]*"', '', xml)
+    # <ns:Tag> / </ns:Tag> -> <Tag> / </Tag> (so em marcacao de abertura/fecho)
+    return re.sub(r'(</?)[A-Za-z_][\w.-]*:', r'\1', texto)
+
+
+def tag_do_wrapper(xml):
+    """URL que um ``<Wrapper>`` manda seguir ('' quando nao e wrapper)."""
+    if not xml:
+        return ''
+    xml = sem_namespace(xml)
     try:
         import xml.etree.ElementTree as ET
         raiz = ET.fromstring(xml.strip())
@@ -278,8 +302,7 @@ def tag_do_vmap(xml):
     """
     if not xml:
         return ''
-    if isinstance(xml, bytes):
-        xml = xml.decode('utf-8', 'replace')
+    xml = sem_namespace(xml)
     try:
         import xml.etree.ElementTree as ET
         raiz = ET.fromstring(xml.strip())
@@ -309,8 +332,9 @@ def escolher_anuncio(xml, altura_tela=0):
         return None
     if not xml:
         return None
-    if isinstance(xml, bytes):
-        xml = xml.decode('utf-8', 'replace')
+    # Namespace default (o VAST do HilltopAds usa) faria ``iter('Ad')`` nao
+    # achar nada: normaliza antes de ler.
+    xml = sem_namespace(xml)
     try:
         raiz = ET.fromstring(xml.strip())
     except Exception:
