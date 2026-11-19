@@ -80,6 +80,9 @@ jobs:
             echo "== assinatura =="
             { "$bt/apksigner" verify --min-sdk-version 21 --verbose --print-certs "$apk" | grep -E "Verified using|Number of signers|certificate SHA-256 digest|Signer #1 certificate DN" || true; }
             echo
+            echo "== modulos do addon dentro do APK =="
+            { python3 tools/kodi/conferir-modulos-no-apk.py "$apk" || true; }
+            echo
             echo "== assinatura completa (codigo de saida) =="
             if "$bt/apksigner" verify --min-sdk-version 21 --print-certs "$apk" 2>&1; then
               echo 'apksigner verify: OK'
@@ -124,16 +127,10 @@ jobs:
           # Todo modulo do addon tem de estar DENTRO do apk. Faltava esta
           # conferencia - e por isso o APK saiu sem ads_regra.py: o import no
           # topo do smart_ads.py derrubava o service.py inteiro no aparelho
-          # (notificacao de erro Python no boot do projetor). A lista e lida do
-          # proprio injetor, entao nao existem duas verdades.
-          mapa=$(python3 -c "import ast,pathlib; a=ast.parse(pathlib.Path('tools/kodi/atualizar-apk-v17.py').read_text()); print(' '.join(ast.literal_eval(n.value) for n in a.body if isinstance(n, ast.Assign) and any(getattr(x,'id',None)=='MODULOS' for x in n.targets)))")
-          presentes=0
-          for modulo in $mapa; do
-            unzip -l "$apk" "assets/addons/service.smarted.bootstrap/$modulo" | grep -q "assets/addons/service.smarted.bootstrap/$modulo" \
-              || falhar "modulo do addon ausente no APK: $modulo"
-            presentes=$((presentes + 1))
-          done
-          echo "::notice::Modulos do addon dentro do APK: $presentes de $(echo $mapa | wc -w)"
+          # (notificacao de erro Python no boot do projetor).
+          if ! python3 tools/kodi/conferir-modulos-no-apk.py "$apk"; then
+            falhar 'modulo do addon ausente dentro do APK'
+          fi
 
           echo '::notice::Laudo do APK conferido: identidade, SDK 21, ABIs 32/64, assinatura v1/v2/v3 e certificado.'
           # Publicar as linhas do laudo como anotacao: o log do runner nao
