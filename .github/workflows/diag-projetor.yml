@@ -53,4 +53,6 @@ jobs:
             build/universal/kodi-anterior.log
             build/universal/addons-no-aparelho.txt
             build/universal/projetor-home.png
+            build/universal/diag-aparelho.txt
+            build/universal/logcat.txt
           if-no-files-found: warn

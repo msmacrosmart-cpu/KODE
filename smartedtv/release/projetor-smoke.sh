@@ -52,12 +52,26 @@ for tentativa in $(seq 1 30); do
   sleep 4
 done
 if [[ -z $log_remoto ]]; then
-  aviso 'kodi.log nao apareceu; o que existe no perfil do app:'
-  adb shell "ls -la /sdcard/Android/data/smartedtv.full/files 2>/dev/null" 2>/dev/null | tr -d '\r' | head -20 || true
-  adb shell "find /sdcard/Android/data/smartedtv.full -name 'kodi*.log' 2>/dev/null" 2>/dev/null | tr -d '\r' | head -5 || true
-  aviso "processo do app: $(adb shell pidof $pkg 2>/dev/null | tr -d '\r' || echo nenhum)"
-  aviso "ultimas linhas do logcat do app:"
-  adb logcat -d -t 40 2>/dev/null | grep -iE "smartedtv|kodi|Python" | tail -20 | tr -d '\r' || true
+  # Diagnostico completo do aparelho (fica no artefato do run): onde o Kodi
+  # gravou, o que o app escreveu e por que o log nao apareceu.
+  diag="$work/diag-aparelho.txt"
+  {
+    echo "== processo: $(adb shell pidof $pkg 2>/dev/null | tr -d '\r')"
+    echo "== /sdcard/Android/data/$pkg"
+    adb shell "ls -la /sdcard/Android/data/$pkg 2>&1" | tr -d '\r'
+    echo "== /sdcard/Android/data/$pkg/files"
+    adb shell "ls -la /sdcard/Android/data/$pkg/files 2>&1" | tr -d '\r'
+    echo "== find kodi.log (externo e interno)"
+    adb root >/dev/null 2>&1 || true
+    sleep 3
+    adb shell "find /sdcard/Android/data/$pkg /data/data/$pkg /data/media/0/Android/data/$pkg -name 'kodi*.log' 2>/dev/null" | tr -d '\r'
+    echo "== /data/data/$pkg"
+    adb shell "ls -la /data/data/$pkg 2>&1" | tr -d '\r'
+    echo "== /data/data/$pkg/files"
+    adb shell "ls -la /data/data/$pkg/files 2>&1" | tr -d '\r'
+  } > "$diag" 2>&1 || true
+  adb logcat -d > "$work/logcat.txt" 2>/dev/null || true
+  grep -iE "smartedtv|kodi|python|profile|seed" "$work/logcat.txt" | tail -60 | while IFS= read -r l; do aviso "$l"; done
   erro 'sem kodi.log: o Kodi nao chegou a iniciar neste aparelho'
 fi
 aviso "kodi.log do aparelho: $log_remoto"
