@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Tag VAST do projeto (MagSrv) e confinamento do fluxo VAST ao modo TV.
+"""Tag VAST do projeto (HilltopAds) e confinamento do fluxo VAST ao modo TV.
 
-O dono do app configurou a tag ``https://s.magsrv.com/v1/vast.php?idz=6096742``
-como padrao. Dois pontos precisam ficar provados, porque os dois ja falharam
+O dono do app configurou a tag do HilltopAds (vapid-size.com) como padrao. Dois pontos precisam ficar provados, porque os dois ja falharam
 antes neste projeto:
 
 1. a URL existe em UM lugar so (``ads_vast.VAST_TAG_PADRAO``) e e a que o
@@ -19,7 +18,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 BOOTSTRAP = ROOT / 'kodi' / 'addons' / 'service.smarted.bootstrap'
-TAG = 'https://s.magsrv.com/v1/vast.php?idz=6096742'
+TAG = ('https://vapid-size.com/dEmwF.zYdOGYNKvRZ/GoUG/beLmU9TuDZrUJl/'
+       'koPpTRcX2iNbDMED3/NzDLkpt/N/zFYf0/MsTEcv1sMXwC')
 
 sys.path.insert(0, str(BOOTSTRAP))
 
@@ -97,8 +97,7 @@ class TagPadraoTest(BaseTag):
 
     def test_a_tag_e_uma_url_valida_e_nao_um_placeholder(self):
         self.assertTrue(self.vast.VAST_TAG_PADRAO.startswith('https://'))
-        self.assertIn('magsrv.com', self.vast.VAST_TAG_PADRAO)
-        self.assertIn('idz=6096742', self.vast.VAST_TAG_PADRAO)
+        self.assertIn('vapid-size.com', self.vast.VAST_TAG_PADRAO)
 
     def test_tag_configurada_devolve_a_tag_do_projeto(self):
         self.assertEqual(self.vast.tag_configurada(self.vast.VAST_TAG_PADRAO),
@@ -119,6 +118,7 @@ class TagPadraoTest(BaseTag):
         """Nada de arquivo truncado: todas as funcoes publicas seguem la."""
         for nome in ('tag_configurada', 'modo_de_teste', 'tag_de_teste',
                      'tag_do_wrapper', 'tag_do_vmap', 'escolher_anuncio',
+                     'sem_namespace',
                      'baixar', 'disparar', 'reproduzir', 'exibir',
                      'estado_do_conteudo', 'restaurar', 'exibir_e_devolver',
                      'resumo'):
@@ -127,6 +127,72 @@ class TagPadraoTest(BaseTag):
                      'QUARTIS', 'TIMEOUT_HTTP', 'PROFUNDIDADE_WRAPPER',
                      'PROPRIEDADE_TAG', 'VAST_TAG_PADRAO'):
             self.assertTrue(hasattr(self.vast, nome), nome)
+
+
+class NameSpaceDefaultTest(BaseTag):
+    """VAST com ``xmlns`` default (o da tag do projeto) tem de ser legivel.
+
+    O VAST do HilltopAds vem assim:
+
+        <VAST version="3.0" xmlns="http://www.w3.org/2001/XMLSchema">
+          <Ad id="567581"><InLine>...
+
+    O ElementTree devolve ``{http://...}Ad`` e ``iter('Ad')`` nao acha nada:
+    o anuncio era descartado como "sem criativo" e a TV ficava sem anuncio,
+    mesmo com a tag respondendo 200 e VAST valido. Estes testes travam a
+    correcao (``sem_namespace``).
+    """
+
+    VAST = ('<VAST version="3.0" xmlns="http://www.w3.org/2001/XMLSchema">'
+            '<Ad id="567581"><InLine><AdSystem>HilltopAds</AdSystem>'
+            '<Impression><![CDATA[https://track/impressao]]></Impression>'
+            '<Creatives><Creative id="1"><Linear skipoffset="00:00:15">'
+            '<Duration>00:00:29</Duration>'
+            '<Tracking event="start"><![CDATA[https://track/start]]></Tracking>'
+            '<MediaFiles>'
+            '<MediaFile type="video/mp4" width="640" height="360">'
+            '<![CDATA[https://cdn/360.mp4]]></MediaFile>'
+            '<MediaFile type="video/mp4" width="1280" height="720">'
+            '<![CDATA[https://cdn/720.mp4]]></MediaFile>'
+            '</MediaFiles></Linear></Creative></Creatives>'
+            '</InLine></Ad></VAST>')
+
+    def test_sem_namespace_remove_a_declaracao_e_os_prefixos(self):
+        limpo = self.vast.sem_namespace(self.VAST)
+        self.assertNotIn('xmlns=', limpo)
+        self.assertIn('<Ad id="567581">', limpo)
+        self.assertIn('<VAST version="3.0">', limpo)
+
+    def test_anuncio_e_lido_com_namespace_default(self):
+        anuncio = self.vast.escolher_anuncio(self.VAST, 1080)
+        self.assertIsNotNone(anuncio, 'VAST com xmlns default tem de ser lido')
+        self.assertEqual(anuncio['url'], 'https://cdn/720.mp4')
+        self.assertEqual(anuncio['duracao'], 29.0)
+        self.assertEqual(anuncio['tempo_skip'], 15)
+        self.assertEqual(anuncio['impressao'], ['https://track/impressao'])
+        self.assertEqual(anuncio['eventos']['start'], ['https://track/start'])
+
+    def test_wrapper_com_namespace_tambem_e_seguido(self):
+        xml = ('<VAST xmlns="http://www.w3.org/2001/XMLSchema"><Ad><Wrapper>'
+               '<VASTAdTagURI><![CDATA[https://ads/proximo]]></VASTAdTagURI>'
+               '</Wrapper></Ad></VAST>')
+        self.assertEqual(self.vast.tag_do_wrapper(xml), 'https://ads/proximo')
+
+    def test_vmap_com_prefixo_continua_legivel(self):
+        xml = ('<vmap:VMAP xmlns:vmap="http://www.iab.net/videosuite/vmap">'
+               '<vmap:AdBreak><vmap:AdTagURI><![CDATA[https://ads/vast]]>'
+               '</vmap:AdTagURI></vmap:AdBreak></vmap:VMAP>')
+        self.assertEqual(self.vast.tag_do_vmap(xml), 'https://ads/vast')
+
+    def test_exibir_chega_ao_player_com_esse_vast(self):
+        tocados = []
+        recibo = self.vast.exibir(
+            tag='https://ads/tag', altura_tela=1080,
+            baixar_tag=lambda _u: self.VAST.encode('utf-8'),
+            tocar=lambda url, log=None: tocados.append(url) or True,
+            dormir=lambda _s: None)
+        self.assertTrue(tocados, recibo)
+        self.assertEqual(tocados[0], 'https://cdn/720.mp4')
 
 
 class ConfinamentoAoModoTVTest(BaseTag):

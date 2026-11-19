@@ -51,6 +51,19 @@ echo "::notice::v22 instalada e atualizada com adb install -r; versionCode=$VERS
 abrir LAUNCHER
 abrir LEANBACK_LAUNCHER
 
+# --- ANUNCIO DA TV (o aparelho trata como TV e o fluxo VAST funciona?) ------
+# O AVD e celular: aqui a resposta esperada e "nao e TV -> AdMob". O mesmo
+# script, rodado numa TV, diz se a tag VAST do projeto responde e se o
+# criativo e legivel. O caminho completo com a tag REAL ja e provado no job
+# "Diagnostico da tag VAST" (tools/kodi/diag-vast-tag.py).
+python3 tools/kodi/liberar-addon-para-diag.py || true
+adb push tools/kodi/diag-anuncio-tv.py /data/local/tmp/diag-anuncio-tv.py >/dev/null 2>&1 || true
+if adb shell "command -v python3 >/dev/null 2>&1"; then
+  adb shell "python3 /data/local/tmp/diag-anuncio-tv.py" 2>&1 | tee "$work/diag-anuncio-tv.txt" | grep '::notice::' || true
+else
+  echo '::warning::sem python3 no AVD: diagnostico de anuncio da TV pulado'
+fi
+
 # --- REABERTURA DO APP (tela preta / app saindo sozinho) --------------------
 # Sair e abrir varias vezes seguidas (inclusive em segundos, com o processo
 # ainda quente) tem de terminar sempre com o app vivo e com imagem na tela.

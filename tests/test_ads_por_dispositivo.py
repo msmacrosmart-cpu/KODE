@@ -204,7 +204,7 @@ class RoteamentoTest(BaseAds):
 
         A 1.0.122 dizia que faltava compilar o Google IMA SDK. O caminho
         mudou: o anuncio de video e tocado pelo player do Kodi (VAST) e a tag
-        do projeto agora existe (MagSrv, ``VAST_TAG_PADRAO``). O que o log tem
+        do projeto agora existe (HilltopAds, ``VAST_TAG_PADRAO``). O que o log tem
         de mostrar e o motivo real quando NAO ha anuncio - nunca um simulado e
         nunca a activity do AdMob.
         """
@@ -229,9 +229,11 @@ class RoteamentoTest(BaseAds):
         logs = []
         modulo.tocar_anuncio(modulo.ATIVIDADE_PREROLL, log=logs.append)
         texto = ' '.join(logs)
-        # o caminho de video recebeu a tag do projeto (MagSrv)
+        # o caminho de video recebeu a tag do projeto (HilltopAds)
         self.assertEqual(recebido.get('tag'),
-                         'https://s.magsrv.com/v1/vast.php?idz=6096742')
+                         ('https://vapid-size.com/dEmwF.zYdOGYNKvRZ/GoUG/'
+                          'beLmU9TuDZrUJl/koPpTRcX2iNbDMED3/NzDLkpt/N/zFYf0/'
+                          'MsTEcv1sMXwC'))
         self.assertIn('VAST', texto)
         # com ou sem log, a TV NAO abre a activity do AdMob
         self.assertEqual([b for b in kodi.builtins
@@ -259,7 +261,9 @@ class RoteamentoTest(BaseAds):
         modulo = self._carregar(kodi)
         sys.modules['ads_vast'] = modulo._ads_vast()
         self.assertEqual(modulo.VAST_TAG_PADRAO,
-                         'https://s.magsrv.com/v1/vast.php?idz=6096742')
+                         ('https://vapid-size.com/dEmwF.zYdOGYNKvRZ/GoUG/'
+                          'beLmU9TuDZrUJl/koPpTRcX2iNbDMED3/NzDLkpt/N/zFYf0/'
+                          'MsTEcv1sMXwC'))
         self.assertEqual(modulo.VAST_TAG_PADRAO,
                          sys.modules['ads_vast'].VAST_TAG_PADRAO)
         # sem tag: nao pede nada e nao abre a activity do AdMob

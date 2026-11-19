@@ -1,3 +1,3 @@
 # Fonte única para o manifesto Android, o atualizador e a tag da release.
-VERSION_NAME="1.0.130"
-VERSION_CODE=2103116
+VERSION_NAME="1.0.131"
+VERSION_CODE=2103117
