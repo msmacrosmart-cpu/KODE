@@ -310,9 +310,10 @@ def limpar_repositorios_de_terceiros(log=None):
     removidos = []
     if not base or not os.path.isdir(base):
         return removidos
-    alvos = (set(REPOSITORIOS_DE_TERCEIROS) |
-             set(ADDONS_QUE_RODAM_NO_BOOT_E_FALHAM) |
-             set(ADDONS_DE_TERCEIROS_DO_PERFIL))
+    protegidos = dependencias_obrigatorias(base)
+    alvos = ((set(REPOSITORIOS_DE_TERCEIROS) |
+              set(ADDONS_QUE_RODAM_NO_BOOT_E_FALHAM) |
+              set(ADDONS_DE_TERCEIROS_DO_PERFIL)) - protegidos)
     for nome in sorted(os.listdir(base)):
         pasta = os.path.join(base, nome)
         if not os.path.isdir(pasta):
@@ -383,6 +384,96 @@ def _esquecer_repositorios_no_banco(removidos, log=None):
     return mexeu
 
 
+# Um addon que outro addon do APK EXIGE nao pode ser removido: o Kodi nao
+# termina de iniciar sem a dependencia -
+#   critical: addon 'audioencoder.kodi.builtin.aac' not installed or not enabled.
+#   critical: CServiceManager::InitStageTwo: Unable to start CAddonMgr
+# e o app fica sem GUI (Home vazia). Isso foi medido no projetor: ao tirar o
+# ``service.xbmc.versioncheck``, a limpeza levou junto o audioencoder que ele
+# declara como dependencia.
+DEPENDENCIAS_OBRIGATORIAS = (
+    'audioencoder.kodi.builtin.aac',
+    'audioencoder.kodi.builtin.wma',
+    'xbmc.python',
+    'xbmc.addon',
+    'xbmc.gui',
+    'xbmc.core',
+    'xbmc.json',
+    'xbmc.metadata',
+    'xbmc.webinterface',
+    'kodi.binary.global.main',
+    'kodi.binary.global.audioengine',
+    'kodi.binary.global.filesystem',
+    'kodi.binary.global.general',
+    'kodi.binary.global.gui',
+    'kodi.binary.global.network',
+    'kodi.binary.global.tools',
+    'kodi.binary.instance.audioencoder',
+    'kodi.binary.instance.audiodecoder',
+    'kodi.binary.instance.game',
+    'kodi.binary.instance.imagedecoder',
+    'kodi.binary.instance.inputstream',
+    'kodi.binary.instance.peripheral',
+    'kodi.binary.instance.pvr',
+    'kodi.binary.instance.screensaver',
+    'kodi.binary.instance.vfs',
+    'kodi.binary.instance.videocodec',
+    'kodi.binary.instance.visualization',
+    'game.controller.default',
+    'game.controller.keyboard',
+    'game.controller.mouse',
+    'game.controller.snes',
+    'kodi.resource',
+    'metadata.local',
+    'resource.language.en_gb',
+    'resource.language.pt_br',
+    'resource.uisounds.kodi',
+    'resource.uisounds.silencio',
+    'skin.estuary',
+    'screensaver.xbmc.builtin.black',
+    'screensaver.xbmc.builtin.dim',
+    'webinterface.default',
+    'vfs.rar',
+    'inputstream.adaptive',
+)
+
+
+def _dependencias_declaradas(base):
+    """{addon: {dependencias obrigatorias}} lendo os addon.xml do perfil."""
+    mapa = {}
+    if not base or not os.path.isdir(base):
+        return mapa
+    for nome in sorted(os.listdir(base)):
+        xml = os.path.join(base, nome, 'addon.xml')
+        if not os.path.exists(xml):
+            continue
+        try:
+            raiz = ET.parse(xml).getroot()
+        except Exception:
+            continue
+        exigidas = set()
+        for requires in raiz.findall('requires'):
+            for item in requires.findall('import'):
+                if (item.get('optional') or '').lower() in ('true', '1'):
+                    continue
+                if item.get('addon'):
+                    exigidas.add(item.get('addon'))
+        mapa[nome] = exigidas
+    return mapa
+
+
+def dependencias_obrigatorias(base=None):
+    """Dependencia de addon que fica + lista fixa do motor do Kodi."""
+    base = base or _pasta_de_addons_do_perfil()
+    exigidas = set(DEPENDENCIAS_OBRIGATORIAS)
+    for _addon, deps in _dependencias_declaradas(base).items():
+        if _addon in ADDONS_DE_TERCEIROS or _addon in REPOSITORIOS_DE_TERCEIROS:
+            # dependencia de addon que VAI SAIR nao protege ninguem
+            continue
+        exigidas |= deps
+    return exigidas
+
+
 def limpar_addons_quebrados(log=None):
     """Tira do perfil o addon que faria o Kodi mostrar a tela de erro.
 
@@ -393,10 +484,13 @@ def limpar_addons_quebrados(log=None):
     removidos = []
     if not base or not os.path.isdir(base):
         return removidos
+    protegidos = dependencias_obrigatorias(base)
     for nome in sorted(os.listdir(base)):
         pasta = os.path.join(base, nome)
         if not os.path.isdir(pasta):
             continue
+        if nome in protegidos:
+            continue                      # sem isso o Kodi nao inicia
         try:
             if not _addon_esta_quebrado(pasta):
                 continue

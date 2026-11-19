@@ -76,11 +76,17 @@ class ServicoLimpaPerfil(object):
                       'repository.alado.tv', 'One.repo',
                       'service.xbmc.versioncheck', 'repository.xbmc.org',
                       'plugin.video.youtube', 'plugin.program.openwizard',
-                      'plugin.audio.mp3streams',
+                      'plugin.audio.mp3streams', 'audioencoder.kodi.builtin.aac',
                       'plugin.video.BrazucaPlay.Matrix', 'script.module.requests'):
             os.makedirs(os.path.join(self.addons, addon))
+            if addon == 'service.xbmc.versioncheck':
+                corpo = ('<addon id="%s"><requires>'
+                         '<import addon="audioencoder.kodi.builtin.aac" version="1.0.2"/>'
+                         '</requires><extension library="default.py"/></addon>' % addon)
+            else:
+                corpo = ('<addon id="%s"><extension library="default.py"/></addon>' % addon)
             with open(os.path.join(self.addons, addon, 'addon.xml'), 'w') as saida:
-                saida.write('<addon id="%s"><extension library="default.py"/></addon>' % addon)
+                saida.write(corpo)
             with open(os.path.join(self.addons, addon, 'default.py'), 'w') as saida:
                 saida.write('# ok\n')
         import sqlite3
@@ -158,6 +164,31 @@ class PerfilSemTerceirosTest(unittest.TestCase):
     def test_pede_ao_kodi_para_reler_os_addons(self):
         self.aparelho.modulo.limpar_repositorios_de_terceiros()
         self.assertIn('UpdateLocalAddons()', self.aparelho.chamados)
+
+    def test_dependencia_obrigatoria_do_aparelho_nunca_sai(self):
+        """O log do projetor provou: sem o audioencoder o Kodi nao inicia.
+
+        critical: addon 'audioencoder.kodi.builtin.aac' not installed or not enabled.
+        critical: CServiceManager::InitStageTwo: Unable to start CAddonMgr
+        """
+        registros = []
+        removidos = self.aparelho.modulo.limpar_repositorios_de_terceiros(
+            registros.append)
+        self.assertNotIn('audioencoder.kodi.builtin.aac', removidos)
+        self.assertTrue(os.path.isdir(os.path.join(
+            self.aparelho.addons, 'audioencoder.kodi.builtin.aac')),
+            'audioencoder nao existe no perfil: o Kodi nao inicia sem ele')
+        protegidos = self.aparelho.modulo.dependencias_obrigatorias(
+            self.aparelho.addons)
+        self.assertIn('audioencoder.kodi.builtin.aac', protegidos)
+
+    def test_limpeza_de_addon_quebrado_respeita_a_dependencia(self):
+        # addon sem addon.xml, mas declarado como dependencia obrigatoria
+        pasta = os.path.join(self.aparelho.addons, 'xbmc.python')
+        os.makedirs(pasta)
+        self.aparelho.modulo.limpar_addons_quebrados()
+        self.assertTrue(os.path.isdir(pasta),
+                        'dependencia obrigatoria sem arquivo nao pode ser apagada')
 
     def test_roda_duas_vezes_sem_erro(self):
         self.aparelho.modulo.limpar_repositorios_de_terceiros()

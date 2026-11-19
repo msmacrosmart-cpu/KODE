@@ -348,6 +348,34 @@ def addons_anunciados_sem_codigo(existentes, zip_aberto):
     return quebrados, pastas
 
 
+def addons_exigidos(existentes, zip_aberto):
+    """Ids que algum addon que FICA no APK declara como dependencia obrigatoria.
+
+    O Kodi nao inicia com dependencia obrigatoria faltando:
+        critical: addon 'audioencoder.kodi.builtin.aac' not installed or not enabled.
+        critical: CServiceManager::InitStageTwo: Unable to start CAddonMgr
+    e o app fica sem GUI (tela preta, Home vazia). Remover um addon que outro
+    depende derruba o aparelho inteiro - logo, dependencia de quem fica e
+    intocavel, mesmo que esteja na lista de terceiros.
+    """
+    import xml.etree.ElementTree as ET
+    exigidos = set()
+    for nome in existentes:
+        if not nome.startswith('assets/addons/') or not nome.endswith('/addon.xml'):
+            continue
+        try:
+            raiz = ET.fromstring(zip_aberto.read(nome))
+        except Exception:
+            continue
+        for requires in raiz.findall('requires'):
+            for importado in requires.findall('import'):
+                if (importado.get('optional') or '').lower() in ('true', '1'):
+                    continue
+                if importado.get('addon'):
+                    exigidos.add(importado.get('addon'))
+    return exigidos
+
+
 def addons_sem_entrega(existentes, zip_aberto):
     """(removidos, motivos) - addons que saem do APK nesta montagem."""
     quebrados, pastas = addons_anunciados_sem_codigo(existentes, zip_aberto)
@@ -363,6 +391,13 @@ def addons_sem_entrega(existentes, zip_aberto):
         if addon in pastas:
             quebrados.add(addon)
             motivos.setdefault(addon, 'addon de terceiro que a entrega nao inclui')
+    # Nada que outro addon do APK exige pode sair: sem a dependencia o Kodi
+    # nem inicia o gerenciador de addons (foi o que aconteceu com o
+    # audioencoder.kodi.builtin.aac na 1.0.135).
+    exigidos = addons_exigidos(existentes, zip_aberto)
+    for addon in sorted(quebrados & exigidos):
+        quebrados.discard(addon)
+        motivos.pop(addon, None)
     return sorted(quebrados), motivos
 
 
