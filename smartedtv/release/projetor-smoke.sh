@@ -60,13 +60,27 @@ candidatos_de_perfil() {
 # acha o arquivo de verdade. Preferir o find.
 procurar_log() {
   local achado
-  achado=$(adb shell "find /sdcard/Android/data /data/media/0/Android/data -maxdepth 8 -name 'kodi.log' 2>/dev/null | head -1" 2>/dev/null | tr -d '\r' || true)
+  # Ignora os estagios de semeadura (.smarted-seed-*) e o perfil embutido no
+  # APK: eles tem um kodi.log de fabrica que NAO e o do aparelho. O que vale e
+  # o log do perfil em uso, o mais recente.
+  achado=$(adb shell "find /sdcard/Android/data /data/media/0/Android/data -maxdepth 8 -name 'kodi.log' 2>/dev/null" 2>/dev/null \
+    | tr -d '\r' | grep -v 'smarted-seed' | grep -v '/assets/' | head -3)
   if [[ -z $achado ]]; then
-    achado=$(adb shell "find /data/data/smartedtv.full -maxdepth 8 -name 'kodi.log' 2>/dev/null | head -1" 2>/dev/null | tr -d '\r' || true)
+    achado=$(adb shell "find /data/data/smartedtv.full -maxdepth 8 -name 'kodi.log' 2>/dev/null" 2>/dev/null \
+      | tr -d '\r' | grep -v 'smarted-seed' | grep -v '/assets/' | head -3)
   fi
   [[ -n $achado ]] || return 1
-  perfil=${achado%/temp/kodi.log}
-  printf '%s\n' "$achado"
+  # Se houver mais de um, fica com o maior (o que o Kodi esta escrevendo).
+  local melhor="" melhor_tam=0 tamanho
+  while IFS= read -r candidato; do
+    [[ -n $candidato ]] || continue
+    tamanho=$(adb shell "stat -c %s '$candidato' 2>/dev/null" 2>/dev/null | tr -d '\r' | head -1)
+    tamanho=${tamanho:-0}
+    if (( tamanho >= melhor_tam )); then melhor=$candidato; melhor_tam=$tamanho; fi
+  done <<< "$achado"
+  [[ -n $melhor ]] || return 1
+  perfil=$(python3 -c "import sys;p=sys.argv[1];print(p.rsplit('/temp/',1)[0].rsplit('/userdata/',1)[0])" "$melhor")
+  printf '%s\n' "$melhor"
 }
 log_remoto=""
 for tentativa in $(seq 1 40); do
@@ -116,7 +130,7 @@ adb exec-out screencap -p > "$work/projetor-home.png" 2>/dev/null || true
 
 # 4) trazer o log do aparelho e analisar DE VERDADE
 mkdir -p "$work"
-adb pull "$log_remoto" "$work/kodi.log" >/dev/null 2>&1 || true
+adb pull "$log_remoto" "$work/kodi.log" >/dev/null 2>&1 || adb shell "cat '$log_remoto'" > "$work/kodi.log" 2>/dev/null || true
 [[ -s "$work/kodi.log" ]] || erro 'nao foi possivel copiar o kodi.log do aparelho'
 etapa '4/5 kodi.log copiado do aparelho'
 wc -l "$work/kodi.log" | sed 's/^/linhas gravadas pelo Kodi: /'
