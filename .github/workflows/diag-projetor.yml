@@ -85,6 +85,28 @@ jobs:
             exit $rc
         env:
           GH_TOKEN: ${{ github.token }}
+      - name: Publicar o resultado do projetor no commit
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          . kodi/addons/service.smarted.bootstrap/smarted_release.py
+          arquivo=build/universal/resumo-log.txt
+          [ -s "$arquivo" ] || { echo '::notice::sem resumo para publicar'; exit 0; }
+          corpo=$(printf 'Projetor (AVD leanback, APK %s) - run %s\n\n```\n%s\n```\n' \
+            "$VERSION_NAME" "$GITHUB_RUN_ID" "$(tail -c 50000 "$arquivo")")
+          python3 - "$corpo" <<'PY'
+          import json, os, subprocess, sys
+          corpo = sys.argv[1]
+          proc = subprocess.run(['gh', 'api', '-X', 'POST',
+                                 'repos/%s/commits/%s/comments' % (os.environ['GITHUB_REPOSITORY'], os.environ['GITHUB_SHA']),
+                                 '--input', '-'],
+                                input=json.dumps({'body': corpo}), text=True,
+                                capture_output=True)
+          print('::notice::comentario publicado' if proc.returncode == 0
+                else '::error::publicacao falhou: ' + (proc.stderr or '')[-300:])
+          PY
       - name: Guardar kodi.log e capturas
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
