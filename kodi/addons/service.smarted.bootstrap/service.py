@@ -189,10 +189,32 @@ ADDONS_DE_TERCEIROS = (
 
 
 def _pasta_de_addons_do_perfil():
+    """Pasta ``addons`` do perfil em uso.
+
+    Em addon de servico, ``special://home`` aponta as vezes para a pasta de
+    ADDONS (nao para o perfil): ``special://home/addons`` vira
+    ``.../.kodi/addons/addons``, que nao existe - e a limpeza nao fazia nada
+    (medido no emulador de projetor: "limpeza de terceiros: 0 addon(s)" com
+    YouTube e OpenWizard instalados). Por isso a pasta e conferida e, se nao
+    existir, o caminho e montado pelo perfil.
+    """
+    for chave in ('special://home/addons', 'special://profile/addons',
+                  'special://masterprofile/addons'):
+        try:
+            caminho = xbmc.translatePath(chave).rstrip('/\\')
+        except Exception:
+            continue
+        if caminho and os.path.isdir(caminho):
+            return caminho
+    # ultimo recurso: derivar do perfil do usuario (sem duplicar "addons")
     try:
-        return xbmc.translatePath('special://home/addons').rstrip('/\\')
+        home = xbmcvfs.translatePath('special://home').rstrip('/\\')
     except Exception:
         return ''
+    if not home:
+        return ''
+    candidato = home if os.path.basename(home) == 'addons' else os.path.join(home, 'addons')
+    return candidato if os.path.isdir(candidato) else ''
 
 
 # Pastas que moram dentro de ``addons/`` e NAO sao addons: ``packages`` guarda
