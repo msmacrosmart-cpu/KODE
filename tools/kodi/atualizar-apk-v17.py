@@ -267,6 +267,98 @@ def patch_startup(dados):
     return novo.encode('utf-8')
 
 
+# ---------------------------------------------------------------------------
+# Addons que deixam a notificacao "Add-on com erro" na tela do projetor
+# ---------------------------------------------------------------------------
+# O Kodi abre a tela de um addon que ele conhece; se o codigo nao existe (pasta
+# vazia, zip do usuario apagado, ``library`` apontando para arquivo ausente) a
+# tela vira "Add-on com erro" POR CIMA da Home - e nesse estado a Home nao
+# carrega o conteudo. O dono do app viu exatamente isso: YouTube, OpenWizard e
+# outros addons que nunca fizeram parte desta entrega.
+#
+# Regras daqui:
+#   * addon declarado no APK cuja pasta/codigo nao existe -> sai do zip;
+#   * addon que a skin cita e o app NAO entrega -> sai do zip (a Home usa
+#     ``System.HasAddon`` para ele, entao o botao simplesmente nao aparece);
+#   * nada de esconder erro: o build lista o que saiu no log.
+ADDONS_QUE_NAO_VEM = (
+    'plugin.video.youtube',           # skin cita a busca do YouTube
+    'plugin.program.openwizard',      # assistente de repositorio de terceiros
+    'plugin.program.openwizard2',
+    'plugin.video.openwizard',
+    'repository.openwizard',
+    'plugin.program.super.favourites',
+    'script.module.bingie',
+    'skin.bingie',
+)
+
+
+def pastas_de_addons(existentes):
+    """{id: prefixo no zip} das pastas de addon embarcadas."""
+    achados = {}
+    for nome in existentes:
+        if not nome.startswith('assets/addons/'):
+            continue
+        partes = nome.split('/')
+        if len(partes) > 3 and partes[2]:
+            achados.setdefault(partes[2], 'assets/addons/%s/' % partes[2])
+    return achados
+
+
+def addons_anunciados_sem_codigo(existentes, zip_aberto):
+    """Ids de addons que o APK anuncia mas nao entrega por inteiro.
+
+    Um addon esta "anunciado" quando tem ``addon.xml`` no zip (o Kodi le esse
+    arquivo e passa a conhecer o addon) ou quando aparece em
+    ``addon-manifest.xml``. Ele esta QUEBRADO quando o ``addon.xml`` diz qual
+    biblioteca carregar e esse arquivo/pasta nao existe no zip - e assim que o
+    Kodi monta a tela de erro.
+    """
+    import xml.etree.ElementTree as ET
+    pastas = pastas_de_addons(existentes)
+    quebrados = set()
+    for nome in existentes:
+        if not nome.startswith('assets/addons/') or not nome.endswith('/addon.xml'):
+            continue
+        partes = nome.split('/')
+        if len(partes) < 4 or partes[2] not in pastas:
+            continue
+        try:
+            raiz = ET.fromstring(zip_aberto.read(nome))
+        except Exception:
+            quebrados.add(partes[2])
+            continue
+        for ext in raiz.findall('extension'):
+            lib = (ext.get('library') or '').strip()
+            if not lib:
+                continue
+            alvo = 'assets/addons/%s/%s' % (partes[2], lib)
+            if alvo in existentes:
+                continue
+            if any(n.startswith(alvo.rstrip('/') + '/') for n in existentes):
+                continue
+            quebrados.add(partes[2])
+    return quebrados, pastas
+
+
+def addons_sem_entrega(existentes, zip_aberto):
+    """(removidos, motivos) - addons que saem do APK nesta montagem."""
+    quebrados, pastas = addons_anunciados_sem_codigo(existentes, zip_aberto)
+    motivos = {addon: 'declarado no APK e sem o codigo que carrega'
+               for addon in quebrados}
+    # Pasta de addon sem addon.xml: o Kodi nem carrega, mas ocupa o perfil e
+    # aparece em Ajuda > Informacoes; tambem sai (nao e addon desta entrega).
+    for addon, prefixo in pastas.items():
+        if (prefixo + 'addon.xml') not in existentes:
+            quebrados.add(addon)
+            motivos[addon] = 'pasta sem addon.xml'
+    for addon in ADDONS_QUE_NAO_VEM:
+        if addon in pastas:
+            quebrados.add(addon)
+            motivos.setdefault(addon, 'addon de terceiro que a entrega nao inclui')
+    return sorted(quebrados), motivos
+
+
 def mapa_da_skin():
     """Todos os arquivos da skin Classica, no caminho de cada skin do APK.
 
@@ -342,11 +434,19 @@ def main(argv=None):
                 raise SystemExit('APK base sem %s' % exigido)
         if 'assets/addons/service.smarted.bootstrap/service.py' not in nomes:
             raise SystemExit('APK base sem o servico smarted')
+        # Addon que o Kodi abriria e nao tem codigo = notificacao de erro na
+        # Home. Sai do zip antes de qualquer outra troca.
+        removidos, motivos = addons_sem_entrega(nomes, origem)
+        for addon in removidos:
+            dbg('addon fora do APK: %s (%s)' % (addon, motivos[addon]))
 
         with zipfile.ZipFile(args.saida, 'w', allowZip64=True) as destino:
             vistos = set()
             for item in origem.infolist():
                 if item.is_dir() or SIG.fullmatch(item.filename):
+                    continue
+                if any(item.filename.startswith('assets/addons/%s/' % addon)
+                       for addon in removidos):
                     continue
                 if item.filename in vistos:
                     raise SystemExit('entrada duplicada: %s' % item.filename)

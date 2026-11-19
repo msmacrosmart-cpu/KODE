@@ -7,8 +7,10 @@ habilitado e com o bootstrap interno pronto antes de qualquer tela abrir.
 from __future__ import absolute_import, unicode_literals
 
 import os
+import shutil
 import threading
 import time
+import xml.etree.ElementTree as ET
 
 import xbmc
 import xbmcaddon
@@ -171,6 +173,77 @@ def _remover_arvore(caminho):
         xbmcvfs.rmdir(caminho)
     except Exception:
         pass
+
+
+# Addons de terceiros que NUNCA fizeram parte desta entrega e que, deixados no
+# perfil, aparecem na tela como "Add-on com erro" quando o zip de origem foi
+# apagado (repositorio removido, instalacao pela metade). A Home do usuario nao
+# carrega enquanto o Kodi insiste em abrir essas telas no boot.
+ADDONS_DE_TERCEIROS = (
+    'plugin.video.youtube',
+    'plugin.program.openwizard',
+    'plugin.program.openwizard2',
+    'plugin.video.openwizard',
+    'repository.openwizard',
+)
+
+
+def _pasta_de_addons_do_perfil():
+    try:
+        return xbmc.translatePath('special://home/addons').rstrip('/\\')
+    except Exception:
+        return ''
+
+
+def _addon_esta_quebrado(pasta):
+    """Addon sem codigo, ou com o ``library`` do addon.xml faltando."""
+    if not os.path.isdir(pasta):
+        return False
+    if os.path.basename(pasta) in ADDONS_DE_TERCEIROS:
+        return True
+    xml = os.path.join(pasta, 'addon.xml')
+    if not os.path.exists(xml):
+        return True                      # pasta solta: o Kodi nem carrega
+    try:
+        raiz = ET.parse(xml).getroot()
+    except Exception:
+        return True                      # addon.xml corrompido
+    for ext in raiz.findall('extension'):
+        lib = (ext.get('library') or '').strip()
+        if not lib:
+            continue
+        alvo = os.path.join(pasta, lib)
+        if os.path.exists(alvo) or os.path.isdir(alvo):
+            continue
+        return True                      # o Kodi abriria e falharia
+    return False
+
+
+def limpar_addons_quebrados(log=None):
+    """Tira do perfil o addon que faria o Kodi mostrar a tela de erro.
+
+    Nao e ``hide error``: o defeito e apagado (addon sem codigo nao tem como
+    funcionar) e cada remocao vai para o log. Addon sadio nao e tocado.
+    """
+    base = _pasta_de_addons_do_perfil()
+    removidos = []
+    if not base or not os.path.isdir(base):
+        return removidos
+    for nome in sorted(os.listdir(base)):
+        pasta = os.path.join(base, nome)
+        if not os.path.isdir(pasta):
+            continue
+        try:
+            if not _addon_esta_quebrado(pasta):
+                continue
+            shutil.rmtree(pasta, ignore_errors=True)
+            removidos.append(nome)
+        except Exception as erro:
+            if log:
+                log('addon quebrado nao pode ser limpo (%s): %r' % (nome, erro))
+    if removidos and log:
+        log('addons sem codigo retirados do perfil: %s' % ', '.join(removidos))
+    return removidos
 
 
 def limpar_estagios_de_seed():

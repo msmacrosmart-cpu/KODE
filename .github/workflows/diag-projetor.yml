@@ -1,0 +1,54 @@
+name: Diagnostico no emulador de projetor
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/diag-projetor.yml'
+jobs:
+  projetor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Baixar o APK publicado (1.0.133) para reproduzir a queixa
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/universal
+          gh release download v1.0.133-universal -R msmacrosmart-cpu/KODE \
+            --pattern SMARTEDTV-universal.apk --output build/universal/SMARTEDTV-universal.apk
+          ls -l build/universal
+      - name: Habilitar aceleracao
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Projetor Android TV (leanback, sem toque) com o APK 1.0.133
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 30
+          arch: x86_64
+          target: google_apis
+          profile: 10.1in WXGA (Tablet)
+          disk-size: 4096M
+          emulator-boot-timeout: 420
+          emulator-options: >-
+            -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+            -camera-back none -prop ro.build.characteristics=tv
+            -prop ro.hardware.type.television=true
+          disable-animations: true
+          script: bash smartedtv/release/projetor-smoke.sh
+      - name: Guardar kodi.log e capturas
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: projetor-${{ github.run_id }}
+          path: |
+            build/universal/kodi.log
+            build/universal/kodi-anterior.log
+            build/universal/addons-no-aparelho.txt
+            build/universal/projetor-home.png
+          if-no-files-found: warn
