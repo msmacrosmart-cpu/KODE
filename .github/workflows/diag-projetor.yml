@@ -38,8 +38,20 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build/universal
-          gh release download v1.0.138-universal -R msmacrosmart-cpu/KODE \
-            --pattern SMARTEDTV-universal.apk --output build/universal/SMARTEDTV-universal.apk
+          # a release aparece antes de o asset terminar de subir (~287 MB):
+          # tentar ate 15 min e conferir o tamanho antes de seguir
+          baixou=0
+          for tentativa in $(seq 1 30); do
+            if gh release download v1.0.138-universal -R msmacrosmart-cpu/KODE \
+                 --pattern SMARTEDTV-universal.apk \
+                 --output build/universal/SMARTEDTV-universal.apk --clobber 2>/dev/null; then
+              tamanho=$(stat -c %s build/universal/SMARTEDTV-universal.apk 2>/dev/null || echo 0)
+              if [ "$tamanho" -gt 200000000 ]; then baixou=1; break; fi
+              echo "asset incompleto ($tamanho bytes); nova tentativa"
+            fi
+            sleep 30
+          done
+          [ "$baixou" = 1 ] || { echo '::error::nao foi possivel baixar o APK 1.0.138 completo'; exit 1; }
           ls -l build/universal
       - name: Habilitar aceleracao
         run: |
