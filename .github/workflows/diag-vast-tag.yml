@@ -7,34 +7,43 @@ jobs:
   medir:
     runs-on: ubuntu-latest
     steps:
-      - name: Ver o XML cru e varias tentativas
+      - uses: actions/checkout@v4
+      - name: Ler a tag com o MODULO REAL do app
         run: |
           python3 - <<'PY'
-          import urllib.request, xml.etree.ElementTree as ET
-          TAG = ('https://vapid-size.com/dEmwF.zYdOGYNKvRZ/GoUG/beLmU9TuDZrUJl/'
-                 'koPpTRcX2iNbDMED3/NzDLkpt/N/zFYf0/MsTEcv1sMXwC')
+          import sys, types, urllib.request, importlib.util
           def aviso(t):
               t = ' '.join(str(t).replace('\r',' ').replace('\n',' ').split())
               print('::notice::' + t[:900])
-          for tentativa in range(3):
-              for ua in ('SMARTEDTV/VAST', 'Mozilla/5.0 (Linux; Android 9) Chrome/120 Mobile'):
-                  try:
-                      req = urllib.request.Request(TAG, headers={'User-Agent': ua})
-                      xml = urllib.request.urlopen(req, timeout=25).read().decode('utf-8', 'replace')
-                  except Exception as erro:
-                      aviso('TF4 t%d ua=%s erro=%r' % (tentativa, ua[:12], erro))
-                      continue
-                  try:
-                      raiz = ET.fromstring(xml.strip())
-                      tag_raiz = raiz.tag
-                      ads = len(list(raiz.iter('Ad')))
-                      inline = len(list(raiz.iter('InLine')))
-                      media = len(list(raiz.iter('MediaFile')))
-                      erro_txt = ' '.join((e.text or '') for e in raiz.iter('Error'))[:200]
-                  except Exception as erro:
-                      tag_raiz, ads, inline, media, erro_txt = 'NAO-XML', -1, -1, -1, repr(erro)[:120]
-                  aviso('TF4 t%d ua=%s bytes=%d raiz=%s ads=%d inline=%d media=%d err=%s' % (
-                      tentativa, ua[:12], len(xml), tag_raiz, ads, inline, media, erro_txt))
-                  if tentativa == 0:
-                      aviso('TF4 cru: ' + xml[:600])
+          xbmc = types.ModuleType('xbmc')
+          xbmc.LOGINFO, xbmc.LOGWARNING, xbmc.LOGERROR = 1, 3, 4
+          xbmc.getInfoLabel = lambda _s: ''
+          xbmc.getCondVisibility = lambda _s: False
+          xbmc.executebuiltin = lambda *a, **k: None
+          xbmc.log = lambda *a, **k: None
+          xbmc.Player = lambda *a, **k: types.SimpleNamespace(
+              isPlaying=lambda: False, isPlayingVideo=lambda: False,
+              getPlayingFile=lambda: '', getTime=lambda: 0.0, getTotalTime=lambda: 0.0)
+          sys.modules['xbmc'] = xbmc
+          spec = importlib.util.spec_from_file_location(
+              'ads_vast', 'kodi/addons/service.smarted.bootstrap/ads_vast.py')
+          vast = importlib.util.module_from_spec(spec); spec.loader.exec_module(vast)
+          TAG = ('https://vapid-size.com/dEmwF.zYdOGYNKvRZ/GoUG/beLmU9TuDZrUJl/'
+                 'koPpTRcX2iNbDMED3/NzDLkpt/N/zFYf0/MsTEcv1sMXwC')
+          dados = vast.baixar(TAG)
+          aviso('MOD bytes=%s' % (len(dados) if dados else 0))
+          aviso('MOD url_valida=%s' % vast.tag_configurada(TAG).startswith('https://'))
+          anuncio = vast.escolher_anuncio(dados, 1080)
+          aviso('MOD escolher_anuncio -> %s' % (anuncio and (anuncio.get('url','')[:90],
+                anuncio.get('tipo'), anuncio.get('duracao'), len(anuncio.get('impressao') or []))))
+          if anuncio:
+              try:
+                  r = urllib.request.Request(anuncio['url'], headers={'User-Agent': 'SMARTEDTV/VAST'})
+                  with urllib.request.urlopen(r, timeout=25) as resp:
+                      b = resp.read(1024)
+                      aviso('MOD criativo http=%s tipo=%s bytes=%d' % (
+                          resp.status, resp.headers.get('Content-Type'), len(b)))
+              except Exception as e:
+                  aviso('MOD criativo falhou: %r' % (e,))
+          aviso('MOD wrappers: wrapper=%r vmap=%r' % (vast.tag_do_wrapper(dados), vast.tag_do_vmap(dados)))
           PY
