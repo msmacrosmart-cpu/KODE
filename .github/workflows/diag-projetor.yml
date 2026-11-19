@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - '.github/workflows/diag-projetor.yml'
+      - 'smartedtv/release/projetor-smoke.sh'
+      - 'tools/kodi/analisar-kodi-log.py'
 jobs:
   projetor:
     runs-on: ubuntu-latest
