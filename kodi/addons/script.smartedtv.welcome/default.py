@@ -1050,6 +1050,13 @@ def _ir_para_home(motivo='', forcar=False):
 
     # `ActivateWindow(Home,return)` NAO e o comando certo: o segundo argumento
     # e um caminho, e "return" nao e caminho valido. Usa a forma oficial.
+    # O ``ActivateWindow`` e RECUSADO pelo Kodi enquanto existe dialogo modal na
+    # tela ("Activate of window '10000' refused because there are active modal
+    # dialogs"). Foi assim que a Home nao abriu no projetor: a janela de entrada
+    # estava fechando e um dialogo modal ainda estava no ar. Fechar os dialogos
+    # sem conteudo do app antes de pedir a Home nao esconde erro nenhum: o
+    # dialogo em questao e de outro addon, e o app segue com a Home dele.
+    _comando_ok('Dialog.Close(all,true)', espera=0.3)
     _comando_ok('ActivateWindow(Home)', espera=1.2)
     if _tela_da_home():
         _log('Home ativa (ActivateWindow)')
@@ -1058,6 +1065,7 @@ def _ir_para_home(motivo='', forcar=False):
 
     _log('ActivateWindow(Home) nao apareceu; tentando ReplaceWindow(Home)',
          xbmc.LOGWARNING)
+    _comando_ok('Dialog.Close(all,true)', espera=0.2)
     _comando_ok('ReplaceWindow(Home)', espera=1.2)
     if _tela_da_home():
         _log('Home ativa (ReplaceWindow)')
@@ -1079,6 +1087,7 @@ def _ir_para_home(motivo='', forcar=False):
     # escondida atras da janela que acabou de fechar.
     _log('a Home nao apareceu; tentando ActivateWindow(Home) novamente',
          xbmc.LOGERROR)
+    _comando_ok('Dialog.Close(all,true)', espera=0.2)
     _comando_ok('ActivateWindow(Home)', espera=1.0)
     if _tela_da_home():
         _log('Home ativa (segunda tentativa)')

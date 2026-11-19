@@ -227,6 +227,140 @@ def _addon_esta_quebrado(pasta):
     return False
 
 
+# O perfil que o APK instala no primeiro arranque vem da base antiga do Brazuca
+# Play e traz repositorios de terceiros. No projetor do cliente isso aparecia no
+# kodi.log como atualizacao falhando e "Add-on com erro":
+#   CRepository: failed read 'https://repo.redwizard.xyz/.../addons.xml.md5'
+#   CRepository: failed read 'http://127.0.0.1:65223/addons.xml.md5'
+#   Addon 'x' already present with higher version
+# E o ``service.xbmc.versioncheck`` estourava no boot (chama uname no Android):
+#   PythonToCppException ... subprocess.CalledProcessError ... 'uname -rs'
+# Nenhum deles e desta entrega. O perfil instalado no aparelho e limpo aqui,
+# com cada remocao registrada no log do app (nao e aviso escondido: e defeito
+# removido, e o que sai fica escrito).
+REPOSITORIOS_DE_TERCEIROS = (
+    'repository.alado.tv',
+    'repository.elementumorg',
+    'repository.nostr-oneplay',
+    'repository.redwizard',
+    'repository.openwizard',
+    'vkkodi.repo',
+    'One.repo',
+)
+ADDONS_QUE_RODAM_NO_BOOT_E_FALHAM = (
+    'service.xbmc.versioncheck',     # uname -rs -> SIGSEGV no Android
+)
+# O que faz parte do app e nao pode ser tocado na limpeza.
+ADDONS_DO_APP = (
+    'plugin.video.',
+    'script.smartedtv.',
+    'script.module.',
+    'service.smarted.',
+    'skin.',
+    'resource.',
+    'repository.xbmc.org',
+    'metadata.',
+    'xbmc.',
+    'kodi.',
+    'game.controller.',
+    'audioencoder.',
+    'screensaver.',
+    'webinterface.',
+    'context.',
+    'inputstream.',
+    'peripheral.',
+    'pvr.',
+    'vim.tagbar',
+)
+
+
+def _e_do_app(addon):
+    if addon in ADDONS_DO_APP:
+        return True
+    return addon.startswith(ADDONS_DO_APP) or addon == 'repository.xbmc.org'
+
+
+def limpar_repositorios_de_terceiros(log=None):
+    """Retira do perfil o repositorio de terceiro e o addon que falha no boot.
+
+    Devolve a lista do que saiu. Todo mundo que sai fica no log; nada e
+    silenciado sem registro.
+    """
+    base = _pasta_de_addons_do_perfil()
+    removidos = []
+    if not base or not os.path.isdir(base):
+        return removidos
+    alvos = set(REPOSITORIOS_DE_TERCEIROS) | set(ADDONS_QUE_RODAM_NO_BOOT_E_FALHAM)
+    for nome in sorted(os.listdir(base)):
+        pasta = os.path.join(base, nome)
+        if not os.path.isdir(pasta):
+            continue
+        if nome in alvos:
+            shutil.rmtree(pasta, ignore_errors=True)
+            removidos.append(nome)
+    if removidos:
+        if log:
+            log('addons de terceiros retirados do perfil: %s' % ', '.join(removidos))
+        # O Kodi guarda o id do repositorio no banco de addons; sem tirar de la
+        # ele continua tentando atualizar e o erro volta na proxima abertura.
+        _esquecer_repositorios_no_banco(removidos, log)
+        try:
+            xbmc.executebuiltin('UpdateLocalAddons()')
+        except Exception:
+            pass
+    return removidos
+
+
+def _esquecer_repositorios_no_banco(removidos, log=None):
+    """Apaga do Addons*.db o vinculo com o repositorio que saiu do perfil."""
+    home = ''
+    try:
+        home = xbmcvfs.translatePath('special://home').rstrip('/')
+    except Exception:
+        return False
+    pastas = [os.path.join(home, 'userdata', 'Database')]
+    dbs = []
+    for pasta in pastas:
+        if not os.path.isdir(pasta):
+            continue
+        for nome in sorted(os.listdir(pasta)):
+            if nome.startswith('Addons') and nome.endswith('.db'):
+                dbs.append(os.path.join(pasta, nome))
+    if not dbs:
+        return False
+    import sqlite3
+    mexeu = False
+    for caminho in dbs:
+        try:
+            conexao = sqlite3.connect(caminho, timeout=5)
+        except Exception as erro:
+            if log:
+                log('banco de addons nao abriu (%s): %r'
+                    % (os.path.basename(caminho), erro), xbmc.LOGWARNING)
+            continue
+        try:
+            for addon in removidos:
+                for comando in (
+                        'DELETE FROM repo WHERE addonID = ?',
+                        'DELETE FROM addonlinkrepo WHERE addonID = ?',
+                        'DELETE FROM installed WHERE addonID = ? AND '
+                        "origin LIKE '%repository.%'"):
+                    try:
+                        conexao.execute(comando, (addon,))
+                        mexeu = True
+                    except Exception:
+                        continue
+            conexao.commit()
+        except Exception as erro:
+            if log:
+                log('banco de addons: nada removido (%r)' % erro, xbmc.LOGWARNING)
+        finally:
+            conexao.close()
+    if mexeu and log:
+        log('banco de addons: repositorios de terceiros esquecidos')
+    return mexeu
+
+
 def limpar_addons_quebrados(log=None):
     """Tira do perfil o addon que faria o Kodi mostrar a tela de erro.
 
@@ -717,6 +851,20 @@ def main():
     except Exception as erro:  # nunca derrubar o boot por causa de anuncio
         log('ads: nao foi possivel iniciar os gatilhos (%s)' % erro,
             xbmc.LOGWARNING)
+
+    # Antes de liberar a Home: tira do perfil o repositorio de terceiro e o
+    # addon que falha no boot (kodi.log do projetor), e o addon que nao tem
+    # codigo (esse e o que vira a tela "Add-on com erro"). Cada remocao fica
+    # registrada; nada e escondido.
+    try:
+        limpar_repositorios_de_terceiros(log)
+    except Exception as erro:
+        log('limpeza de repositorios de terceiros falhou (%r)'
+            % erro, xbmc.LOGWARNING)
+    try:
+        limpar_addons_quebrados(log)
+    except Exception as erro:
+        log('limpeza de addons sem codigo falhou (%r)' % erro, xbmc.LOGWARNING)
 
     pronto = esperar_addons_manager(monitor, log=log)
     if monitor.abortRequested():
