@@ -326,7 +326,11 @@ def addons_anunciados_sem_codigo(existentes, zip_aberto):
         try:
             raiz = ET.fromstring(zip_aberto.read(nome))
         except Exception:
-            quebrados.add(partes[2])
+            # addon.xml que nao le: nao da para saber o que ele carrega, e
+            # remover as cegas poderia tirar uma skin/idioma que o app usa.
+            # O servico do app trata esse caso no aparelho (limpar_addons_
+            # quebrados), onde o historico de uso mostra o que falta.
+            dbg('addon com addon.xml ilegivel (mantido): %s' % partes[2])
             continue
         for ext in raiz.findall('extension'):
             lib = (ext.get('library') or '').strip()
