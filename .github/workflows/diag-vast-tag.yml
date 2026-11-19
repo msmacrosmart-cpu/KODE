@@ -7,62 +7,34 @@ jobs:
   medir:
     runs-on: ubuntu-latest
     steps:
-      - name: Ler o VAST como o app le e testar o criativo
+      - name: Ver o XML cru e varias tentativas
         run: |
           python3 - <<'PY'
-          import os, subprocess, urllib.request
+          import urllib.request, xml.etree.ElementTree as ET
           TAG = ('https://vapid-size.com/dEmwF.zYdOGYNKvRZ/GoUG/beLmU9TuDZrUJl/'
                  'koPpTRcX2iNbDMED3/NzDLkpt/N/zFYf0/MsTEcv1sMXwC')
-          UA = 'SMARTEDTV/VAST'
           def aviso(t):
               t = ' '.join(str(t).replace('\r',' ').replace('\n',' ').split())
               print('::notice::' + t[:900])
-          req = urllib.request.Request(TAG, headers={'User-Agent': UA})
-          xml = urllib.request.urlopen(req, timeout=25).read().decode('utf-8', 'replace')
-          aviso('TF3 bytes=%d' % len(xml))
-          import xml.etree.ElementTree as ET
-          raiz = ET.fromstring(xml.strip())
-          ads = list(raiz.iter('Ad'))
-          aviso('TF3 anuncios=%d inline=%d wrapper=%d' % (
-              len(ads), len(list(raiz.iter('InLine'))), len(list(raiz.iter('Wrapper')))))
-          for i, ad in enumerate(ads):
-              inline = ad.find('InLine')
-              if inline is None:
-                  continue
-              lin = inline.find('.//Linear')
-              dur = ''
-              if lin is not None:
-                  d = lin.find('Duration')
-                  dur = (d.text or '').strip() if d is not None else ''
-              medias = []
-              for m in inline.iter('MediaFile'):
-                  medias.append('%s %sx%s %s' % ((m.get('type') or '?'),
-                               m.get('width') or '?', m.get('height') or '?',
-                               (m.text or '').strip()[:120]))
-              aviso('TF3 ad%d dur=%s skip=%s medias=%d' % (
-                  i, dur, (lin.get('skipoffset') if lin is not None else ''), len(medias)))
-              for m in medias[:4]:
-                  aviso('TF3 ad%d media %s' % (i, m))
-              aviso('TF3 ad%d impressoes=%d tracking=%d errors=%d' % (
-                  i, len(list(inline.iter('Impression'))),
-                  len(list(inline.iter('Tracking'))), len(list(inline.iter('Error')))))
-          # o criativo mais "proximo" do que o app escolhe (MP4 progressivo)
-          alvo = None
-          for m in raiz.iter('MediaFile'):
-              tipo = (m.get('type') or '').lower()
-              if tipo.startswith(('video/mp4', 'video/webm')):
-                  alvo = (m.text or '').strip()
-                  break
-          if not alvo:
-              aviso('TF3 nenhum MP4/WebM progressivo no VAST')
-              raise SystemExit(0)
-          aviso('TF3 criativo escolhido: %s' % alvo[:200])
-          try:
-              r = urllib.request.Request(alvo, headers={'User-Agent': UA})
-              with urllib.request.urlopen(r, timeout=25) as resp:
-                  dados = resp.read(2048)
-                  aviso('TF3 criativo http=%s tipo=%s bytes_lidos=%d' % (
-                      resp.status, resp.headers.get('Content-Type'), len(dados)))
-          except Exception as erro:
-              aviso('TF3 criativo NAO abriu: %r' % (erro,))
+          for tentativa in range(3):
+              for ua in ('SMARTEDTV/VAST', 'Mozilla/5.0 (Linux; Android 9) Chrome/120 Mobile'):
+                  try:
+                      req = urllib.request.Request(TAG, headers={'User-Agent': ua})
+                      xml = urllib.request.urlopen(req, timeout=25).read().decode('utf-8', 'replace')
+                  except Exception as erro:
+                      aviso('TF4 t%d ua=%s erro=%r' % (tentativa, ua[:12], erro))
+                      continue
+                  try:
+                      raiz = ET.fromstring(xml.strip())
+                      tag_raiz = raiz.tag
+                      ads = len(list(raiz.iter('Ad')))
+                      inline = len(list(raiz.iter('InLine')))
+                      media = len(list(raiz.iter('MediaFile')))
+                      erro_txt = ' '.join((e.text or '') for e in raiz.iter('Error'))[:200]
+                  except Exception as erro:
+                      tag_raiz, ads, inline, media, erro_txt = 'NAO-XML', -1, -1, -1, repr(erro)[:120]
+                  aviso('TF4 t%d ua=%s bytes=%d raiz=%s ads=%d inline=%d media=%d err=%s' % (
+                      tentativa, ua[:12], len(xml), tag_raiz, ads, inline, media, erro_txt))
+                  if tentativa == 0:
+                      aviso('TF4 cru: ' + xml[:600])
           PY
