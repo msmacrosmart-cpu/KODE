@@ -1,0 +1,37 @@
+name: Diag audioencoder
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/diag-audioencoder.yml']
+jobs:
+  ver:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Comparar 1.0.133 x 1.0.136
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          aviso() { printf '::notice::%s\n' "$(printf '%s' "$*" | tr '\r\n' '  ' | cut -c1-800)"; }
+          mkdir -p apks && cd apks
+          gh release download v1.0.133-universal -R msmacrosmart-cpu/KODE -p SMARTEDTV-universal.apk -O v133.apk
+          gh release download v1.0.136-universal -R msmacrosmart-cpu/KODE -p SMARTEDTV-universal.apk -O v136.apk
+          for v in v133 v136; do
+            unzip -l $v.apk | awk '{print $4}' | grep -E '^assets/addons/[^/]+/' | cut -d/ -f3 | sort -u > $v.txt
+            aviso "$v: $(wc -l < $v.txt) addons no APK"
+          done
+          echo "== so na 1.0.133 (removidos pela 1.0.136)"; comm -23 v133.txt v136.txt | tr '\n' ' '; echo
+          echo "== so na 1.0.136"; comm -13 v133.txt v136.txt | tr '\n' ' '; echo
+          aviso "so na 1.0.133: $(comm -23 v133.txt v136.txt | tr '\n' ' ')"
+          echo "== audioencoder no APK?"
+          for v in v133 v136; do
+            n=$(unzip -l $v.apk | awk '{print $4}' | grep -c 'audioencoder.kodi.builtin.aac' || true)
+            echo "$v: $n entrada(s) de audioencoder.kodi.builtin.aac"
+            aviso "$v: $n entradas de audioencoder no zip"
+          done
+          echo "== no perfil embarcado (assets/smarted/profile/addons)"
+          for v in v133 v136; do
+            unzip -l $v.apk | awk '{print $4}' | grep -E '^assets/smarted/profile/addons/[^/]+/' | cut -d/ -f5 | sort -u > $v-prof.txt
+            aviso "$v perfil: $(wc -l < $v-prof.txt) addons -> $(tr '\n' ' ' < $v-prof.txt | cut -c1-600)"
+          done
