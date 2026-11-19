@@ -221,8 +221,11 @@ class NomeFixoTest(unittest.TestCase):
         do arquivo com o nome combinado. E isso que torna o NOME o contrato.
         """
         token = 'AK7fQutCVmMZBWlqKAt0p-g'
-        html = ('<a href="/scl/fo/5w6yfp0tvee0xro2wh0m3/%s/SMARTEDTV.apk'
-                '?rlkey=3b8m9dnw571waz7vs83n0vn17&dl=0">' % token)
+        # pasta unica publicada: /scl/fo/<id-pasta>/<token?rlkey=..>
+        pasta_id, _token_pasta, rlkey = self.vip._pasta_e_token(
+            self.vip.pastas_dropbox()[0])
+        html = ('<a href="/scl/fo/%s/%s/SMARTEDTV.apk?rlkey=%s&dl=0">'
+                % (pasta_id, token, rlkey))
 
         class Resposta(object):
             def read(self):
@@ -233,9 +236,8 @@ class NomeFixoTest(unittest.TestCase):
             lambda req, timeout=None: Resposta())
         url = self.vip.url_do_apk_por_nome()
         self.assertEqual(
-            url, 'https://www.dropbox.com/scl/fo/5w6yfp0tvee0xro2wh0m3/%s/'
-                 'SMARTEDTV.apk?rlkey=3b8m9dnw571waz7vs83n0vn17&dl=1'
-                 % token)
+            url, 'https://www.dropbox.com/scl/fo/%s/%s/'
+                 'SMARTEDTV.apk?rlkey=%s&dl=1' % (pasta_id, token, rlkey))
         self.vip._cabecalhos_remotos = lambda u: (287248566,
                                                   'SMARTEDTV.apk')
         encontrada, motivo = self.vip.resolver_apk_publicado()
