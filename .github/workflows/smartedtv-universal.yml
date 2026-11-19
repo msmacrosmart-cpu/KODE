@@ -121,6 +121,20 @@ jobs:
           grep -q 'zipalign -c 4: OK' "$RUNNER_TEMP/laudo-apk.txt" || falhar 'APK nao esta alinhado a 4 bytes'
           grep -q '^resources\.arsc$' "$RUNNER_TEMP/laudo-apk.txt" || falhar 'resources.arsc nao esta sem compressao'
           grep -q '^apksigner verify: OK$' "$RUNNER_TEMP/laudo-apk.txt" || falhar 'apksigner nao reconheceu a assinatura completa'
+          # Todo modulo do addon tem de estar DENTRO do apk. Faltava esta
+          # conferencia - e por isso o APK saiu sem ads_regra.py: o import no
+          # topo do smart_ads.py derrubava o service.py inteiro no aparelho
+          # (notificacao de erro Python no boot do projetor). A lista e lida do
+          # proprio injetor, entao nao existem duas verdades.
+          mapa=$(python3 -c "import ast,pathlib; a=ast.parse(pathlib.Path('tools/kodi/atualizar-apk-v17.py').read_text()); print(' '.join(ast.literal_eval(n.value) for n in a.body if isinstance(n, ast.Assign) and any(getattr(x,'id',None)=='MODULOS' for x in n.targets)))")
+          presentes=0
+          for modulo in $mapa; do
+            unzip -l "$apk" "assets/addons/service.smarted.bootstrap/$modulo" | grep -q "assets/addons/service.smarted.bootstrap/$modulo" \
+              || falhar "modulo do addon ausente no APK: $modulo"
+            presentes=$((presentes + 1))
+          done
+          echo "::notice::Modulos do addon dentro do APK: $presentes de $(echo $mapa | wc -w)"
+
           echo '::notice::Laudo do APK conferido: identidade, SDK 21, ABIs 32/64, assinatura v1/v2/v3 e certificado.'
           # Publicar as linhas do laudo como anotacao: o log do runner nao
           # fica sempre acessivel e a evidencia precisa ser legivel.
