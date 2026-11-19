@@ -1,0 +1,63 @@
+name: Diagnostico dos addons do APK base
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/diag-addons-base.yml'
+jobs:
+  ver:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Baixar a base v22 e listar o que ela traz
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p base && cd base
+          gh release download v1.0.87-universal-v22 -R msmacrosmart-cpu/KODE --pattern SMARTEDTV-universal.apk --output base.apk
+          echo "sha: $(sha256sum base.apk)"
+      - name: Inventario de addons embarcados
+        run: |
+          set -euo pipefail
+          cd base
+          aviso() { printf '::notice::%s\n' "$(printf '%s' "$*" | tr '\r\n' '  ' | cut -c1-900)"; }
+          unzip -q base.apk 'assets/addons/*' -d extraido
+          mapfile -t dirs < <(ls extraido/assets/addons | sort)
+          aviso "addons no APK base: ${#dirs[@]} -> $(printf '%s ' "${dirs[@]}")"
+          echo "--- addon-manifest.xml"
+          cat extraido/assets/addon-manifest.xml 2>/dev/null | head -40 || true
+          echo "--- ids do manifesto x pastas"
+          python3 - <<'PY'
+          import os, xml.etree.ElementTree as ET
+          base = 'extraido/assets'
+          pasta = os.path.join(base, 'addons')
+          existem = set(os.listdir(pasta)) if os.path.isdir(pasta) else set()
+          m = os.path.join(base, 'addon-manifest.xml')
+          ids = []
+          if os.path.exists(m):
+              r = ET.parse(m).getroot()
+              ids = [a.get('id') for a in r.iter('addon') if a.get('id')]
+          print('::notice::manifesto: %d addons; pastas: %d' % (len(ids), len(existem)))
+          faltando = [i for i in ids if i not in existem]
+          sobrando = [i for i in existem if i not in ids]
+          print('::notice::LISTADOS SEM PASTA (causam "addon com erro"): %s' % (faltando or 'nenhum'))
+          print('::notice::PASTA SEM MANIFESTO (nao carregam): %s' % (sobrando or 'nenhum'))
+          PY
+      - name: Perfil semeado, settings e banco de addons
+        run: |
+          set -euo pipefail
+          cd base
+          aviso() { printf '::notice::%s\n' "$(printf '%s' "$*" | tr '\r\n' '  ' | cut -c1-900)"; }
+          echo "--- arquivos de perfil/config no APK"
+          unzip -l base.apk | grep -iE "profile|guisettings|Addons[0-9]*\.db|addon_data|sources.xml|advancedsettings" | head -30 || true
+          if [ -d extraido/assets/smarted/profile ]; then
+            find extraido/assets/smarted/profile -maxdepth 3 | head -40
+          fi
+          echo "--- guisettings (skin, som, addons)"
+          for f in $(find extraido -name guisettings.xml | head -2); do
+            grep -oE '<setting id="(lookandfeel.skin|lookandfeel.soundskin|services.webserver|general.addonbrowser)"[^>]*>[^<]*' "$f" | head -10
+            aviso "guisettings: $f"
+          done
+          echo "--- addon_data / bans"
+          find extraido -path "*addon_data*" -maxdepth 6 | head -20 || true
