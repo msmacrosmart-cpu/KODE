@@ -213,6 +213,26 @@ class NomeFixoTest(unittest.TestCase):
         self.assertEqual(url, self.vip.APK_GITHUB)
         self.assertIn('github.com', url)
 
+    def test_na_tv_a_reserva_do_github_tambem_vale(self):
+        """Com UM APK, a TV pode (e deve) usar a release como reserva.
+
+        Antes a TV ficava sem reserva porque a release publicava tambem um APK
+        so de celular. Agora o arquivo da release e o universal.
+        """
+        class Resposta(object):
+            def read(self):
+                return b'<html>pasta sem o arquivo</html>'
+
+        self.vip.eh_tv = lambda: True
+        self.vip._urlopen_request = lambda: (
+            lambda url, headers=None, timeout=None: Resposta(),
+            lambda req, timeout=None: Resposta())
+        self.vip._cabecalhos_remotos = lambda u: (287299613,
+                                                  'SMARTEDTV-universal.apk')
+        url, motivo = self.vip.resolver_apk_publicado()
+        self.assertEqual(motivo, 'github')
+        self.assertEqual(url, self.vip.APK_GITHUB)
+
     def test_descobre_o_arquivo_pelo_nome_na_pasta(self):
         """Publicar = trocar o arquivo de nome fixo na pasta. O app acha o token.
 

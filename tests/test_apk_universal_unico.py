@@ -109,6 +109,16 @@ class AtualizacaoNoDropboxTest(unittest.TestCase):
         self.assertNotIn('recusado na versao', trecho)
 
 
+class ReservaNoGithubTest(unittest.TestCase):
+    """Um APK so: a release do GitHub serve de reserva para os dois aparelhos."""
+
+    def test_github_nao_e_bloqueado_na_tv(self):
+        fonte = VIP.read_text(encoding='utf-8')
+        trecho = fonte[fonte.index('if APK_GITHUB'):fonte.index("motivo = '; '.join")]
+        self.assertNotIn('not eh_tv()', trecho)
+        self.assertIn('APK UNIVERSAL', trecho)
+
+
 class DeteccaoPreservadaTest(unittest.TestCase):
     """O APK universal depende do e_tv(): ele nao pode ter sido simplificado."""
 

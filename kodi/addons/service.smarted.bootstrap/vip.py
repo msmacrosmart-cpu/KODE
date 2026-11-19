@@ -972,9 +972,11 @@ def resolver_apk_publicado():
         log('Dropbox (%s): %s (%s)' % (origem, APK_NOME,
                                        tamanho or 'tamanho desconhecido'))
         return (url, origem)
-    if APK_GITHUB and not eh_tv():
-        # A release do GitHub publica o APK MOBILE (smartedtv.full). A versao
-        # TV nao usa esse atalho para nao instalar o pacote errado.
+    if APK_GITHUB:
+        # A release publica o APK UNIVERSAL (smartedtv.full), o mesmo arquivo
+        # para celular e TV. Antes, com dois APKs, a TV nao podia usar este
+        # atalho; agora pode - e deve, porque a pasta do Dropbox tem o arquivo
+        # depositado por quem publica. Se o tamanho nao for de APK, nao usa.
         tamanho, _ = _cabecalhos_remotos(APK_GITHUB)
         if tamanho is None or tamanho >= APK_TAMANHO_MINIMO:
             log('usando o APK da release no GitHub (%s)' % APK_GITHUB)
