@@ -150,6 +150,24 @@ while IFS= read -r addon; do
   fi
 done < "$work/addons-no-aparelho.txt"
 
-python3 tools/kodi/analisar-kodi-log.py "$work/kodi.log" || true
+# A analise do log (o que o aparelho escreveu de erro) vai para um resumo que
+# o workflow publica como comentario do commit: artefato do run nao baixa em
+# outro lugar, e evidencia que nao se consegue ler nao serve.
+resumo="$work/resumo-log.txt"
+{
+  echo "== perfil em uso: $perfil"
+  echo "== addons no perfil: $(wc -l < "$work/addons-no-aparelho.txt" 2>/dev/null || echo 0)"
+  echo "== linhas no kodi.log: $(wc -l < "$work/kodi.log")"
+  echo
+  echo '--- analise (analisar-kodi-log.py)'
+  python3 tools/kodi/analisar-kodi-log.py "$work/kodi.log" 2>&1 || true
+  echo
+  echo '--- linhas de erro/problema no kodi.log'
+  grep -nE 'ERROR|Add-on com erro|Failed to load|Unable to load|Traceback|Python' "$work/kodi.log" 2>/dev/null | tail -40 || echo '(nenhuma)'
+  echo
+  echo '--- linhas do servico do app e da Home'
+  grep -nE '\[service\.smarted|skin=|nós da Home|liberando a Home|pronto apos|SmartAds' "$work/kodi.log" 2>/dev/null | tail -30 || echo '(nenhuma)'
+} > "$resumo" 2>&1
+while IFS= read -r l; do aviso "resumo: $l"; done < <(head -40 "$resumo")
 etapa '5/5 projetor: app iniciou, Home abriu e o kodi.log foi lido'
 aviso "resumo: addons no perfil=$(wc -l < "$work/addons-no-aparelho.txt") linhas no log=$(wc -l < "$work/kodi.log")"

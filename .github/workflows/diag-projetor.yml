@@ -46,6 +46,7 @@ jobs:
             set +e
             bash smartedtv/release/projetor-smoke.sh
             rc=$?
+            bash tools/kodi/publicar-diag.sh build/universal/resumo-log.txt || true
             bash tools/kodi/publicar-diag.sh build/universal/diag-aparelho.txt || true
             exit $rc
         env:
@@ -61,5 +62,6 @@ jobs:
             build/universal/addons-no-aparelho.txt
             build/universal/projetor-home.png
             build/universal/diag-aparelho.txt
+            build/universal/resumo-log.txt
             build/universal/logcat.txt
           if-no-files-found: warn
