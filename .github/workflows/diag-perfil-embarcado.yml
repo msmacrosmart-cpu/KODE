@@ -27,7 +27,10 @@ jobs:
           echo "--- arquivos do perfil"
           find perfil/assets/smarted/profile -type f | sed 's|perfil/assets/smarted/profile/||' | sort > "$RUNNER_TEMP/perfil-arquivos.txt"
           wc -l < "$RUNNER_TEMP/perfil-arquivos.txt"
-          head -40 "$RUNNER_TEMP/perfil-arquivos.txt"
+          echo "--- addons dentro do perfil"
+          grep -oE 'addons/[^/]+/' "$RUNNER_TEMP/perfil-arquivos.txt" | cut -d/ -f2 | sort -u | tr '\n' ' '
+          echo
+          grep -cE '^addons/' "$RUNNER_TEMP/perfil-arquivos.txt" || true
           aviso "perfil embarcado: $(wc -l < "$RUNNER_TEMP/perfil-arquivos.txt") arquivos"
           python3 - <<'PY'
           import os, sqlite3, shutil, tempfile
