@@ -977,7 +977,9 @@ def main():
     # codigo (esse e o que vira a tela "Add-on com erro"). Cada remocao fica
     # registrada; nada e escondido.
     try:
-        limpar_repositorios_de_terceiros(log)
+        retirados = limpar_repositorios_de_terceiros(log)
+        log('limpeza de terceiros: %d addon(s) do perfil antigo (%s)'
+            % (len(retirados), ', '.join(retirados) or 'nenhum'))
     except Exception as erro:
         log('limpeza de repositorios de terceiros falhou (%r)'
             % erro, xbmc.LOGWARNING)

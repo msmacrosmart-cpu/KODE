@@ -26,19 +26,19 @@ jobs:
           set -euo pipefail
           # o build do APK leva ~6 min: esperar ate 15 min pela release
           for tentativa in $(seq 1 45); do
-            if gh release view v1.0.137-universal -R msmacrosmart-cpu/KODE >/dev/null 2>&1; then
-              echo "::notice::release v1.0.137-universal disponivel"; exit 0
+            if gh release view v1.0.138-universal -R msmacrosmart-cpu/KODE >/dev/null 2>&1; then
+              echo "::notice::release v1.0.138-universal disponivel"; exit 0
             fi
             sleep 20
           done
-          echo '::error::release v1.0.137-universal nao existe'; exit 1
-      - name: Baixar o APK publicado (1.0.137) para provar a correcao
+          echo '::error::release v1.0.138-universal nao existe'; exit 1
+      - name: Baixar o APK publicado (1.0.138) para provar a correcao
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir -p build/universal
-          gh release download v1.0.137-universal -R msmacrosmart-cpu/KODE \
+          gh release download v1.0.138-universal -R msmacrosmart-cpu/KODE \
             --pattern SMARTEDTV-universal.apk --output build/universal/SMARTEDTV-universal.apk
           ls -l build/universal
       - name: Habilitar aceleracao
@@ -46,7 +46,7 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Projetor Android TV (leanback, sem toque) com o APK 1.0.137
+      - name: Projetor Android TV (leanback, sem toque) com o APK 1.0.138
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
         with:
           api-level: 30
