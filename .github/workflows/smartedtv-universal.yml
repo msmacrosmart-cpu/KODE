@@ -7,6 +7,15 @@ on:
       # entradas da montagem: antes uma mudanca aqui nao gerava release
       - 'kodi/addons/service.smarted.bootstrap/vip.py'
       - 'kodi/addons/service.smarted.bootstrap/variante.py'
+      # Tudo que entra no APK: o overlay do injetor, o servico do app, a tela
+      # de entrada e as duas skins. Antes, mudanca aqui nao gerava release e o
+      # aparelho continuava com o defeito.
+      - 'tools/kodi/atualizar-apk-v17.py'
+      - 'kodi/addons/service.smarted.bootstrap/*.py'
+      - 'kodi/addons/script.smartedtv.welcome/**'
+      - 'kodi/skin.estilo.personalizado/**'
+      - 'kodi/skin.novatv/**'
+      - 'kodi/keymaps/**'
       - 'smartedtv/release/build.sh'
       - 'smartedtv/release/install-smoke.sh'
       - '.github/workflows/smartedtv-universal.yml'
