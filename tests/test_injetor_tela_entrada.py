@@ -103,7 +103,10 @@ class InjetorTest(unittest.TestCase):
             # vip.py substitui a cópia da base e usa o descritor de versão irmão.
             fora = {n for n in novos if not n.startswith(PREFIXO)
                     and not n.endswith('/fonts/NotoSans-Regular.ttf')}
-            self.assertEqual(fora, {KEYMAP, modulo.SMART_ADS_MODULO, modulo.RELEASE_MODULO})
+            # ads_vast.py (anuncio de video da TV) e novo: entra com os
+            # modulos que o injetor substitui/entrega.
+            self.assertEqual(fora, {KEYMAP, modulo.SMART_ADS_MODULO,
+                                    modulo.RELEASE_MODULO, modulo.VAST_MODULO})
             self.assertEqual(depois.read(modulo.RELEASE_MODULO),
                              (ROOT / 'kodi/addons/service.smarted.bootstrap/smarted_release.py').read_bytes())
             self.assertEqual(sorted(n for n in a - d),

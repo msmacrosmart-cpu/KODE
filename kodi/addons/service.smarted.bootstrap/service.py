@@ -257,47 +257,87 @@ def esperar_addons_manager(monitor, log=None):
     return False
 
 
-def garantir_interface_inicial(monitor, log=None, espera=25):
-    """Recupera um boot sem janela (tela preta) sem tocar no processo.
+# A TELA DE ENTRADA E A PRIMEIRA COISA. A janela de startup (Startup.xml) NAO
+# conta como "interface pronta": ela e so o desenho de espera enquanto o
+# Python sobe. Contar startup como pronto era o que deixava o app abrir na
+# Home na TV - o vigia desistia cedo e, no prazo maior, ainda disparava
+# ActivateWindow(Home) por cima da tela de escolha (assistir com anuncios x
+# checkout), que e onde o usuario decide.
+SCRIPT_DA_ENTRADA = 'script.smartedtv.welcome'
+JANELAS_DE_ESPERA = ('startup', 'startupwindow', '')
 
-    O Startup.xml normal abre a tela de entrada. Se o Kodi reutilizou um estado
-    antigo e nao abriu nenhuma janela, este vigia pede a tela de entrada e, se
-    ela nao vier, libera a Home. Nao apaga perfil, VIP, cache nem configuracoes.
+
+def _tela_de_entrada_aberta():
+    """True quando a tela de entrada esta na frente (ou ainda vai abrir).
+
+    O script da tela publica ``smartedtv.welcome.ativa`` na propria janela
+    (WindowXMLDialog). Basta ``Window.IsActive(<id do addon>)``: o Kodi aceita
+    o id do addon como nome da janela de um script em dialogo.
+    """
+    if _home_na_tela():
+        # O script da tela so troca para a Home depois da escolha do usuario:
+        # com a Home na frente, a tela de entrada nao esta mais no caminho.
+        return False
+    for condicao in ('Window.IsActive(%s)' % SCRIPT_DA_ENTRADA,
+                     'Window.IsVisible(%s)' % SCRIPT_DA_ENTRADA):
+        try:
+            if xbmc.getCondVisibility(condicao):
+                return True
+        except Exception:
+            pass
+    return False
+
+
+def _home_na_tela():
+    try:
+        if xbmc.getCondVisibility('Window.IsActive(Home)'):
+            return True
+    except Exception:
+        pass
+    return _janela_atual() in ('home', '10000')
+
+
+def garantir_interface_inicial(monitor, log=None, espera=45):
+    """Garante a tela de ENTRADA primeiro; a Home so entra sem ela.
+
+    Regra do produto: o app abre na tela de entrada (Splash -> escolha de
+    assistir com anuncios ou ir para o checkout) e so depois a Home. Portanto:
+
+    * janela de startup = ainda subindo: espera (e nao considera pronto);
+    * tela de entrada aberta = pronto, nao faz nada;
+    * Home aberta = pronto (o usuario ja escolheu; o script dela cuida);
+    * nada na tela depois do prazo = pede a tela de entrada de novo;
+    * se a tela nao vier MESMO (addon quebrado/desabilitado) e nao houver Home,
+      libera a Home para o app nunca ficar no preto.
     """
     limite = time.time() + max(8, int(espera))
     while time.time() < limite:
         if monitor.abortRequested():
             return False
-        atual = _janela_atual()
-        try:
-            if xbmc.getCondVisibility('Window.IsActive(Home)'):
-                return True
-        except Exception:
-            pass
-        if atual in ('home', 'startup', 'startupwindow'):
+        if _tela_de_entrada_aberta() or _home_na_tela():
+            return True
+        if _janela_atual() not in JANELAS_DE_ESPERA:
+            # Outra janela do Kodi (video, dialogo): nao interferir.
             return True
         try:
             if monitor.waitForAbort(1):
                 return False
         except Exception:
             time.sleep(1)
-    log('boot: nenhuma janela ativa em %d s; reabrindo a tela de entrada'
+    log('boot: nenhuma janela util em %d s; pedindo a tela de entrada'
         % espera, xbmc.LOGWARNING)
     xbmc.executebuiltin('RunScript(script.smartedtv.welcome)')
-    limite = time.time() + 12
+    limite = time.time() + 15
     while time.time() < limite:
-        try:
-            if xbmc.getCondVisibility('Window.IsActive(Home)'):
-                return True
-        except Exception:
-            pass
-        if _janela_atual() in ('home', 'startup', 'startupwindow'):
+        if _tela_de_entrada_aberta() or _home_na_tela():
             return True
         try:
             if monitor.waitForAbort(1):
                 return False
         except Exception:
             time.sleep(1)
+    if _home_na_tela():
+        return True
     log('boot: a tela de entrada nao veio; liberando a Home', xbmc.LOGERROR)
     xbmc.executebuiltin('ActivateWindow(Home)')
     return False
@@ -580,6 +620,14 @@ def main():
         log('ads: nao foi possivel identificar o dispositivo (%s)' % erro,
             xbmc.LOGWARNING)
     try:
+        # Diagnostico do anuncio na TV: uma linha no log dizendo se ha tag
+        # VAST configurada e como o anuncio vai aparecer. Sem tag, a TV segue
+        # sem anuncio (nada de tela preta) - e fica registrado o motivo.
+        if getattr(smart_ads, 'e_tv', lambda: False)():
+            smart_ads.explicar_anuncio_tv(log)
+    except Exception as erro:
+        log('ads: diagnostico de TV indisponivel (%s)' % erro)
+    try:
         smart_ads.iniciar_monitor(log)
         abertura = threading.Thread(target=smart_ads.abertura_depois_do_boot,
                                     args=(monitor, log), name='ads-abertura')
@@ -597,6 +645,16 @@ def main():
     # Abre a Home agora (a skin ja desenha, o menu aparece) e termina o reparo
     # numa thread. Sem isso o aparelho lento ficava parado na espera do boot.
     if not pronto and REPARO_EM_SEGUNDO_PLANO:
+        # A tela de entrada e a primeira coisa: se ela esta na frente, a Home
+        # NAO pode ser liberada agora (era isso que fazia o app abrir na Home
+        # na TV, pulando a escolha "assistir com anuncios x checkout"). O
+        # preparo continua em segundo plano e a Home vai abrir quando o proprio
+        # script da tela terminar (ou pelo vigia, se a tela nao existir).
+        if _tela_de_entrada_aberta():
+            log('boot: addons ainda carregando; a tela de entrada esta na '
+                'frente, preparo segue em segundo plano', xbmc.LOGWARNING)
+            _preparar_em_segundo_plano(monitor)
+            return
         log('boot: addons ainda carregando; abrindo a Home e concluindo depois',
             xbmc.LOGWARNING)
         _, _, _ = _liberar_home_agora()

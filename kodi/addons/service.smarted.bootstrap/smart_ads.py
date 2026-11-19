@@ -308,13 +308,12 @@ def tocar_anuncio(atividade, log=None, uri=''):
     # O perfil do aparelho fica registrado no log para diagnostico, mas NAO
     # decide mais se ha anuncio: todos os aparelhos recebem.
     perfil, motivo = perfil_dispositivo()
-    if e_tv() and not anuncio_de_video_disponivel():
-        # AdMob nao tem formato para Android TV: abrir a activity aqui so
-        # pausava o video e voltava sem nada (a "tela preta" do projetor).
-        if log:
-            log('[SmartAds] TV sem anuncio de video disponivel: nada pedido')
-        explicar_anuncio_tv(log)
-        return False
+    if e_tv():
+        # A TV NAO usa a activity do AdMob (o SDK nao suporta Android TV).
+        # Ela usa o anuncio de video: tag VAST lida pelo player do Kodi, que
+        # e o unico formato de anuncio que funciona em TV sem recompilar o
+        # app. Ver ``ads_vast.py``.
+        return tocar_anuncio_de_video(log)
     if log:
         log('[SmartAds] aparelho: %s (%s) - anuncio %s'
             % (perfil, motivo, 'video (TV)' if e_tv() else 'AdMob'))
@@ -350,6 +349,87 @@ def _kodi_em_foco(limite=2.5, passo=0.1):
 
 # Bloco/tag VAST. Fica aqui porque e o mesmo contrato que o SDK IMA usa.
 VAST_TAG_PADRAO = ''  # preencher com a tag VAST/IMA; vazio = nao pedir anuncio
+
+
+def _ads_vast():
+    """Carrega o modulo de anuncio de video (pasta do addon ou arquivo vizinho)."""
+    try:
+        import ads_vast
+        return ads_vast
+    except Exception:
+        pass
+    try:  # importado de fora do addon (harness/testes)
+        import importlib.util as _ilu
+        _spec = _ilu.spec_from_file_location(
+            'ads_vast', os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                     'ads_vast.py'))
+        modulo = _ilu.module_from_spec(_spec)
+        _spec.loader.exec_module(modulo)
+        return modulo
+    except Exception:
+        return None
+
+
+def tocar_anuncio_de_video(log=None):
+    """Anuncio de video (VAST) na TV, tocado pelo player do Kodi.
+
+    Devolve True somente quando o anuncio REALMENTE tocou (recibo de
+    ``ads_vast.exibir_e_devolver``). Sem tag configurada, sem rede ou com VAST
+    sem criativo linear, devolve False e o conteudo segue - a regra de
+    frequencia trata falha como "nao consumiu o intervalo".
+    """
+    ads_vast = _ads_vast()
+    if ads_vast is None:
+        if log:
+            log('[SmartAds] TV: modulo de anuncio de video indisponivel')
+        return False
+    tag = ads_vast.tag_configurada(VAST_TAG_PADRAO)
+    if not tag:
+        if log:
+            log('[SmartAds] TV: nenhuma tag VAST configurada; conteudo segue '
+                'sem anuncio (nada de anuncio simulado)')
+        explicar_anuncio_tv(log)
+        return False
+    try:
+        altura = int(float(_info('System.ScreenHeight') or 0))
+    except Exception:
+        altura = 0
+    recibo = ads_vast.exibir_e_devolver(log=log, tag=tag, altura_tela=altura)
+    if log:
+        log('[SmartAds] ' + ads_vast.resumo(recibo))
+    return bool(recibo.get('exibido'))
+
+
+def testar_anuncio_video(log=None):
+    """Pedido manual de UM anuncio de video (botao "Testar anuncio").
+
+    Diferente do fluxo normal: nao consulta ``ads_regra`` (e um teste, nao
+    reproducao do usuario) e nao mexe na marca de abertura. Devolve o recibo.
+    """
+    ads_vast = _ads_vast()
+    if ads_vast is None:
+        return {'exibido': False, 'motivo': 'sem-tag'}
+    tag = ads_vast.tag_configurada(VAST_TAG_PADRAO)
+    if not tag:
+        return {'exibido': False, 'motivo': 'sem-tag'}
+    try:
+        altura = int(float(_info('System.ScreenHeight') or 0))
+    except Exception:
+        altura = 0
+    recibo = ads_vast.exibir_e_devolver(log=log, tag=tag, altura_tela=altura)
+    if log:
+        log('[SmartAds] teste de anuncio de video: ' + ads_vast.resumo(recibo))
+    return recibo
+
+
+def tag_de_teste_disponivel():
+    """Existe tag configurada OU o modo de validacao com a tag de teste?"""
+    ads_vast = _ads_vast()
+    if ads_vast is None:
+        return False
+    if ads_vast.tag_configurada(VAST_TAG_PADRAO):
+        return True
+    return bool(_condicao('Skin.HasSetting(secret_unlocked)'))
 
 
 # ---------------------------------------------------------------------------
@@ -390,8 +470,17 @@ def e_tv():
 
 
 def anuncio_de_video_disponivel():
-    """A TV so anuncia com video (VAST/IMA) e o SDK precisa estar no APK."""
-    return vast_disponivel()
+    """A TV anuncia com video VAST tocado pelo PROPRIO player do Kodi.
+
+    Antes esta funcao exigia o Google IMA SDK compilado no dex do APK, o que
+    nunca aconteceu (nao ha fonte Java dele no repositorio) e por isso a TV
+    nunca pedia anuncio. O VAST tocado pelo player resolve o mesmo problema
+    sem build de codigo-fonte: o unico requisito e existir tag configurada.
+    """
+    ads_vast = _ads_vast()
+    if ads_vast is None:
+        return False
+    return bool(ads_vast.tag_configurada(VAST_TAG_PADRAO))
 
 
 def explicar_anuncio_tv(log=None):
@@ -401,12 +490,12 @@ def explicar_anuncio_tv(log=None):
     if not e_tv():
         return None
     if anuncio_de_video_disponivel():
-        texto = ('TV: anuncio de video (VAST/IMA) disponivel '
-                 '(tag configurada e SDK no APK)')
+        texto = ('TV: anuncio de video (VAST) ativo - tocado pelo player do '
+                 'Kodi, sem precisar de SDK novo no APK')
     else:
-        texto = ('TV: sem anuncio de video - falta compilar o Google IMA SDK '
-                 'no app Android e configurar a tag VAST (VAST_TAG_PADRAO); '
-                 'o AdMob do celular nao tem formato para Android TV. '
+        texto = ('TV: sem anuncio - falta configurar a tag VAST '
+                 '(VAST_TAG_PADRAO ou Window.Property(smartedtv.vast.tag)). '
+                 'O AdMob nao tem formato para Android TV. '
                  'Reproducao segue sem anuncio.')
     log('[SmartAds] ' + texto)
     return texto

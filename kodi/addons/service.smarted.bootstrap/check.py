@@ -97,6 +97,17 @@ def handle_skin_command(command):
             os.path.join(home, 'userdata', 'favourites.xml'))['ok'])
     if command == 'anuncio-teste':
         import smart_ads
+        if getattr(smart_ads, 'e_tv', lambda: False)():
+            # Na TV o anuncio e video (VAST) tocado pelo player do Kodi. Este
+            # botao existe para o dono do app validar em aparelho: liga o modo
+            # de teste (tag oficial do Google) e pede um anuncio na hora.
+            enviado, detalhe = testar_anuncio_tv()
+            xbmcgui.Dialog().notification(
+                'SMARTEDTV Anúncios',
+                detalhe,
+                xbmcgui.NOTIFICATION_INFO if enviado
+                else xbmcgui.NOTIFICATION_WARNING, 6000)
+            return True
         enviado = smart_ads.testar_anuncio(service.log)
         xbmcgui.Dialog().notification(
             'SMARTEDTV Anúncios',
@@ -118,6 +129,42 @@ def handle_skin_command(command):
         xbmc.executebuiltin('Skin.Reset(secret_unlocked)')
         return True
     return False
+
+
+def testar_anuncio_tv():
+    """Pede UM anuncio de video na TV (modo de teste) e devolve (ok, texto).
+
+    E o mesmo caminho do pre-roll real; a diferenca e a tag: sem tag do
+    projeto, usa a de TESTE oficial do Google, para o dono do app validar em
+    aparelho sem gerar trafego invalido.
+    """
+    import smart_ads
+    antes = ''
+    try:
+        antes = xbmc.getInfoLabel('Window(10000).Property(smartedtv.vast.teste)')
+        xbmc.executebuiltin('SetProperty(smartedtv.vast.teste,1,tv)')
+    except Exception:
+        pass
+    try:
+        recibo = smart_ads.testar_anuncio_video(service.log)
+    finally:
+        if not (antes or '').strip():
+            try:
+                xbmc.executebuiltin(
+                    'ClearProperty(smartedtv.vast.teste,tv)')
+            except Exception:
+                pass
+    if recibo.get('exibido'):
+        return True, 'Anúncio de vídeo exibido (%s s)' % recibo.get('segundos', '?')
+    motivo = recibo.get('motivo', '?')
+    textos = {
+        'sem-tag': 'Sem tag VAST configurada',
+        'tag-sem-resposta': 'A tag VAST não respondeu (rede)',
+        'vast-sem-criativo': 'A tag não trouxe vídeo de anúncio',
+        'nao-iniciou': 'O player não abriu o vídeo do anúncio',
+        'player-recusou': 'O Kodi recusou o vídeo do anúncio',
+    }
+    return False, textos.get(motivo, 'Anúncio não exibido (%s)' % motivo)
 
 
 def restore_favourites():

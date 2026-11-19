@@ -25,7 +25,13 @@ SERVICO_DIR = ROOT / "kodi" / "addons" / "service.smarted.bootstrap"
 VIP_MODULO = "assets/addons/service.smarted.bootstrap/vip.py"
 SMART_ADS_MODULO = "assets/addons/service.smarted.bootstrap/smart_ads.py"
 RELEASE_MODULO = "assets/addons/service.smarted.bootstrap/smarted_release.py"
-MODULOS_SUBSTITUIDOS = (VIP_MODULO, SMART_ADS_MODULO, RELEASE_MODULO)
+# ads_vast.py e o anuncio de video da TV (VAST tocado pelo player). Ele e
+# NOVO (nao existe no APK base), entao precisa entrar na lista de arquivos do
+# servico que o injetor grava - sem isso a TV receberia um smart_ads.py que
+# chama um modulo ausente e ficaria sem anuncio nenhum.
+VAST_MODULO = "assets/addons/service.smarted.bootstrap/ads_vast.py"
+MODULOS_SUBSTITUIDOS = (VIP_MODULO, SMART_ADS_MODULO, RELEASE_MODULO,
+                        VAST_MODULO)
 KEYMAP_ORIGEM = ROOT / "kodi" / "keymaps" / "smartedtv-voltar.xml"
 KEYMAP_DESTINO = "assets/system/keymaps/zzz-smartedtv-voltar.xml"
 SIG = re.compile(r"^META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC))$", re.I)

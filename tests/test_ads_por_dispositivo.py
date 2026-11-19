@@ -200,6 +200,13 @@ class RoteamentoTest(BaseAds):
         self.assertEqual(envios, [], kodi.builtins)
 
     def test_tv_registra_o_que_falta_em_vez_de_simular(self):
+        """Sem tag VAST o log diz exatamente o que falta (nada e simulado).
+
+        A 1.0.122 dizia que faltava compilar o Google IMA SDK. O caminho
+        mudou: o anuncio de video e tocado pelo player do Kodi (VAST), entao o
+        que falta agora e a TAG. O teste antigo exigia a palavra IMA; o que
+        importa e: registra o motivo, nao inventa anuncio, nao chama AdMob.
+        """
         kodi = AdsFalso(condicoes={'System.Platform.Android.TV',
                                    'System.Platform.Android'})
         modulo = self._carregar(kodi)
@@ -207,8 +214,9 @@ class RoteamentoTest(BaseAds):
         logs = []
         modulo.tocar_anuncio(modulo.ATIVIDADE_PREROLL, log=logs.append)
         texto = ' '.join(logs)
-        self.assertIn('IMA', texto)
         self.assertIn('VAST', texto)
+        self.assertIn('AdMob', texto)
+        self.assertIn('tag', texto.lower())
 
     def test_abertura_na_tv_nao_abre_admob(self):
         kodi = AdsFalso(condicoes={'System.Platform.Android.TV',
