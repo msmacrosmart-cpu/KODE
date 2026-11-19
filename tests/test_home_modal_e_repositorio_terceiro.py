@@ -165,6 +165,22 @@ class PerfilSemTerceirosTest(unittest.TestCase):
         self.aparelho.modulo.limpar_repositorios_de_terceiros()
         self.assertIn('UpdateLocalAddons()', self.aparelho.chamados)
 
+    def test_estagio_de_semeadura_com_terceiros_e_apagado(self):
+        """O APK instala o perfil por um estagio .smarted-seed-*; se ele sobra,
+        o YouTube/OpenWizard voltam a ser carregados dali."""
+        estagio = os.path.join(self.aparelho.kodi, '.smarted-seed-teste')
+        for addon in ('plugin.video.youtube', 'plugin.program.openwizard'):
+            os.makedirs(os.path.join(estagio, 'addons', addon))
+        # um estagio sem terceiros (rascunho normal) NAO pode ser apagado
+        limpo = os.path.join(self.aparelho.kodi, '.smarted-seed-limpo')
+        os.makedirs(os.path.join(limpo, 'addons', 'skin.novatv'))
+        registros = []
+        removidos = self.aparelho.modulo.limpar_repositorios_de_terceiros(
+            registros.append)
+        self.assertIn('.smarted-seed-teste', removidos)
+        self.assertFalse(os.path.isdir(estagio))
+        self.assertTrue(os.path.isdir(limpo), 'rascunho sem terceiros fica')
+
     def test_dependencia_obrigatoria_do_aparelho_nunca_sai(self):
         """O log do projetor provou: sem o audioencoder o Kodi nao inicia.
 

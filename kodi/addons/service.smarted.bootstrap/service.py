@@ -326,6 +326,38 @@ def _e_do_app(addon):
     return addon.startswith(ADDONS_DO_APP) or addon == 'repository.xbmc.org'
 
 
+def _pastas_do_perfil_com_addon_de_terceiro():
+    """Estagios de semeadura deixados no perfil que ainda trazem terceiros.
+
+    O dex instala o perfil por um estagio ``.smarted-seed-*``; se ele nao for
+    apagado (o Java tenta, mas nao garante), fica uma copia com YouTube,
+    OpenWizard e os repositorios antigos. Sao removidos por inteiro - sao
+    rascunho de instalacao, nunca o perfil em uso.
+    """
+    removidos = []
+    home = ''
+    try:
+        home = xbmcvfs.translatePath('special://home').rstrip('/')
+    except Exception:
+        return removidos
+    if not home or not os.path.isdir(home):
+        return removidos
+    for nome in sorted(os.listdir(home)):
+        if not nome.startswith('.smarted-seed-'):
+            continue
+        pasta = os.path.join(home, nome)
+        if not os.path.isdir(pasta):
+            continue
+        tem_terceiro = any(
+            os.path.isdir(os.path.join(pasta, 'addons', addon))
+            for addon in ADDONS_DE_TERCEIROS_DO_PERFIL)
+        if not tem_terceiro:
+            continue
+        shutil.rmtree(pasta, ignore_errors=True)
+        removidos.append(nome)
+    return removidos
+
+
 def limpar_repositorios_de_terceiros(log=None):
     """Retira do perfil o repositorio de terceiro e o addon que falha no boot.
 
@@ -340,6 +372,12 @@ def limpar_repositorios_de_terceiros(log=None):
     alvos = ((set(REPOSITORIOS_DE_TERCEIROS) |
               set(ADDONS_QUE_RODAM_NO_BOOT_E_FALHAM) |
               set(ADDONS_DE_TERCEIROS_DO_PERFIL)) - protegidos)
+    # Caminhos que o dex do APK deixou para tras tambem entram: o perfil
+    # embarcado tem ``temp/kodi.log`` de outro aparelho e um ``.old.log`` com
+    # os addons de terceiros instalados. Enquanto ele existir, o log tem a
+    # "prova" de um estado que ja nao e o do aparelho - e o addon citado ali
+    # volta a ser instalado pelo Kodi quando o perfil e reaproveitado.
+    extras = _pastas_do_perfil_com_addon_de_terceiro()
     for nome in sorted(os.listdir(base)):
         pasta = os.path.join(base, nome)
         if not os.path.isdir(pasta):
@@ -347,6 +385,7 @@ def limpar_repositorios_de_terceiros(log=None):
         if nome in alvos:
             shutil.rmtree(pasta, ignore_errors=True)
             removidos.append(nome)
+    removidos.extend(extras)
     if removidos:
         if log:
             log('addons de terceiros retirados do perfil: %s' % ', '.join(removidos))
