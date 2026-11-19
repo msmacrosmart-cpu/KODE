@@ -7,20 +7,62 @@ jobs:
   medir:
     runs-on: ubuntu-latest
     steps:
-      - name: Pedir a tag e reportar por anotacao
+      - name: Ler o VAST como o app le e testar o criativo
         run: |
-          TAG='https://vapid-size.com/dEmwF.zYdOGYNKvRZ/GoUG/beLmU9TuDZrUJl/koPpTRcX2iNbDMED3/NzDLkpt/N/zFYf0/MsTEcv1sMXwC'
-          APP='SMARTEDTV/VAST'
-          NAV='Mozilla/5.0 (Linux; Android 9; AFTMM Build/PS7624; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0 Mobile Safari/537.36'
-          aviso() { printf '::notice::%s\n' "$(printf '%s' "$*" | tr '\r\n' '  ' | cut -c1-900)"; }
-          for par in "app|$APP" "navegador|$NAV"; do
-            nome=${par%%|*}; ua=${par#*|}
-            codigo=$(curl -sS -L --max-time 25 -A "$ua" -D /tmp/h-$nome.txt -o /tmp/c-$nome.txt -w '%{http_code}' "$TAG" 2>/tmp/e-$nome.txt) || codigo=000
-            aviso "TF-$nome http=$codigo bytes=$(wc -c < /tmp/c-$nome.txt 2>/dev/null || echo 0) erro=$(head -c 120 /tmp/e-$nome.txt 2>/dev/null)"
-            aviso "TF-$nome tipo=$(grep -i '^content-type' /tmp/h-$nome.txt | tr -d '\r' | cut -c1-90)"
-            for marca in '<VAST' 'InLine' 'Wrapper' 'MediaFile' 'VASTAdTagURI' 'VMAP' 'AdTagURI' '<html' '<iframe' 'window.location'; do
-              aviso "TF-$nome marca $marca = $(grep -o -i -F "$marca" /tmp/c-$nome.txt 2>/dev/null | wc -l)"
-            done
-            aviso "TF-$nome inicio: $(head -c 240 /tmp/c-$nome.txt 2>/dev/null)"
-            aviso "TF-$nome urls: $(grep -o -E 'https?://[^"'"'"' <>]+' /tmp/c-$nome.txt 2>/dev/null | head -3 | tr '\n' ' ')"
-          done
+          python3 - <<'PY'
+          import os, subprocess, urllib.request
+          TAG = ('https://vapid-size.com/dEmwF.zYdOGYNKvRZ/GoUG/beLmU9TuDZrUJl/'
+                 'koPpTRcX2iNbDMED3/NzDLkpt/N/zFYf0/MsTEcv1sMXwC')
+          UA = 'SMARTEDTV/VAST'
+          def aviso(t):
+              t = ' '.join(str(t).replace('\r',' ').replace('\n',' ').split())
+              print('::notice::' + t[:900])
+          req = urllib.request.Request(TAG, headers={'User-Agent': UA})
+          xml = urllib.request.urlopen(req, timeout=25).read().decode('utf-8', 'replace')
+          aviso('TF3 bytes=%d' % len(xml))
+          import xml.etree.ElementTree as ET
+          raiz = ET.fromstring(xml.strip())
+          ads = list(raiz.iter('Ad'))
+          aviso('TF3 anuncios=%d inline=%d wrapper=%d' % (
+              len(ads), len(list(raiz.iter('InLine'))), len(list(raiz.iter('Wrapper')))))
+          for i, ad in enumerate(ads):
+              inline = ad.find('InLine')
+              if inline is None:
+                  continue
+              lin = inline.find('.//Linear')
+              dur = ''
+              if lin is not None:
+                  d = lin.find('Duration')
+                  dur = (d.text or '').strip() if d is not None else ''
+              medias = []
+              for m in inline.iter('MediaFile'):
+                  medias.append('%s %sx%s %s' % ((m.get('type') or '?'),
+                               m.get('width') or '?', m.get('height') or '?',
+                               (m.text or '').strip()[:120]))
+              aviso('TF3 ad%d dur=%s skip=%s medias=%d' % (
+                  i, dur, (lin.get('skipoffset') if lin is not None else ''), len(medias)))
+              for m in medias[:4]:
+                  aviso('TF3 ad%d media %s' % (i, m))
+              aviso('TF3 ad%d impressoes=%d tracking=%d errors=%d' % (
+                  i, len(list(inline.iter('Impression'))),
+                  len(list(inline.iter('Tracking'))), len(list(inline.iter('Error')))))
+          # o criativo mais "proximo" do que o app escolhe (MP4 progressivo)
+          alvo = None
+          for m in raiz.iter('MediaFile'):
+              tipo = (m.get('type') or '').lower()
+              if tipo.startswith(('video/mp4', 'video/webm')):
+                  alvo = (m.text or '').strip()
+                  break
+          if not alvo:
+              aviso('TF3 nenhum MP4/WebM progressivo no VAST')
+              raise SystemExit(0)
+          aviso('TF3 criativo escolhido: %s' % alvo[:200])
+          try:
+              r = urllib.request.Request(alvo, headers={'User-Agent': UA})
+              with urllib.request.urlopen(r, timeout=25) as resp:
+                  dados = resp.read(2048)
+                  aviso('TF3 criativo http=%s tipo=%s bytes_lidos=%d' % (
+                      resp.status, resp.headers.get('Content-Type'), len(dados)))
+          except Exception as erro:
+              aviso('TF3 criativo NAO abriu: %r' % (erro,))
+          PY
