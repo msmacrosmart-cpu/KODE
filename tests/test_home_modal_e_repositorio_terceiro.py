@@ -75,6 +75,8 @@ class ServicoLimpaPerfil(object):
         for addon in ('repository.redwizard', 'repository.elementumorg',
                       'repository.alado.tv', 'One.repo',
                       'service.xbmc.versioncheck', 'repository.xbmc.org',
+                      'plugin.video.youtube', 'plugin.program.openwizard',
+                      'plugin.audio.mp3streams',
                       'plugin.video.BrazucaPlay.Matrix', 'script.module.requests'):
             os.makedirs(os.path.join(self.addons, addon))
             with open(os.path.join(self.addons, addon, 'addon.xml'), 'w') as saida:
@@ -128,11 +130,17 @@ class PerfilSemTerceirosTest(unittest.TestCase):
         self.assertIn('repository.elementumorg', removidos)
         self.assertIn('One.repo', removidos)
         self.assertIn('service.xbmc.versioncheck', removidos)
+        # os nomes exatos das notificacoes reclamadas no projetor
+        self.assertIn('plugin.video.youtube', removidos)
+        self.assertIn('plugin.program.openwizard', removidos)
+        self.assertIn('plugin.audio.mp3streams', removidos)
         restantes = sorted(os.listdir(self.aparelho.addons))
         self.assertIn('repository.xbmc.org', restantes)
         self.assertIn('plugin.video.BrazucaPlay.Matrix', restantes)
         self.assertIn('script.module.requests', restantes)
         self.assertNotIn('repository.redwizard', restantes)
+        self.assertNotIn('plugin.video.youtube', restantes)
+        self.assertNotIn('plugin.program.openwizard', restantes)
         self.assertTrue(any('retirados do perfil' in linha for linha in registros),
                         'a remocao precisa ficar registrada no log')
 

@@ -244,8 +244,28 @@ REPOSITORIOS_DE_TERCEIROS = (
     'repository.nostr-oneplay',
     'repository.redwizard',
     'repository.openwizard',
+    'repository.streamxtv.matrix',
+    'repository.resolveurl',
     'vkkodi.repo',
     'One.repo',
+)
+# Addons que o perfil embarcado instala e que o app NAO usa. Sao exatamente os
+# nomes das notificacoes reclamadas no projetor ("YouTube com erro",
+# "openwizard com erro"): o log do perfil prova a instalacao deles -
+#   CAddonMgr::FindAddons: plugin.program.openwizard v2.0.7 installed
+#   CAddonMgr::FindAddons: plugin.video.youtube v7.4.4rw+unofficial.3 installed
+# Sem servidor (ou com a versao do addon quebrada no Android) eles abrem a tela
+# de erro no boot e a Home nao carrega os dados.
+ADDONS_DE_TERCEIROS_DO_PERFIL = (
+    'plugin.video.youtube',
+    'plugin.program.openwizard',
+    'plugin.program.openwizard2',
+    'plugin.video.openwizard',
+    'plugin.audio.mp3streams',
+    'service.subtitles.legendei',
+    'plugin.program.super.favourites',
+    'script.module.bingie',
+    'skin.bingie',
 )
 ADDONS_QUE_RODAM_NO_BOOT_E_FALHAM = (
     'service.xbmc.versioncheck',     # uname -rs -> SIGSEGV no Android
@@ -290,7 +310,9 @@ def limpar_repositorios_de_terceiros(log=None):
     removidos = []
     if not base or not os.path.isdir(base):
         return removidos
-    alvos = set(REPOSITORIOS_DE_TERCEIROS) | set(ADDONS_QUE_RODAM_NO_BOOT_E_FALHAM)
+    alvos = (set(REPOSITORIOS_DE_TERCEIROS) |
+             set(ADDONS_QUE_RODAM_NO_BOOT_E_FALHAM) |
+             set(ADDONS_DE_TERCEIROS_DO_PERFIL))
     for nome in sorted(os.listdir(base)):
         pasta = os.path.join(base, nome)
         if not os.path.isdir(pasta):

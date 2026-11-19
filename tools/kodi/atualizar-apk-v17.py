@@ -283,6 +283,9 @@ def patch_startup(dados):
 #   * nada de esconder erro: o build lista o que saiu no log.
 ADDONS_QUE_NAO_VEM = (
     'plugin.video.youtube',           # skin cita a busca do YouTube
+    'plugin.program.openwizard2',
+    'plugin.audio.mp3streams',        # perfil antigo do aparelho
+    'service.subtitles.legendei',
     'plugin.program.openwizard',      # assistente de repositorio de terceiros
     'plugin.program.openwizard2',
     'plugin.video.openwizard',

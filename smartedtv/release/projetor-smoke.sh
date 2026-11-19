@@ -1,3 +1,17 @@
+# O rotativo ``kodi.old.log`` do PERFIL EMBARCADO e o log do aparelho onde o
+# perfil foi capturado (tem data antiga e outro modelo) - nao e esta sessao.
+# Ele e guardado a parte, como informacao do que veio no perfil, e NAO entra na
+# analise do projetor.
+anterior="${log_remoto%.log}.old.log"
+if adb shell "test -f '$anterior'" >/dev/null 2>&1; then
+  adb pull "$anterior" "$work/kodi-do-perfil-embarcado.log" >/dev/null 2>&1 \
+    || adb shell "cat '$anterior'" > "$work/kodi-do-perfil-embarcado.log" 2>/dev/null || true
+  if [[ -s "$work/kodi-do-perfil-embarcado.log" ]]; then
+    aviso "perfil embarcado trouxe um kodi.log do aparelho de origem ($(head -c 200 "$work/kodi-do-perfil-embarcado.log" | tr -d '\r\n' | cut -c1-120)...)"
+    aviso "addons citados nele: $(grep -oE '(plugin|repository|service|script)\.[a-zA-Z0-9._-]+' "$work/kodi-do-perfil-embarcado.log" | sort -u | tr '\n' ' ' | cut -c1-600)"
+  fi
+fi
+
 #!/usr/bin/env bash
 # Executa NO EMULADOR DE PROJETOR da CI (AVD leanback, sem toque).
 #
@@ -122,7 +136,7 @@ aviso "kodi.log do aparelho: $log_remoto (perfil: $perfil)"
 # depois), e a analise nao ve o que interessa.
 marcas='pronto apos|liberando a Home|perfil incompleto|addons de terceiros retirados|Perfil inicial preparado'
 pronto_em=0
-for tentativa in $(seq 1 30); do
+for tentativa in $(seq 1 48); do
   sleep 5
   if adb shell "grep -qE '$marcas' '$log_remoto'" >/dev/null 2>&1; then
     pronto_em=$tentativa
@@ -160,7 +174,7 @@ fi
 
 # 5) o perfil do aparelho TEM os addons que o Kodi viu? (o defeito do projetor)
 { adb shell "ls -1 $perfil/addons 2>/dev/null" 2>/dev/null | tr -d '\r' | sort > "$work/addons-no-aparelho.txt"; } || true
-aviso "addons no perfil do aparelho: $(wc -l < "$work/addons-no-aparelho.txt")"
+aviso "addons no perfil do aparelho ($(wc -l < "$work/addons-no-aparelho.txt")): $(tr '\n' ' ' < "$work/addons-no-aparelho.txt" | cut -c1-800)"
 # Pasta de addon sem addon.xml = exatamente o que vira "Add-on com erro".
 while IFS= read -r addon; do
   [[ -n $addon ]] || continue
