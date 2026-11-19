@@ -6,6 +6,7 @@ on:
       - '.github/workflows/diag-projetor.yml'
       - 'smartedtv/release/projetor-smoke.sh'
       - 'tools/kodi/analisar-kodi-log.py'
+      - 'tools/kodi/publicar-log-inteiro.sh'
 permissions:
   contents: write
   actions: read
@@ -53,6 +54,7 @@ jobs:
             awk 'NR>=330 && NR<=380' build/universal/kodi.log > build/universal/traceback.txt 2>/dev/null || true
             bash tools/kodi/publicar-diag.sh build/universal/traceback.txt || true
             bash tools/kodi/publicar-diag.sh build/universal/resumo-log.txt || true
+            bash tools/kodi/publicar-log-inteiro.sh build/universal/kodi.log || true
             bash tools/kodi/publicar-diag.sh build/universal/diag-aparelho.txt || true
             exit $rc
         env:
