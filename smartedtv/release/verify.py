@@ -80,11 +80,16 @@ def so_mudou_o_pin(novo, base):
     """
     if len(novo) != len(base):
         return False
-    inicio = next((i for i, (a, b) in enumerate(zip(novo, base)) if a != b), None)
-    if inicio is None:
+    diferentes = [i for i, (a, b) in enumerate(zip(novo, base)) if a != b]
+    if not diferentes:
         return True
-    fim = len(novo) - next(i for i, (a, b) in enumerate(zip(novo[::-1], base[::-1]))
-                           if a != b)
+    # cabecalho do dex: 8..12 = Adler-32 (recalculado) e 12..32 = SHA-1 (idem)
+    fora_do_cabecalho = [i for i in diferentes if not 8 <= i < 32]
+    if not fora_do_cabecalho:
+        return True
+    inicio, fim = min(fora_do_cabecalho), max(fora_do_cabecalho) + 1
+    if any(not 8 <= i < 32 and not inicio <= i < fim for i in diferentes):
+        return False
     return (any(m.start() <= inicio and fim <= m.end() for m in HEX64.finditer(base)) and
             any(m.start() <= inicio and fim <= m.end() for m in HEX64.finditer(novo)))
 

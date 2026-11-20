@@ -198,13 +198,27 @@ class DexSoComPinTrocadoTest(unittest.TestCase):
         cls.modulo = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(cls.modulo)
 
+    # o pin vem depois do cabecalho (112 bytes no dex real)
+    CABECALHO = b'dex\n035' + b'\x00' * 105   # pin comeca no byte 112 do dex
+
     def test_troca_do_pin_e_permitida(self):
-        base = b'dex\n035' + b'\x00' * 10 + b'a' * 64 + b'\x00' * 10
-        novo = b'dex\n035' + b'\x00' * 10 + b'b' * 64 + b'\x00' * 10
+        base = self.CABECALHO + b'a' * 64 + b'\x00' * 10
+        novo = self.CABECALHO + b'b' * 64 + b'\x00' * 10
         self.assertTrue(self.modulo.so_mudou_o_pin(novo, base))
 
+    def test_cabecalho_recalculado_tambem_e_aceito(self):
+        base = self.CABECALHO + b'a' * 64 + b'\x00' * 10
+        # so os bytes 8..32 (checksum + assinatura) alem do pin
+        novo = (b'dex\n035\x00' + b'\xff' * 24 + b'\x00' * 80 +
+                b'b' * 64 + b'\x00' * 10)
+        self.assertTrue(self.modulo.so_mudou_o_pin(novo, base))
+        # cabecalho E pin: vale; mas codigo fora disso continua barrado
+        self.assertFalse(self.modulo.so_mudou_o_pin(novo + b'', base + b'\x00'))
+        self.assertFalse(self.modulo.so_mudou_o_pin(
+            novo[:-1] + b'\x01', base))
+
     def test_qualquer_outra_mudanca_no_dex_e_barrada(self):
-        base = b'dex\n035' + b'\x00' * 10 + b'a' * 64 + b'\x00' * 10
+        base = self.CABECALHO + b'a' * 64 + b'\x00' * 10
         self.assertFalse(self.modulo.so_mudou_o_pin(base.replace(b'dex', b'dey'), base))
         self.assertFalse(self.modulo.so_mudou_o_pin(base + b'\x00', base))
         self.assertFalse(self.modulo.so_mudou_o_pin(b'curto', base))
