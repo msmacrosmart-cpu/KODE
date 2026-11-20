@@ -67,14 +67,6 @@ def verificar_skins(apk, names):
         print('skin ok: %s (Home Clássica + fontes)' % skin)
 
 
-# Dex que PODE ser recompilado: o bootstrap do splash (tela de entrada), que
-# carrega o pin do perfil embarcado. Todo o resto do codigo tem de ser identico
-# a base. Editar byte em dex NAO e aceito: o experimento no emulador mostrou que
-# o classes4 patcheado mata o app com
-#   NoClassDefFoundError: Failed resolution of: Lsmartedtv/full/XBMCJsonRPC
-DEX_RECOMPILAVEL = 'classes3.dex'
-
-
 def verify_apk(base, final):
     def code_files(z):
         return {n for n in z.namelist() if n.startswith('lib/') or re.fullmatch(r'classes\d*\.dex|resources\.arsc', n)}
@@ -87,13 +79,7 @@ def verify_apk(base, final):
         require(code_files(before) == code_files(apk), 'sumiu código da v22')
         for path in code_files(apk):
             contents = apk.read(path)
-            original = before.read(path)
-            if contents != original:
-                require(path == DEX_RECOMPILAVEL,
-                        'código diferente da base: '+path)
-                require(contents[:4] == b'dex\n' and len(contents) > 112,
-                        'dex recompilado invalido: '+path)
-                print('%s: recompilado do bootstrap (permitido)' % path)
+            require(contents == before.read(path), 'código diferente da base: '+path)
             if path.startswith('lib/') and path.endswith('.so'):
                 abi = path.split('/')[1]
                 require(contents[:4] == b'\x7fELF' and contents[5] == 1 and
