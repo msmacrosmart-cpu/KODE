@@ -74,7 +74,9 @@ CACHE_SETTINGS_PROJETOR = {
     'filecache.chunksize': 262144,
 }
 
-ADVANCED_TEMPLATE = """<!-- {marker}: cache agressivo para streams do Brazuca Play -->"
+DNS_DOH_CLOUDFLARE = 'https://cloudflare-dns.com/dns-query'
+
+ADVANCED_TEMPLATE = """<!-- {marker}: cache agressivo para streams do Brazuca Play -->
 <advancedsettings version="1.0">
     <cache>
         <buffermode>4</buffermode>
@@ -84,6 +86,7 @@ ADVANCED_TEMPLATE = """<!-- {marker}: cache agressivo para streams do Brazuca Pl
     <network>
         <curlclienttimeout>20</curlclienttimeout>
         <curllowspeedtime>30</curllowspeedtime>
+        <dnsoverhttps>{doh}</dnsoverhttps>
     </network>
 </advancedsettings>
 """
@@ -158,7 +161,8 @@ def write_advancedsettings(home, log=None, nome_dispositivo=''):
         log('advancedsettings: cache de %d MB (perfil do aparelho)'
             % (memorysize // (1024 * 1024)))
     body = ADVANCED_TEMPLATE.format(marker=MARKER, memorysize=memorysize,
-                                    readfactor=readfactor)
+                                    readfactor=readfactor,
+                                    doh=DNS_DOH_CLOUDFLARE)
     folder = os.path.dirname(path)
     if folder and not os.path.isdir(folder):
         os.makedirs(folder)
@@ -222,9 +226,29 @@ def apply_settings(jsonrpc, log=None, nome_dispositivo=''):
     return applied, failed
 
 
+def apply_dns_cloudflare(jsonrpc, log=None):
+    """Ativa DNS-over-HTTPS Cloudflare (1.1.1.1) no motor HTTP/HLS do Kodi."""
+    try:
+        resp = jsonrpc('Settings.SetSettingValue', {
+            'setting': 'network.dnsoverhttps',
+            'value': DNS_DOH_CLOUDFLARE,
+        })
+        ok = not (resp or {}).get('error')
+        if log:
+            log('dns: Cloudflare DoH %s (%s)' % (
+                'ativo' if ok else 'mantido em advancedsettings',
+                DNS_DOH_CLOUDFLARE))
+        return ok
+    except Exception as erro:
+        if log:
+            log('dns: nao foi possivel aplicar via JSON-RPC (%s)' % erro)
+        return False
+
+
 def ensure_performance(home, jsonrpc, log=None, nome_dispositivo=''):
     """Roda as duas camadas e devolve o resumo usado nos testes/relatório."""
     wrote = write_advancedsettings(home, log, nome_dispositivo=nome_dispositivo)
     applied, failed = apply_settings(jsonrpc, log, nome_dispositivo=nome_dispositivo)
+    doh = apply_dns_cloudflare(jsonrpc, log=log)
     return {'advancedsettings': wrote, 'applied': applied, 'failed': failed,
-            'projetor': eh_projetor(nome_dispositivo)}
+            'projetor': eh_projetor(nome_dispositivo), 'doh_cloudflare': doh}

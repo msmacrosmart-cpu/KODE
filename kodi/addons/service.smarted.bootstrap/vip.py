@@ -372,15 +372,20 @@ def ativa():
     O prazo EXATO (``expira_em``, com hora - o que o servidor devolveu) manda;
     ``expira`` (so o dia) fica como reserva para licencas antigas, gravadas
     quando apenas a data era guardada. Sem isso, quem tem 1 hora de acesso
-    ficaria liberado ate o fim do dia.
+    ficaria liberado ate o fim do dia. Quando o prazo vence, sincroniza
+    ``"ativo": false`` no vip.json para o Java (Licenca.java) liberar os
+    anuncios no mesmo instante.
     """
     dados = estado()
     if not dados.get('ativo'):
         return False
     exato = (dados.get('expira_em') or '').strip()
-    if exato:
-        return dentro_do_prazo(exato)
-    return dentro_do_prazo(dados.get('expira'))
+    vigente = dentro_do_prazo(exato) if exato else dentro_do_prazo(dados.get('expira'))
+    if not vigente:
+        atualizado = dict(dados)
+        atualizado['ativo'] = False
+        _gravar_json(VIP_JSON, atualizado)
+    return vigente
 
 
 def em_instantes(segundos):

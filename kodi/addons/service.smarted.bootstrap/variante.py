@@ -76,6 +76,14 @@ MARCAS_TV = (
     'projector', 'projetor', 'cinebeam', 'the freestyle', 'xgimi', 'wanbo',
     'byintek', 'magcubic', 'salange', 'yaber', 'vankyo', 'nebula', 'formovie',
     'jmgo', 'dangbei', 'hisense', 'tcl', 'philips tv', 'bravia', 'aquos',
+    'hy300', 'h713', 'allwinner', 'droidlogic', 'amlogic', 'rk322', 'rk332',
+    'rk352', 'h96', 'x96', 'tx3', 'mxq', 'tanix',
+)
+
+MARCAS_MOBILE = (
+    'phone', 'celular', 'smartphone', 'tablet', 'sm-', 'moto ', 'moto g',
+    'moto e', 'redmi', 'poco', 'galaxy', 'pixel', 'xiaomi', 'realme',
+    'infinix', 'tecno',
 )
 
 
@@ -143,17 +151,17 @@ def variante_do_aparelho():
     for marca in MARCAS_TV:
         if marca in nome:
             return TV, 'nome do aparelho contem %r' % marca
+    for marca in MARCAS_MOBILE:
+        if marca in nome:
+            return MOBILE, 'nome do aparelho contem %r' % marca
+    if _condicao('System.Platform.Android.Mobile'):
+        return MOBILE, 'System.Platform.Android.Mobile'
     try:
         altura = int(float(_info('System.ScreenHeight') or 0))
     except Exception:
         altura = 0
     if altura and altura <= 720 and _condicao('System.Platform.Android'):
         return TV, 'tela de %d linhas (HD/HD Ready)' % altura
-    # ``Android.Mobile`` fica por ULTIMO: em Android TV projetor/box o Kodi
-    # tambem responde verdadeiro nessa condicao em algumas builds, e usar esse
-    # sinal antes dos outros faria a TV ser tratada como celular.
-    if _condicao('System.Platform.Android.Mobile'):
-        return MOBILE, 'System.Platform.Android.Mobile'
     return MOBILE, 'sem sinal de TV; mantendo a versao mobile'
 
 

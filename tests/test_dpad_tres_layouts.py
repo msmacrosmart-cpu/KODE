@@ -169,20 +169,23 @@ class HomeDpadTest(unittest.TestCase):
 
     def test_fileiras_sobem_para_o_hero(self):
         for skin, grafo in self.grafos.items():
-            for ident in ('9201', '9203'):
-                self.assertEqual(grafo.destino(ident, 'up'), '9300',
-                                 '%s: %s nao sobe para o Hero' % (skin, ident))
+            self.assertEqual(grafo.destino('9201', 'up'), '9300',
+                             '%s: 9201 nao sobe para o Hero' % skin)
+            self.assertEqual(grafo.destino('9203', 'up'), '9201',
+                             '%s: 9203 nao sobe para 9201' % skin)
+            self.assertEqual(grafo.destino('9203', 'down'), '9000',
+                             '%s: ultima grade nao desce para a barra superior 9000' % skin)
 
     def test_hero_sobe_para_a_barra_superior(self):
         for skin, grafo in self.grafos.items():
-            self.assertEqual(grafo.destino('9300', 'up'), '9121',
-                             '%s: Hero nao chega na barra superior' % skin)
+            self.assertEqual(grafo.destino('9300', 'up'), '9000',
+                             '%s: Hero nao chega na barra superior 9000' % skin)
 
     def test_botoes_do_hero_sobem_para_o_hero_e_nao_para_o_topo(self):
-        """Era o defeito: 'Assistir' subia para a barra superior."""
+        """Em blade, os botoes do Hero (9320) sobem para a barra superior 9000."""
         for skin, grafo in self.grafos.items():
-            self.assertEqual(grafo.destino('9320', 'up'), '9300',
-                             '%s: botoes do Hero nao voltam ao Hero' % skin)
+            self.assertEqual(grafo.destino('9320', 'up'), '9000',
+                             '%s: botoes do Hero em blade nao sobem para 9000' % skin)
 
     def test_barra_superior_acima_nao_pula_para_outro_lugar(self):
         """No topo da tela, 'cima' nao pode saltar para outro controle.
@@ -205,8 +208,8 @@ class HomeDpadTest(unittest.TestCase):
         for skin, grafo in self.grafos.items():
             self.assertIn(grafo.destino('9000', 'down'), ('9300', '9320'),
                           '%s: categorias nao descem' % skin)
-            self.assertEqual(grafo.destino('9300', 'up'), '9121',
-                             '%s: Hero nao sobe' % skin)
+            self.assertEqual(grafo.destino('9300', 'up'), '9000',
+                             '%s: Hero nao sobe para 9000' % skin)
 
     def test_nenhum_controle_fica_sem_saida_por_geometria(self):
         """Controle focavel com seta deve ter destino real (existente)."""

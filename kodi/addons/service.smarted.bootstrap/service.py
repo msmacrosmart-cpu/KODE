@@ -266,7 +266,6 @@ def _addon_esta_quebrado(pasta):
 # removido, e o que sai fica escrito).
 REPOSITORIOS_DE_TERCEIROS = (
     'repository.alado.tv',
-    'repository.elementumorg',
     'repository.nostr-oneplay',
     'repository.redwizard',
     'repository.openwizard',
@@ -300,11 +299,14 @@ ADDONS_QUE_RODAM_NO_BOOT_E_FALHAM = (
 ADDONS_DO_APP = (
     'plugin.video.',
     'script.smartedtv.',
+    'script.elementum.',
     'script.module.',
     'service.smarted.',
     'skin.',
     'resource.',
     'repository.xbmc.org',
+    'repository.elementumorg',
+    'addon.dns',
     'metadata.',
     'xbmc.',
     'kodi.',

@@ -133,7 +133,7 @@ class PerfilSemTerceirosTest(unittest.TestCase):
         registros = []
         removidos = self.aparelho.modulo.limpar_repositorios_de_terceiros(registros.append)
         self.assertIn('repository.redwizard', removidos)
-        self.assertIn('repository.elementumorg', removidos)
+        self.assertNotIn('repository.elementumorg', removidos)
         self.assertIn('One.repo', removidos)
         self.assertIn('service.xbmc.versioncheck', removidos)
         # os nomes exatos das notificacoes reclamadas no projetor
@@ -142,6 +142,7 @@ class PerfilSemTerceirosTest(unittest.TestCase):
         self.assertIn('plugin.audio.mp3streams', removidos)
         restantes = sorted(os.listdir(self.aparelho.addons))
         self.assertIn('repository.xbmc.org', restantes)
+        self.assertIn('repository.elementumorg', restantes)
         self.assertIn('plugin.video.BrazucaPlay.Matrix', restantes)
         self.assertIn('script.module.requests', restantes)
         self.assertNotIn('repository.redwizard', restantes)

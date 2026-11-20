@@ -311,9 +311,12 @@ def tocar_anuncio(atividade, log=None, uri=''):
     perfil, motivo = perfil_dispositivo()
     if e_tv():
         # A TV NAO usa a activity do AdMob (o SDK nao suporta Android TV).
-        # Ela usa o anuncio de video: tag VAST lida pelo player do Kodi, que
-        # e o unico formato de anuncio que funciona em TV sem recompilar o
-        # app. Ver ``ads_vast.py``.
+        # Na abertura da Home nao ha pre-roll de video (evita som sem imagem
+        # tocando escondido na Home); no player usa VAST em tela cheia.
+        if atividade == ATIVIDADE_ABERTURA:
+            if log:
+                log('[SmartAds] TV: sem pop-up de abertura em video na Home')
+            return False
         return tocar_anuncio_de_video(log)
     if log:
         log('[SmartAds] aparelho: %s (%s) - anuncio %s'
@@ -558,6 +561,14 @@ def abrir_anuncio(atividade, log=None, uri=''):
     disparou = tocar_anuncio(atividade, log, uri)
     if disparou:
         _kodi_em_foco()
+        if atividade == ATIVIDADE_PREROLL:
+            try:
+                if (xbmc.Player().isPlayingVideo()
+                        and not xbmc.getCondVisibility(
+                            'Window.IsActive(fullscreenvideo)')):
+                    xbmc.executebuiltin('ActivateWindow(fullscreenvideo)')
+            except Exception:
+                pass
     return disparou
 
 
@@ -842,6 +853,8 @@ class MonitorPreRoll(_BasePlayer):
         self.ultimo_caminho = None
         self.sessao = 0
         self.retomada = None
+        self._em_vast = False
+        self._ate_ignorar_volta_vast = 0.0
 
     def _retomada(self):
         if self.retomada is None:
@@ -852,7 +865,29 @@ class MonitorPreRoll(_BasePlayer):
                 self.retomada = False
         return self.retomada
 
+    def _garantir_player_tela_cheia(self):
+        try:
+            if (_e_video(self)
+                    and not xbmc.getCondVisibility(
+                        'Window.IsActive(fullscreenvideo)')):
+                xbmc.executebuiltin('ActivateWindow(fullscreenvideo)')
+        except Exception:
+            pass
+
     def _disparar(self, atividade, log):
+        if e_tv():
+            # No caminho VAST da TV, ads_vast.exibir_e_devolver ja guarda e
+            # restaura o conteudo em tela cheia; bloqueia reentrancia dos
+            # eventos do proprio anuncio para nao derrubar o estado nem repetir.
+            self._em_vast = True
+            try:
+                disparou = abrir_anuncio(atividade, log)
+            finally:
+                self._em_vast = False
+            if disparou:
+                self._ate_ignorar_volta_vast = time.monotonic() + 8.0
+                self._garantir_player_tela_cheia()
+            return disparou
         # Guarda o ponto ANTES de a tela do anuncio pausar o player. Sem isso,
         # a volta do anuncio recomecaria o filme do zero em qualquer aparelho.
         retomada = self._retomada()
@@ -892,8 +927,22 @@ class MonitorPreRoll(_BasePlayer):
         return caminho or None
 
     def _talvez_mostrar(self):
+        if self._em_vast:
+            return
         try:
             if not _e_video(self):
+                return
+            if (self._ate_ignorar_volta_vast
+                    and time.monotonic() < self._ate_ignorar_volta_vast):
+                self._ate_ignorar_volta_vast = 0.0
+                globals()['_ultima_sessao'] = self.sessao
+                self._garantir_player_tela_cheia()
+                try:
+                    ads_regra.concluir_anuncio()
+                except Exception:
+                    pass
+                if self.log:
+                    self.log('[SmartAds] volta do anuncio VAST: tela cheia restaurada')
                 return
             caminho = self._caminho() or self.ultimo_caminho
             retomada = self._retomada()
@@ -902,6 +951,7 @@ class MonitorPreRoll(_BasePlayer):
                 # A reproducao que acabou de comecar e a volta do anuncio: nao
                 # gera outro pre-roll e devolve o video ao ponto guardado.
                 globals()['_ultima_sessao'] = self.sessao
+                self._garantir_player_tela_cheia()
                 # Recibo de "anuncio concluido ou pulado": a tela do anuncio
                 # saiu e o conteudo voltou a tocar. O intervalo de 2 minutos
                 # comeca AQUI (e nao no disparo), como pedido.
@@ -943,11 +993,15 @@ class MonitorPreRoll(_BasePlayer):
     # Kodi 21 chama onPlayBackStarted; onAVStarted vem em seguida para o mesmo
     # stream. Os dois passam pela mesma janela anti-duplicidade.
     def onPlayBackStarted(self):
+        if self._em_vast:
+            return
         self.sessao += 1
         # Wait for AVStarted: the addon may still be resolving/resuming the item.
 
 
     def onAVStarted(self):
+        if self._em_vast:
+            return
         # Mesma sessao de onPlayBackStarted: nao pede o segundo anuncio.
         # Tambem e aqui que a volta do anuncio e reconhecida (Kodi retoma o
         # player) e o ponto guardado e restaurado.
@@ -955,15 +1009,21 @@ class MonitorPreRoll(_BasePlayer):
 
     # Compatibilidade com versoes que ainda chamam onPlay.
     def onPlay(self, **kwargs):
+        if self._em_vast:
+            return
         self._talvez_mostrar()
 
     def onPlayBackStopped(self):
+        if self._em_vast:
+            return
         self._limpar_retomada()
         self.ultimo_caminho = None
         self.sessao += 1
         esquecer()
 
     def onPlayBackEnded(self):
+        if self._em_vast:
+            return
         self._limpar_retomada()
 
     def _limpar_retomada(self):

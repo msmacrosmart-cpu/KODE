@@ -36,9 +36,12 @@ class HomeNavegacaoTest(unittest.TestCase):
             self.assertIn('9300', subidas, ident)
 
     def test_acoes_do_hero_sobem_para_a_barra(self):
+        # Os botoes filhos do Hero (9301..9303) nao prendem <onup> em 9300,
+        # deixando o grouplist 9300 subir direto para a barra superior 9000.
         for ident in ('9301', '9302', '9303'):
-            self.assertEqual((self.controle(ident).findtext('onup') or '').strip(),
-                             '9300', ident)
+            self.assertIsNone(self.controle(ident).find('onup'), ident)
+        subidas = [(c.text or '').strip() for c in self.controle('9300').findall('onup')]
+        self.assertIn('9000', subidas)
 
     def test_lancamentos_e_series_ficam_lado_a_lado_no_grafo(self):
         self.assertEqual((self.controle('9201').findtext('top') or '').strip(), '570')
@@ -46,14 +49,11 @@ class HomeNavegacaoTest(unittest.TestCase):
         descidas = [(e.text or '').strip() for e in self.controle('9201').findall('ondown')]
         self.assertIn('9203', descidas)
         subidas = [(e.text or '').strip() for e in self.controle('9203').findall('onup')]
+        self.assertIn('9201', subidas)
         self.assertIn('9300', subidas)
-        # 9203 NAO sobe para 9201: subir tem de sair da fileira e ir para o
-        # hero (9300). O 9203 -> 9201 veio da troca de 873542f por d91326f e
-        # era um dos tres <onup> incondicionais que deixavam o primeiro vencer
-        # por acidente (e travavam o foco quando o hero estava oculto).
-        # A subida da fileira de baixo para a de cima NAO e perdida: e feita
-        # pelo hero (9300), que fica entre elas.
-        self.assertNotIn('9201', subidas)
+        self.assertIn('9000', subidas)
+        descidas_ultima = [(e.text or '').strip() for e in self.controle('9203').findall('ondown')]
+        self.assertEqual(descidas_ultima, ['9000'])
 
     def test_nenhum_alvo_de_dpad_aponta_para_controle_inexistente(self):
         ids = {c.get('id') for c in self.raiz.iter('control') if c.get('id')}

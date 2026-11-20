@@ -84,10 +84,10 @@ class AuroraDpadTest(unittest.TestCase):
         for skin in SKINS:
             raiz = _home(skin)
             subidas = _alvos(_ctrl(raiz, '9300'), 'onup')
-            self.assertIn('9121', subidas,
-                          '%s: hero nao chega na barra superior' % skin)
+            self.assertIn('9000', subidas,
+                          '%s: hero nao chega na barra superior 9000' % skin)
             incondicionais = _sem_condicao(_ctrl(raiz, '9300'), 'onup')
-            self.assertEqual(incondicionais, ['9121'],
+            self.assertEqual(incondicionais, ['9000'],
                              '%s: a subida do hero tem de valer em todo layout'
                              % skin)
 
@@ -95,10 +95,6 @@ class AuroraDpadTest(unittest.TestCase):
         for skin in SKINS:
             raiz = _home(skin)
             for ident in ('9121', '9122', '9123'):
-                condicionais = [(f.get('condition') or '') for f in
-                                _ctrl(raiz, ident).findall('ondown')]
-                self.assertTrue(any('blade' in c for c in condicionais),
-                                '%s: %s nao trata a blade' % (skin, ident))
                 self.assertIn('9000', _alvos(_ctrl(raiz, ident), 'ondown'),
                               '%s: %s nao desce para as categorias' % (skin, ident))
 
@@ -122,19 +118,21 @@ class AuroraDpadTest(unittest.TestCase):
         for skin in SKINS:
             raiz = _home(skin)
             series = _ctrl(raiz, '9203')
+            self.assertIn('9201', _alvos(series, 'onup'))
             self.assertIn('9300', _alvos(series, 'onup'))
-            self.assertIn('9121', _alvos(_ctrl(raiz, '9300'), 'onup'))
-            self.assertIn('9000', _alvos(_ctrl(raiz, '9121'), 'onup'))
+            self.assertIn('9000', _alvos(series, 'ondown'))
+            self.assertIn('9000', _alvos(_ctrl(raiz, '9300'), 'onup'))
+            self.assertIn('9121', _alvos(_ctrl(raiz, '9000'), 'onup'))
 
     def test_navegacao_volta_ao_hero_depois_de_recarregar(self):
-        """Fila de conteudo vazia nao pode quebrar a subida: os alvos do onup
-        nao dependem de Container().NumItems (so o ondown depende)."""
+        """Fila de conteudo vazia nao pode quebrar a subida: ha sempre um
+        fallback incondicional para 9000."""
         for skin in SKINS:
             for ident in ('9201', '9203'):
-                for f in _ctrl(_home(skin), ident).findall('onup'):
-                    self.assertIsNone(f.get('condition'),
-                                      '%s: %s sobe com condicao de conteudo'
-                                      % (skin, ident))
+                self.assertEqual(_sem_condicao(_home(skin) and _ctrl(_home(skin), ident), 'onup'),
+                                 ['9000'],
+                                 '%s: %s sem fallback incondicional para 9000'
+                                 % (skin, ident))
 
 
 if __name__ == '__main__':

@@ -438,10 +438,45 @@ def _posicao_e_duracao():
         return 0.0, 0.0
 
 
-def _tocar(url, log=None):
-    """Entrega o video do anuncio ao player do Kodi."""
+def _garantir_tela_cheia():
+    """Mantem o video no player em tela cheia (nunca em 2o plano na Home)."""
     try:
-        xbmc.executebuiltin('PlayMedia("%s",1)' % url.replace('"', '%22'))
+        if not xbmc.getCondVisibility('Window.IsActive(fullscreenvideo)'):
+            xbmc.executebuiltin('ActivateWindow(fullscreenvideo)')
+    except Exception:
+        pass
+
+
+def _proxy_local_inativo(url):
+    """True quando ``url`` aponta para um proxy 127.0.0.1/localhost ja fechado."""
+    texto = (url or '').split('|', 1)[0].strip()
+    if not (texto.startswith('http://127.0.0.1:')
+            or texto.startswith('http://localhost:')):
+        return False
+    try:
+        import socket
+        from urllib.parse import urlparse
+        parsed = urlparse(texto)
+        porta = parsed.port
+        if not porta:
+            return False
+        with socket.create_connection((parsed.hostname or '127.0.0.1', porta),
+                                      timeout=0.35):
+            return False
+    except Exception:
+        return True
+
+
+def _tocar(url, log=None):
+    """Entrega o video do anuncio ao player do Kodi em TELA CHEIA.
+
+    ATENCAO: NUNCA passar ``,1`` no ``PlayMedia`` — no Kodi ``1`` significa
+    ``noFullscreen`` (modo segundo plano), o que fechava o player e tocava o
+    anuncio escondido atras da Home.
+    """
+    try:
+        xbmc.executebuiltin('PlayMedia("%s")' % url.replace('"', '%22'))
+        _garantir_tela_cheia()
         return True
     except Exception as erro:
         if log:
@@ -562,6 +597,15 @@ def estado_do_conteudo(player=None, log=None):
         caminho = player.getPlayingFile()
         if not caminho:
             return None
+        plugin_path = ''
+        for rotulo in ('Player.Filenameandpath', 'Player.FilenameAndPath'):
+            try:
+                valor = (xbmc.getInfoLabel(rotulo) or '').strip()
+            except Exception:
+                valor = ''
+            if valor and valor != caminho:
+                plugin_path = valor
+                break
         try:
             posicao = float(player.getTime()) or 0.0
         except Exception:
@@ -572,12 +616,22 @@ def estado_do_conteudo(player=None, log=None):
             total = 0.0
         ao_vivo = False
         try:
-            import ao_vivo
-            ao_vivo = bool(ao_vivo.eh_ao_vivo(caminho))
+            import ao_vivo as _mod_ao_vivo
+            ao_vivo = bool(_mod_ao_vivo.eh_ao_vivo(caminho))
+            # Filme/serie em HLS (.m3u8) tem duracao conhecida (>= 60 s):
+            # nao confundir VOD com canal ao vivo.
+            baixo = caminho.lower()
+            if (ao_vivo and total >= 60.0
+                    and not xbmc.getCondVisibility('VideoPlayer.Content(live)')
+                    and 'mode=11' not in baixo
+                    and 'canal' not in baixo
+                    and 'channel' not in baixo
+                    and 'aovivo' not in baixo):
+                ao_vivo = False
         except Exception:
             ao_vivo = False
-        return {'caminho': caminho, 'posicao': posicao, 'total': total,
-                'ao_vivo': ao_vivo}
+        return {'caminho': caminho, 'plugin_path': plugin_path,
+                'posicao': posicao, 'total': total, 'ao_vivo': ao_vivo}
     except Exception as erro:
         if log:
             log('[SmartAds] sem estado do conteudo (%s)' % type(erro).__name__)
@@ -600,50 +654,80 @@ def _player_video_id():
     return None
 
 
-def restaurar(estado, log=None, espera=20, dormir=None, agora=None):
-    """Devolve o conteudo a tela, no ponto em que estava.
+def _iniciar_em_tela_cheia(url, log=None):
+    try:
+        xbmc.executebuiltin('PlayMedia("%s")' % url.replace('"', '%22'))
+        _garantir_tela_cheia()
+        return True
+    except Exception as erro:
+        if log:
+            log('[SmartAds] VAST: nao consegui reabrir o conteudo (%s)' % erro,
+                xbmc.LOGWARNING)
+        return False
 
-    * canal ao vivo: reabre pelo proprio player (entra no ponto ATUAL da
-      transmissao - seek em ao vivo derruba o fluxo);
-    * filme/serie: PlayMedia + espera o player voltar e busca a posicao.
+
+def restaurar(estado, log=None, espera=20, dormir=None, agora=None):
+    """Devolve o conteudo a tela EM TELA CHEIA, no ponto em que estava.
+
+    * NUNCA usa ``PlayMedia(..., 1)``: ``,1`` e ``noFullscreen`` no Kodi e
+      fazia o filme rodar em segundo plano atras da Home apos o anuncio;
+    * se o stream usava proxy local encerrado ou token de conexao unica que
+      caiu ao tocar o anuncio, reconecta automaticamente pelo ``plugin_path``;
+    * canal ao vivo: reabre sem seek; filme/serie: retoma na posicao e garante
+      ``fullscreenvideo`` visivel.
     """
     if not estado or not estado.get('caminho'):
         return False
     dormir = dormir or time.sleep
     agora = agora or _agora
     caminho = estado['caminho']
+    plugin_path = (estado.get('plugin_path') or '').strip()
+    preferir_origem = bool(plugin_path and _proxy_local_inativo(caminho))
+    primario = plugin_path if preferir_origem else caminho
+    reserva = '' if preferir_origem else plugin_path
+
     if estado.get('ao_vivo'):
         try:
             import ao_vivo
-            if ao_vivo._tocar_de_novo(caminho):
+            if ao_vivo._tocar_de_novo(primario):
+                _garantir_tela_cheia()
                 if log:
                     log('[SmartAds] VAST: canal ao vivo reaberto apos o anuncio')
                 return True
         except Exception:
             pass
-    try:
-        xbmc.executebuiltin('PlayMedia("%s",1)' % caminho.replace('"', '%22'))
-    except Exception as erro:
-        if log:
-            log('[SmartAds] VAST: nao consegui reabrir o conteudo (%s)' % erro,
-                xbmc.LOGWARNING)
-        return False
+    if not _iniciar_em_tela_cheia(primario, log=log):
+        if not reserva or not _iniciar_em_tela_cheia(reserva, log=log):
+            return False
+        reserva = ''
     alvo = float(estado.get('posicao') or 0.0)
-    limite = agora() + espera
-    while agora() < limite:
+    limite_total = agora() + espera
+    limite_primario = agora() + (min(espera, 6) if reserva else espera)
+    while agora() < limite_primario:
         if _player_tocando_video():
             break
         dormir(0.25)
-    if alvo <= 0:
+    if not _player_tocando_video() and reserva:
+        if log:
+            log('[SmartAds] VAST: reconectando conteudo pela rota de origem')
+        if _iniciar_em_tela_cheia(reserva, log=log):
+            while agora() < limite_total:
+                if _player_tocando_video():
+                    break
+                dormir(0.25)
+    if _player_tocando_video():
+        _garantir_tela_cheia()
+    if alvo <= 0 or estado.get('ao_vivo'):
         return True
     # Espera a posicao ficar legivel antes de buscar (player recriado).
-    while agora() < limite:
+    while agora() < limite_total:
         try:
             atual = float(xbmc.Player().getTime()) or 0.0
         except Exception:
             atual = 0.0
         if atual > 0:
             if abs(atual - alvo) <= 2.0:
+                _garantir_tela_cheia()
                 return True
             try:
                 _rpc('Player.Seek', playerid=_player_video_id(),
@@ -655,8 +739,10 @@ def restaurar(estado, log=None, espera=20, dormir=None, agora=None):
                     xbmc.Player().seekTime(alvo)
                 except Exception:
                     pass
+            _garantir_tela_cheia()
             return True
         dormir(0.25)
+    _garantir_tela_cheia()
     return True
 
 
