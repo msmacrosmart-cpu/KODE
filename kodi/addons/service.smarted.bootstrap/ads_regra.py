@@ -177,26 +177,27 @@ def anunciado_no_conteudo():
 
 
 def ja_anunciado(chave):
-    """Este conteudo JA recebeu o anuncio dele nesta sessao do app?
+    """Este conteudo JA recebeu o anuncio dele na sessao ATUAL em reproducao?
 
-    Fica gravado mesmo depois de PARAR e reabrir o mesmo conteudo: recarregar,
-    reconectar ou reiniciar o mesmo video nao autoriza um segundo anuncio
-    (regra 3 do pedido). So um conteudo DIFERENTE entra na fila de novo.
+    Enquanto o usuario continua assistindo o mesmo conteudo (pausa, retomada,
+    retorno do anuncio ou reconexao), devolve True para que possa assistir ate
+    o final sem novo anuncio. Ao sair do conteudo (Stop/Voltar) ou trocar para
+    outro conteudo, libera novamente respeitando o intervalo de 2 minutos.
     """
     if _sem_metadados(chave):
         return False
-    return chave in (_ler().get('anunciados') or [])
+    dados = _ler()
+    return bool(dados.get('anunciado')) and (dados.get('conteudo') or '') == chave
 
 
 def marcar_anunciado(chave, dados=None):
-    """Guarda ``chave`` na lista de conteudos ja anunciados (sem duplicar)."""
+    """Marca que o conteudo atual recebeu anuncio (limpando lista legada)."""
     if not chave or _sem_metadados(chave):
         return False
     dados = _ler() if dados is None else dados
-    lista = [c for c in (dados.get('anunciados') or []) if c != chave]
-    lista.append(chave)
-    # Teto: memoria/arquivo nao crescem sem limite em sessao longa de zap.
-    dados['anunciados'] = lista[-ANUNCIADOS_MAXIMO:]
+    dados.pop('anunciados', None)
+    dados['conteudo'] = chave
+    dados['anunciado'] = True
     return True
 
 
@@ -229,6 +230,7 @@ def marcar_conteudo(chave):
     dados['conteudo'] = chave
     dados.pop('anunciado', None)   # conteudo novo: bilhete novo
     dados.pop('tentativa', None)   # e a tentativa da troca anterior nao conta
+    dados.pop('anunciados', None)
     return _gravar(dados)
 
 
@@ -247,6 +249,7 @@ def abrir_troca(chave):
     dados['conteudo'] = chave
     dados.pop('anunciado', None)
     dados.pop('tentativa', None)
+    dados.pop('anunciados', None)
     return _gravar(dados)
 
 
@@ -363,11 +366,10 @@ def cancelar_anuncio(chave=None):
     """
     dados = _ler()
     mudou = False
-    if chave:
-        dados['anunciados'] = [c for c in (dados.get('anunciados') or [])
-                                if c != chave]
-        if dados.get('conteudo') == chave:
-            dados.pop('anunciado', None)
+    if dados.pop('anunciados', None) is not None:
+        mudou = True
+    if chave and dados.get('conteudo') == chave:
+        if dados.pop('anunciado', None) is not None:
             mudou = True
     # O disparo nao virou exibicao: desfaz o piso daquele disparo. Se ja havia
     # um anuncio de verdade contado antes deste, ele fica (o intervalo dele
@@ -387,15 +389,15 @@ def cancelar_anuncio(chave=None):
 
 
 def encerrar_conteudo():
-    """Fim da reproducao (PARAR): fecha a sessao de reproducao atual.
+    """Fim da reproducao (PARAR / Voltar / Quadrado): fecha a sessao atual.
 
-    A lista de conteudos JA anunciados continua: reabrir o mesmo video depois
-    de parar nao autoriza outro anuncio. O intervalo de 2 minutos desde o
-    ultimo anuncio exibido tambem continua valendo.
+    Depois de sair do conteudo e passados os 2 minutos desde o ultimo anuncio
+    exibido, entrar em qualquer conteudo (inclusive reabrir este mesmo filme
+    ou canal) volta a exibir anuncio normalmente.
     """
     dados = _ler()
     mudou = False
-    for chave in ('conteudo', 'anunciado', 'tentativa'):
+    for chave in ('conteudo', 'anunciado', 'tentativa', 'anunciados'):
         if dados.pop(chave, None) is not None:
             mudou = True
     return _gravar(dados) if mudou else False

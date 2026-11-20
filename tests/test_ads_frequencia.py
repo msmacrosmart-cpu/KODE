@@ -217,17 +217,15 @@ class UmAnuncioPorConteudoTest(BaseRegra):
         self.assertFalse(self.regra.abrir_troca('canal:A'))
         self.assertFalse(self.regra.pode_anunciar('canal:A', agora=9999.0)[0])
 
-    def test_reabrir_o_mesmo_conteudo_nao_autoriza_outro_anuncio(self):
-        """Regra 3: recarregar/reconectar parar e voltar NAO e troca.
-
-        Mesmo que a sessao de reproducao tenha terminado (PARAR) e passado
-        muito mais que os 2 minutos, o mesmo conteudo nao recebe outro anuncio.
-        """
+    def test_reabrir_o_mesmo_conteudo_apos_sair_e_passar_2_minutos_anuncia_novamente(self):
+        """Sair do conteudo e reabri-lo apos os 2 minutos exibe anuncio de novo."""
         self.regra.encerrar_conteudo()
         self.assertTrue(self.regra.abrir_troca('canal:A'))
+        # dentro dos 2 minutos continua bloqueado
+        self.assertFalse(self.regra.pode_anunciar('canal:A', agora=1050.0)[0])
+        # passados os 2 minutos, reentrar em canal:A libera anuncio novamente
         pode, motivo = self.regra.pode_anunciar('canal:A', agora=9999.0)
-        self.assertFalse(pode, motivo)
-        self.assertIn('ja recebeu', motivo)
+        self.assertTrue(pode, motivo)
 
     def test_conteudo_diferente_depois_de_parar_e_liberado(self):
         """Troca REAL de conteudo (outro canal/filme) continua podendo."""
