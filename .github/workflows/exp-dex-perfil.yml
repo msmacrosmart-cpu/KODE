@@ -6,7 +6,9 @@ name: Experimento dex do perfil
 on:
   workflow_dispatch:
   push:
-    paths: ['.github/workflows/exp-dex-perfil.yml']
+    paths:
+      - '.github/workflows/exp-dex-perfil.yml'
+      - 'tools/android/exp-dex.sh'
 jobs:
   experimento:
     runs-on: ubuntu-latest
@@ -22,32 +24,6 @@ jobs:
           gh release download v1.0.87-universal-v22 -R msmacrosmart-cpu/KODE \
             --pattern SMARTEDTV-universal.apk --output build/universal/base-v22.apk
           printf '%s  %s\n' 18d95307a015d4e15d5d8b2c07d6f228a7a47c487b0c5891b9e55b4c5cccaaf0 build/universal/base-v22.apk | sha256sum -c -
-      - name: Montar as tres variantes
-        run: |
-          set -euo pipefail
-          aviso() { printf '::notice::%s\n' "$(printf '%s' "$*" | tr '\r\n' '  ' | cut -c1-900)"; }
-          PROJECT=$PWD . smartedtv/tools/test-signing-env.sh
-          bt="$ANDROID_HOME/build-tools/35.0.0"
-          work=build/exp; mkdir -p "$work"
-          cp build/universal/base-v22.apk "$work/base.apk"
-          python3 - <<'PY'
-          import importlib.util as u
-          spec = u.spec_from_file_location('m', 'tools/kodi/sanear-perfil-embarcado.py')
-          m = u.module_from_spec(spec); spec.loader.exec_module(m)
-          m.executar('build/exp/base.apk', 'build/exp/A.apk', atualizar_origem=False)   # A
-          # B: mesmo zip reescrito, arquivos todos mantidos, so o pin muda
-          m.ADDONS_DE_TERCEIROS = ()
-          m.executar('build/exp/base.apk', 'build/exp/B.apk', atualizar_origem=False)
-          print('variantes geradas')
-          PY
-          cp "$work/base.apk" "$work/C.apk"
-          for v in A B C; do
-            python3 tools/kodi/align-apk.py "$work/$v.apk" "$work/$v-a.apk"
-            "$bt/apksigner" sign --ks "$KODI_ANDROID_STORE_FILE" --ks-key-alias "$KODI_ANDROID_KEY_ALIAS" \
-              --ks-pass env:KODI_ANDROID_STORE_PASSWORD --key-pass env:KODI_ANDROID_KEY_PASSWORD \
-              --out "$work/$v-s.apk" "$work/$v-a.apk"
-            aviso "$v: $(stat -c%s "$work/$v-s.apk") bytes"
-          done
       - name: Habilitar aceleracao
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -62,23 +38,8 @@ jobs:
           profile: 10.1in WXGA (Tablet)
           disk-size: 4096M
           emulator-boot-timeout: 420
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 3072
+          emulator-options: >-
+            -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+            -camera-back none -memory 3072
           disable-animations: true
-          script: |
-            set -uo pipefail
-            aviso() { printf '::notice::%s\n' "$(printf '%s' "$*" | tr '\r\n' '  ' | cut -c1-700)"; }
-            which adb emulator >/dev/null 2>&1 || aviso "adb fora do PATH (o action cuida disso)"
-            ls build/exp | while read -r l; do aviso "arquivo: $l"; done
-            for v in A B C; do
-              adb install -r "build/exp/$v-s.apk" >/dev/null 2>&1 || aviso "$v: instalacao falhou"
-              adb shell am force-stop smartedtv.full
-              adb logcat -c
-              adb shell am start -W -n smartedtv.full/.Splash >/dev/null 2>&1
-              sleep 12
-              pid=$(adb shell pidof smartedtv.full | tr -d '\r')
-              if [ -z "$pid" ]; then
-                aviso "$v: MORREU -> $(adb logcat -b crash -d | grep -m1 -E 'NoClassDef|FATAL' | cut -c1-200)"
-              else
-                aviso "$v: vivo (pid $pid)"
-              fi
-            done
+          script: bash tools/android/exp-dex.sh
