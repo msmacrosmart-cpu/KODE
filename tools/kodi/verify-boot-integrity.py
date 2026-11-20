@@ -48,6 +48,17 @@ def expected_manifest_sha256() -> str:
     except OSError:
         return PIN_137
     return achados[0] if achados else PIN_137
+
+
+def pin_do_dex(z) -> str:
+    """Pin que o dex DESTE APK confere (fonte da verdade do aparelho)."""
+    candidatos = set()
+    for nome in z.namelist():
+        if nome.endswith(".dex"):
+            candidatos.update(_HEX64.findall(z.read(nome).decode("latin-1")))
+    if len(candidatos) == 1:
+        return candidatos.pop()
+    return expected_manifest_sha256()
 SKIN_ADDON_XML = "assets/addons/skin.novatv/addon.xml"
 BUILD_SCRIPT = Path(__file__).resolve().parent / "build-release-apk.py"
 
@@ -93,7 +104,7 @@ def main():
             h = sha256_bytes(manifest)
             check(
                 "manifest sha256 == dex const",
-                h == expected_manifest_sha256(),
+                h == pin_do_dex(z),
                 f"got {h}",
             )
             check("manifest size < 2 MB", len(manifest) < 2 * 1024 * 1024, f"{len(manifest)} bytes")

@@ -239,10 +239,28 @@ def executar(apk_entrada, apk_saida, atualizar_origem=True):
     }
 
 
+def pin_do_dex(z):
+    """Pin de 64 hex que o dex do APK realmente confere.
+
+    E a fonte da verdade do que o aparelho verifica: o `conferir` do APK
+    publicado tem de olhar o proprio APK, nao o Java do repositorio (o build
+    atualiza o Java no runner, mas o repositorio continua com o pin anterior).
+    """
+    candidatos = set()
+    for nome in z.namelist():
+        if not nome.endswith('.dex'):
+            continue
+        candidatos.update(_HEX64.findall(z.read(nome).decode('latin-1')))
+    if len(candidatos) == 1:
+        return candidatos.pop()
+    return None
+
+
 def conferir(apk, pin_esperado=None):
     """Checagem final do APK assinado: perfil limpo e pin batendo no dex."""
     problemas = []
-    pin_java = pin_esperado or pin_publicado()
+    with zipfile.ZipFile(apk) as z:
+        pin_java = pin_esperado or pin_do_dex(z) or pin_publicado()
     with zipfile.ZipFile(apk) as z:
         nomes = set(z.namelist())
         manifesto = z.read(MANIFESTO) if MANIFESTO in nomes else b''
@@ -257,6 +275,9 @@ def conferir(apk, pin_esperado=None):
                 and pin_java.encode('ascii') in z.read(n)]
         if not dexs:
             problemas.append('nenhum dex carrega o pin %s' % pin_java)
+        elif pin_publicado() != pin_java:
+            print('aviso: pin do Java no repositorio e %s (o build regrava o '
+                  'arquivo no runner)' % pin_publicado())
         for linha in manifesto.decode('utf-8').splitlines():
             partes = linha.split('\t')
             if len(partes) != 3:

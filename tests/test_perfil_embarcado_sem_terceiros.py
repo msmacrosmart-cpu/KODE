@@ -122,6 +122,10 @@ class SanearPerfilTest(unittest.TestCase):
                 self.assertEqual(int(tamanho), len(dados), caminho)
                 self.assertEqual(sha, hashlib.sha256(dados).hexdigest(), caminho)
 
+    def test_conferencia_acha_o_pin_dentro_do_dex(self):
+        with zipfile.ZipFile(self.apk) as z:
+            self.assertEqual(self.modulo.pin_do_dex(z), self.modulo.PIN_ANTIGO)
+
     def test_conferencia_do_apk_final_pega_perfil_sujo(self):
         """O build confere o APK assinado: perfil com terceiro nao passa."""
         with self.assertRaises(SystemExit):
