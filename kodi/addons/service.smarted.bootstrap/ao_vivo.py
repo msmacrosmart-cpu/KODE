@@ -44,6 +44,33 @@ EXTENSOES = ('.m3u8', '.m3u', '.ts', '.mpegts', '.m2ts')
 # O addon abre canal pelo resolver dele (``mode=11`` = play do canal).
 MODO_CANAL = 'mode=11'
 
+_REABERTURA_ATE = 0.0
+_REABERTURA_URLS = set()
+
+
+def _limpar_url_comparacao(caminho):
+    texto = (caminho or '').strip()
+    if not texto:
+        return ''
+    return texto.split('|', 1)[0].strip()
+
+
+def reabertura_recente(caminho=''):
+    """True quando ``_tocar_de_novo`` acabou de reabrir internamente o canal."""
+    agora = time.monotonic()
+    if not _REABERTURA_ATE or agora >= _REABERTURA_ATE:
+        return False
+    if not caminho or not _REABERTURA_URLS:
+        return True
+    candidatos = {_limpar_url_comparacao(caminho)}
+    extra = _limpar_url_comparacao(extrair_url_proxy(caminho))
+    if extra:
+        candidatos.add(extra)
+    candidatos.discard('')
+    if not candidatos:
+        return True
+    return bool(candidatos & _REABERTURA_URLS)
+
 # Espera para o player entregar o primeiro quadro antes de desconfiar.
 ESPERA_PADRAO = 12.0
 PASSO = 0.5
@@ -236,6 +263,14 @@ def _tocar_de_novo(caminho):
     except Exception:
         pass
     try:
+        global _REABERTURA_ATE, _REABERTURA_URLS
+        urls = {_limpar_url_comparacao(caminho), _limpar_url_comparacao(alvo)}
+        extra = _limpar_url_comparacao(extrair_url_proxy(caminho))
+        if extra:
+            urls.add(extra)
+        urls.discard('')
+        _REABERTURA_URLS = urls
+        _REABERTURA_ATE = time.monotonic() + 15.0
         xbmc.executebuiltin('PlayMedia("%s")' % alvo.replace('"', '%22'))
         return True
     except Exception:

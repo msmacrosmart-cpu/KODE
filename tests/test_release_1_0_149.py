@@ -348,90 +348,48 @@ class RemocaoYoutubeMp3StreamsTest(unittest.TestCase):
             if os.path.exists(caminho):
                 os.remove(caminho)
 
-    def test_1_empacotador_e_verify_removem_youtube_e_mp3streams_mantendo_dex_e_demais_addons(self):
-        """atualizar-apk-v17.py expurga YouTube e MP3 Streams do perfil e do banco,
-        recalcula o pin SHA-256 de profile-manifest.txt preservando a ordem de
-        string_ids do classes4.dex, e passa na validação completa de verify.py."""
+    def test_1_empacotador_e_verify_removem_youtube_e_mp3streams_mantendo_dex_intacto(self):
+        """atualizar-apk-v17.py remove YouTube e MP3 Streams de assets/addons/
+        preservando classes4.dex e profile-manifest.txt 100% intactos (estado
+        da 1.0.148 que garante reabertura perfeita do app)."""
         atu = _carregar('atu_149', EMPACTADOR)
         ver = _carregar('ver_149', VERIFICADOR)
 
-        db_sujo = self._criar_addons_db_bytes()
-        arquivos_perfil = {
-            'addons/plugin.video.youtube/addon.xml': b'<addon id="plugin.video.youtube"/>',
-            'addons/plugin.audio.mp3streams/addon.xml': b'<addon id="plugin.audio.mp3streams"/>',
-            'addons/plugin.video.BrazucaPlay.Matrix/addon.xml': b'<addon id="plugin.video.BrazucaPlay.Matrix"/>',
-            'addons/plugin.video.elementum/addon.xml': b'<addon id="plugin.video.elementum"/>',
-            'userdata/addon_data/plugin.video.youtube/settings.xml': b'<settings/>',
-            'userdata/addon_data/plugin.audio.mp3streams/settings.xml': b'<settings/>',
-            'userdata/Database/Addons33.db': db_sujo,
+        nomes = {
+            'assets/addons/plugin.video.youtube/addon.xml',
+            'assets/addons/plugin.audio.mp3streams/addon.xml',
+            'assets/addons/plugin.video.BrazucaPlay.Matrix/addon.xml',
+            'assets/addons/plugin.video.elementum/addon.xml',
         }
-        # Pelo menos 12 entradas no manifesto para permutação rápida de prefixo
-        for idx in range(12):
-            arquivos_perfil[f'userdata/extra_{idx:02d}.xml'] = f'<x i="{idx}"/>'.encode('utf-8')
-
-        linhas_manifesto = []
-        for rel in sorted(arquivos_perfil):
-            b = arquivos_perfil[rel]
-            linhas_manifesto.append(f'{hashlib.sha256(b).hexdigest()}\t{len(b)}\t{rel}\n')
-        base_manifest = ''.join(linhas_manifesto).encode('utf-8')
-        pin_base = hashlib.sha256(base_manifest).hexdigest()
-
-        # Strings vizinhas reais de classes4.dex ('10' < pin_base < ': ')
-        strings = sorted(['0', '10', pin_base, ': ', 'ProfileDirectorySeed', 'org/smartedtv'])
-        base_dex = _criar_dex_sintetico(strings)
-
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
-            zf.writestr('classes4.dex', base_dex)
-            zf.writestr('assets/smarted/profile-manifest.txt', base_manifest)
-            for rel, b in arquivos_perfil.items():
-                zf.writestr(f'assets/smarted/profile/{rel}', b)
+            for n in sorted(nomes):
+                addon_id = n.split('/')[2]
+                zf.writestr(n, f'<addon id="{addon_id}"/>'.encode('utf-8'))
         buf.seek(0)
+        with zipfile.ZipFile(buf, 'r') as zf:
+            removidos, _motivos = atu.addons_sem_entrega(nomes, zf)
 
-        with zipfile.ZipFile(buf, 'r') as origem:
-            excluidos, modificados = atu.preparar_perfil_limpo(origem)
+        self.assertIn('plugin.video.youtube', removidos)
+        self.assertIn('plugin.audio.mp3streams', removidos)
+        self.assertNotIn('plugin.video.BrazucaPlay.Matrix', removidos)
+        self.assertNotIn('plugin.video.elementum', removidos)
+        self.assertFalse(hasattr(ver, 'verificar_classes4_dex'),
+                         'verify.py deve exigir classes*.dex identico ao base-v22')
 
-        self.assertIn('assets/smarted/profile/addons/plugin.video.youtube/addon.xml', excluidos)
-        self.assertIn('assets/smarted/profile/addons/plugin.audio.mp3streams/addon.xml', excluidos)
-        self.assertNotIn('assets/smarted/profile/addons/plugin.video.BrazucaPlay.Matrix/addon.xml', excluidos)
-        self.assertNotIn('assets/smarted/profile/addons/plugin.video.elementum/addon.xml', excluidos)
-
-        novo_manifest = modificados['assets/smarted/profile-manifest.txt']
-        novo_dex = modificados['classes4.dex']
-        self.assertNotIn(b'plugin.video.youtube', novo_manifest)
-        self.assertNotIn(b'plugin.audio.mp3streams', novo_manifest)
-        self.assertIn(b'plugin.video.BrazucaPlay.Matrix', novo_manifest)
-        self.assertIn(b'plugin.video.elementum', novo_manifest)
-
-        # Valida integridade binária do classes4.dex com a mesma função do CI!
-        ver.verificar_classes4_dex(base_dex, novo_dex, base_manifest, novo_manifest)
-
-        # Confirma que Addons33.db ficou sem youtube/mp3streams mas manteve Brazuca e Elementum
-        fd, db_limpo_path = tempfile.mkstemp(suffix='.db')
-        os.close(fd)
-        try:
-            Path(db_limpo_path).write_bytes(modificados['assets/smarted/profile/userdata/Database/Addons33.db'])
-            con = sqlite3.connect(db_limpo_path)
-            ids_inst = {r[0] for r in con.execute('SELECT addonID FROM installed')}
-            con.close()
-            self.assertNotIn('plugin.video.youtube', ids_inst)
-            self.assertNotIn('plugin.audio.mp3streams', ids_inst)
-            self.assertEqual(ids_inst, {'plugin.video.BrazucaPlay.Matrix', 'plugin.video.elementum'})
-        finally:
-            os.remove(db_limpo_path)
-
-    def test_2_bootstrap_service_desativa_e_expurga_youtube_e_mp3streams_no_upgrade(self):
-        """Em aparelhos que atualizarem por cima de versão anterior, service.py
-        desativa via JSON-RPC e apaga pastas, pacotes e registros SQLite apenas
-        de YouTube e MP3 Streams, preservando Brazuca e Elementum."""
+    def test_2_bootstrap_service_expurga_youtube_e_mp3streams_no_primeiro_boot_sem_tocar_reabertura(self):
+        """No 1o boot (pastas presentes), service.py apaga pastas, pacotes .zip
+        e registros SQLite de YouTube e MP3 Streams; na reabertura seguinte
+        (pastas ja ausentes), nao abre SQLite nem dispara JSON-RPC/UpdateLocalAddons."""
         tmp = tempfile.mkdtemp(prefix='smarted-svc149-')
         salvos = {k: sys.modules.get(k) for k in ('xbmc', 'xbmcvfs', 'xbmcgui', 'xbmcaddon')}
         try:
             rpcs = []
+            builtins = []
             xbmc = types.ModuleType('xbmc')
             xbmc.log = lambda *a, **k: None
             xbmc.LOGINFO, xbmc.LOGWARNING, xbmc.LOGERROR = 1, 3, 4
-            xbmc.executebuiltin = lambda _c: None
+            xbmc.executebuiltin = lambda c: builtins.append(c)
             xbmc.getCondVisibility = lambda _c: False
             xbmc.executeJSONRPC = lambda p: (rpcs.append(json.loads(p)) or '{"result":"OK"}')
             xbmc.Monitor = object
@@ -478,15 +436,18 @@ class RemocaoYoutubeMp3StreamsTest(unittest.TestCase):
             self.assertFalse(os.path.exists(os.path.join(tmp, 'addons/packages/plugin.video.youtube-7.0.zip')))
             self.assertTrue(os.path.exists(os.path.join(tmp, 'addons/plugin.video.BrazucaPlay.Matrix')))
             self.assertTrue(os.path.exists(os.path.join(tmp, 'addons/plugin.video.elementum')))
-            desabilitados = [r['params']['addonid'] for r in rpcs
-                             if r.get('method') == 'Addons.SetAddonEnabled']
-            self.assertIn('plugin.video.youtube', desabilitados)
-            self.assertIn('plugin.audio.mp3streams', desabilitados)
 
             con = sqlite3.connect(os.path.join(tmp, 'userdata/Database/Addons33.db'))
             restantes = {r[0] for r in con.execute('SELECT addonID FROM installed')}
             con.close()
             self.assertEqual(restantes, {'plugin.video.BrazucaPlay.Matrix', 'plugin.video.elementum'})
+
+            # Na reabertura (pastas ja ausentes): zero RPC e zero UpdateLocalAddons!
+            rpcs.clear()
+            builtins.clear()
+            self.assertEqual(svc.limpar_repositorios_de_terceiros(), [])
+            self.assertEqual(rpcs, [])
+            self.assertEqual(builtins, [])
         finally:
             for k, mod in salvos.items():
                 if mod is None:

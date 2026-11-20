@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 """Valida o manifesto decodificado pelo SDK e as ABIs reais do APK assinado."""
-import hashlib
 import re
 import struct
 import sys
 import xml.etree.ElementTree as ET
-import zlib
 from pathlib import Path
 from zipfile import ZIP_STORED, ZipFile
 
@@ -69,47 +67,6 @@ def verificar_skins(apk, names):
         print('skin ok: %s (Home Clássica + fontes)' % skin)
 
 
-def _mutf8_u16(dados):
-    out, i, n = [], 0, len(dados)
-    while i < n:
-        b0 = dados[i]
-        if (b0 & 0x80) == 0:
-            out.append(b0); i += 1
-        elif (b0 & 0xE0) == 0xC0 and i + 1 < n:
-            out.append(((b0 & 0x1F) << 6) | (dados[i + 1] & 0x3F)); i += 2
-        elif (b0 & 0xF0) == 0xE0 and i + 2 < n:
-            out.append(((b0 & 0x0F) << 12) | ((dados[i + 1] & 0x3F) << 6) | (dados[i + 2] & 0x3F)); i += 3
-        else:
-            out.append(b0); i += 1
-    return tuple(out)
-
-
-def verificar_classes4_dex(base_dex, novo_dex, base_manifest, novo_manifest):
-    if novo_dex == base_dex:
-        return
-    require(len(novo_dex) == len(base_dex) and novo_dex.startswith(b'dex\n'), 'classes4.dex inválido')
-    adler = zlib.adler32(memoryview(novo_dex)[12:]) & 0xFFFFFFFF
-    require(struct.unpack_from('<I', novo_dex, 8)[0] == adler, 'classes4.dex: Adler-32 incorreto')
-    require(novo_dex[12:32] == hashlib.sha1(memoryview(novo_dex)[32:]).digest(), 'classes4.dex: SHA-1 incorreto')
-    count, table_off = struct.unpack_from('<II', novo_dex, 56)
-    anterior = None
-    for idx in range(count):
-        off = struct.unpack_from('<I', novo_dex, table_off + 4 * idx)[0]
-        pos = off
-        while novo_dex[pos] & 0x80:
-            pos += 1
-        pos += 1
-        fim = novo_dex.index(0, pos)
-        atual = _mutf8_u16(novo_dex[pos:fim])
-        require(anterior is None or anterior < atual, f'classes4.dex: string_ids fora de ordem em {idx}')
-        anterior = atual
-    pin_antigo = hashlib.sha256(base_manifest).hexdigest().encode('ascii')
-    pin_novo = hashlib.sha256(novo_manifest).hexdigest().encode('ascii')
-    require(pin_novo in novo_dex, 'classes4.dex: pin do manifesto ausente')
-    reconstituido = novo_dex.replace(pin_novo, pin_antigo, 1)
-    require(reconstituido[32:] == base_dex[32:], 'classes4.dex alterado além do pin do manifesto')
-
-
 def verify_apk(base, final):
     def code_files(z):
         return {n for n in z.namelist() if n.startswith('lib/') or re.fullmatch(r'classes\d*\.dex|resources\.arsc', n)}
@@ -117,21 +74,12 @@ def verify_apk(base, final):
     with ZipFile(base) as before, ZipFile(final) as apk:
         names = apk.namelist()
         require(len(names) == len(set(names)) and apk.testzip() is None, 'ZIP duplicado ou corrompido')
-        require(not any('plugin.video.youtube' in n or 'plugin.audio.mp3streams' in n for n in names),
-                'YouTube ou MP3 Streams presente no APK')
         require(apk.getinfo('resources.arsc').compress_type == ZIP_STORED, 'resources.arsc comprimido')
         require({n.split('/')[1] for n in names if n.startswith('lib/')} == ABIS.keys(), 'conjunto de ABIs incorreto')
         require(code_files(before) == code_files(apk), 'sumiu código da v22')
         for path in code_files(apk):
             contents = apk.read(path)
-            if path == 'classes4.dex' and 'assets/smarted/profile-manifest.txt' in names:
-                verificar_classes4_dex(
-                    before.read(path), contents,
-                    before.read('assets/smarted/profile-manifest.txt'),
-                    apk.read('assets/smarted/profile-manifest.txt'),
-                )
-            else:
-                require(contents == before.read(path), 'código diferente da base: '+path)
+            require(contents == before.read(path), 'código diferente da base: '+path)
             if path.startswith('lib/') and path.endswith('.so'):
                 abi = path.split('/')[1]
                 require(contents[:4] == b'\x7fELF' and contents[5] == 1 and

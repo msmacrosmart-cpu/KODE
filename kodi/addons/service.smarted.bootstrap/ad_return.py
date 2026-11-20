@@ -71,6 +71,29 @@ def _ao_vivo(caminho=''):
         return False
 
 
+def _urls_equivalentes(a, b):
+    """Compara caminhos tratando proxy LAN ``?url=...`` e URL real como iguais."""
+    if not a or not b:
+        return True
+    if a == b:
+        return True
+    ca = {a.split('|', 1)[0].strip()}
+    cb = {b.split('|', 1)[0].strip()}
+    try:
+        import ao_vivo
+        ea = ao_vivo.extrair_url_proxy(a)
+        eb = ao_vivo.extrair_url_proxy(b)
+        if ea:
+            ca.add(ea.split('|', 1)[0].strip())
+        if eb:
+            cb.add(eb.split('|', 1)[0].strip())
+    except Exception:
+        pass
+    ca.discard('')
+    cb.discard('')
+    return bool(ca & cb)
+
+
 class Retomada(object):
     """Um ponto de retorno por anuncio; nunca mexe em conteudo que nao seja ele."""
 
@@ -133,7 +156,7 @@ class Retomada(object):
             caminho = caminho or xbmc.Player().getPlayingFile()
         except Exception:
             caminho = ''
-        if estado['caminho'] and caminho and estado['caminho'] != caminho:
+        if estado['caminho'] and caminho and not _urls_equivalentes(estado['caminho'], caminho):
             return False
         return True
 
@@ -156,7 +179,7 @@ class Retomada(object):
             return False
         if volta[1] and canal and volta[1] != canal:
             return False
-        if volta[0] and caminho and volta[0] != caminho:
+        if volta[0] and caminho and not _urls_equivalentes(volta[0], caminho):
             return False
         return True
 
@@ -183,14 +206,19 @@ class Retomada(object):
                         # a tela do anuncio estava na frente: reabrir o canal e
                         # a unica forma de voltar a ter imagem (sem seek).
                         if estado.get('ao_vivo') and self.mesmo_conteudo():
+                            reaberto = False
                             try:
                                 import ao_vivo
                                 if ao_vivo._tocar_de_novo(estado['caminho']):
+                                    reaberto = True
                                     if self.log:
                                         self.log('[SmartAds] canal reaberto apos '
                                                  'o anuncio (ao vivo)')
                             except Exception:
                                 pass
+                            if reaberto:
+                                self.consumir(player)
+                                return None
                         self.cancelar()
                         return None
                     continue
