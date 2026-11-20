@@ -34,8 +34,20 @@ jobs:
           { python3 tools/kodi/sanear-perfil-embarcado.py /tmp/apk/a.apk /tmp/apk/b.apk 2>&1 || true; } | tee /tmp/sanea.txt
           grep -E 'addons de terceiros removidos|addons que ficam no perfil|arquivos removidos|pin' /tmp/sanea.txt | while read -r l; do aviso "$l"; done
           echo '--- depois: a conferencia tem de passar'
-          python3 tools/kodi/sanear-perfil-embarcado.py --conferir /tmp/apk/b.apk
-          aviso 'DEPOIS: perfil limpo e pin do dex bate'
+          echo '--- recompilando o bootstrap com o pin novo'
+          python3 tools/kodi/recompilar-bootstrap.py /tmp/apk/b.apk /tmp/apk/c.apk /tmp/apk/boot
+          python3 tools/kodi/sanear-perfil-embarcado.py --conferir /tmp/apk/c.apk
+          aviso 'DEPOIS: perfil limpo, bootstrap recompilado e pin batendo'
+          python3 - <<'PY'
+          import zipfile
+          a = zipfile.ZipFile('/tmp/apk/a.apk')
+          c = zipfile.ZipFile('/tmp/apk/c.apk')
+          for nome in ('classes.dex', 'classes2.dex', 'classes4.dex', 'classes9.dex'):
+              mesmo = a.read(nome) == c.read(nome)
+              print('::notice::%s %s' % (nome, 'identico a base (ok)' if mesmo else 'DIFERENTE (proibido)'))
+          print('::notice::classes3.dex recompilado: %d bytes (base %d)'
+                % (len(c.read('classes3.dex')), len(a.read('classes3.dex'))))
+          PY
           echo '--- o Java do bootstrap ficou com o pin novo?'
           aviso "pin no Java: $(grep -oE '\b[0-9a-f]{64}\b' tools/android/src/org/smartedtv/bootstrap/ProfileDirectoryBootstrap.java | head -1)"
           echo '--- integridade de boot no APK saneado'

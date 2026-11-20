@@ -67,31 +67,12 @@ def verificar_skins(apk, names):
         print('skin ok: %s (Home Clássica + fontes)' % skin)
 
 
-HEX64 = re.compile(rb'[0-9a-f]{64}')
-
-
-def so_mudou_o_pin(novo, base):
-    """Dex so pode diferir da base na string do pin do perfil (64 hex).
-
-    O perfil embarcado sai sem os addons de terceiros (youtube, OpenWizard...),
-    entao o sha256 de `assets/smarted/profile-manifest.txt` muda e o bootstrap
-    precisa conferir o novo valor. O build troca o pin NO DEX; a regra de "dex
-    identico a base" continua valendo para todo o resto.
-    """
-    if len(novo) != len(base):
-        return False
-    diferentes = [i for i, (a, b) in enumerate(zip(novo, base)) if a != b]
-    if not diferentes:
-        return True
-    # cabecalho do dex: 8..12 = Adler-32 (recalculado) e 12..32 = SHA-1 (idem)
-    fora_do_cabecalho = [i for i in diferentes if not 8 <= i < 32]
-    if not fora_do_cabecalho:
-        return True
-    inicio, fim = min(fora_do_cabecalho), max(fora_do_cabecalho) + 1
-    if any(not 8 <= i < 32 and not inicio <= i < fim for i in diferentes):
-        return False
-    return (any(m.start() <= inicio and fim <= m.end() for m in HEX64.finditer(base)) and
-            any(m.start() <= inicio and fim <= m.end() for m in HEX64.finditer(novo)))
+# Dex que PODE ser recompilado: o bootstrap do splash (tela de entrada), que
+# carrega o pin do perfil embarcado. Todo o resto do codigo tem de ser identico
+# a base. Editar byte em dex NAO e aceito: o experimento no emulador mostrou que
+# o classes4 patcheado mata o app com
+#   NoClassDefFoundError: Failed resolution of: Lsmartedtv/full/XBMCJsonRPC
+DEX_RECOMPILAVEL = 'classes3.dex'
 
 
 def verify_apk(base, final):
@@ -108,9 +89,11 @@ def verify_apk(base, final):
             contents = apk.read(path)
             original = before.read(path)
             if contents != original:
-                require(path.endswith('.dex') and so_mudou_o_pin(contents, original),
+                require(path == DEX_RECOMPILAVEL,
                         'código diferente da base: '+path)
-                print('%s: so o pin do perfil mudou (permitido)' % path)
+                require(contents[:4] == b'dex\n' and len(contents) > 112,
+                        'dex recompilado invalido: '+path)
+                print('%s: recompilado do bootstrap (permitido)' % path)
             if path.startswith('lib/') and path.endswith('.so'):
                 abi = path.split('/')[1]
                 require(contents[:4] == b'\x7fELF' and contents[5] == 1 and

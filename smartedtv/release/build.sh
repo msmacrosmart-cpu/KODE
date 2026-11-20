@@ -28,17 +28,15 @@ montar() {  # $1 = arquivo final
 # align-apk.py, o mesmo daquela entrega. Nao elevar nem reduzir minSdk aqui.
   # Perfil embarcado: sem YouTube/OpenWizard e sem os repositorios antigos. O
   # Kodi inicia os servicos desses addons ANTES de qualquer Python do app, entao
-  # limpá-los depois da Home nao adianta (medido no projetor). Este passo tambem
-  # revalida o manifesto e troca o pin conferido pelo dex.
+  # limpá-los depois da Home nao adianta (medido no projetor).
   python3 tools/kodi/sanear-perfil-embarcado.py "$scratch/overlay.apk" "$scratch/sem-terceiros.apk"
-  python3 tools/kodi/ajustar-versao-apk.py "$scratch/sem-terceiros.apk" "$scratch/raw.apk" \
+  # O pin do manifesto vive no classes3.dex (bootstrap). Recompilar - nunca
+  # editar byte no dex: o experimento no emulador provou que patchear o
+  # classes4 deixa o ART recusar o arquivo (NoClassDefFoundError no app).
+  python3 tools/kodi/recompilar-bootstrap.py "$scratch/sem-terceiros.apk" "$scratch/bootstrap-novo.apk" "$scratch/bootstrap"
+  python3 tools/kodi/ajustar-versao-apk.py "$scratch/bootstrap-novo.apk" "$scratch/raw.apk" \
     --de 1.0.87 --de-codigo 2103073 --para "$VERSION_NAME" --para-codigo "$VERSION_CODE"
-  # O dex que o app lê tem de estar com checksum/assinatura válidos: com o
-  # cabeçalho errado o ART recusa o arquivo e o app morre com
-  # NoClassDefFoundError (visto no emulador de projetor no APK 1.0.143).
-  # Este passo diz no log se encontrou cabeçalho quebrado e conserta.
-  python3 tools/kodi/sanear-perfil-embarcado.py --reparar-dex "$scratch/raw.apk" "$scratch/reparado.apk"
-  python3 tools/kodi/align-apk.py "$scratch/reparado.apk" "$scratch/aligned.apk"
+  python3 tools/kodi/align-apk.py "$scratch/raw.apk" "$scratch/aligned.apk"
   "$bt/apksigner" sign --ks "$KODI_ANDROID_STORE_FILE" --ks-key-alias "$KODI_ANDROID_KEY_ALIAS" \
     --ks-pass env:KODI_ANDROID_STORE_PASSWORD --key-pass env:KODI_ANDROID_KEY_PASSWORD \
     --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false \
