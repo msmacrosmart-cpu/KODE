@@ -67,6 +67,7 @@ for v in A D C; do
     aviso "$v: MORREU -> $(adb logcat -b crash -d | grep -m6 -E 'NoClassDef|Caused by|FATAL|at smartedtv' | tr '\n' ' ' | cut -c1-600)"
   else
     aviso "$v: app vivo (pid $pid)"
+    printf '== %s: app vivo (pid %s)\n' "$v" "$pid" > "$work/resumo-$v.txt"
     adb exec-out screencap -p > "$work/tela-$v.png" 2>/dev/null || true
   fi
 done
