@@ -98,6 +98,8 @@ DROPBOX_URL = ('https://www.dropbox.com/scl/fi/adn9elzkjzxof741bbui2/'
 APK = DROPBOX_URL.replace('&dl=0', '&dl=1')
 APK_GITHUB = ('https://github.com/msmacrosmart-cpu/KODE/releases/latest/'
               'download/SMARTEDTV-universal.apk')
+APK_GITHUB_FIXO = ('https://github.com/msmacrosmart-cpu/KODE/releases/latest/'
+                   'download/SMARTEDTV.apk')
 
 # Um APK do Kodi com as duas ABIs passa de 240 MB. Abaixo disso o arquivo
 # baixado e pagina de erro do Dropbox/HTML com extensao .apk, nao o app.
@@ -1132,13 +1134,23 @@ def resolver_apk_publicado():
         return (url, origem)
     if APK_GITHUB:
         # A release publica o APK UNIVERSAL (smartedtv.full), o mesmo arquivo
-        # para celular e TV. Antes, com dois APKs, a TV nao podia usar este
-        # atalho; agora pode - e deve, porque a pasta do Dropbox tem o arquivo
-        # depositado por quem publica. Se o tamanho nao for de APK, nao usa.
-        tamanho, _ = _cabecalhos_remotos(APK_GITHUB)
-        if tamanho is None or tamanho >= APK_TAMANHO_MINIMO:
-            log('usando o APK da release no GitHub (%s)' % APK_GITHUB)
-            return (APK_GITHUB, 'github')
+        # para celular e TV. Aceita tanto SMARTEDTV-universal.apk quanto
+        # SMARTEDTV.apk caso o ativo da release tenha sido renomeado, evitando
+        # que TV Stick/TV Box baixe pagina 404 com extensao .apk ("App nao instalado").
+        opcoes_gh = [APK_GITHUB]
+        if APK_GITHUB_FIXO and APK_GITHUB_FIXO != APK_GITHUB:
+            opcoes_gh.append(APK_GITHUB_FIXO)
+        tamanhos_gh = []
+        for url_gh in opcoes_gh:
+            tam_gh, _ = _cabecalhos_remotos(url_gh)
+            tamanhos_gh.append((url_gh, tam_gh))
+            if tam_gh is not None and tam_gh >= APK_TAMANHO_MINIMO:
+                log('usando o APK da release no GitHub (%s)' % url_gh)
+                return (url_gh, 'github')
+        for url_gh, tam_gh in tamanhos_gh:
+            if tam_gh is None:
+                log('usando o APK da release no GitHub sem Content-Length (%s)' % url_gh)
+                return (url_gh, 'github')
     motivo = '; '.join(motivos) or 'sem link de APK configurado'
     return (None, motivo)
 

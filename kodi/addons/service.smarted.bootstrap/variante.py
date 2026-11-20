@@ -70,14 +70,20 @@ PACOTE_TV = 'smartedtv.tv'
 # ``System.FriendlyName``; a comparacao e sem acento e em minusculas).
 MARCAS_TV = (
     'android tv', 'google tv', 'chromecast', 'fire tv', 'firetv', 'fire stick',
-    'firestick', 'nvidia shield', 'shield android', 'mi box', 'mibox',
-    'mi tv', 'mitv', 'mi stick', 'tv box', 'tvbox', 'box tv', 'smart tv',
-    'smarttv', 'apple tv', 'roku', 'matv', 'aosp on', 'adt-', 'atv',
-    'projector', 'projetor', 'cinebeam', 'the freestyle', 'xgimi', 'wanbo',
-    'byintek', 'magcubic', 'salange', 'yaber', 'vankyo', 'nebula', 'formovie',
-    'jmgo', 'dangbei', 'hisense', 'tcl', 'philips tv', 'bravia', 'aquos',
-    'hy300', 'h713', 'allwinner', 'droidlogic', 'amlogic', 'rk322', 'rk332',
-    'rk352', 'h96', 'x96', 'tx3', 'mxq', 'tanix',
+    'firestick', 'fireos', 'aftm', 'aftt', 'afts', 'aftb', 'aftk', 'afth',
+    'afte', 'aftn', 'nvidia shield', 'shield android', 'mi box', 'mibox',
+    'mi tv', 'mitv', 'mi stick', 'mistick', 'mdz-', 'realme tv', 'izy play',
+    'iziplay', 'mecool', 'aquario', 'stv-', 'tv box', 'tvbox', 'box tv',
+    'smart tv', 'smarttv', 'apple tv', 'roku', 'matv', 'aosp on', 'adt-',
+    'atv', 'projector', 'projetor', 'cinebeam', 'the freestyle', 'xgimi',
+    'wanbo', 'byintek', 'magcubic', 'salange', 'yaber', 'vankyo', 'nebula',
+    'formovie', 'jmgo', 'dangbei', 'hisense', 'tcl', 'philips tv', 'bravia',
+    'aquos', 'hy300', 'h713', 'allwinner', 'sun8i', 'sun50i', 'h313', 'h616',
+    'h618', 'droidlogic', 'amlogic', 'meson', 'gxbb', 'gxl', 'gxm', 'g12a',
+    'g12b', 's905', 's912', 's922', 'p212', 'p281', 'q201', 'rk3128', 'rk322',
+    'rk3318', 'rk3328', 'rk352', 'rk356', 'h96', 'x96', 'x88', 'a95x', 'hk1',
+    't95', 'tx2', 'tx3', 'tx6', 'tx9', 'mxq', 'tanix', 'btv', 'htv', 'tigre',
+    'vontar', 'transpeed', 'beelink', 'ugoos', 'zidoo', 'minix',
 )
 
 MARCAS_MOBILE = (
@@ -85,6 +91,116 @@ MARCAS_MOBILE = (
     'moto e', 'redmi', 'poco', 'galaxy', 'pixel', 'xiaomi', 'realme',
     'infinix', 'tecno',
 )
+
+_PROP_ARQUIVOS_PADRAO = (
+    '/system/build.prop',
+    '/vendor/build.prop',
+    '/product/build.prop',
+    '/odm/etc/build.prop',
+)
+_PERM_PASTAS_PADRAO = (
+    '/system/etc/permissions',
+    '/vendor/etc/permissions',
+)
+_CHAVES_PROP_APARELHO = (
+    'ro.product.model', 'ro.product.vendor.model', 'ro.product.odm.model',
+    'ro.product.device', 'ro.product.vendor.device', 'ro.product.board',
+    'ro.board.platform', 'ro.hardware', 'ro.product.name',
+    'ro.product.manufacturer', 'ro.product.brand',
+)
+_CARACTERISTICAS_TV = ('tv', 'television', 'tvbox', 'mbox', 'mbx', 'stb', 'leanback')
+_PERMISSOES_TV = (
+    'android.software.leanback.xml',
+    'android.hardware.type.television.xml',
+    'com.amazon.feature.television.xml',
+)
+_PERMISSOES_TOQUE = (
+    'android.hardware.touchscreen.xml',
+    'handheld_core_hardware.xml',
+    'tablet_core_hardware.xml',
+)
+_CACHE_SISTEMA = {}
+
+
+def _ler_props_android(arquivos=None):
+    """Le build.prop diretamente com open() puro (zero subprocess)."""
+    usar_cache = arquivos is None
+    if usar_cache and 'props' in _CACHE_SISTEMA:
+        return _CACHE_SISTEMA['props']
+    props = {}
+    for caminho in (arquivos if arquivos is not None else _PROP_ARQUIVOS_PADRAO):
+        try:
+            if not os.path.isfile(caminho):
+                continue
+            with open(caminho, 'r', encoding='utf-8', errors='replace') as fh:
+                for linha in fh:
+                    linha = linha.strip()
+                    if not linha or linha.startswith('#') or '=' not in linha:
+                        continue
+                    chave, valor = linha.split('=', 1)
+                    chave = chave.strip().lower()
+                    valor = valor.strip()
+                    if chave and valor and chave not in props:
+                        props[chave] = valor
+        except Exception:
+            continue
+    if usar_cache:
+        _CACHE_SISTEMA['props'] = props
+    return props
+
+
+def _sinais_sistema_android(arquivos_prop=None, pastas_perm=None):
+    """Inspeciona permissoes e build.prop do Android para TV Stick e TV Box.
+
+    Retorna ``(TV/MOBILE/None, motivo)``. Em host de teste (sem /system Android)
+    devolve ``(None, '')`` para nao interferir nos stubs do Kodi.
+    """
+    pastas = pastas_perm if pastas_perm is not None else _PERM_PASTAS_PADRAO
+    pastas_existentes = [p for p in pastas if p and os.path.isdir(p)]
+    for pasta in pastas_existentes:
+        for arq in _PERMISSOES_TV:
+            if os.path.isfile(os.path.join(pasta, arq)):
+                return TV, 'permissao de sistema %s' % arq
+
+    props = _ler_props_android(arquivos_prop)
+    if props:
+        carac = _sem_acento(props.get('ro.build.characteristics', ''))
+        tokens_carac = [t.strip() for t in carac.split(',') if t.strip()]
+        for tok in tokens_carac:
+            if tok in _CARACTERISTICAS_TV:
+                return TV, 'ro.build.characteristics=%s' % tok
+
+        if props.get('ro.build.version.fireos'):
+            return TV, 'Fire OS detectado (TV Stick/Fire TV)'
+
+        fab = _sem_acento(props.get('ro.product.manufacturer', '') + ' ' +
+                          props.get('ro.product.brand', ''))
+        modelo = _sem_acento(props.get('ro.product.model', ''))
+        if 'amazon' in fab and modelo.startswith('aft'):
+            return TV, 'Amazon Fire TV Stick (%s)' % modelo
+
+        resumo_hw = _sem_acento(' '.join(
+            props.get(k, '') for k in _CHAVES_PROP_APARELHO if props.get(k)
+        ))
+        # Verifica marcas de TV Box/Stick ANTES de marcas genericas como xiaomi/realme
+        for marca in MARCAS_TV:
+            if marca in resumo_hw:
+                return TV, 'hardware Android contem %r' % marca
+        for marca in MARCAS_MOBILE:
+            if marca in resumo_hw:
+                return MOBILE, 'hardware Android contem %r' % marca
+
+    # TV Box AOSP sem Leanback e sem tela touch fisica
+    if pastas_existentes:
+        tem_toque = any(
+            os.path.isfile(os.path.join(pasta, arq))
+            for pasta in pastas_existentes
+            for arq in _PERMISSOES_TOQUE
+        )
+        if not tem_toque:
+            return TV, 'Android sem touchscreen fisico (TV Box/Stick)'
+
+    return None, ''
 
 
 def _condicao(consulta):
@@ -144,7 +260,7 @@ def variante_do_arquivo():
 
 
 def variante_do_aparelho():
-    """(variante, motivo) usando somente o que o Kodi informa do aparelho."""
+    """(variante, motivo) usando o que o Kodi e o sistema Android informam."""
     if _condicao('System.Platform.Android.TV'):
         return TV, 'System.Platform.Android.TV'
     nome = _sem_acento(_info('System.FriendlyName'))
@@ -154,6 +270,10 @@ def variante_do_aparelho():
     for marca in MARCAS_MOBILE:
         if marca in nome:
             return MOBILE, 'nome do aparelho contem %r' % marca
+    if _condicao('System.Platform.Android') or _condicao('System.Platform.Android.Mobile'):
+        sinal_sis, motivo_sis = _sinais_sistema_android()
+        if sinal_sis in (TV, MOBILE):
+            return sinal_sis, motivo_sis
     if _condicao('System.Platform.Android.Mobile'):
         return MOBILE, 'System.Platform.Android.Mobile'
     try:

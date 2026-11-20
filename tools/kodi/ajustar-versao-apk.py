@@ -114,6 +114,119 @@ def desligar_debug(manifesto: bytes) -> tuple:
     return bytes(dados), alterados, vistos
 
 
+def tornar_features_opcionais(manifesto: bytes) -> tuple:
+    """Garante android:required="false" em todas as tags <uses-feature>.
+
+    Algumas TV Boxes (Rockchip/Allwinner/Amlogic AOSP) e sticks nao declaram
+    ``android.hardware.screen.landscape`` em /etc/permissions e recusam o APK
+    com INSTALL_FAILED_MISSING_FEATURE ("App nao instalado") quando algum
+    ``<uses-feature>`` fica com ``required=true`` (ou sem o atributo required).
+    """
+    dados = bytearray(manifesto)
+    strings = None
+    res_ids = []
+    modelo_req_false = None
+    indice_req = None
+
+    for inicio, tipo, _, tamanho in _chunks_axml(dados):
+        if tipo == 0x0001:
+            strings = _strings_do_pool(dados, inicio)
+        elif tipo == 0x0180:
+            qtd = (tamanho - 8) // 4
+            res_ids = [ _u32(dados, inicio + 8 + 4 * i) for i in range(qtd) ]
+        elif tipo == 0x0102 and strings is not None:
+            if strings[_u32(dados, inicio + 20)] != 'uses-feature':
+                continue
+            passo = _u16(dados, inicio + 26)
+            base = inicio + 16 + _u16(dados, inicio + 24)
+            for i in range(_u16(dados, inicio + 28)):
+                pos = base + i * passo
+                ns = _u32(dados, pos)
+                ind_nome = _u32(dados, pos + 4)
+                if ns != NO_INDEX and strings[ns] == ANDROID and strings[ind_nome] == 'required':
+                    indice_req = ind_nome
+                    bloco = bytearray(dados[pos:pos + 20])
+                    struct.pack_into('<I', bloco, 8, NO_INDEX)
+                    bloco[15] = 0x12  # TYPE_INT_BOOLEAN
+                    struct.pack_into('<I', bloco, 16, 0)
+                    modelo_req_false = bytes(bloco)
+                    break
+
+    alteradas = []
+    # Passo 1: desligar in-place qualquer uses-feature que ja tenha required != 0
+    for inicio, tipo, _, tamanho in list(_chunks_axml(dados)):
+        if tipo != 0x0102 or strings is None:
+            continue
+        if strings[_u32(dados, inicio + 20)] != 'uses-feature':
+            continue
+        passo = _u16(dados, inicio + 26)
+        base = inicio + 16 + _u16(dados, inicio + 24)
+        qtd_attr = _u16(dados, inicio + 28)
+        nome_feat = '?'
+        pos_req = None
+        for i in range(qtd_attr):
+            pos = base + i * passo
+            ns = _u32(dados, pos)
+            if ns == NO_INDEX or strings[ns] != ANDROID:
+                continue
+            atrib = strings[_u32(dados, pos + 4)]
+            if atrib == 'name' and dados[pos + 15] == 3:
+                nome_feat = strings[_u32(dados, pos + 16)]
+            elif atrib == 'required':
+                pos_req = pos
+        if pos_req is not None and _u32(dados, pos_req + 16) != 0:
+            struct.pack_into('<I', dados, pos_req + 8, NO_INDEX)
+            dados[pos_req + 15] = 0x12
+            struct.pack_into('<I', dados, pos_req + 16, 0)
+            alteradas.append(nome_feat)
+
+    # Passo 2: inserir required="false" nos uses-feature que omitiam o atributo
+    if modelo_req_false is not None and indice_req is not None:
+        res_req = res_ids[indice_req] if indice_req < len(res_ids) else 0x0101028e
+        while True:
+            inseriu = False
+            for inicio, tipo, _, tamanho in _chunks_axml(dados):
+                if tipo != 0x0102:
+                    continue
+                if strings[_u32(dados, inicio + 20)] != 'uses-feature':
+                    continue
+                passo = _u16(dados, inicio + 26)
+                if passo != 20:
+                    continue
+                base = inicio + 16 + _u16(dados, inicio + 24)
+                qtd_attr = _u16(dados, inicio + 28)
+                nome_feat = '?'
+                tem_req = False
+                pos_insercao = base + qtd_attr * passo
+                for i in range(qtd_attr):
+                    pos = base + i * passo
+                    ns = _u32(dados, pos)
+                    ind_n = _u32(dados, pos + 4)
+                    if ns != NO_INDEX and strings[ns] == ANDROID:
+                        atrib = strings[ind_n]
+                        if atrib == 'name' and dados[pos + 15] == 3:
+                            nome_feat = strings[_u32(dados, pos + 16)]
+                        elif atrib == 'required':
+                            tem_req = True
+                    rid = res_ids[ind_n] if ind_n < len(res_ids) else 0xffffffff
+                    if rid > res_req and pos < pos_insercao:
+                        pos_insercao = pos
+                if not tem_req:
+                    dados[pos_insercao:pos_insercao] = modelo_req_false
+                    struct.pack_into('<H', dados, inicio + 28, qtd_attr + 1)
+                    struct.pack_into('<I', dados, inicio + 4, tamanho + 20)
+                    struct.pack_into('<I', dados, 4, len(dados))
+                    alteradas.append(nome_feat)
+                    inseriu = True
+                    break
+            if not inseriu:
+                break
+
+    # Confere integridade estrutural de todos os chunks AXML apos o ajuste
+    list(_chunks_axml(dados))
+    return bytes(dados), alteradas
+
+
 def _versao_no_pool(dados, indice, antigo, novo):
     # A base assinada usa um pool sem estilos. Conserva índices (inclusive os
     # do resource map), recalculando offsets para versões como 1.0.100.
@@ -212,6 +325,8 @@ def main() -> int:
                 raise SystemExit('android:debuggable nao encontrado no manifesto')
             print('debug/testOnly vistos: %s' % (vistos,))
             print('debug/testOnly desligados: %s' % (alterados or 'ja estavam false'))
+            manifesto, feats_opc = tornar_features_opcionais(manifesto)
+            print('uses-feature tornadas opcionais: %s' % (feats_opc or 'ja eram todas false'))
         args.saida.parent.mkdir(parents=True, exist_ok=True)
         try:
             with zipfile.ZipFile(args.saida, 'w', allowZip64=True) as destino:

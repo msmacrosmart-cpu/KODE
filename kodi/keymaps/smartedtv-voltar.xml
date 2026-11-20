@@ -22,6 +22,7 @@
       <!-- Android/TV: KEYCODE_BACK chega como XBMCK_BACKSPACE -->
       <backspace>RunScript(script.smartedtv.welcome,voltar)</backspace>
       <browser_back>RunScript(script.smartedtv.welcome,voltar)</browser_back>
+      <nav_back>RunScript(script.smartedtv.welcome,voltar)</nav_back>
       <!-- teclado de PC/comando de teste -->
       <escape>RunScript(script.smartedtv.welcome,voltar)</escape>
     </keyboard>
@@ -29,5 +30,10 @@
       <!-- controle/CEC: o botao "voltar" do controle -->
       <back>RunScript(script.smartedtv.welcome,voltar)</back>
     </remote>
+    <gamepad>
+      <!-- controles Bluetooth de Fire TV Stick / Mi Stick / TV Box -->
+      <B>RunScript(script.smartedtv.welcome,voltar)</B>
+      <back>RunScript(script.smartedtv.welcome,voltar)</back>
+    </gamepad>
   </Home>
 </keymap>

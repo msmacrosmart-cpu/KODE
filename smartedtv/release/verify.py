@@ -35,6 +35,8 @@ def verify_manifest(root, name, code):
     for feature in ('android.hardware.touchscreen', 'android.software.leanback', 'android.hardware.type.television'):
         require(features.get(feature) == 'false', 'feature deve ser opcional: '+feature)
     require(all(req == 'false' for feat, req in features.items() if (feat or '').startswith('android.hardware.touchscreen')), 'multitoque obrigatório')
+    require(all(req == 'false' for feat, req in features.items() if feat),
+            'uses-feature obrigatória impede instalar em TV box/stick: ' + str(features))
     cats = set()
     for activity in app.findall('activity') + app.findall('activity-alias'):
         if activity.get(ANDROID+'exported') != 'true' or activity.get(ANDROID+'enabled') == 'false':

@@ -291,9 +291,22 @@ def _parece_tv():
     except Exception:
         nome = ''
     for marca in ('tv', 'box', 'stick', 'fire', 'aft', 'shield',
-                  'chromecast', 'projector', 'projetor', 'leanback'):
+                  'chromecast', 'projector', 'projetor', 'leanback',
+                  'mxq', 'tx3', 'tx9', 'tanix', 'x96', 'h96', 'btv', 'htv'):
         if marca in nome:
             return True
+    try:
+        pasta = _pasta_do_servico()
+        arq_var = os.path.join(pasta, 'variante.py') if pasta else ''
+        if arq_var and os.path.isfile(arq_var):
+            import importlib.util as _il_util
+            spec = _il_util.spec_from_file_location('_smarted_variante_welcome', arq_var)
+            mod_var = _il_util.module_from_spec(spec)
+            spec.loader.exec_module(mod_var)
+            if mod_var.e_tv():
+                return True
+    except Exception:
+        pass
     return False
 
 

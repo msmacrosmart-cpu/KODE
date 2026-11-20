@@ -10,6 +10,7 @@
     <keyboard>
       <backspace>Stop</backspace>
       <browser_back>Stop</browser_back>
+      <nav_back>Stop</nav_back>
       <escape>Stop</escape>
       <stop>Stop</stop>
       <x>Stop</x>
@@ -28,6 +29,7 @@
     <keyboard>
       <backspace>Stop</backspace>
       <browser_back>Stop</browser_back>
+      <nav_back>Stop</nav_back>
       <escape>Stop</escape>
       <stop>Stop</stop>
       <x>Stop</x>
@@ -46,6 +48,7 @@
     <keyboard>
       <backspace>Stop</backspace>
       <browser_back>Stop</browser_back>
+      <nav_back>Stop</nav_back>
       <escape>Stop</escape>
       <stop>Stop</stop>
       <x>Stop</x>

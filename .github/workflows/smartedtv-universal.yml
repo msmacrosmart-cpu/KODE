@@ -11,6 +11,7 @@ on:
       # de entrada e as duas skins. Antes, mudanca aqui nao gerava release e o
       # aparelho continuava com o defeito.
       - 'tools/kodi/atualizar-apk-v17.py'
+      - 'tools/kodi/ajustar-versao-apk.py'
       - 'kodi/addons/service.smarted.bootstrap/*.py'
       - 'kodi/addons/script.smartedtv.welcome/**'
       - 'kodi/skin.estilo.personalizado/**'
@@ -51,7 +52,7 @@ jobs:
         run: |
           python3 tools/kodi/static-check.py
           python3 -m unittest tests.test_release_universal tests.test_atualizar_apk tests.test_vip_botoes_android \
-            tests.test_apk_nome_fixo tests.test_projetor_addons \
+            tests.test_apk_nome_fixo tests.test_projetor_addons tests.test_release_1_0_155 \
             tests.test_tela_entrada.TVBoxStickTest tests.test_tela_entrada.CicloDeVidaTest
       - name: Montar, alinhar, assinar e verificar o APK final
         shell: bash
@@ -112,6 +113,8 @@ jobs:
             grep -oE 'android:name="[^"]*FileProvider"' build/universal/manifest.xml | head -5 || true
             grep -oE 'android:authorities="[^"]*"' build/universal/manifest.xml | head -5 || true
             grep -oE 'requestLegacyExternalStorage="[^"]*"|usesCleartextTraffic="[^"]*"' build/universal/manifest.xml | head -3 || true
+            echo "== uses-feature (nenhuma obrigatoria para TV Stick / TV Box) =="
+            grep -E '<uses-feature' build/universal/manifest.xml || true
             echo
             echo "== identidade instalada (antes desta build) =="
             { grep -E "versionName|versionCode|primaryCpuAbi|codePath" build/universal/pacote-instalado.txt 2>/dev/null || echo "(sem dumpsys nesta etapa)"; } | head -8
