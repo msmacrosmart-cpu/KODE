@@ -9,7 +9,7 @@ on:
     paths: ['.github/workflows/exp-dex-perfil.yml']
 jobs:
   experimento:
-    runs-on: macos-13
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -46,17 +46,22 @@ jobs:
             "$bt/apksigner" sign --ks "$KODI_ANDROID_STORE_FILE" --ks-key-alias "$KODI_ANDROID_KEY_ALIAS" \
               --ks-pass env:KODI_ANDROID_STORE_PASSWORD --key-pass env:KODI_ANDROID_KEY_PASSWORD \
               --out "$work/$v-s.apk" "$work/$v-a.apk"
-            aviso "$v: $(stat -f%z "$work/$v-s.apk") bytes"
+            aviso "$v: $(stat -c%s "$work/$v-s.apk") bytes"
           done
-      - name: Habilitar KVM
+      - name: Habilitar aceleracao
         run: |
-          sudo chmod 666 /dev/kvm || true
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
       - name: Instalar cada variante e abrir
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 30
           target: google_apis
           arch: x86_64
+          profile: 10.1in WXGA (Tablet)
+          disk-size: 4096M
+          emulator-boot-timeout: 420
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 3072
           disable-animations: true
           script: |
