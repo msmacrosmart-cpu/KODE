@@ -303,7 +303,8 @@ def _parece_tv():
             spec = _il_util.spec_from_file_location('_smarted_variante_welcome', arq_var)
             mod_var = _il_util.module_from_spec(spec)
             spec.loader.exec_module(mod_var)
-            if mod_var.e_tv():
+            sinal_sis, _ = mod_var._sinais_sistema_android()
+            if sinal_sis == 'tv':
                 return True
     except Exception:
         pass

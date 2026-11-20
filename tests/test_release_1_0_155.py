@@ -280,6 +280,24 @@ class Release10155Test(unittest.TestCase):
         with zipfile.ZipFile(buf, 'r') as zf:
             sim_boot.conferir_keymap(zf)
 
+        path_antes = list(sys.path)
+        vip_antes = sys.modules.get('vip')
+        sim = sim_boot.Simulacao(RAIZ / 'nao-existe.apk')
+        mod_welcome = sim_boot.carregar_default(
+            sim,
+            RAIZ / 'kodi' / 'addons' / 'script.smartedtv.welcome',
+            RAIZ / 'kodi' / 'addons' / 'service.smarted.bootstrap',
+        )
+        try:
+            sim_boot.conferir_execucao(sim, mod_welcome)
+        finally:
+            sim_boot.restaurar_modulos(mod_welcome)
+            sys.path[:] = path_antes
+            if vip_antes is None:
+                sys.modules.pop('vip', None)
+            else:
+                sys.modules['vip'] = vip_antes
+
 
 if __name__ == '__main__':
     unittest.main()
