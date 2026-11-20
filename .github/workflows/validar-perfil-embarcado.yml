@@ -1,0 +1,40 @@
+name: Validar saneamento do perfil embarcado
+# Roda o saneador contra o APK REAL publicado (perfil e dex de verdade, com o pin
+# de 64 hex) e confere o resultado. O sandbox de desenvolvimento nao alcança
+# release-assets.githubusercontent.com, por isso a prova roda no runner.
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/validar-perfil-embarcado.yml']
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sanea o APK real e confere
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          aviso() { printf '::notice::%s\n' "$(printf '%s' "$*" | tr '\r\n' '  ' | cut -c1-900)"; }
+          mkdir -p /tmp/apk
+          gh release download v1.0.141-universal -R msmacrosmart-cpu/KODE \
+            -p SMARTEDTV-universal.apk -O /tmp/apk/a.apk
+          aviso "baixado: $(stat -c%s /tmp/apk/a.apk) bytes"
+          echo '--- antes: o perfil embarcado TEM addon de terceiro?'
+          if python3 tools/kodi/sanear-perfil-embarcado.py --conferir /tmp/apk/a.apk > /tmp/antes.txt 2>&1; then
+            aviso 'ANTES: a conferencia passou (o APK publicado ja esta limpo)'
+          else
+            aviso "ANTES (esperado reprovar): $(head -c 600 /tmp/antes.txt)"
+          fi
+          echo '--- saneando'
+          { python3 tools/kodi/sanear-perfil-embarcado.py /tmp/apk/a.apk /tmp/apk/b.apk 2>&1 || true; } | tee /tmp/sanea.txt
+          grep -E 'addons de terceiros removidos|addons que ficam no perfil|arquivos removidos|pin' /tmp/sanea.txt | while read -r l; do aviso "$l"; done
+          echo '--- depois: a conferencia tem de passar'
+          python3 tools/kodi/sanear-perfil-embarcado.py --conferir /tmp/apk/b.apk
+          aviso 'DEPOIS: perfil limpo e pin do dex bate'
+          echo '--- o Java do bootstrap ficou com o pin novo?'
+          aviso "pin no Java: $(grep -oE '\b[0-9a-f]{64}\b' tools/android/src/org/smartedtv/bootstrap/ProfileDirectoryBootstrap.java | head -1)"
+          echo '--- integridade de boot no APK saneado'
+          { python3 tools/kodi/verify-boot-integrity.py /tmp/apk/b.apk 2>&1 || true; } | tail -20 | while read -r l; do aviso "$l"; done

@@ -25,6 +25,7 @@ Usage:
 """
 import hashlib
 import sys
+import re
 import zipfile
 from pathlib import Path
 
@@ -32,7 +33,21 @@ MANIFEST_PATH = "assets/smarted/profile-manifest.txt"
 PROFILE_PREFIX = "assets/smarted/profile/"
 OLD_SKIN_LINE = '<setting id="lookandfeel.skin" default="true">skin.estuary</setting>'
 NEW_SKIN_LINE = '<setting id="lookandfeel.skin">skin.novatv</setting>'
-EXPECTED_MANIFEST_SHA256 = "1447de816a44ecc11c42c2c315cf20e61c9baa037e914a13293711cf152d1ede"
+BOOTSTRAP_JAVA = (Path(__file__).resolve().parent.parent / "android" / "src" /
+                  "org" / "smartedtv" / "bootstrap" / "ProfileDirectoryBootstrap.java")
+_HEX64 = re.compile(r"\b[0-9a-f]{64}\b")
+# O pin NAO e fixo no repositorio: `sanear-perfil-embarcado.py` reescreve o
+# manifesto (tira addons de terceiros) e atualiza o pin no Java E no dex. Ler o
+# valor do Java aqui foi o que manteve a conferencia valida nessa troca.
+PIN_137 = "1447de816a44ecc11c42c2c315cf20e61c9baa037e914a13293711cf152d1ede"
+
+
+def expected_manifest_sha256() -> str:
+    try:
+        achados = _HEX64.findall(BOOTSTRAP_JAVA.read_text(encoding="utf-8"))
+    except OSError:
+        return PIN_137
+    return achados[0] if achados else PIN_137
 SKIN_ADDON_XML = "assets/addons/skin.novatv/addon.xml"
 BUILD_SCRIPT = Path(__file__).resolve().parent / "build-release-apk.py"
 
@@ -78,7 +93,7 @@ def main():
             h = sha256_bytes(manifest)
             check(
                 "manifest sha256 == dex const",
-                h == EXPECTED_MANIFEST_SHA256,
+                h == expected_manifest_sha256(),
                 f"got {h}",
             )
             check("manifest size < 2 MB", len(manifest) < 2 * 1024 * 1024, f"{len(manifest)} bytes")

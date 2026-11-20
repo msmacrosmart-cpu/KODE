@@ -26,7 +26,12 @@ montar() {  # $1 = arquivo final
 # Receita IDENTICA a da v22/v21, que instalou no aparelho: o manifesto muda
 # so versao/codigo (o minSdk fica o da base) e o alinhamento e feito pelo
 # align-apk.py, o mesmo daquela entrega. Nao elevar nem reduzir minSdk aqui.
-  python3 tools/kodi/ajustar-versao-apk.py "$scratch/overlay.apk" "$scratch/raw.apk" \
+  # Perfil embarcado: sem YouTube/OpenWizard e sem os repositorios antigos. O
+  # Kodi inicia os servicos desses addons ANTES de qualquer Python do app, entao
+  # limpá-los depois da Home nao adianta (medido no projetor). Este passo tambem
+  # revalida o manifesto e troca o pin conferido pelo dex.
+  python3 tools/kodi/sanear-perfil-embarcado.py "$scratch/overlay.apk" "$scratch/sem-terceiros.apk"
+  python3 tools/kodi/ajustar-versao-apk.py "$scratch/sem-terceiros.apk" "$scratch/raw.apk" \
     --de 1.0.87 --de-codigo 2103073 --para "$VERSION_NAME" --para-codigo "$VERSION_CODE"
   python3 tools/kodi/align-apk.py "$scratch/raw.apk" "$scratch/aligned.apk"
   "$bt/apksigner" sign --ks "$KODI_ANDROID_STORE_FILE" --ks-key-alias "$KODI_ANDROID_KEY_ALIAS" \
@@ -48,6 +53,9 @@ montar() {  # $1 = arquivo final
     echo '::error::o APK universal tem marcador de variante (a TV ficaria como celular)' >&2
     exit 1
   fi
+  # Nenhum addon de terceiro pode voltar ao perfil embarcado neste APK, e o
+  # manifesto tem de bater com o pin que o dex confere (senao a Home fica vazia).
+  python3 tools/kodi/sanear-perfil-embarcado.py --conferir "$scratch/signed.apk"
   python3 tools/kodi/simular-boot-tela-entrada.py --apk "$scratch/signed.apk"
   mv "$scratch/signed.apk" "$saida"
   rm -rf "$scratch"
