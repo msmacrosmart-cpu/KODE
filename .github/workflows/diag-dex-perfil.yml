@@ -9,40 +9,41 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - name: Patchear e inspecionar o dex com dexdump
+      - name: classes4.dex x bootstrap recompilado
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           aviso() { printf '::notice::%s\n' "$(printf '%s' "$*" | tr '\r\n' '  ' | cut -c1-900)"; }
           TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
-          ls "$TOOLS" | grep -i dex || true
+          SDK_JAR=$(find "$ANDROID_HOME/platforms" -name android.jar | sort -V | tail -1)
           mkdir -p /tmp/apk && cd /tmp/apk
           gh release download v1.0.141-universal -R msmacrosmart-cpu/KODE -p SMARTEDTV-universal.apk -O a.apk
           cd "$GITHUB_WORKSPACE"
-          python3 tools/kodi/sanear-perfil-embarcado.py /tmp/apk/a.apk /tmp/apk/b.apk > /tmp/sanea.txt 2>&1 || true
-          tail -4 /tmp/sanea.txt | while read -r l; do aviso "$l"; done
           python3 - <<'PY'
-          import hashlib, struct, zipfile, zlib
-          for tag, caminho in (('base', '/tmp/apk/a.apk'), ('saneado', '/tmp/apk/b.apk')):
-              with zipfile.ZipFile(caminho) as z:
-                  d = z.read('classes4.dex')
-              print('::notice::%s classes4.dex: %d bytes, magic=%r, file_size=%d, header_size=%d, string_ids_size=%d'
-                    % (tag, len(d), d[:8], struct.unpack('<I', d[32:36])[0],
-                       struct.unpack('<I', d[36:40])[0], struct.unpack('<I', d[56:60])[0]))
-              print('::notice::%s checksum no cabecalho=%08x calculado=%08x | sha1 no cabecalho=%s calculado=%s'
-                    % (tag, struct.unpack('<I', d[8:12])[0], zlib.adler32(d[12:]) & 0xffffffff,
-                       d[12:32].hex(), hashlib.sha1(d[32:]).hexdigest()))
-              open('/tmp/%s-classes4.dex' % tag, 'wb').write(d)
+          import zipfile
+          with zipfile.ZipFile('/tmp/apk/a.apk') as z:
+              for nome in sorted(n for n in z.namelist() if n.endswith('.dex')):
+                  d = z.read(nome)
+                  print('::notice::%s %d bytes | bootstrap=%s | XBMCJsonRPC=%s | XBMCFileContentProvider=%s | ProfileSeed=%s'
+                        % (nome, len(d), b'org/smartedtv/bootstrap' in d,
+                           b'XBMCJsonRPC' in d, b'XBMCFileContentProvider' in d,
+                           b'ProfileDirectorySeed' in d))
+                  open('/tmp/%s' % nome, 'wb').write(d)
           PY
-          for tag in base saneado; do
-            echo "=== dexdump $tag"
-            { "$TOOLS/dexdump" -f "/tmp/$tag-classes4.dex" 2>&1 || true; } | head -30 | while read -r l; do aviso "$tag: $l"; done
-            { "$TOOLS/dexdump" -c "/tmp/$tag-classes4.dex" 2>&1 || true; } | head -5 | while read -r l; do aviso "$tag checksum: $l"; done
-          done
-          echo '=== a string do pin nos dois'
-          for tag in base saneado; do
-            aviso "$tag: $(grep -aoE '[0-9a-f]{64}' "/tmp/$tag-classes4.dex" | head -2 | tr '\n' ' ')"
-          done
-          echo '=== diff binario (regioes alteradas)'
-          cmp -l /tmp/base-classes4.dex /tmp/saneado-classes4.dex | head -5 | while read -r l; do aviso "diff: $l"; done
+          echo '=== classes declaradas no classes4.dex (publicado)'
+          { "$TOOLS/dexdump" /tmp/classes4.dex 2>/dev/null || true; } \
+            | grep -oE "Class descriptor *: 'L[^']+;'" | sed "s/.*'L//;s/;'//" | sort -u > /tmp/classes_publicado.txt || true
+          aviso "publicado: $(wc -l < /tmp/classes_publicado.txt) classes; primeiras: $(head -5 /tmp/classes_publicado.txt | tr '\n' ' ')"
+          echo '=== recompilando o bootstrap do repositorio'
+          mkdir -p /tmp/classes /tmp/dex
+          javac -source 8 -target 8 -classpath "$SDK_JAR" -d /tmp/classes tools/android/src/org/smartedtv/bootstrap/*.java 2>&1 | tail -3 || true
+          "$TOOLS/d8" --min-api 21 --lib "$SDK_JAR" --output /tmp/dex $(find /tmp/classes -name '*.class')
+          { "$TOOLS/dexdump" /tmp/dex/classes.dex 2>/dev/null || true; } \
+            | grep -oE "Class descriptor *: 'L[^']+;'" | sed "s/.*'L//;s/;'//" | sort -u > /tmp/classes_novo.txt || true
+          aviso "recompilado: $(wc -l < /tmp/classes_novo.txt) classes; $(stat -c%s /tmp/dex/classes.dex) bytes"
+          echo '=== so no publicado'
+          comm -23 /tmp/classes_publicado.txt /tmp/classes_novo.txt | head -20 | while read -r l; do aviso "so publicado: $l"; done
+          echo '=== so no recompilado'
+          comm -13 /tmp/classes_publicado.txt /tmp/classes_novo.txt | head -20 | while read -r l; do aviso "so recompilado: $l"; done
+          aviso "iguais: $(comm -12 /tmp/classes_publicado.txt /tmp/classes_novo.txt | wc -l)"
