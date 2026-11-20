@@ -216,7 +216,10 @@ def trocar_pin_no_dex(dados, antigo, novo):
 
 def executar(apk_entrada, apk_saida, atualizar_origem=True):
     arquivos, removidos, mantidos = planejar(apk_entrada)
-    pin_antigo = pin_publicado()
+    with zipfile.ZipFile(apk_entrada) as z:
+        # o pin de partida e o que ESTE APK confere (o Java pode estar um passo
+        # atras quando o build roda duas vezes seguidas)
+        pin_antigo = pin_do_dex(z) or pin_publicado()
     with zipfile.ZipFile(apk_entrada) as z:
         nomes = set(z.namelist())
         restantes = {n for n in nomes if n not in arquivos}
@@ -242,7 +245,9 @@ def executar(apk_entrada, apk_saida, atualizar_origem=True):
                 info.external_attr = item.external_attr
                 info.comment = item.comment
                 saida.writestr(info, dados)
-    if trocados != 1:
+    if pin_novo == pin_antigo:
+        print('perfil identico ao publicado: pin mantido (%s)' % pin_novo)
+    elif trocados != 1:
         raise SystemExit('pin trocado %d vez(es) no dex; esperado 1' % trocados)
     # conferir o resultado no arquivo final
     with zipfile.ZipFile(apk_saida) as z:

@@ -26,7 +26,7 @@ jobs:
         run: |
           set -euo pipefail
           aviso() { printf '::notice::%s\n' "$(printf '%s' "$*" | tr '\r\n' '  ' | cut -c1-900)"; }
-          . smartedtv/tools/test-signing-env.sh
+          PROJECT=$PWD . smartedtv/tools/test-signing-env.sh
           bt="$ANDROID_HOME/build-tools/35.0.0"
           work=build/exp; mkdir -p "$work"
           cp build/universal/base-v22.apk "$work/base.apk"

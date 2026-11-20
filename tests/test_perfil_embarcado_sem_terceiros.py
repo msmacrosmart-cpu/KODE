@@ -187,6 +187,15 @@ class SanearPerfilTest(unittest.TestCase):
             self.assertTrue(self.modulo.cabecalho_do_dex_confere(z.read('classes4.dex')))
             self.assertIn('assets/smarted/profile/userdata/guisettings.xml', z.namelist())
 
+    def test_perfil_identico_ao_publicado_nao_mexe_no_dex(self):
+        """Sem mudanca no perfil o pin fica igual: nao pode falhar por isso."""
+        self.modulo.executar(self.apk, self.saida, atualizar_origem=False)
+        outra = os.path.join(self.pasta, 'outra.apk')
+        self.modulo.executar(self.saida, outra, atualizar_origem=False)
+        with zipfile.ZipFile(self.saida) as a, zipfile.ZipFile(outra) as b:
+            self.assertEqual(a.read('classes4.dex'), b.read('classes4.dex'))
+            self.assertEqual(a.read(self.modulo.MANIFESTO), b.read(self.modulo.MANIFESTO))
+
     def test_falha_alto_quando_o_pin_nao_esta_no_dex(self):
         """Sem o pin, o dex recusaria o perfil e a Home ficaria vazia."""
         apk_sem_pin = os.path.join(self.pasta, 'sem-pin.apk')
