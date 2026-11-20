@@ -41,7 +41,8 @@ import sys
 import zipfile
 
 PERFIL = 'assets/smarted/profile/'
-MANIFESTO = PERFIL + 'profile-manifest.txt'
+# fica AO LADO da pasta, nao dentro: assets/smarted/profile-manifest.txt
+MANIFESTO = 'assets/smarted/profile-manifest.txt'
 # O pin vive no codigo Java do bootstrap (que vai para o dex). Ele e a fonte da
 # verdade: o script le daqui, confere no dex e grava o novo valor de volta.
 ORIGEM_DO_PIN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
