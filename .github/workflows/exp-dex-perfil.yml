@@ -43,3 +43,6 @@ jobs:
             -camera-back none -memory 3072
           disable-animations: true
           script: bash tools/android/exp-dex.sh
+          # o script publica o crash como comentario do commit
+        env:
+          GH_TOKEN: ${{ github.token }}
