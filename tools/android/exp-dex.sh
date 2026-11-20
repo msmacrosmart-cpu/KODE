@@ -61,6 +61,8 @@ for v in A D C; do
   pid=$(adb shell pidof smartedtv.full | tr -d '\r')
   if [ -z "$pid" ]; then
     adb logcat -d > "$work/logcat-$v.txt" 2>/dev/null || true
+    adb logcat -b crash -d > "$work/crash-$v.txt" 2>/dev/null || true
+    printf '%s\n' "== $v: crash ==" "$(cat "$work/crash-$v.txt" 2>/dev/null | tail -60)" > "$work/resumo-$v.txt"
     grep -iE "Error|Exception|NoClassDef|Rejecting|checksum|magic|failed|DexInv|--- END" "$work/logcat-$v.txt" | grep -viE "hidden method|hidden api" | head -25 | while read -r l; do aviso "$v logcat: $l"; done
     aviso "$v: MORREU -> $(adb logcat -b crash -d | grep -m6 -E 'NoClassDef|Caused by|FATAL|at smartedtv' | tr '\n' ' ' | cut -c1-600)"
   else
@@ -68,4 +70,8 @@ for v in A D C; do
     adb exec-out screencap -p > "$work/tela-$v.png" 2>/dev/null || true
   fi
 done
+for v in A D C; do
+  [ -f "$work/resumo-$v.txt" ] && cat "$work/resumo-$v.txt"
+done | tail -c 60000 > "$work/resumo-exp.txt"
+bash tools/kodi/publicar-diag.sh "$work/resumo-exp.txt" || true
 exit 0
