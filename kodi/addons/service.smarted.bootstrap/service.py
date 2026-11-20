@@ -649,20 +649,6 @@ def limpar_estado_interface():
     """
     limpar_estagios_de_seed()
     try:
-        perfil = xbmcvfs.translatePath('special://profile')
-        if perfil and os.path.isabs(perfil):
-            pasta_dados = os.path.join(
-                perfil, 'addon_data', 'service.smarted.bootstrap')
-            if os.path.isdir(pasta_dados):
-                for arq in os.listdir(pasta_dados):
-                    if arq.endswith('.tmp'):
-                        try:
-                            os.remove(os.path.join(pasta_dados, arq))
-                        except Exception:
-                            pass
-    except Exception:
-        pass
-    try:
         import xbmcgui
         janela = xbmcgui.Window(10000)
         for chave in ('smartedtv.welcome.saiu', 'smartedtv.welcome.home',

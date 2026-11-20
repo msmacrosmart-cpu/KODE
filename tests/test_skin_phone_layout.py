@@ -240,7 +240,7 @@ class HomeBrazucaFavoritosTest(unittest.TestCase):
                           self.home, re.S)
         self.assertIsNotNone(bloco)
         self.assertIn('route=recent-movies', bloco.group(0))
-        self.assertIn('limit="8"', bloco.group(0))
+        self.assertIn('limit="30"', bloco.group(0))
         # o fundo do HERO acompanha o filme em destaque (linha 9201)
         self.assertIn('$INFO[Container(9201).ListItem.Art(fanart)]', self.home)
         self.assertNotIn('$INFO[Container(9200).ListItem.Art(fanart)]', self.home)

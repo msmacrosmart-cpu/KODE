@@ -71,27 +71,19 @@ def _ao_vivo(caminho=''):
         return False
 
 
-def _urls_equivalentes(a, b):
-    """Compara caminhos tratando proxy LAN ``?url=...`` e URL real como iguais."""
-    if not a or not b:
-        return True
-    if a == b:
-        return True
-    ca = {a.split('|', 1)[0].strip()}
-    cb = {b.split('|', 1)[0].strip()}
+def _url_base(caminho=''):
+    """Normaliza URL de stream desencapsulando proxy temporario ``?url=...``."""
+    texto = str(caminho or '').strip()
+    if not texto:
+        return ''
     try:
         import ao_vivo
-        ea = ao_vivo.extrair_url_proxy(a)
-        eb = ao_vivo.extrair_url_proxy(b)
-        if ea:
-            ca.add(ea.split('|', 1)[0].strip())
-        if eb:
-            cb.add(eb.split('|', 1)[0].strip())
+        real = ao_vivo.extrair_url_proxy(texto)
+        if real:
+            texto = real
     except Exception:
         pass
-    ca.discard('')
-    cb.discard('')
-    return bool(ca & cb)
+    return texto.split('|', 1)[0].strip()
 
 
 class Retomada(object):
@@ -152,12 +144,14 @@ class Retomada(object):
         canal = _canal() if canal is None else canal
         if estado['canal'] and canal and estado['canal'] != canal:
             return False
-        try:
-            caminho = caminho or xbmc.Player().getPlayingFile()
-        except Exception:
-            caminho = ''
-        if estado['caminho'] and caminho and not _urls_equivalentes(estado['caminho'], caminho):
-            return False
+        if caminho is None:
+            try:
+                caminho = xbmc.Player().getPlayingFile()
+            except Exception:
+                caminho = ''
+        if estado['caminho'] and caminho:
+            if _url_base(estado['caminho']) != _url_base(caminho):
+                return False
         return True
 
     def consumir(self, player):
@@ -171,16 +165,17 @@ class Retomada(object):
     def e_volta(self, caminho=None, canal=None):
         """A reproducao que comecou agora e a volta do anuncio?"""
         with self.lock:
-            volta, self.volta = self.volta, None
-        if not volta:
-            return False
-        limite = time.monotonic() > volta[2]
-        if limite:
-            return False
-        if volta[1] and canal and volta[1] != canal:
-            return False
-        if volta[0] and caminho and not _urls_equivalentes(volta[0], caminho):
-            return False
+            volta = self.volta
+            if not volta:
+                return False
+            if time.monotonic() > volta[2]:
+                self.volta = None
+                return False
+            if volta[1] and canal and volta[1] != canal:
+                return False
+            if volta[0] and caminho and _url_base(volta[0]) != _url_base(caminho):
+                return False
+            self.volta = None
         return True
 
     # ------------------------------------------------------------- vigia
@@ -191,7 +186,8 @@ class Retomada(object):
         box, projetor e stick. Para quando o conteudo muda, quando o usuario
         para ou quando o video ja voltou sozinho no ponto certo.
         """
-        limite = time.monotonic() + VIGIA_MAXIMO
+        inicio = time.monotonic()
+        limite = inicio + VIGIA_MAXIMO
         pausado_visto = False
         while time.monotonic() < limite:
             time.sleep(0.5)
@@ -200,25 +196,26 @@ class Retomada(object):
                     return None
             try:
                 if not player.isPlayingVideo():
-                    if pausado_visto:
-                        # stop/troca durante o anuncio: nada a restaurar. No
-                        # canal ao vivo, porem, o fluxo pode ter caido enquanto
-                        # a tela do anuncio estava na frente: reabrir o canal e
-                        # a unica forma de voltar a ter imagem (sem seek).
-                        if estado.get('ao_vivo') and self.mesmo_conteudo():
-                            reaberto = False
+                    # No canal ao vivo, o fluxo pode cair enquanto a tela do
+                    # anuncio esteve aberta (mesmo antes do poll ver Paused).
+                    # Marca a volta ANTES de reabrir o canal para que o retorno
+                    # ao canal inicie o intervalo de 2 min sem novo anuncio.
+                    if (estado.get('ao_vivo')
+                            and (pausado_visto or time.monotonic() - inicio >= 1.0)):
+                        if self.mesmo_conteudo('', _canal()):
+                            self.consumir(player)
                             try:
                                 import ao_vivo
                                 if ao_vivo._tocar_de_novo(estado['caminho']):
-                                    reaberto = True
                                     if self.log:
                                         self.log('[SmartAds] canal reaberto apos '
                                                  'o anuncio (ao vivo)')
                             except Exception:
                                 pass
-                            if reaberto:
-                                self.consumir(player)
-                                return None
+                        else:
+                            self.cancelar()
+                        return None
+                    if pausado_visto:
                         self.cancelar()
                         return None
                     continue
@@ -247,7 +244,13 @@ class Retomada(object):
         """Devolve o player a posicao guardada, se ele perdeu o ponto."""
         if estado.get('ao_vivo'):
             # Canal continuo: seek aqui derruba o fluxo (tela preta). O canal
-            # volta no ponto atual da transmissao, que e o comportamento certo.
+            # volta no ponto atual da transmissao e inicia o intervalo de 2 min.
+            self.consumir(player)
+            try:
+                import ads_regra
+                ads_regra.concluir_anuncio()
+            except Exception:
+                pass
             if self.log:
                 self.log('[SmartAds] TV ao vivo: sem retomada por posicao')
             return None

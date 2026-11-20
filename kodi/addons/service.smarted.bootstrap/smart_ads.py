@@ -52,7 +52,6 @@ normalmente.
 from __future__ import absolute_import, unicode_literals
 
 import os
-import re
 import threading
 import time
 
@@ -639,180 +638,33 @@ def vip_ativo():
         return False
 
 
-_TAG_KODI_RE = re.compile(
-    r'\[/?(?:COLOR[^\]]*|B|I|LIGHT|UPPERCASE|LOWERCASE|CAPITALIZE|CR)\]',
-    re.IGNORECASE,
-)
-_QUALIDADE_FIM_RE = re.compile(
-    r'(?:\s*[\[\(]\s*(?:4k|uhd|fhd|hd|sd|h\.?265|hevc|alt|backup|24h)\s*[\]\)]\s*)+$',
-    re.IGNORECASE,
-)
-_TENTATIVA_FIM_RE = re.compile(
-    r'(?:[\s\-–—:|/]+|[\[\(]\s*)(?:op[cç][aã]o|opcao|rota|link|servidor|server|fonte|player|sinal)\s*\d*\s*[\]\)]?$',
-    re.IGNORECASE,
-)
-_ARQUIVO_BRUTO_RE = re.compile(
-    r'\.(?:m3u8|m3u|ts|mpegts|m2ts|mp4|mkv|avi|mpd)(?:$|\?)',
-    re.IGNORECASE,
-)
-_AO_VIVO_FALLBACK = None
-
-
-def _modulo_ao_vivo():
-    """Obtem ``ao_vivo`` sem poluir ``sys.path``."""
-    global _AO_VIVO_FALLBACK
-    mod = sys.modules.get('ao_vivo') if 'sys' in globals() else None
-    if mod is None:
-        try:
-            import sys as _sys
-            mod = _sys.modules.get('ao_vivo')
-        except Exception:
-            mod = None
-    if mod is not None:
-        return mod
-    try:
-        import ao_vivo as mod_real
-        return mod_real
-    except Exception:
-        pass
-    if _AO_VIVO_FALLBACK is not None:
-        return _AO_VIVO_FALLBACK
-    try:
-        import importlib.util as _ilu
-        arq = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                           'ao_vivo.py')
-        if os.path.isfile(arq):
-            sp = _ilu.spec_from_file_location('_smarted_ao_vivo_local', arq)
-            carregado = _ilu.module_from_spec(sp)
-            sp.loader.exec_module(carregado)
-            _AO_VIVO_FALLBACK = carregado
-            return carregado
-    except Exception:
-        pass
-    return None
-
-
-def _extrair_url_proxy_ao_vivo(caminho):
-    texto = (caminho or '').strip()
-    if not texto or '?' not in texto:
-        return ''
-    mod = _modulo_ao_vivo()
-    extrator = getattr(mod, 'extrair_url_proxy', None)
-    if callable(extrator):
-        try:
-            real = extrator(texto)
-            if real:
-                return real
-        except Exception:
-            pass
-    try:
-        from urllib.parse import parse_qs, unquote, urlparse
-        sem_pipe = texto.split('|', 1)[0]
-        valores = parse_qs(urlparse(sem_pipe).query).get('url') or []
-        if valores:
-            cand = unquote(valores[0]).strip()
-            if cand.lower().startswith(('http://', 'https://')):
-                return cand
-    except Exception:
-        pass
-    return ''
-
-
-def _eh_canal_ao_vivo(caminho=None):
-    for rotulo in ('VideoPlayer.ChannelName', 'Player.ChannelName'):
-        try:
-            if (xbmc.getInfoLabel(rotulo) or '').strip():
-                return True
-        except Exception:
-            pass
-    mod = _modulo_ao_vivo()
-    detector = getattr(mod, 'eh_ao_vivo', None)
-    if callable(detector):
-        try:
-            return bool(detector(caminho or ''))
-        except Exception:
-            return False
-    return False
-
-
-def _reabertura_interna_ao_vivo(caminho=''):
-    mod = _modulo_ao_vivo()
-    fn = getattr(mod, 'reabertura_recente', None)
-    if callable(fn):
-        try:
-            return bool(fn(caminho or ''))
-        except Exception:
-            return False
-    return False
-
-
-def _normalizar_nome_canal(texto):
-    """Normaliza o nome humano do canal removendo tags de cor e sufixos de opcao."""
-    limpo = _TAG_KODI_RE.sub('', str(texto or '')).strip()
-    if not limpo:
-        return ''
-    baixo = limpo.lower()
-    if baixo.startswith(('http://', 'https://', 'plugin://', 'pvr://', 'rtmp://')):
-        return ''
-    if _ARQUIVO_BRUTO_RE.search(limpo):
-        return ''
-    anterior = None
-    while limpo and limpo != anterior:
-        anterior = limpo
-        limpo = _QUALIDADE_FIM_RE.sub('', limpo).strip()
-        limpo = _TENTATIVA_FIM_RE.sub('', limpo).strip()
-    limpo = re.sub(r'\s+', ' ', limpo).strip(' -–—:|/')
-    return limpo.lower()
-
-
-def _nome_canal_ao_vivo():
-    for rotulo in ('VideoPlayer.ChannelName', 'Player.ChannelName',
-                   'VideoPlayer.Title', 'Player.Title'):
-        try:
-            bruto = xbmc.getInfoLabel(rotulo) or ''
-        except Exception:
-            bruto = ''
-        nome = _normalizar_nome_canal(bruto)
-        if nome:
-            return nome
-    return ''
-
-
-def _urls_canonicas_ao_vivo(caminho):
-    urls = set()
-    texto = (caminho or '').strip()
+def _normalizar_caminho_chave(caminho):
+    """Normaliza URL desencapsulando proxy temporario ``?url=...`` e headers."""
+    texto = str(caminho or '').strip()
     if not texto:
-        return urls
-    real = _extrair_url_proxy_ao_vivo(texto)
-    if real:
-        urls.add(real.split('|', 1)[0].strip())
-    sem_pipe = texto.split('|', 1)[0].strip()
-    if sem_pipe and not real:
-        urls.add(sem_pipe)
-    elif sem_pipe and '?url=' not in sem_pipe.lower():
-        urls.add(sem_pipe)
-    urls.discard('')
-    return urls
+        return ''
+    try:
+        import ao_vivo
+        real = ao_vivo.extrair_url_proxy(texto)
+        if real:
+            texto = real
+    except Exception:
+        pass
+    return texto.split('|', 1)[0].strip()
 
 
 def _chave_conteudo(caminho=None):
-    """Chave do conteudo: caminho + canal/titulo quando existirem.
+    """Chave do conteudo: caminho normalizado + canal/titulo quando existirem.
 
-    Live TV pode repetir o mesmo caminho em canais diferentes, ou trocar de
-    porta de proxy/rota de opcao durante tentativas do MESMO canal: no ao vivo
-    a chave usa a identidade normalizada do canal (ou a URL real sem a porta
-    efemera do proxy) para que tentativas de reproducao nunca parecam troca.
+    Live TV pode repetir o mesmo caminho em canais diferentes; o nome do canal
+    entra na chave para que a troca de canal realmente conte como novo conteudo,
+    enquanto o retorno do anuncio para a URL real (fora do proxy local) mantem
+    a mesma chave base do canal.
     """
-    if _eh_canal_ao_vivo(caminho):
-        nome_vivo = _nome_canal_ao_vivo()
-        if nome_vivo:
-            return 'aovivo:canal:%s' % nome_vivo
-        urls = sorted(_urls_canonicas_ao_vivo(caminho))
-        if urls:
-            return 'aovivo:url:%s' % urls[0]
     partes = []
-    if caminho:
-        partes.append(str(caminho))
+    base = _normalizar_caminho_chave(caminho)
+    if base:
+        partes.append(base)
     for rotulo in ('VideoPlayer.ChannelName', 'VideoPlayer.Title',
                    'VideoPlayer.OriginalTitle', 'Player.Title'):
         try:
@@ -1021,54 +873,8 @@ class MonitorPreRoll(_BasePlayer):
         self.retomada = None
         self._em_vast = False
         self._ate_ignorar_volta_vast = 0.0
+        self._volta_vast_chave = ''
         self._vast_lock = threading.Lock()
-        self._sessao_ao_vivo = None
-        self._tentativa_ao_vivo_recente = None
-
-    def _eh_tentativa_mesmo_canal_ao_vivo(self, caminho, nome_vivo, urls_vivo):
-        """True quando a TV ao vivo esta tentando/reconectando o canal ja escolhido."""
-        agora = time.monotonic()
-        atual = self._sessao_ao_vivo
-        if atual is not None:
-            if _reabertura_interna_ao_vivo(caminho):
-                atual['urls'].update(urls_vivo)
-                return True
-            if nome_vivo and atual.get('nome'):
-                if nome_vivo == atual['nome']:
-                    atual['urls'].update(urls_vivo)
-                    return True
-                return False
-            if urls_vivo and atual.get('urls') and (urls_vivo & atual['urls']):
-                if nome_vivo and not atual.get('nome'):
-                    atual['nome'] = nome_vivo
-                atual['urls'].update(urls_vivo)
-                return True
-            if not nome_vivo and atual.get('nome'):
-                atual['urls'].update(urls_vivo)
-                return True
-
-        rec = self._tentativa_ao_vivo_recente
-        if rec is not None and agora < float(rec.get('ate') or 0.0):
-            mesmo = False
-            if nome_vivo and rec.get('nome'):
-                if nome_vivo == rec['nome']:
-                    mesmo = True
-                else:
-                    self._tentativa_ao_vivo_recente = None
-                    return False
-            elif urls_vivo and rec.get('urls') and (urls_vivo & rec['urls']):
-                mesmo = True
-            if mesmo:
-                urls_novas = set(rec.get('urls') or set()) | set(urls_vivo)
-                self._sessao_ao_vivo = {
-                    'nome': nome_vivo or rec.get('nome') or '',
-                    'urls': urls_novas,
-                    'chave': rec.get('chave') or '',
-                    'inicio': rec.get('inicio') or agora,
-                }
-                self._tentativa_ao_vivo_recente = None
-                return True
-        return False
 
     def _retomada(self):
         if self.retomada is None:
@@ -1096,7 +902,8 @@ class MonitorPreRoll(_BasePlayer):
                 disparou = abrir_anuncio(atividade, log)
             finally:
                 if disparou:
-                    self._ate_ignorar_volta_vast = time.monotonic() + 12.0
+                    self._volta_vast_chave = _normalizar_caminho_chave(caminho_inicial)
+                    self._ate_ignorar_volta_vast = time.monotonic() + 18.0
                 self._em_vast = False
             if disparou:
                 self._garantir_player_tela_cheia()
@@ -1180,38 +987,24 @@ class MonitorPreRoll(_BasePlayer):
             if not _e_video(self):
                 return
             caminho = self._caminho() or self.ultimo_caminho
-            eh_vivo = _eh_canal_ao_vivo(caminho)
-            nome_vivo = _nome_canal_ao_vivo() if eh_vivo else ''
-            urls_vivo = _urls_canonicas_ao_vivo(caminho) if eh_vivo else set()
-
             if (self._ate_ignorar_volta_vast
                     and time.monotonic() < self._ate_ignorar_volta_vast):
-                trocou_durante_volta = False
-                if not eh_vivo and self._sessao_ao_vivo is not None:
-                    trocou_durante_volta = True
-                elif (eh_vivo and nome_vivo and self._sessao_ao_vivo
-                      and self._sessao_ao_vivo.get('nome')
-                      and nome_vivo != self._sessao_ao_vivo['nome']):
-                    trocou_durante_volta = True
-                if trocou_durante_volta:
-                    self._ate_ignorar_volta_vast = 0.0
-                else:
-                    if not eh_vivo:
+                base_atual = _normalizar_caminho_chave(caminho)
+                if (not self._volta_vast_chave or not base_atual
+                        or base_atual == self._volta_vast_chave):
+                    if not self._volta_vast_chave:
                         self._ate_ignorar_volta_vast = 0.0
-                    elif self._sessao_ao_vivo is not None:
-                        self._sessao_ao_vivo['urls'].update(urls_vivo)
                     globals()['_ultima_sessao'] = self.sessao
                     self._garantir_player_tela_cheia()
                     try:
                         ads_regra.concluir_anuncio()
                     except Exception:
                         pass
-                    if eh_vivo and caminho:
-                        self._vigiar_imagem(caminho)
                     if self.log:
                         self.log('[SmartAds] volta do anuncio VAST: tela cheia restaurada')
                     return
-
+                self._ate_ignorar_volta_vast = 0.0
+                self._volta_vast_chave = ''
             retomada = self._retomada()
             canal = xbmc.getInfoLabel('VideoPlayer.ChannelName') or ''
             if retomada and retomada.e_volta(caminho, canal):
@@ -1226,34 +1019,11 @@ class MonitorPreRoll(_BasePlayer):
                     ads_regra.concluir_anuncio()
                 except Exception:
                     pass
+                self._vigiar_imagem(caminho)
                 if self.log:
                     self.log('[SmartAds] volta do anuncio: sem novo pre-roll')
                 return
-
-            if eh_vivo:
-                if self._eh_tentativa_mesmo_canal_ao_vivo(
-                        caminho, nome_vivo, urls_vivo):
-                    self.ultimo_caminho = caminho
-                    globals()['_ultima_sessao'] = self.sessao
-                    self._garantir_player_tela_cheia()
-                    self._vigiar_imagem(caminho)
-                    if self.log:
-                        self.log('[SmartAds] TV ao vivo em tentativa/reconexao '
-                                 'do mesmo canal: sem novo anuncio')
-                    return
-                chave = _chave_conteudo(caminho)
-                self._sessao_ao_vivo = {
-                    'nome': nome_vivo,
-                    'urls': set(urls_vivo),
-                    'chave': chave,
-                    'inicio': time.monotonic(),
-                }
-                self._tentativa_ao_vivo_recente = None
-            else:
-                self._sessao_ao_vivo = None
-                self._tentativa_ao_vivo_recente = None
-                chave = _chave_conteudo(caminho)
-
+            chave = _chave_conteudo(caminho)
             self.ultimo_caminho = caminho
             disparou = mostrar_preroll(self.log, self.intervalo, caminho=caminho,
                                        chave=chave, sessao=self.sessao,
@@ -1307,23 +1077,6 @@ class MonitorPreRoll(_BasePlayer):
     def onPlayBackStopped(self):
         if self._em_vast:
             return
-        if self._sessao_ao_vivo is not None and _reabertura_interna_ao_vivo():
-            return
-        if self._sessao_ao_vivo is not None:
-            atual = self._sessao_ao_vivo
-            self._sessao_ao_vivo = None
-            duracao = time.monotonic() - float(atual.get('inicio') or 0.0)
-            if duracao < 25.0 and (atual.get('nome') or atual.get('urls')):
-                self._tentativa_ao_vivo_recente = {
-                    'nome': atual.get('nome') or '',
-                    'urls': set(atual.get('urls') or set()),
-                    'chave': atual.get('chave') or '',
-                    'inicio': atual.get('inicio') or time.monotonic(),
-                    'ate': time.monotonic() + 90.0,
-                }
-            else:
-                self._tentativa_ao_vivo_recente = None
-        self._ate_ignorar_volta_vast = 0.0
         self._limpar_retomada()
         self.ultimo_caminho = None
         self.sessao += 1
@@ -1332,24 +1085,22 @@ class MonitorPreRoll(_BasePlayer):
     def onPlayBackEnded(self):
         if self._em_vast:
             return
-        if self._sessao_ao_vivo is not None:
-            # Queda de fluxo / tentativa falha na TV ao vivo NAO e saida do
-            # usuario: mantem o canal bloqueado contra novo anuncio ate sair
-            # (onPlayBackStopped) ou escolher outro conteudo.
-            retomada = self._retomada()
-            if retomada:
-                retomada.cancelar()
+        retomada = self._retomada()
+        if retomada and retomada.guardado():
+            # Em TV ao vivo o stream pode cair enquanto a tela do anuncio esta
+            # aberta: mantem o ponto armado para reabrir o canal na volta.
             return
-        self._limpar_retomada()
-
-    def onPlayBackError(self):
-        if self._em_vast:
+        if (self._ate_ignorar_volta_vast
+                and time.monotonic() < self._ate_ignorar_volta_vast):
             return
-        if self._sessao_ao_vivo is not None:
-            retomada = self._retomada()
-            if retomada:
-                retomada.cancelar()
-            return
+        try:
+            import ao_vivo
+            if self.ultimo_caminho and ao_vivo.eh_ao_vivo(self.ultimo_caminho):
+                # Canal continuo nao tem "fim do filme": Ended e queda/tentativa
+                # de reconexao; so Stopped (Voltar/Quadrado) encerra a sessao.
+                return
+        except Exception:
+            pass
         self._limpar_retomada()
 
     def _limpar_retomada(self):

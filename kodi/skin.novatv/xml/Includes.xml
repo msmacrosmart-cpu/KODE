@@ -1583,7 +1583,7 @@
 			<align>center</align>
 			<aligny>center</aligny>
 			<onclick>Dialog.Close(all,true)</onclick>
-			<onclick>Action(FullScreen)</onclick>
+			<onclick>PlayerControl(Stop)</onclick>
 			<texturefocus colordiffuse="pb_white">buttons/roundbutton-fo.png</texturefocus>
 			<texturenofocus />
 			<radioposx>30</radioposx>

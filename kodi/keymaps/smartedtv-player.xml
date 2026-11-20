@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Ao sair de um video/canal com a tecla VOLTAR ou ao apertar o QUADRADO (Stop),
+  finaliza a reproducao (Stop) em vez de minimizar em segundo plano (FullScreen).
+  Carregado como zzy-smartedtv-player.xml: sobrescreve os keymaps padrao do Kodi
+  e mantem zzz-smartedtv-voltar.xml por ultimo para a janela Home.
+-->
+<keymap>
+  <FullscreenVideo>
+    <keyboard>
+      <backspace>Stop</backspace>
+      <browser_back>Stop</browser_back>
+      <escape>Stop</escape>
+      <stop>Stop</stop>
+      <x>Stop</x>
+    </keyboard>
+    <remote>
+      <back>Stop</back>
+      <stop>Stop</stop>
+    </remote>
+    <gamepad>
+      <B>Stop</B>
+      <back>Stop</back>
+      <X>Stop</X>
+    </gamepad>
+  </FullscreenVideo>
+  <FullscreenLiveTV>
+    <keyboard>
+      <backspace>Stop</backspace>
+      <browser_back>Stop</browser_back>
+      <escape>Stop</escape>
+      <stop>Stop</stop>
+      <x>Stop</x>
+    </keyboard>
+    <remote>
+      <back>Stop</back>
+      <stop>Stop</stop>
+    </remote>
+    <gamepad>
+      <B>Stop</B>
+      <back>Stop</back>
+      <X>Stop</X>
+    </gamepad>
+  </FullscreenLiveTV>
+  <Visualisation>
+    <keyboard>
+      <backspace>Stop</backspace>
+      <browser_back>Stop</browser_back>
+      <escape>Stop</escape>
+      <stop>Stop</stop>
+      <x>Stop</x>
+    </keyboard>
+    <remote>
+      <back>Stop</back>
+      <stop>Stop</stop>
+    </remote>
+    <gamepad>
+      <B>Stop</B>
+      <back>Stop</back>
+      <X>Stop</X>
+    </gamepad>
+  </Visualisation>
+  <VideoOSD>
+    <keyboard>
+      <stop>Stop</stop>
+      <x>Stop</x>
+    </keyboard>
+    <remote>
+      <stop>Stop</stop>
+    </remote>
+    <gamepad>
+      <X>Stop</X>
+    </gamepad>
+  </VideoOSD>
+  <MusicOSD>
+    <keyboard>
+      <stop>Stop</stop>
+      <x>Stop</x>
+    </keyboard>
+    <remote>
+      <stop>Stop</stop>
+    </remote>
+    <gamepad>
+      <X>Stop</X>
+    </gamepad>
+  </MusicOSD>
+</keymap>

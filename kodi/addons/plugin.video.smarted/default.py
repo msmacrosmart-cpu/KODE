@@ -252,15 +252,18 @@ def _widget_cached(name, fetch, successful):
     return cached(directory, name, fetch, successful)
 
 
+HOME_GRID_LIMIT = 30
+
+
 def _movie_cache_ok(value):
     required = ('label', 'url', 'title', 'folder', 'playable', 'thumbnail', 'fanart', 'plot', 'year')
-    return isinstance(value, list) and 0 < len(value) <= 10 and all(
+    return isinstance(value, list) and 0 < len(value) <= HOME_GRID_LIMIT and all(
         isinstance(item, dict) and all(key in item for key in required) for item in value)
 
 
 def _series_cache_ok(value):
     required = ('category', 'title', 'thumb', 'fanart', 'description', 'url', 'release_date')
-    return isinstance(value, (list, tuple)) and len(value) == 2 and not value[1] and isinstance(value[0], list) and 0 < len(value[0]) <= 10 and all(
+    return isinstance(value, (list, tuple)) and len(value) == 2 and not value[1] and isinstance(value[0], list) and 0 < len(value[0]) <= HOME_GRID_LIMIT and all(
         isinstance(item, dict) and all(key in item for key in required) for item in value[0])
 
 
@@ -269,7 +272,11 @@ def recent_series(handle):
     from search import SOURCES, recent_series as fetch_recent_series
 
     try:
-        results, failed = _widget_cached('recent-series', fetch_recent_series, _series_cache_ok)
+        results, failed = _widget_cached(
+            'recent-series-30',
+            lambda: fetch_recent_series(limit=HOME_GRID_LIMIT),
+            _series_cache_ok,
+        )
     except Exception:
         xbmc.log('SMARTED-TV: lançamentos de séries indisponíveis', xbmc.LOGWARNING)
         xbmcplugin.endOfDirectory(handle, succeeded=False, cacheToDisc=False)
@@ -408,9 +415,11 @@ def recent_movies(handle):
     from catalogue import recent_movies as fetch_recent_movies
 
     try:
-        results = _widget_cached('recent-movies',
-                                 lambda: fetch_recent_movies(xbmc.executeJSONRPC, limit=8),
-                                 _movie_cache_ok)[:8]
+        results = _widget_cached(
+            'recent-movies-30',
+            lambda: fetch_recent_movies(xbmc.executeJSONRPC, limit=HOME_GRID_LIMIT),
+            _movie_cache_ok,
+        )[:HOME_GRID_LIMIT]
     except Exception:
         # A widget must not interrupt the Home with a dialog or leak URLs.
         xbmc.log('SMARTED-TV: lançamentos do Brazuca indisponíveis', xbmc.LOGWARNING)

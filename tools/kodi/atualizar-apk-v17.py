@@ -71,6 +71,8 @@ MODULOS = ('service.py', 'menu_smarted.py', 'performance.py', 'vip.py',
 MARCADOR_VARIANTE = 'assets/smartedtv-variante.txt'
 KEYMAP_ORIGEM = ROOT / 'kodi' / 'keymaps' / 'smartedtv-voltar.xml'
 KEYMAP_DESTINO = 'assets/system/keymaps/zzz-smartedtv-voltar.xml'
+KEYMAP_PLAYER_ORIGEM = ROOT / 'kodi' / 'keymaps' / 'smartedtv-player.xml'
+KEYMAP_PLAYER_DESTINO = 'assets/system/keymaps/zzy-smartedtv-player.xml'
 # O *ID embarcado* não é a origem: o monólito copia a Clássica para skin.novatv.
 # A skin homônima da árvore Kodi usa outro vocabulário de IDs/fontes/texturas.
 SKINS = ('skin.novatv', 'skin.smartedtv.classic')
@@ -138,6 +140,8 @@ def arquivos_do_servico():
         if not caminho.is_file():
             raise SystemExit('modulo do servico ausente: %s' % caminho)
         extras[SERVICO + nome] = caminho.read_bytes()
+    if KEYMAP_PLAYER_ORIGEM.is_file():
+        extras[KEYMAP_PLAYER_DESTINO] = KEYMAP_PLAYER_ORIGEM.read_bytes()
     if KEYMAP_ORIGEM.is_file():
         extras[KEYMAP_DESTINO] = KEYMAP_ORIGEM.read_bytes()
     return extras
@@ -834,7 +838,7 @@ def main(argv=None):
                     # arquivo que so exista no APK continua como esta
                     substituidos.add(item.filename)
                     continue
-                if item.filename == KEYMAP_DESTINO:
+                if item.filename in (KEYMAP_DESTINO, KEYMAP_PLAYER_DESTINO):
                     substituidos.add(item.filename)
                     continue
                 if item.filename in SKIN_ARQUIVOS and item.filename not in arquivos_da_skin:
