@@ -3,7 +3,7 @@
 Ponto de referência oficial do **APK Universal** mantendo 100% do funcionamento aprovado em celular e projetor (`v1.0.154-universal`) e adicionando compatibilidade completa para **TV Stick** e **TV Box** (remoção de `uses-feature` obrigatória `screen.landscape` contra erro *"App não instalado"*, detecção real via `build.prop`/permissões Android sem `subprocess`, reserva dupla GitHub `SMARTEDTV-universal.apk` + `SMARTEDTV.apk` e teclas `<nav_back>`/`<gamepad>` para controles Bluetooth e 2.4GHz):
 
 - **Versão / Tag Padrão Atual:** `v1.0.155-universal` (`VERSION_NAME="1.0.155"`, `VERSION_CODE=2103141`)
-- **Commit Git do APK:** `80bc6f707780f4fa3bd20cb05f6f7662a00bc3d8`
+- **Commit Git do APK:** `80bc6f72fe700732cc4007630f65ebbaa5c1fe8b`
 - **GitHub Actions Run:** `https://github.com/msmacrosmart-cpu/KODE/actions/runs/44798224758`
 - **Release Oficial (Latest):** `https://github.com/msmacrosmart-cpu/KODE/releases/tag/v1.0.155-universal`
 - **Download Direto do APK:** `https://github.com/msmacrosmart-cpu/KODE/releases/download/v1.0.155-universal/SMARTEDTV-universal.apk`
@@ -12,7 +12,7 @@ Ponto de referência oficial do **APK Universal** mantendo 100% do funcionamento
 
 ## Como restaurar este checkpoint
 ```bash
-git checkout 80bc6f707780f4fa3bd20cb05f6f7662a00bc3d8
+git checkout 80bc6f72fe700732cc4007630f65ebbaa5c1fe8b
 ```
 
 ---
