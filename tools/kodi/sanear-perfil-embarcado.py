@@ -35,6 +35,8 @@ from __future__ import print_function
 
 import hashlib
 import io
+import struct
+import zlib
 import os
 import re
 import sys
@@ -171,6 +173,33 @@ def manifesto_de(z, nomes_restantes):
     return ('\n'.join(linhas) + '\n').encode('utf-8')
 
 
+def consertar_cabecalho_do_dex(dados):
+    """Recalcula assinatura (SHA-1) e checksum (Adler-32) do cabecalho do dex.
+
+    O dex tem, nos bytes 8..12, o Adler-32 de tudo a partir do byte 12, e nos
+    bytes 12..32 o SHA-1 de tudo a partir do byte 32. Trocar o pin sem refazer
+    os dois deixa o dex invalido: no emulador de projetor (APK 1.0.143) o ART
+    recusou o classes4.dex e o app morreu com
+        NoClassDefFoundError: Failed resolution of Lsmartedtv/full/XBMCJsonRPC
+    """
+    if dados[:4] != b'dex\n' or len(dados) < 112:
+        return dados
+    corpo = dados[32:]
+    dados = dados[:12] + hashlib.sha1(corpo).digest() + dados[32:]
+    corpo = dados[12:]
+    dados = dados[:8] + struct.pack('<I', zlib.adler32(corpo) & 0xffffffff) + dados[12:]
+    return dados
+
+
+def cabecalho_do_dex_confere(dados):
+    if dados[:4] != b'dex\n' or len(dados) < 112:
+        return True
+    assinatura = dados[12:32]
+    checksum = struct.unpack('<I', dados[8:12])[0]
+    return (assinatura == hashlib.sha1(dados[32:]).digest() and
+            checksum == (zlib.adler32(dados[12:]) & 0xffffffff))
+
+
 def trocar_pin_no_dex(dados, antigo, novo):
     """Troca o pin ASCII no dex. Só aceita exatamente uma ocorrência."""
     de = antigo.encode('ascii')
@@ -182,7 +211,7 @@ def trocar_pin_no_dex(dados, antigo, novo):
         return dados, 0          # este dex nao carrega o pin; nada a trocar
     if total != 1:
         raise SystemExit('pin aparece %d vez(es) no dex (esperado 1)' % total)
-    return dados.replace(de, para), total
+    return consertar_cabecalho_do_dex(dados.replace(de, para)), total
 
 
 def executar(apk_entrada, apk_saida, atualizar_origem=True):
@@ -278,6 +307,10 @@ def conferir(apk, pin_esperado=None):
         elif pin_publicado() != pin_java:
             print('aviso: pin do Java no repositorio e %s (o build regrava o '
                   'arquivo no runner)' % pin_publicado())
+        for nome in sorted(nomes):
+            if nome.endswith('.dex') and not cabecalho_do_dex_confere(z.read(nome)):
+                problemas.append('cabecalho do dex invalido (checksum/assinatura): %s'
+                                 % nome)
         for linha in manifesto.decode('utf-8').splitlines():
             partes = linha.split('\t')
             if len(partes) != 3:

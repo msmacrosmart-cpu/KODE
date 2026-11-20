@@ -59,9 +59,13 @@ class SanearPerfilTest(unittest.TestCase):
             for caminho, dados in self.perfil.items():
                 z.writestr('assets/smarted/profile/' + caminho, dados)
             z.writestr(self.modulo.MANIFESTO, manifesto)
-            # dex com o pin antigo (64 caracteres ASCII, como no APK real)
-            z.writestr('classes4.dex', b'dex\n035\x00' + self.modulo.PIN_ANTIGO.encode('ascii') + b'\x00fim')
-            z.writestr('classes.dex', b'dex\n035\x00sem pin aqui')
+            # dex com o pin antigo (64 caracteres ASCII, como no APK real), com
+            # cabecalho valido: o ART recusa dex com checksum/assinatura errados
+            z.writestr('classes4.dex', self.modulo.consertar_cabecalho_do_dex(
+                b'dex\n035\x00' + b'\x00' * 4 + b'\x00' * 104 +
+                self.modulo.PIN_ANTIGO.encode('ascii') + b'\x00fim'))
+            z.writestr('classes.dex', self.modulo.consertar_cabecalho_do_dex(
+                b'dex\n035\x00' + b'\x00' * 4 + b'\x00' * 104 + b'\x00fim'))
 
     @staticmethod
     def _manifesto(perfil):
@@ -111,6 +115,8 @@ class SanearPerfilTest(unittest.TestCase):
             dex = z.read('classes4.dex')
             self.assertIn(pin.encode('ascii'), dex)
             self.assertNotIn(self.modulo.PIN_ANTIGO.encode('ascii'), dex)
+            self.assertTrue(self.modulo.cabecalho_do_dex_confere(dex),
+                            'cabecalho do dex invalido (checksum/assinatura)')
 
     def test_manifesto_corresponde_aos_arquivos_que_ficaram(self):
         self.modulo.executar(self.apk, self.saida, atualizar_origem=False)
@@ -121,6 +127,16 @@ class SanearPerfilTest(unittest.TestCase):
                 dados = z.read('assets/smarted/profile/' + caminho)
                 self.assertEqual(int(tamanho), len(dados), caminho)
                 self.assertEqual(sha, hashlib.sha256(dados).hexdigest(), caminho)
+
+    def test_cabecalho_do_dex_e_recalculado(self):
+        """Sem isso o ART recusa o dex: NoClassDefFoundError no projetor."""
+        corpo = b'\x00' * 104 + b'1' * 64
+        dex = self.modulo.consertar_cabecalho_do_dex(b'dex\n035\x00' + b'\x00' * 4 + corpo)
+        self.assertTrue(self.modulo.cabecalho_do_dex_confere(dex))
+        novo, quantos = self.modulo.trocar_pin_no_dex(dex, '1' * 64, '2' * 64)
+        self.assertEqual(quantos, 1)
+        self.assertTrue(self.modulo.cabecalho_do_dex_confere(novo))
+        self.assertIn(b'2' * 64, novo)
 
     def test_conferencia_acha_o_pin_dentro_do_dex(self):
         with zipfile.ZipFile(self.apk) as z:
@@ -137,6 +153,21 @@ class SanearPerfilTest(unittest.TestCase):
                                          atualizar_origem=False)
         self.assertTrue(self.modulo.conferir(self.saida,
                                              pin_esperado=resultado['pin']))
+
+    def test_conferencia_pega_dex_com_cabecalho_quebrado(self):
+        """APK 1.0.143: dex com pin trocado e cabecalho velho -> app caiu."""
+        quebrado = os.path.join(self.pasta, 'quebrado.apk')
+        resultado = self.modulo.executar(self.apk, self.saida,
+                                         atualizar_origem=False)
+        with zipfile.ZipFile(self.saida) as entrada, \
+                zipfile.ZipFile(quebrado, 'w') as saida:
+            for item in entrada.infolist():
+                dados = entrada.read(item)
+                if item.filename == 'classes4.dex':
+                    dados = dados[:12] + b'\x00' * 20 + dados[32:]
+                saida.writestr(item, dados)
+        with self.assertRaises(SystemExit):
+            self.modulo.conferir(quebrado, pin_esperado=resultado['pin'])
 
     def test_falha_alto_quando_o_pin_nao_esta_no_dex(self):
         """Sem o pin, o dex recusaria o perfil e a Home ficaria vazia."""
