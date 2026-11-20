@@ -67,7 +67,8 @@ jobs:
           script: |
             set -uo pipefail
             aviso() { printf '::notice::%s\n' "$(printf '%s' "$*" | tr '\r\n' '  ' | cut -c1-700)"; }
-            adb install build/exp/base-s.apk >/dev/null 2>&1 || aviso "base nao instalou (segue)"
+            which adb emulator >/dev/null 2>&1 || aviso "adb fora do PATH (o action cuida disso)"
+            ls build/exp | while read -r l; do aviso "arquivo: $l"; done
             for v in A B C; do
               adb install -r "build/exp/$v-s.apk" >/dev/null 2>&1 || aviso "$v: instalacao falhou"
               adb shell am force-stop smartedtv.full
