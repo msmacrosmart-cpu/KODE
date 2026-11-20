@@ -23,12 +23,26 @@ m.executar('build/exp/base.apk', 'build/exp/A.apk', atualizar_origem=False)
 terceiros = m.ADDONS_DE_TERCEIROS
 m.ADDONS_DE_TERCEIROS = ()
 m.executar('build/exp/base.apk', 'build/exp/B.apk', atualizar_origem=False)
+# D: perfil sem terceiros mas dex SEM troca (pin velho) -> isola o dex
+import zipfile, shutil
+m.executar('build/exp/base.apk', 'build/exp/D-tmp.apk', atualizar_origem=False)
+with zipfile.ZipFile('build/exp/base.apk') as original, \
+        zipfile.ZipFile('build/exp/D-tmp.apk') as saneado, \
+        zipfile.ZipFile('build/exp/D.apk', 'w', allowZip64=True) as saida:
+    for item in saneado.infolist():
+        dados = saneado.read(item)
+        if item.filename.endswith('.dex'):
+            dados = original.read(item.filename)
+        info = zipfile.ZipInfo(item.filename, date_time=item.date_time)
+        info.compress_type = item.compress_type
+        info.external_attr = item.external_attr
+        saida.writestr(info, dados)
 m.ADDONS_DE_TERCEIROS = terceiros
 print('variantes A e B geradas')
 PY
 cp "$work/base.apk" "$work/C.apk"
 
-for v in A B C; do
+for v in A D C; do
   python3 tools/kodi/align-apk.py "$work/$v.apk" "$work/$v-al.apk" || { aviso "$v: alinhamento falhou"; continue; }
   "$bt/apksigner" sign --ks "$KODI_ANDROID_STORE_FILE" --ks-key-alias "$KODI_ANDROID_KEY_ALIAS" \
     --ks-pass env:KODI_ANDROID_STORE_PASSWORD --key-pass env:KODI_ANDROID_KEY_PASSWORD \
@@ -37,7 +51,7 @@ for v in A B C; do
 done
 
 adb install "$work/base.apk" >/dev/null 2>&1 || aviso 'base nao instalou (segue)'
-for v in A B C; do
+for v in A D C; do
   [ -f "$work/$v-signed.apk" ] || { aviso "$v: sem APK"; continue; }
   adb install -r "$work/$v-signed.apk" >/dev/null 2>&1 || aviso "$v: instalacao falhou"
   adb shell am force-stop smartedtv.full
@@ -48,7 +62,7 @@ for v in A B C; do
   if [ -z "$pid" ]; then
     adb logcat -d > "$work/logcat-$v.txt" 2>/dev/null || true
     grep -iE "Error|Exception|NoClassDef|Rejecting|checksum|magic|failed|DexInv|--- END" "$work/logcat-$v.txt" | grep -viE "hidden method|hidden api" | head -25 | while read -r l; do aviso "$v logcat: $l"; done
-    aviso "$v: MORREU -> $(adb logcat -b crash -d | grep -m1 -E 'NoClassDef|FATAL' | cut -c1-200)"
+    aviso "$v: MORREU -> $(adb logcat -b crash -d | grep -m6 -E 'NoClassDef|Caused by|FATAL|at smartedtv' | tr '\n' ' ' | cut -c1-600)"
   else
     aviso "$v: app vivo (pid $pid)"
     adb exec-out screencap -p > "$work/tela-$v.png" 2>/dev/null || true
