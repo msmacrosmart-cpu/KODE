@@ -67,6 +67,28 @@ def verificar_skins(apk, names):
         print('skin ok: %s (Home Clássica + fontes)' % skin)
 
 
+HEX64 = re.compile(rb'[0-9a-f]{64}')
+
+
+def so_mudou_o_pin(novo, base):
+    """Dex so pode diferir da base na string do pin do perfil (64 hex).
+
+    O perfil embarcado sai sem os addons de terceiros (youtube, OpenWizard...),
+    entao o sha256 de `assets/smarted/profile-manifest.txt` muda e o bootstrap
+    precisa conferir o novo valor. O build troca o pin NO DEX; a regra de "dex
+    identico a base" continua valendo para todo o resto.
+    """
+    if len(novo) != len(base):
+        return False
+    inicio = next((i for i, (a, b) in enumerate(zip(novo, base)) if a != b), None)
+    if inicio is None:
+        return True
+    fim = len(novo) - next(i for i, (a, b) in enumerate(zip(novo[::-1], base[::-1]))
+                           if a != b)
+    return (any(m.start() <= inicio and fim <= m.end() for m in HEX64.finditer(base)) and
+            any(m.start() <= inicio and fim <= m.end() for m in HEX64.finditer(novo)))
+
+
 def verify_apk(base, final):
     def code_files(z):
         return {n for n in z.namelist() if n.startswith('lib/') or re.fullmatch(r'classes\d*\.dex|resources\.arsc', n)}
@@ -79,7 +101,11 @@ def verify_apk(base, final):
         require(code_files(before) == code_files(apk), 'sumiu código da v22')
         for path in code_files(apk):
             contents = apk.read(path)
-            require(contents == before.read(path), 'código diferente da base: '+path)
+            original = before.read(path)
+            if contents != original:
+                require(path.endswith('.dex') and so_mudou_o_pin(contents, original),
+                        'código diferente da base: '+path)
+                print('%s: so o pin do perfil mudou (permitido)' % path)
             if path.startswith('lib/') and path.endswith('.so'):
                 abi = path.split('/')[1]
                 require(contents[:4] == b'\x7fELF' and contents[5] == 1 and

@@ -154,3 +154,26 @@ class SanearPerfilTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class DexSoComPinTrocadoTest(unittest.TestCase):
+    """`verify.py` exige dex identico a base: abrir so para a troca do pin."""
+
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            'verify_release', RAIZ / 'smartedtv' / 'release' / 'verify.py')
+        cls.modulo = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.modulo)
+
+    def test_troca_do_pin_e_permitida(self):
+        base = b'dex\n035' + b'\x00' * 10 + b'a' * 64 + b'\x00' * 10
+        novo = b'dex\n035' + b'\x00' * 10 + b'b' * 64 + b'\x00' * 10
+        self.assertTrue(self.modulo.so_mudou_o_pin(novo, base))
+
+    def test_qualquer_outra_mudanca_no_dex_e_barrada(self):
+        base = b'dex\n035' + b'\x00' * 10 + b'a' * 64 + b'\x00' * 10
+        self.assertFalse(self.modulo.so_mudou_o_pin(base.replace(b'dex', b'dey'), base))
+        self.assertFalse(self.modulo.so_mudou_o_pin(base + b'\x00', base))
+        self.assertFalse(self.modulo.so_mudou_o_pin(b'curto', base))
