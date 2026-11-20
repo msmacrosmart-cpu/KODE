@@ -17,6 +17,10 @@ on:
       - 'kodi/skin.novatv/**'
       - 'kodi/keymaps/**'
       - 'smartedtv/release/build.sh'
+      - 'smartedtv/release/verify.py'
+      - 'smartedtv/release/prepare.sh'
+      # tira os addons de terceiros do perfil embarcado (erro do YouTube/OpenWizard)
+      - 'tools/kodi/sanear-perfil-embarcado.py'
       - 'smartedtv/release/install-smoke.sh'
       - '.github/workflows/smartedtv-universal.yml'
   workflow_dispatch:
