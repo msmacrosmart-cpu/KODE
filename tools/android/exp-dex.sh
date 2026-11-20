@@ -47,7 +47,7 @@ for v in A B C; do
   pid=$(adb shell pidof smartedtv.full | tr -d '\r')
   if [ -z "$pid" ]; then
     adb logcat -d > "$work/logcat-$v.txt" 2>/dev/null || true
-    grep -iE "dex|art |linker|Rejecting|checksum|magic|zip" "$work/logcat-$v.txt" | head -25 | while read -r l; do aviso "$v logcat: $l"; done
+    grep -iE "Error|Exception|NoClassDef|Rejecting|checksum|magic|failed|DexInv|--- END" "$work/logcat-$v.txt" | grep -viE "hidden method|hidden api" | head -25 | while read -r l; do aviso "$v logcat: $l"; done
     aviso "$v: MORREU -> $(adb logcat -b crash -d | grep -m1 -E 'NoClassDef|FATAL' | cut -c1-200)"
   else
     aviso "$v: app vivo (pid $pid)"
