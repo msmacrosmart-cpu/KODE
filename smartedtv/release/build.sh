@@ -42,6 +42,14 @@ montar() {  # $1 = arquivo final
   grep -F 'certificate SHA-256 digest: 855de171e5560d517db1a69f6aa55562b72c8b66f9cc29dfd55be0a8aa00951a' "$work/signature.txt"
   "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest print "$scratch/signed.apk" > "$work/manifest.xml"
   python3 smartedtv/release/verify.py "$base" "$scratch/signed.apk" "$work/manifest.xml" "$VERSION_NAME" "$VERSION_CODE"
+  if unzip -l "$scratch/signed.apk" classes4.dex | grep -q 'classes4\.dex'; then
+    unzip -p "$scratch/signed.apk" classes4.dex > "$scratch/classes4.dex"
+    "$bt/dexdump" -c "$scratch/classes4.dex" > /dev/null
+  fi
+  if unzip -l "$scratch/signed.apk" | grep -E -q 'plugin\.video\.youtube|plugin\.audio\.mp3streams'; then
+    echo '::error::YouTube ou MP3 Streams ainda presente no pacote' >&2
+    exit 1
+  fi
   # APK universal: NAO pode haver marcador de variante. Com o marcador, a
   # deteccao por aparelho (e_tv()) seria anulada e a TV usaria AdMob.
   if unzip -l "$scratch/signed.apk" assets/smartedtv-variante.txt | grep -q 'smartedtv-variante'; then

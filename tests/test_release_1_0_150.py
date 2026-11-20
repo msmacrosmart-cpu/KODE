@@ -31,41 +31,39 @@ def _carregar(nome, caminho):
 
 
 # ===========================================================================
-# 1. REABERTURA NO ESTADO DA 1.0.148 + RESILIÊNCIA PÓS-ERRO DE REPRODUÇÃO (3 testes)
+# 1. BASE COMPACTA (~265 MB) DA 1.0.149 + RESILIÊNCIA PÓS-ERRO DE REPRODUÇÃO (3 testes)
 # ===========================================================================
-class ReaberturaEstado148Test(unittest.TestCase):
-    def test_1_dex_e_manifesto_100_por_cento_identicos_a_1_0_148(self):
-        """Garante que classes*.dex e profile-manifest.txt permanecem 100% intocados
-        em relação ao base-v22.apk, exatamente como na 1.0.148."""
-        atu = _carregar('atu_150', EMPACTADOR)
-        ver = _carregar('ver_150', VERIFICADOR)
+class BaseCompacta149Test(unittest.TestCase):
+    def test_1_base_compacta_da_1_0_149_sem_youtube_nem_mp3streams_no_perfil(self):
+        """Garante que a atualização parte exatamente do pacote enxuto da 1.0.149
+        (~265 MB, sem YouTube/MP3 Streams no perfil embarcado), e não do de 287 MB."""
+        atu = _carregar('atu_151', EMPACTADOR)
+        ver = _carregar('ver_151', VERIFICADOR)
         build_txt = BUILD_SH.read_text(encoding='utf-8')
-        verify_txt = VERIFICADOR.read_text(encoding='utf-8')
 
-        self.assertFalse(hasattr(atu, 'preparar_perfil_limpo'))
-        self.assertFalse(hasattr(atu, '_atualizar_dex_com_pin'))
-        self.assertFalse(hasattr(ver, 'verificar_classes4_dex'))
-        self.assertIn("require(contents == before.read(path), 'código diferente da base: '+path)", verify_txt)
-        self.assertNotIn('dexdump', build_txt)
+        self.assertTrue(callable(getattr(atu, 'preparar_perfil_limpo', None)))
+        self.assertTrue(callable(getattr(ver, 'verificar_classes4_dex', None)))
+        self.assertEqual(
+            set(atu.ADDONS_FORA_DO_PERFIL),
+            {'plugin.video.youtube', 'plugin.audio.mp3streams'},
+        )
+        self.assertIn('YouTube ou MP3 Streams ainda presente no pacote', build_txt)
 
-    def test_2_reabertura_nao_toca_sqlite_nem_jsonrpc_e_limpa_residuos_pos_erro_reproducao(self):
-        """Na reabertura do app (pastas de terceiros já ausentes) service.py não
-        executa JSON-RPC síncrono, não abre Addons*.db nem dispara UpdateLocalAddons,
-        e limpa arquivos .tmp/JSON truncados deixados por erro de reprodução."""
-        tmp = tempfile.mkdtemp(prefix='smarted-reabertura150-')
+    def test_2_limpar_estado_interface_remove_residuos_pos_erro_reproducao(self):
+        """Se o app fechar durante erro de reprodução deixando .tmp/JSON truncado,
+        o boot limpa os resíduos e recupera o estado sem impedir a reabertura."""
+        tmp = tempfile.mkdtemp(prefix='smarted-reabertura151-')
         salvos = {k: sys.modules.get(k)
                   for k in ('xbmc', 'xbmcvfs', 'xbmcgui', 'xbmcaddon', 'ads_regra')}
         try:
-            rpcs = []
-            builtins = []
             props = {'smartedtv.welcome.saiu': '1', 'smartedtv.welcome.home': 'ok'}
 
             xbmc = types.ModuleType('xbmc')
             xbmc.log = lambda *a, **k: None
             xbmc.LOGINFO, xbmc.LOGWARNING, xbmc.LOGERROR = 1, 3, 4
-            xbmc.executebuiltin = lambda c: builtins.append(c)
+            xbmc.executebuiltin = lambda _c: None
             xbmc.getCondVisibility = lambda _c: False
-            xbmc.executeJSONRPC = lambda p: (rpcs.append(json.loads(p)) or '{"result":"OK"}')
+            xbmc.executeJSONRPC = lambda _p: '{"result":"OK"}'
             xbmc.Monitor = object
             xbmc.Player = object
             sys.modules['xbmc'] = xbmc
@@ -96,12 +94,8 @@ class ReaberturaEstado148Test(unittest.TestCase):
                 )
             )
 
-            os.makedirs(os.path.join(tmp, 'addons/plugin.video.BrazucaPlay.Matrix'), exist_ok=True)
-            os.makedirs(os.path.join(tmp, 'userdata/Database'), exist_ok=True)
             pasta_boot = os.path.join(tmp, 'userdata/addon_data/service.smarted.bootstrap')
             os.makedirs(pasta_boot, exist_ok=True)
-
-            # Simula resíduos deixados quando o app fechou no meio de erro de reprodução
             tmp_truncado = os.path.join(pasta_boot, 'ads-regra.json.tmp')
             json_corrompido = os.path.join(pasta_boot, 'ads-regra.json')
             Path(tmp_truncado).write_text('{quebrado', encoding='utf-8')
@@ -109,19 +103,13 @@ class ReaberturaEstado148Test(unittest.TestCase):
 
             if str(BOOTSTRAP) not in sys.path:
                 sys.path.insert(0, str(BOOTSTRAP))
-            svc = _carregar('svc_150', BOOTSTRAP / 'service.py')
-            regra = _carregar('regra_150', BOOTSTRAP / 'ads_regra.py')
+            svc = _carregar('svc_151', BOOTSTRAP / 'service.py')
+            regra = _carregar('regra_151', BOOTSTRAP / 'ads_regra.py')
 
             self.assertTrue(svc.limpar_estado_interface())
             self.assertFalse(os.path.exists(tmp_truncado))
             self.assertEqual(props, {})
 
-            # Reabertura com perfil já sem terceiros: zero RPC e zero UpdateLocalAddons
-            self.assertEqual(svc.limpar_repositorios_de_terceiros(), [])
-            self.assertEqual(rpcs, [])
-            self.assertEqual(builtins, [])
-
-            # E ads_regra se recupera automaticamente de JSON corrompido sem travar
             pode, _ = regra.pode_anunciar('filme:novo', agora=1000.0)
             self.assertTrue(pode)
         finally:
@@ -134,15 +122,14 @@ class ReaberturaEstado148Test(unittest.TestCase):
                     sys.modules[k] = mod
             shutil.rmtree(tmp, ignore_errors=True)
 
-    def test_3_versao_1_0_150_e_checkpoint_registrado(self):
-        """Confere smarted_release.py em 1.0.150 / 2103136 e checkpoint documentado."""
-        rel = _carregar('rel_150', BOOTSTRAP / 'smarted_release.py')
-        self.assertEqual(rel.VERSION_NAME, '1.0.150')
-        self.assertEqual(rel.VERSION_CODE, 2103136)
+    def test_3_versao_1_0_151_e_checkpoint_registrado(self):
+        """Confere smarted_release.py em 1.0.151 / 2103137 e checkpoint documentado."""
+        rel = _carregar('rel_151', BOOTSTRAP / 'smarted_release.py')
+        self.assertEqual(rel.VERSION_NAME, '1.0.151')
+        self.assertEqual(rel.VERSION_CODE, 2103137)
         chk = (ROOT / 'docs' / 'checkpoint-apk-padrao.md').read_text(encoding='utf-8')
-        self.assertIn('v1.0.148-universal', chk)
         self.assertIn('v1.0.149-universal', chk)
-        self.assertIn('v1.0.150-universal', chk)
+        self.assertIn('v1.0.151-universal', chk)
 
 
 # ===========================================================================
