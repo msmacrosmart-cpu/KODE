@@ -33,7 +33,12 @@ montar() {  # $1 = arquivo final
   python3 tools/kodi/sanear-perfil-embarcado.py "$scratch/overlay.apk" "$scratch/sem-terceiros.apk"
   python3 tools/kodi/ajustar-versao-apk.py "$scratch/sem-terceiros.apk" "$scratch/raw.apk" \
     --de 1.0.87 --de-codigo 2103073 --para "$VERSION_NAME" --para-codigo "$VERSION_CODE"
-  python3 tools/kodi/align-apk.py "$scratch/raw.apk" "$scratch/aligned.apk"
+  # O dex que o app lê tem de estar com checksum/assinatura válidos: com o
+  # cabeçalho errado o ART recusa o arquivo e o app morre com
+  # NoClassDefFoundError (visto no emulador de projetor no APK 1.0.143).
+  # Este passo diz no log se encontrou cabeçalho quebrado e conserta.
+  python3 tools/kodi/sanear-perfil-embarcado.py --reparar-dex "$scratch/raw.apk" "$scratch/reparado.apk"
+  python3 tools/kodi/align-apk.py "$scratch/reparado.apk" "$scratch/aligned.apk"
   "$bt/apksigner" sign --ks "$KODI_ANDROID_STORE_FILE" --ks-key-alias "$KODI_ANDROID_KEY_ALIAS" \
     --ks-pass env:KODI_ANDROID_STORE_PASSWORD --key-pass env:KODI_ANDROID_KEY_PASSWORD \
     --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false \

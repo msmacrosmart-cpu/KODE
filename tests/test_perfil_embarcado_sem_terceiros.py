@@ -169,6 +169,24 @@ class SanearPerfilTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self.modulo.conferir(quebrado, pin_esperado=resultado['pin'])
 
+    def test_reparar_dex_conserta_cabecalho_e_preserva_o_resto(self):
+        """APK 1.0.143: dex com pin trocado e cabecalho velho -> NoClassDefFound."""
+        self.modulo.executar(self.apk, self.saida, atualizar_origem=False)
+        quebrado = os.path.join(self.pasta, 'quebrado.apk')
+        consertado = os.path.join(self.pasta, 'consertado.apk')
+        with zipfile.ZipFile(self.saida) as entrada, \
+                zipfile.ZipFile(quebrado, 'w') as saida:
+            for item in entrada.infolist():
+                dados = entrada.read(item)
+                if item.filename == 'classes4.dex':
+                    dados = dados[:8] + b'\x00' * 24 + dados[32:]
+                saida.writestr(item, dados)
+        self.assertEqual(self.modulo.reparar_dex(quebrado, consertado),
+                         ['classes4.dex'])
+        with zipfile.ZipFile(consertado) as z:
+            self.assertTrue(self.modulo.cabecalho_do_dex_confere(z.read('classes4.dex')))
+            self.assertIn('assets/smarted/profile/userdata/guisettings.xml', z.namelist())
+
     def test_falha_alto_quando_o_pin_nao_esta_no_dex(self):
         """Sem o pin, o dex recusaria o perfil e a Home ficaria vazia."""
         apk_sem_pin = os.path.join(self.pasta, 'sem-pin.apk')

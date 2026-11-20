@@ -329,7 +329,41 @@ def conferir(apk, pin_esperado=None):
     return True
 
 
+def reparar_dex(entrada, saida):
+    """Reescreve o APK com os cabecalhos de dex recalculados.
+
+    Roda ANTES do zipalign/assinatura: depois de assinado nao da para mexer em
+    byte nenhum. Serve de diagnostico tambem - diz no log se algum dex chegou
+    aqui com checksum/assinatura errados.
+    """
+    quebrados, total = [], 0
+    with zipfile.ZipFile(entrada) as z, \
+            zipfile.ZipFile(saida, 'w', allowZip64=True) as destino:
+        for item in z.infolist():
+            if item.is_dir():
+                continue
+            dados = z.read(item)
+            if item.filename.endswith('.dex'):
+                total += 1
+                if not cabecalho_do_dex_confere(dados):
+                    quebrados.append(item.filename)
+                    dados = consertar_cabecalho_do_dex(dados)
+            info = zipfile.ZipInfo(item.filename, date_time=item.date_time)
+            info.compress_type = item.compress_type
+            info.external_attr = item.external_attr
+            info.comment = item.comment
+            destino.writestr(info, dados)
+    if quebrados:
+        print('dex com cabecalho invalido consertado: %s' % ', '.join(quebrados))
+    else:
+        print('%d dex com cabecalho valido (nada a consertar)' % total)
+    return quebrados
+
+
 def main(argv):
+    if len(argv) >= 4 and argv[1] == '--reparar-dex':
+        reparar_dex(argv[2], argv[3])
+        return 0
     if len(argv) >= 3 and argv[1] == '--conferir':
         conferir(argv[2])
         print('perfil embarcado conferido: nenhum addon de terceiro, pin do dex bate')
