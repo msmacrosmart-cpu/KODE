@@ -6,49 +6,49 @@ on:
 jobs:
   ver:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: classes4.dex x bootstrap recompilado
+      - name: Comparar o APK real com o saneado (tamanho, compressao, dex)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           aviso() { printf '::notice::%s\n' "$(printf '%s' "$*" | tr '\r\n' '  ' | cut -c1-900)"; }
-          TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
-          SDK_JAR=$(find "$ANDROID_HOME/platforms" -name android.jar | sort -V | tail -1)
           mkdir -p /tmp/apk && cd /tmp/apk
           gh release download v1.0.141-universal -R msmacrosmart-cpu/KODE -p SMARTEDTV-universal.apk -O a.apk
           cd "$GITHUB_WORKSPACE"
+          python3 tools/kodi/sanear-perfil-embarcado.py /tmp/apk/a.apk /tmp/apk/b.apk > /tmp/sanea.txt 2>&1 || true
+          python3 tools/kodi/sanear-perfil-embarcado.py --reparar-dex /tmp/apk/b.apk /tmp/apk/c.apk > /tmp/repara.txt 2>&1 || true
+          tail -2 /tmp/repara.txt | while read -r l; do aviso "reparar: $l"; done
           python3 - <<'PY'
           import zipfile
-          with zipfile.ZipFile('/tmp/apk/a.apk') as z:
-              for nome in sorted(n for n in z.namelist() if n.endswith('.dex')):
-                  d = z.read(nome)
-                  print('::notice::%s %d bytes | bootstrap=%s | XBMCJsonRPC=%s | XBMCFileContentProvider=%s | ProfileSeed=%s'
-                        % (nome, len(d), b'org/smartedtv/bootstrap' in d,
-                           b'XBMCJsonRPC' in d, b'XBMCFileContentProvider' in d,
-                           b'ProfileDirectorySeed' in d))
-                  open('/tmp/%s' % nome, 'wb').write(d)
+          def resumo(caminho):
+              with zipfile.ZipFile(caminho) as z:
+                  info = z.infolist()
+              total = sum(i.compress_size for i in info)
+              tipos = {}
+              for i in info:
+                  tipos[i.compress_type] = tipos.get(i.compress_type, 0) + 1
+              return len(info), sum(i.file_size for i in info), total, tipos, {i.filename: i for i in info}
+          for tag, caminho in (('a publicado', '/tmp/apk/a.apk'), ('b saneado', '/tmp/apk/b.apk'),
+                               ('c reparado', '/tmp/apk/c.apk')):
+              n, bruto, comp, tipos, _ = resumo(caminho)
+              print('::notice::%s: %d entradas, %d bytes brutos, %d comprimidos, compress_type=%s'
+                    % (tag, n, bruto, comp, tipos))
+          _, _, _, _, a = resumo('/tmp/apk/a.apk')
+          _, _, _, _, b = resumo('/tmp/apk/b.apk')
+          mudou = [n for n in b if n in a and (a[n].compress_type != b[n].compress_type)]
+          print('::notice::entradas com compressao diferente: %s' % (', '.join(mudou[:10]) or 'nenhuma'))
+          faltando = sorted(set(a) - set(b))
+          print('::notice::entradas que sairam: %d (ex.: %s)' % (len(faltando), ', '.join(faltando[:3])))
+          # os .so e o dex tem de continuar como estavam
+          for nome in ('lib/arm64-v8a/libkodi.so', 'classes.dex', 'classes4.dex', 'resources.arsc'):
+              if nome in a and nome in b:
+                  print('::notice::%s: antes tipo=%d tam=%d | depois tipo=%d tam=%d'
+                        % (nome, a[nome].compress_type, a[nome].file_size,
+                           b[nome].compress_type, b[nome].file_size))
+              else:
+                  print('::notice::%s: ausente em %s' % (nome, 'a' if nome not in a else 'b'))
           PY
-          echo '=== classes declaradas no classes4.dex (publicado)'
-          { "$TOOLS/dexdump" /tmp/classes4.dex 2>/dev/null || true; } \
-            | grep -oE "Class descriptor *: 'L[^']+;'" | sed "s/.*'L//;s/;'//" | sort -u > /tmp/classes_publicado.txt || true
-          aviso "publicado: $(wc -l < /tmp/classes_publicado.txt) classes"
-          aviso "publicado lista: $(tr '\n' ' ' < /tmp/classes_publicado.txt)"
-          echo '=== recompilando o bootstrap do repositorio'
-          mkdir -p /tmp/classes /tmp/dex
-          { javac -source 8 -target 8 -classpath "$SDK_JAR" -d /tmp/classes tools/android/src/org/smartedtv/bootstrap/*.java 2>&1 || true; } | tail -20 | while read -r l; do aviso "javac: $l"; done
-          find /tmp/classes -name '*.class' | wc -l | while read -r n; do aviso "javac gerou $n classes"; done
-          { "$TOOLS/d8" --min-api 21 --lib "$SDK_JAR" --output /tmp/dex $(find /tmp/classes -name '*.class') 2>&1 || true; } \
-            | tail -20 | while read -r l; do aviso "d8: $l"; done
-          ls -la /tmp/dex | while read -r l; do aviso "dexdir: $l"; done
-          { "$TOOLS/dexdump" /tmp/dex/classes.dex 2>/dev/null || true; } \
-            | grep -oE "Class descriptor *: 'L[^']+;'" | sed "s/.*'L//;s/;'//" | sort -u > /tmp/classes_novo.txt || true
-          aviso "recompilado: $(wc -l < /tmp/classes_novo.txt) classes, $(stat -c%s /tmp/dex/classes.dex) bytes"
-          aviso "recompilado lista: $(tr '\n' ' ' < /tmp/classes_novo.txt)"
-          echo '=== so no publicado'
-          comm -23 /tmp/classes_publicado.txt /tmp/classes_novo.txt | head -20 | while read -r l; do aviso "so publicado: $l"; done
-          echo '=== so no recompilado'
-          comm -13 /tmp/classes_publicado.txt /tmp/classes_novo.txt | head -20 | while read -r l; do aviso "so recompilado: $l"; done
-          aviso "iguais: $(comm -12 /tmp/classes_publicado.txt /tmp/classes_novo.txt | wc -l)"
+          ls -l /tmp/apk/*.apk | while read -r l; do aviso "arquivo: $l"; done
