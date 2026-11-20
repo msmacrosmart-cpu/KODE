@@ -9,6 +9,8 @@ on:
     paths:
       - '.github/workflows/exp-dex-perfil.yml'
       - 'tools/android/exp-dex.sh'
+permissions:
+  contents: write
 jobs:
   experimento:
     runs-on: ubuntu-latest
