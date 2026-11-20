@@ -54,5 +54,21 @@ class WidgetCacheTest(unittest.TestCase):
             file.write_text('x')
             self.assertEqual(cache.cached(str(file), 'recent-movies', lambda: ['real'], lambda x: True), ['real'])
 
+    def test_thirty_item_widget_keys_and_path_traversal_guard(self):
+        with tempfile.TemporaryDirectory() as path:
+            movies = [{'id': idx} for idx in range(30)]
+            series = ([{'id': idx} for idx in range(30)], [])
+            self.assertEqual(
+                cache.cached(path, 'recent-movies-30', lambda: movies, lambda v: len(v) == 30),
+                movies,
+            )
+            self.assertEqual(
+                cache.cached(path, 'recent-series-30', lambda: series, lambda v: len(v[0]) == 30),
+                series,
+            )
+            for bad in ('../evil', 'carrossel-../evil', 'other-widget'):
+                with self.assertRaises(ValueError):
+                    cache.cached(path, bad, lambda: ['x'], lambda v: True)
+
 
 if __name__ == '__main__': unittest.main()

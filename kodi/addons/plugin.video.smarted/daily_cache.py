@@ -10,10 +10,12 @@ import tempfile
 from datetime import date
 
 MAX_BYTES = 2 * 1024 * 1024
+ALLOWED_NAMES = ('recent-movies', 'recent-movies-30', 'recent-series', 'recent-series-30')
 
 
 def cached(directory, name, fetch, successful, today=None):
-    if name not in ('recent-movies', 'recent-series') and not name.startswith('carrossel-'):
+    if (name not in ALLOWED_NAMES and not name.startswith('carrossel-')) or (
+            '/' in name or '\\' in name or '..' in name):
         raise ValueError('Invalid widget cache name')
     today = (today or date.today()).isoformat()
     try:
