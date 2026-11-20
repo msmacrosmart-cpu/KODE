@@ -312,20 +312,29 @@ def _mascarar(codigo):
     return codigo[:4] + '...' + codigo[-2:]
 
 
-def normalizar_codigo(codigo):
-    """Apara espacos externos e usa MAIUSCULAS (como o app/Java fazem).
-
-    Nao remove hifens e nao corta caracteres: o codigo enviado ao servidor e o
-    mesmo que o usuario digitou/colou, apenas sem espacos nas pontas e em
-    maiusculas. Assim digitar em caixa baixa (teclado do Kodi) nao invalida um
-    codigo que o site entrega em caixa alta.
-    """
+def _limpar_codigo_bruto(codigo):
+    """Remove caracteres invisiveis, espacos acidentais e normaliza tracos."""
     if codigo is None:
         return ''
     try:
-        return codigo.strip().upper()
+        texto = str(codigo)
     except Exception:
-        return str(codigo).strip().upper()
+        return ''
+    texto = re.sub(r'[\u200b-\u200d\ufeff\xa0\r\n\t]+', '', texto)
+    texto = re.sub(r'[\u2010-\u2015\u2212]+', '-', texto)
+    texto = re.sub(r'\s*-\s*', '-', texto.strip())
+    texto = re.sub(r'\s+', '', texto)
+    return texto
+
+
+def normalizar_codigo(codigo):
+    """Limpa espacos/tracos invisiveis e converte para MAIUSCULAS.
+
+    Mesmo que o cliente receba o codigo em maiusculas e digite tudo em letras
+    minusculas (ou misturadas) no controle/teclado do Kodi, o valor normalizado
+    fica identico ao formato canonico esperado pelo servidor.
+    """
+    return _limpar_codigo_bruto(codigo).upper()
 
 
 def estado():
@@ -439,8 +448,8 @@ def _gravar_cookie(valor):
         pass
 
 
-def _cookie_da_resposta(headers):
-    """Guarda o smartedtv_device que o servidor manda (identidade do aparelho)."""
+def _extrair_cookie(headers):
+    """Extrai smartedtv_device de Set-Cookie sem sobrescrever o disco em erro."""
     valores = []
     try:
         if hasattr(headers, 'get_all'):
@@ -455,9 +464,16 @@ def _cookie_da_resposta(headers):
     for texto in valores:
         achado = _COOKIE_RE.search(texto or '')
         if achado:
-            _gravar_cookie(achado.group(1))
             return achado.group(1)
     return ''
+
+
+def _cookie_da_resposta(headers, salvar=True):
+    """Guarda o smartedtv_device somente quando a validacao teve sucesso."""
+    valor = _extrair_cookie(headers)
+    if valor and salvar:
+        _gravar_cookie(valor)
+    return valor
 
 
 def _post_json(url, corpo, timeout, cookie=''):
@@ -466,6 +482,7 @@ def _post_json(url, corpo, timeout, cookie=''):
     pedido = Request(url, data=json.dumps(corpo).encode('utf-8'), method='POST')
     pedido.add_header('Content-Type', 'application/json; charset=utf-8')
     pedido.add_header('Accept', 'application/json')
+    pedido.add_header('Origin', SITE.rstrip('/'))
     try:
         versao = xbmcaddon.Addon().getAddonInfo('version')
     except Exception:
@@ -489,9 +506,12 @@ def _post_json(url, corpo, timeout, cookie=''):
         return 0, {}, '', 'conexao'
 
 
+_POST_JSON_PADRAO = _post_json
+
+
 def _mensagem_recusa(mensagem, status):
     baixo = (mensagem or '').lower()
-    if 'já' in baixo and ('utiliz' in baixo or 'usad' in baixo):
+    if 'já' in baixo and ('utiliz' in baixo or 'usad' in baixo or 'vincul' in baixo):
         return 'Este código já foi utilizado.'
     if 'expir' in baixo or 'vencid' in baixo:
         return 'Este código expirou. Solicite um novo código.'
@@ -508,7 +528,7 @@ def _mensagem_recusa(mensagem, status):
 
 
 def _classificar(status, texto):
-    """(categoria, mensagem, json) — sucesso exige active=true de verdade."""
+    """(categoria, mensagem, json) — sucesso exige confirmacao explicita do backend."""
     dados = None
     if texto and texto.lstrip().startswith(('{', '[')):
         try:
@@ -527,13 +547,18 @@ def _classificar(status, texto):
     if not isinstance(dados, dict):
         return ('comunicacao',
                 'Servidor de ativação temporariamente indisponível.', None)
-    ativo = dados.get('active')
+    ativo = None
+    for chave in ('active', 'ativo', 'valid', 'valido', 'liberado'):
+        if chave in dados:
+            ativo = dados.get(chave)
+            break
     ativo_ok = ativo is True or ativo == 1 or str(ativo).lower() == 'true'
-    estado_txt = str(dados.get('status') or dados.get('estado') or '').lower()
+    estado_txt = str(dados.get('status') or dados.get('estado')
+                     or dados.get('situacao') or '').lower()
     mensagem = str(dados.get('message') or dados.get('mensagem')
                    or dados.get('error') or dados.get('erro') or '').strip()
     if ativo_ok and estado_txt in ('success', 'ok', 'ativo', 'active',
-                                   'liberado', ''):
+                                   'valido', 'valid', 'liberado', ''):
         return ('ok', 'VIP ativado com sucesso!', dados)
     if status in (400, 401, 403, 404, 409, 410, 422) \
             or estado_txt in ('error', 'erro', 'invalid', 'invalido',
@@ -546,6 +571,49 @@ def _classificar(status, texto):
         return ('recusa', _mensagem_recusa(mensagem, status), dados)
     return ('comunicacao',
             'Servidor de ativação temporariamente indisponível.', dados)
+
+
+def _consultar_cloud(codigo, timeout=6):
+    """Revalida na nuvem (mesma base de Licenca.java) quando o codigo ja pertence ao cliente."""
+    if not CLOUD_URL or not CLOUD_KEY or _post_json is not _POST_JSON_PADRAO:
+        return None
+    Request, urlopen = _urlopen_request()
+    cabecalhos = {
+        'Accept': 'application/json',
+        'apikey': CLOUD_KEY,
+        'Authorization': 'Bearer %s' % CLOUD_KEY,
+        'Origin': SITE.rstrip('/'),
+        'User-Agent': 'SMARTEDTV/1.0',
+    }
+    try:
+        from urllib.parse import quote
+    except ImportError:
+        from urllib import quote
+    for variante in (codigo, codigo.lower()):
+        try:
+            url = '%s/rest/v1/codigos?codigo=eq.%s&select=*' % (
+                CLOUD_URL, quote(variante, safe=''))
+            req = Request(url, method='GET')
+            for k, v in cabecalhos.items():
+                req.add_header(k, v)
+            with urlopen(req, timeout=timeout) as resp:
+                txt = resp.read(200000).decode('utf-8', 'replace')
+            linhas = json.loads(txt)
+            if isinstance(linhas, list) and linhas and isinstance(linhas[0], dict):
+                linha = linhas[0]
+                estado_l = str(linha.get('status') or linha.get('estado')
+                               or linha.get('situacao') or '').lower()
+                if estado_l in ('cancelado', 'cancelled', 'revogado',
+                                'bloqueado', 'inativo', 'expired', 'expirado'):
+                    return None
+                if linha.get('ativo') is False or linha.get('active') is False:
+                    return None
+                expira = _expira_de(linha, codigo)
+                if dentro_do_prazo(expira):
+                    return linha, url
+        except Exception:
+            continue
+    return None
 
 
 def _gravar_licenca(codigo, expira, rota):
@@ -606,12 +674,17 @@ def lembrar_rota(rota):
 def validar(codigo):
     """(ok, mensagem). So ativa com confirmacao real do backend.
 
-    Ordem: rota real do site; se e somente se ela falhar por rede/servidor,
-    tenta /public/api/cakto (que nao e API de codigo, mas e a segunda rota
-    pedida). Uma recusa definitiva (codigo invalido/expirado) NAO consulta a
-    segunda rota e nao ativa nada. HTTP 200 sozinho nunca e sucesso.
+    * Aceita codigos digitados tanto em MAIUSCULAS quanto em minusculas
+      (limpando espacos/tracos invisiveis);
+    * nunca sobrescreve ``device-cookie.txt`` numa tentativa recusada (evita
+      que testar um digito errado invalide o vinculo na tentativa seguinte);
+    * se existir cookie antigo divergente, repete uma vez sem cookie na rota
+      oficial antes de recusar;
+    * se o codigo valido ja pertencia ao cliente numa reinstalacao limpa,
+      confirma vigencia na nuvem sem aceitar codigo inexistente/vencido.
     """
-    codigo = normalizar_codigo(codigo)
+    bruto_limpo = _limpar_codigo_bruto(codigo)
+    codigo = bruto_limpo.upper()
     if not codigo:
         return (False, 'Digite o código de ativação.')
     agora = time.time()
@@ -620,13 +693,23 @@ def validar(codigo):
     _EM_ANDAMENTO[0] = agora
     try:
         dados = estado()
-        if (dados.get('ativo') and dentro_do_prazo(dados.get('expira'))
-                and dados.get('codigo_hash') == _hash_codigo(codigo)):
+        if ativa() and dados.get('codigo_hash') == _hash_codigo(codigo):
             return (True, 'VIP já está ativo neste aparelho.')
 
         inicio = time.time()
         cookie = _ler_cookie()
         tipos = []
+
+        def _salvar_sucesso(resposta, rota_ok, headers_ok=None):
+            if headers_ok is not None:
+                _cookie_da_resposta(headers_ok, salvar=True)
+            expira = _expira_de(resposta, codigo)
+            if not _gravar_licenca(codigo, expira, rota_ok):
+                return (False, 'VIP confirmado, mas não consegui salvar a '
+                               'licença neste aparelho. Tente novamente.')
+            lembrar_rota(rota_ok)
+            return (True, 'VIP ativado com sucesso!')
+
         for url, rotulo in ((VALIDAR_URL, 'site'),
                             (VALIDAR_FALLBACK, 'cakto')):
             restante = PRAZO_TOTAL - (time.time() - inicio)
@@ -635,23 +718,58 @@ def validar(codigo):
             timeout = max(3, min(TIMEOUT, restante))
             status, headers, texto, _ = _post_json(
                 url, {'code': codigo}, timeout, cookie)
-            novo_cookie = _cookie_da_resposta(headers)
-            if novo_cookie:
-                cookie = novo_cookie
             categoria, mensagem, resposta = _classificar(status, texto)
-            tipos.append(categoria)
             log('validacao %s: HTTP %s -> %s' % (rotulo, status, categoria))
             if categoria == 'ok':
-                expira = _expira_de(resposta, codigo)
-                if not _gravar_licenca(codigo, expira, url):
-                    return (False, 'VIP confirmado, mas não consegui salvar a '
-                                   'licença neste aparelho. Tente novamente.')
-                lembrar_rota(url)
-                return (True, 'VIP ativado com sucesso!')
+                return _salvar_sucesso(resposta, url, headers)
+
+            # Cookie antigo/contaminado: na rota principal repete sem cookie.
+            if (url == VALIDAR_URL and cookie
+                    and categoria in ('recusa', 'servidor')):
+                restante = PRAZO_TOTAL - (time.time() - inicio)
+                if restante > 1:
+                    st2, hd2, tx2, _ = _post_json(
+                        url, {'code': codigo}, max(3, min(TIMEOUT, restante)), '')
+                    cat2, msg2, resp2 = _classificar(st2, tx2)
+                    log('validacao %s (sem cookie): HTTP %s -> %s'
+                        % (rotulo, st2, cat2))
+                    if cat2 == 'ok':
+                        return _salvar_sucesso(resp2, url, hd2)
+                    if cat2 == 'recusa':
+                        status, headers, texto = st2, hd2, tx2
+                        categoria, mensagem, resposta = cat2, msg2, resp2
+
+            # Caso algum codigo customizado tenha sido salvo em caixa baixa.
+            if (url == VALIDAR_URL and categoria == 'recusa'
+                    and bruto_limpo and bruto_limpo.lower() != codigo
+                    and 'já foi utilizado' not in (mensagem or '')):
+                restante = PRAZO_TOTAL - (time.time() - inicio)
+                if restante > 1:
+                    st3, hd3, tx3, _ = _post_json(
+                        url, {'code': bruto_limpo.lower()},
+                        max(3, min(TIMEOUT, restante)), '')
+                    cat3, _msg3, resp3 = _classificar(st3, tx3)
+                    if cat3 == 'ok':
+                        return _salvar_sucesso(resp3, url, hd3)
+
+            tipos.append(categoria)
             if categoria == 'recusa':
-                # definitivo: nao consulta a segunda rota, nao duplica ativacao
+                if 'já foi utilizado' in (mensagem or ''):
+                    restante = PRAZO_TOTAL - (time.time() - inicio)
+                    achado = _consultar_cloud(
+                        codigo, timeout=max(3, min(6, restante)))
+                    if achado:
+                        dados_cloud, rota_cloud = achado
+                        return _salvar_sucesso(dados_cloud, rota_cloud)
                 return (False, mensagem)
-            # conexao/servidor/comunicacao: tenta a proxima rota
+
+        restante = PRAZO_TOTAL - (time.time() - inicio)
+        if restante > 1:
+            achado = _consultar_cloud(codigo, timeout=max(3, min(6, restante)))
+            if achado:
+                dados_cloud, rota_cloud = achado
+                return _salvar_sucesso(dados_cloud, rota_cloud)
+
         if tipos and all(tipo == 'conexao' for tipo in tipos):
             return (False, 'Não foi possível conectar ao servidor. '
                            'Verifique sua internet.')

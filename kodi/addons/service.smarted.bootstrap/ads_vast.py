@@ -44,15 +44,19 @@ from __future__ import absolute_import, unicode_literals
 import json
 import os
 import re
+import threading
 import time
 
 import xbmc
 
 # Prazo total do anuncio: passou disso, o conteudo volta. Um VAST malformado
 # ou um MP4 que nunca carrega nao podem prender o usuario na TV.
-TEMPO_MAXIMO_ANUNCIO = 150
+TEMPO_MAXIMO_ANUNCIO = 45
+# Se a posicao do video do anuncio ficar parada por mais que isto (quadro
+# congelado no 2o anuncio ou player mudo em 0.0s), encerra e devolve o conteudo.
+TEMPO_TRAVAMENTO_ANUNCIO = 6.0
 # Quanto esperar o video do anuncio realmente comecar.
-ESPERA_INICIO = 15
+ESPERA_INICIO = 10
 # Tolerancia para considerar que o anuncio terminou (fim do arquivo).
 FOLGA_FIM = 1.5
 # Eventos VAST: quartis de exibicao.
@@ -197,9 +201,11 @@ def _media_escolhido(inline, altura_tela=0):
             tipo = (media.get('type') or '').lower()
             largura = _inteiro(media.get('width'))
             altura = _inteiro(media.get('height'))
-            progressivo = tipo.startswith(('video/mp4', 'video/webm',
-                                           'video/x-m4v'))
-            hls = 'mpegurl' in tipo or url.lower().endswith('.m3u8')
+            url_limpa = url.lower().split('?', 1)[0]
+            mp4 = (tipo.startswith(('video/mp4', 'video/x-m4v'))
+                   or (not tipo and url_limpa.endswith(('.mp4', '.m4v'))))
+            progressivo = mp4 or tipo.startswith('video/webm')
+            hls = 'mpegurl' in tipo or url_limpa.endswith('.m3u8')
             if not (progressivo or hls):
                 continue
             candidatos.append({
@@ -207,13 +213,14 @@ def _media_escolhido(inline, altura_tela=0):
                 'tipo': tipo,
                 'largura': largura,
                 'altura': altura,
+                'prioridade': 0 if mp4 else (1 if progressivo else 2),
                 'progressivo': progressivo,
                 # perto da resolucao da tela = menos up/downscale no aparelho
                 'proximidade': abs((altura or 0) - (altura_tela or 1080)),
             })
     if not candidatos:
         return None
-    candidatos.sort(key=lambda item: (not item['progressivo'],
+    candidatos.sort(key=lambda item: (item['prioridade'],
                                       item['proximidade'],
                                       -item['altura'], -item['largura']))
     return candidatos[0]
@@ -386,7 +393,14 @@ def baixar(url, timeout=TIMEOUT_HTTP):
     except Exception:  # pragma: no cover - Python 2 nao existe no Kodi 21
         return None
     try:
-        pedido = Request(url, headers={'User-Agent': 'SMARTEDTV/VAST'})
+        pedido = Request(url, headers={
+            'User-Agent': (
+                'Mozilla/5.0 (Linux; Android 11; Android TV) '
+                'AppleWebKit/537.36 (KHTML, like Gecko) '
+                'Chrome/120.0.0.0 Safari/537.36'
+            ),
+            'Accept': 'application/xml, text/xml, */*',
+        })
         resposta = urlopen(pedido, timeout=timeout)
         try:
             return resposta.read()
@@ -407,6 +421,23 @@ def disparar(urls):
     return enviados
 
 
+_DISPARAR_PADRAO = disparar
+
+
+def _disparar_eventos(urls):
+    """Em producao dispara em background para nunca travar o loop do player;
+    nos testes (quando ``disparar`` foi substituida) mantem ordem sincrona.
+    """
+    if not urls:
+        return 0
+    if disparar is not _DISPARAR_PADRAO:
+        return disparar(urls)
+    copia = list(urls)
+    threading.Thread(target=disparar, args=(copia,),
+                     name='vast-tracking', daemon=True).start()
+    return len(copia)
+
+
 # ---------------------------------------------------------------------------
 # Reproducao
 # ---------------------------------------------------------------------------
@@ -417,14 +448,29 @@ def _player_tocando_video():
         return False
 
 
+def _arquivo_atual():
+    try:
+        return (xbmc.Player().getPlayingFile() or '').strip()
+    except Exception:
+        return ''
+
+
 def _aguardar_anuncio_tocar(log=None, espera=ESPERA_INICIO, dormir=None,
-                            agora=None):
+                            agora=None, anterior=''):
     """True quando o player comecou a tocar o video do anuncio."""
     dormir = dormir or time.sleep
     agora = agora or _agora
-    limite = agora() + espera
+    inicio = agora()
+    limite = inicio + espera
+    janela_troca = inicio + min(float(espera), 1.5)
     while agora() < limite:
         if _player_tocando_video():
+            atual = _arquivo_atual()
+            # Evita falso-positivo no quadro final do video anterior enquanto o
+            # PlayMedia assincrono do Kodi ainda esta abrindo o criativo VAST.
+            if anterior and atual and atual == anterior and agora() < janela_troca:
+                dormir(0.25)
+                continue
             return True
         dormir(0.25)
     return False
@@ -447,21 +493,52 @@ def _garantir_tela_cheia():
         pass
 
 
+def extrair_url_real_do_proxy(url):
+    """Extrai a URL real embutida em ``?url=...`` nos proxies locais/LAN."""
+    texto = (url or '').strip()
+    if '?' not in texto:
+        return ''
+    try:
+        from urllib.parse import parse_qs, unquote, urlparse
+        sem_pipe = texto.split('|', 1)[0]
+        parsed = urlparse(sem_pipe)
+        valores = parse_qs(parsed.query).get('url') or []
+        if not valores:
+            return ''
+        decodificada = valores[0].strip()
+        if decodificada.lower().startswith(('http%3a', 'https%3a')):
+            decodificada = unquote(decodificada).strip()
+        if decodificada.lower().startswith(('http://', 'https://')):
+            return decodificada
+    except Exception:
+        return ''
+    return ''
+
+
 def _proxy_local_inativo(url):
-    """True quando ``url`` aponta para um proxy 127.0.0.1/localhost ja fechado."""
+    """True quando ``url`` aponta para um proxy local/LAN (ex.: Brazuca/Elementum) ja fechado."""
     texto = (url or '').split('|', 1)[0].strip()
-    if not (texto.startswith('http://127.0.0.1:')
-            or texto.startswith('http://localhost:')):
+    if not texto.startswith('http://'):
         return False
     try:
+        import ipaddress
         import socket
         from urllib.parse import urlparse
         parsed = urlparse(texto)
+        host = (parsed.hostname or '').strip()
         porta = parsed.port
-        if not porta:
+        if not host or not porta:
             return False
-        with socket.create_connection((parsed.hostname or '127.0.0.1', porta),
-                                      timeout=0.35):
+        eh_local = host == 'localhost'
+        if not eh_local:
+            try:
+                ip = ipaddress.ip_address(host)
+                eh_local = bool(ip.is_loopback or ip.is_private)
+            except ValueError:
+                eh_local = False
+        if not eh_local:
+            return False
+        with socket.create_connection((host, porta), timeout=0.35):
             return False
     except Exception:
         return True
@@ -472,9 +549,11 @@ def _tocar(url, log=None):
 
     ATENCAO: NUNCA passar ``,1`` no ``PlayMedia`` — no Kodi ``1`` significa
     ``noFullscreen`` (modo segundo plano), o que fechava o player e tocava o
-    anuncio escondido atras da Home.
+    anuncio escondido atras da Home. Tambem desliga ``RepeatOne`` (ligado por
+    addons de TV ao vivo) para o anuncio nao repetir nem congelar a transicao.
     """
     try:
+        xbmc.executebuiltin('PlayerControl(RepeatOff)')
         xbmc.executebuiltin('PlayMedia("%s")' % url.replace('"', '%22'))
         _garantir_tela_cheia()
         return True
@@ -486,7 +565,7 @@ def _tocar(url, log=None):
 
 
 def reproduzir(anuncio, log=None, tempo_maximo=TEMPO_MAXIMO_ANUNCIO,
-               tocar=None, dormir=None):
+               tocar=None, dormir=None, anterior=''):
     """Toca o anuncio e devolve um recibo do que realmente aconteceu.
 
     O recibo e o que interessa: ``exibido`` so e True se o video do anuncio
@@ -497,10 +576,11 @@ def reproduzir(anuncio, log=None, tempo_maximo=TEMPO_MAXIMO_ANUNCIO,
         return {'exibido': False, 'motivo': 'sem-anuncio'}
     tocar = tocar or _tocar
     dormir = dormir or time.sleep
-    disparar(anuncio.get('impressao') or [])
+    anterior = anterior or _arquivo_atual()
+    _disparar_eventos(anuncio.get('impressao') or [])
     if not tocar(anuncio['url'], log):
         return {'exibido': False, 'motivo': 'player-recusou'}
-    if not _aguardar_anuncio_tocar(log, dormir=dormir):
+    if not _aguardar_anuncio_tocar(log, dormir=dormir, anterior=anterior):
         # Nao comecou a tocar: nao houve anuncio (e nao se registra impressao
         # como se tivesse havido).
         return {'exibido': False, 'motivo': 'nao-iniciou'}
@@ -509,12 +589,24 @@ def reproduzir(anuncio, log=None, tempo_maximo=TEMPO_MAXIMO_ANUNCIO,
     inicio = _agora()
     # O evento "start" e obrigatorio no VAST e so pode ser enviado depois que o
     # video do anuncio comecou a tocar de verdade (por isso aqui, e nao antes).
-    disparar((anuncio.get('eventos') or {}).get('start') or [])
+    _disparar_eventos((anuncio.get('eventos') or {}).get('start') or [])
     disparados = set(['start'])
+    ultima_posicao = -1.0
+    ultimo_avanco = inicio
     while _agora() - inicio < tempo_maximo:
         if not _player_tocando_video():
             break
+        _garantir_tela_cheia()
         posicao, duracao = _posicao_e_duracao()
+        agora_atual = _agora()
+        if posicao > ultima_posicao + 0.05:
+            ultima_posicao = posicao
+            ultimo_avanco = agora_atual
+        elif (agora_atual - ultimo_avanco) >= TEMPO_TRAVAMENTO_ANUNCIO:
+            if log:
+                log('[SmartAds] VAST sem avanco por %.1fs; liberando conteudo'
+                    % (agora_atual - ultimo_avanco), xbmc.LOGWARNING)
+            break
         duracao = duracao or anuncio.get('duracao') or 0.0
         if duracao > 0:
             fracao = min(1.0, posicao / duracao)
@@ -522,7 +614,7 @@ def reproduzir(anuncio, log=None, tempo_maximo=TEMPO_MAXIMO_ANUNCIO,
                 if nome in disparados:
                     continue
                 if fracao + 0.01 >= quarto:
-                    disparar((anuncio.get('eventos') or {}).get(nome) or [])
+                    _disparar_eventos((anuncio.get('eventos') or {}).get(nome) or [])
                     disparados.add(nome)
             if posicao >= duracao - FOLGA_FIM:
                 disparados.add('complete')
@@ -530,10 +622,11 @@ def reproduzir(anuncio, log=None, tempo_maximo=TEMPO_MAXIMO_ANUNCIO,
         dormir(0.5)
     if 'complete' not in disparados:
         disparados.add('complete')
-        disparar((anuncio.get('eventos') or {}).get('complete') or [])
+        _disparar_eventos((anuncio.get('eventos') or {}).get('complete') or [])
     return {'exibido': True, 'motivo': 'exibido',
             'segundos': round(_agora() - inicio, 1),
-            'eventos': sorted(disparados)}
+            'eventos': sorted(disparados),
+            'url_anuncio': anuncio.get('url', '')}
 
 
 def exibir(log=None, tag='', altura_tela=0, tempo_maximo=TEMPO_MAXIMO_ANUNCIO,
@@ -614,23 +707,28 @@ def estado_do_conteudo(player=None, log=None):
             total = float(player.getTotalTime()) or 0.0
         except Exception:
             total = 0.0
+        url_real = extrair_url_real_do_proxy(caminho)
         ao_vivo = False
         try:
             import ao_vivo as _mod_ao_vivo
             ao_vivo = bool(_mod_ao_vivo.eh_ao_vivo(caminho))
-            # Filme/serie em HLS (.m3u8) tem duracao conhecida (>= 60 s):
-            # nao confundir VOD com canal ao vivo.
-            baixo = caminho.lower()
-            if (ao_vivo and total >= 60.0
+            # Filme/serie em HLS (.m3u8) tem duracao conhecida (>= 120 s):
+            # nao confundir VOD com canal ao vivo, mas preservar canais que
+            # rodam em proxy LAN (?url=...) ou trazem marcadores ao vivo.
+            baixo = (caminho + ' ' + url_real).lower()
+            if (ao_vivo and total >= 120.0
+                    and not url_real
                     and not xbmc.getCondVisibility('VideoPlayer.Content(live)')
                     and 'mode=11' not in baixo
                     and 'canal' not in baixo
                     and 'channel' not in baixo
-                    and 'aovivo' not in baixo):
+                    and 'aovivo' not in baixo
+                    and '/live/' not in baixo):
                 ao_vivo = False
         except Exception:
             ao_vivo = False
         return {'caminho': caminho, 'plugin_path': plugin_path,
+                'url_real': url_real,
                 'posicao': posicao, 'total': total, 'ao_vivo': ao_vivo}
     except Exception as erro:
         if log:
@@ -656,6 +754,7 @@ def _player_video_id():
 
 def _iniciar_em_tela_cheia(url, log=None):
     try:
+        xbmc.executebuiltin('PlayerControl(RepeatOff)')
         xbmc.executebuiltin('PlayMedia("%s")' % url.replace('"', '%22'))
         _garantir_tela_cheia()
         return True
@@ -666,58 +765,99 @@ def _iniciar_em_tela_cheia(url, log=None):
         return False
 
 
-def restaurar(estado, log=None, espera=20, dormir=None, agora=None):
+def _candidatos_restauracao(estado):
+    """Lista ordenada e sem duplicatas de rotas para reabrir o conteudo."""
+    caminho = (estado.get('caminho') or '').strip()
+    plugin_path = (estado.get('plugin_path') or '').strip()
+    url_real = (estado.get('url_real') or extrair_url_real_do_proxy(caminho)).strip()
+    ao_vivo = bool(estado.get('ao_vivo'))
+    proxy_morto = _proxy_local_inativo(caminho)
+    # No Brazuca, mode=11 abre dialogo de escolha (IsPlayable=false), entao no
+    # ao vivo com proxy encerrado a URL real do stream escolhido vem primeiro.
+    plugin_reproduzivel = plugin_path and 'mode=11' not in plugin_path.lower()
+    ordem = []
+    if proxy_morto:
+        if ao_vivo:
+            ordem.extend([url_real, plugin_path if plugin_reproduzivel else '', caminho])
+        else:
+            ordem.extend([plugin_path if plugin_reproduzivel else '', url_real, caminho, plugin_path])
+    else:
+        if ao_vivo:
+            ordem.extend([caminho, url_real, plugin_path if plugin_reproduzivel else ''])
+        else:
+            ordem.extend([caminho, plugin_path if plugin_reproduzivel else '', url_real, plugin_path])
+    vistos = set()
+    saida = []
+    for item in ordem:
+        if item and item not in vistos:
+            vistos.add(item)
+            saida.append(item)
+    return saida
+
+
+def restaurar(estado, log=None, espera=20, dormir=None, agora=None,
+              url_anuncio=''):
     """Devolve o conteudo a tela EM TELA CHEIA, no ponto em que estava.
 
     * NUNCA usa ``PlayMedia(..., 1)``: ``,1`` e ``noFullscreen`` no Kodi e
       fazia o filme rodar em segundo plano atras da Home apos o anuncio;
-    * se o stream usava proxy local encerrado ou token de conexao unica que
-      caiu ao tocar o anuncio, reconecta automaticamente pelo ``plugin_path``;
-    * canal ao vivo: reabre sem seek; filme/serie: retoma na posicao e garante
-      ``fullscreenvideo`` visivel.
+    * se o stream usava proxy local/LAN encerrado ou token de conexao unica que
+      caiu ao tocar o anuncio, reconecta automaticamente por ``url_real`` ou
+      ``plugin_path``;
+    * canal ao vivo: reabre e CONFIRMA reproducao sem seek (nunca sai do canal);
+    * filme/serie: retoma na posicao e garante ``fullscreenvideo`` visivel.
     """
     if not estado or not estado.get('caminho'):
         return False
     dormir = dormir or time.sleep
     agora = agora or _agora
-    caminho = estado['caminho']
-    plugin_path = (estado.get('plugin_path') or '').strip()
-    preferir_origem = bool(plugin_path and _proxy_local_inativo(caminho))
-    primario = plugin_path if preferir_origem else caminho
-    reserva = '' if preferir_origem else plugin_path
-
-    if estado.get('ao_vivo'):
-        try:
-            import ao_vivo
-            if ao_vivo._tocar_de_novo(primario):
-                _garantir_tela_cheia()
-                if log:
-                    log('[SmartAds] VAST: canal ao vivo reaberto apos o anuncio')
-                return True
-        except Exception:
-            pass
-    if not _iniciar_em_tela_cheia(primario, log=log):
-        if not reserva or not _iniciar_em_tela_cheia(reserva, log=log):
-            return False
-        reserva = ''
+    candidatos = _candidatos_restauracao(estado)
+    if not candidatos:
+        return False
+    eh_vivo = bool(estado.get('ao_vivo'))
     alvo = float(estado.get('posicao') or 0.0)
     limite_total = agora() + espera
-    limite_primario = agora() + (min(espera, 6) if reserva else espera)
-    while agora() < limite_primario:
+    iniciou_algum = False
+
+    for idx, rota in enumerate(candidatos):
+        tem_proximo = idx + 1 < len(candidatos)
+        abriu = False
+        if eh_vivo:
+            try:
+                import ao_vivo
+                abriu = bool(ao_vivo._tocar_de_novo(rota))
+                if abriu:
+                    _garantir_tela_cheia()
+            except Exception:
+                abriu = False
+        if not abriu:
+            abriu = _iniciar_em_tela_cheia(rota, log=log)
+        if not abriu:
+            continue
+        iniciou_algum = True
+        prazo_rota = (agora() + min(float(espera), 6.0)) if tem_proximo else limite_total
+        janela_troca = agora() + min(float(espera), 1.5)
+        while agora() < prazo_rota:
+            if _player_tocando_video():
+                atual = _arquivo_atual()
+                if url_anuncio and atual and atual == url_anuncio and agora() < janela_troca:
+                    dormir(0.25)
+                    continue
+                break
+            dormir(0.25)
         if _player_tocando_video():
+            _garantir_tela_cheia()
+            if eh_vivo and log:
+                log('[SmartAds] VAST: canal ao vivo reaberto apos o anuncio')
             break
-        dormir(0.25)
-    if not _player_tocando_video() and reserva:
-        if log:
-            log('[SmartAds] VAST: reconectando conteudo pela rota de origem')
-        if _iniciar_em_tela_cheia(reserva, log=log):
-            while agora() < limite_total:
-                if _player_tocando_video():
-                    break
-                dormir(0.25)
+        if tem_proximo and log:
+            log('[SmartAds] VAST: reconectando conteudo pela rota alternativa')
+
+    if not iniciou_algum:
+        return False
     if _player_tocando_video():
         _garantir_tela_cheia()
-    if alvo <= 0 or estado.get('ao_vivo'):
+    if alvo <= 0 or eh_vivo:
         return True
     # Espera a posicao ficar legivel antes de buscar (player recriado).
     while agora() < limite_total:
@@ -761,8 +901,10 @@ def exibir_e_devolver(log=None, tag='', altura_tela=0,
                     tempo_maximo=tempo_maximo, baixar_tag=baixar_tag,
                     tocar=tocar, dormir=dormir)
     if estado and (recibo.get('exibido') or not _player_tocando_video()):
-        recibo['conteudo_devolvido'] = restaurar(estado, log=log,
-                                                 dormir=dormir)
+        recibo['conteudo_devolvido'] = restaurar(
+            estado, log=log, dormir=dormir,
+            url_anuncio=recibo.get('url_anuncio', ''),
+        )
     return recibo
 
 

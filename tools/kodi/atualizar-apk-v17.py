@@ -21,10 +21,15 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import itertools
 import re
+import sqlite3
+import struct
 import sys
+import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
+import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -430,6 +435,278 @@ def addons_sem_entrega(existentes, zip_aberto):
     return sorted(finais), motivos
 
 
+PERFIL_PREFIX = 'assets/smarted/profile/'
+PERFIL_MANIFESTO = 'assets/smarted/profile-manifest.txt'
+PIN_PERFIL_BASE = '1447de816a44ecc11c42c2c315cf20e61c9baa037e914a13293711cf152d1ede'
+# Pedido explicito: remover do perfil semeado APENAS YouTube e MP3 Streams,
+# mantendo todo o restante (Elementum, BrazucaPlay, ResolveURL, skins, etc.).
+ADDONS_FORA_DO_PERFIL = (
+    'plugin.video.youtube',
+    'plugin.audio.mp3streams',
+)
+
+
+def _caminho_perfil_excluido(rel):
+    for addon in ADDONS_FORA_DO_PERFIL:
+        if (rel.startswith('addons/%s/' % addon)
+                or rel.startswith('userdata/addon_data/%s/' % addon)
+                or rel.startswith('addons/packages/%s-' % addon)
+                or rel == 'addons/packages/%s.zip' % addon):
+            return True
+    return False
+
+
+def _limpar_addons_db_bytes(dados):
+    """Remove apenas YouTube e MP3 Streams do Addons*.db sem tocar nos demais."""
+    with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp:
+        caminho_tmp = Path(tmp.name)
+        tmp.write(dados)
+    try:
+        mexeu = False
+        con = sqlite3.connect(str(caminho_tmp))
+        try:
+            for addon in ADDONS_FORA_DO_PERFIL:
+                for sql in (
+                    'DELETE FROM repo WHERE addonID = ?',
+                    'DELETE FROM addonlinkrepo WHERE addonID = ?',
+                    'DELETE FROM installed WHERE addonID = ?',
+                    'DELETE FROM addons WHERE addonID = ?',
+                    'DELETE FROM package WHERE addonID = ?',
+                ):
+                    try:
+                        cur = con.execute(sql, (addon,))
+                        if getattr(cur, 'rowcount', 0) > 0:
+                            mexeu = True
+                    except Exception:
+                        continue
+            if mexeu:
+                con.commit()
+        finally:
+            con.close()
+        return caminho_tmp.read_bytes() if mexeu else dados
+    finally:
+        caminho_tmp.unlink(missing_ok=True)
+
+
+def _mutf8_para_utf16(dados):
+    """Decodifica MUTF-8 para tupla de code units UTF-16 (ordem do DexFileVerifier)."""
+    out = []
+    i = 0
+    n = len(dados)
+    while i < n:
+        b0 = dados[i]
+        if (b0 & 0x80) == 0:
+            out.append(b0)
+            i += 1
+        elif (b0 & 0xE0) == 0xC0 and i + 1 < n:
+            u = ((b0 & 0x1F) << 6) | (dados[i + 1] & 0x3F)
+            out.append(u)
+            i += 2
+        elif (b0 & 0xF0) == 0xE0 and i + 2 < n:
+            u = (((b0 & 0x0F) << 12)
+                 | ((dados[i + 1] & 0x3F) << 6)
+                 | (dados[i + 2] & 0x3F))
+            out.append(u)
+            i += 3
+        else:
+            out.append(b0)
+            i += 1
+    return tuple(out)
+
+
+def _strings_do_dex(dex):
+    """Lista [(offset_payload, bytes_mutf8), ...] de string_ids em classes*.dex."""
+    if len(dex) < 112 or not dex.startswith(b'dex\n'):
+        raise SystemExit('classes4.dex invalido')
+    count, table_off = struct.unpack_from('<II', dex, 56)
+    itens = []
+    for idx in range(count):
+        off = struct.unpack_from('<I', dex, table_off + 4 * idx)[0]
+        pos = off
+        while dex[pos] & 0x80:
+            pos += 1
+        pos += 1
+        fim = dex.index(0, pos)
+        itens.append((pos, bytes(dex[pos:fim])))
+    return itens
+
+
+def _atualizar_dex_com_pin(dex_original, pin_antigo, pin_novo):
+    """Substitui o pin SHA-256 em classes4.dex preservando string_ids ordenado."""
+    antigo_b = pin_antigo.encode('ascii')
+    novo_b = pin_novo.encode('ascii')
+    if len(antigo_b) != 64 or len(novo_b) != 64:
+        raise SystemExit('pin SHA-256 invalido')
+    buf = bytearray(dex_original)
+    strings = _strings_do_dex(buf)
+    indices = [i for i, (_p, s) in enumerate(strings) if s == antigo_b]
+    if len(indices) != 1:
+        raise SystemExit('classes4.dex: esperado 1 pin de manifesto, achado %d'
+                         % len(indices))
+    pos = strings[indices[0]][0]
+    buf[pos:pos + 64] = novo_b
+    # Valida estritamente a ordenacao lexicografica UTF-16 de TODA a tabela
+    verificadas = _strings_do_dex(buf)
+    anterior = None
+    for idx, (_p, s) in enumerate(verificadas):
+        atual = _mutf8_para_utf16(s)
+        if anterior is not None and not (anterior < atual):
+            raise SystemExit(
+                'classes4.dex: string_ids fora de ordem em %d (%r >= %r)'
+                % (idx, verificadas[idx - 1][1], s))
+        anterior = atual
+    buf[12:32] = hashlib.sha1(memoryview(buf)[32:]).digest()
+    struct.pack_into('<I', buf, 8, zlib.adler32(memoryview(buf)[12:]) & 0xFFFFFFFF)
+    return bytes(buf)
+
+
+def preparar_perfil_limpo(origem):
+    """Retira apenas YouTube e MP3 Streams de assets/smarted/profile/ + Addons33.db.
+
+    Atualiza assets/smarted/profile-manifest.txt e o pin SHA-256 em classes4.dex
+    escolhendo uma permutacao de linhas do manifesto cujo SHA-256 caia
+    estritamente entre as strings vizinhas de classes4.dex.
+    """
+    nomes = set(origem.namelist())
+    if PERFIL_MANIFESTO not in nomes or 'classes4.dex' not in nomes:
+        return set(), {}
+    dex_orig = origem.read('classes4.dex')
+    strings = _strings_do_dex(dex_orig)
+    pin_idx = None
+    pin_atual = None
+    for idx, (_pos, s) in enumerate(strings):
+        if len(s) == 64 and re.fullmatch(rb'[0-9a-f]{64}', s):
+            candidato = s.decode('ascii')
+            if candidato == hashlib.sha256(origem.read(PERFIL_MANIFESTO)).hexdigest():
+                pin_idx = idx
+                pin_atual = candidato
+                break
+            if candidato == PIN_PERFIL_BASE and pin_idx is None:
+                pin_idx = idx
+                pin_atual = candidato
+    if pin_idx is None:
+        return set(), {}
+
+    prev_u16 = _mutf8_para_utf16(strings[pin_idx - 1][1]) if pin_idx > 0 else ()
+    next_u16 = (_mutf8_para_utf16(strings[pin_idx + 1][1])
+                if pin_idx + 1 < len(strings) else (0xFFFF,))
+
+    excluidos = set()
+    modificados = {}
+    for nome in sorted(nomes):
+        if not nome.startswith(PERFIL_PREFIX):
+            continue
+        rel = nome[len(PERFIL_PREFIX):]
+        if not rel:
+            continue
+        if _caminho_perfil_excluido(rel):
+            excluidos.add(nome)
+            continue
+        if re.fullmatch(r'userdata/Database/Addons\d+\.db', rel):
+            orig_db = origem.read(nome)
+            novo_db = _limpar_addons_db_bytes(orig_db)
+            if novo_db != orig_db:
+                modificados[nome] = novo_db
+
+    if not excluidos and not modificados:
+        return set(), {}
+
+    linhas_orig = origem.read(PERFIL_MANIFESTO).decode('utf-8').splitlines()
+    linhas_novas = []
+    for linha in linhas_orig:
+        if not linha.strip():
+            continue
+        partes = linha.split('\t')
+        if len(partes) != 3:
+            raise SystemExit('profile-manifest.txt invalido: %r' % linha)
+        rel = partes[2]
+        zip_path = PERFIL_PREFIX + rel
+        if zip_path in excluidos or _caminho_perfil_excluido(rel):
+            excluidos.add(zip_path)
+            continue
+        if zip_path in modificados:
+            blob = modificados[zip_path]
+            linhas_novas.append('%s\t%d\t%s\n' % (
+                hashlib.sha256(blob).hexdigest(), len(blob), rel))
+        else:
+            linhas_novas.append(linha + '\n')
+
+    if not linhas_novas:
+        raise SystemExit('profile-manifest.txt ficou vazio')
+
+    # Minera uma ordenacao valida das ultimas linhas para preservar a ordem de
+    # string_ids em classes4.dex (ex.: prefixo '1447', prev_u16 < novo < next_u16).
+    cauda_tam = min(11, len(linhas_novas))
+    cabeca_bytes = ''.join(linhas_novas[:-cauda_tam]).encode('utf-8')
+    cauda = linhas_novas[-cauda_tam:]
+    base_hash = hashlib.sha256(cabeca_bytes)
+    manifesto_final = None
+    pin_novo = None
+    prefixo_alvo = pin_atual[:4]
+
+    for exigir_prefixo in (True, False):
+        for perm in itertools.permutations(cauda):
+            bloco = ''.join(perm).encode('utf-8')
+            h = base_hash.copy()
+            h.update(bloco)
+            cand = h.hexdigest()
+            if exigir_prefixo and not cand.startswith(prefixo_alvo):
+                continue
+            cand_u16 = tuple(ord(c) for c in cand)
+            if prev_u16 < cand_u16 < next_u16:
+                manifesto_final = cabeca_bytes + bloco
+                pin_novo = cand
+                break
+        if manifesto_final is not None:
+            break
+
+    # Reserva para APK sintetico de teste com poucas linhas no manifesto:
+    # ajusta PRAGMA user_version num Addons*.db ate achar hash no intervalo.
+    if manifesto_final is None:
+        alvos_db = [n for n in sorted(nomes)
+                    if n.startswith(PERFIL_PREFIX + 'userdata/Database/Addons')
+                    and n.endswith('.db')]
+        if alvos_db:
+            alvo_db = alvos_db[0]
+            rel_db = alvo_db[len(PERFIL_PREFIX):]
+            base_db = modificados.get(alvo_db) or origem.read(alvo_db)
+            with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp:
+                p_tmp = Path(tmp.name)
+                tmp.write(base_db)
+            try:
+                for versao_usr in range(1, 200000):
+                    con = sqlite3.connect(str(p_tmp))
+                    con.execute('PRAGMA user_version = %d' % versao_usr)
+                    con.commit()
+                    con.close()
+                    blob = p_tmp.read_bytes()
+                    linha_db = '%s\t%d\t%s\n' % (
+                        hashlib.sha256(blob).hexdigest(), len(blob), rel_db)
+                    tentativa = ''.join(
+                        linha_db if l.endswith('\t' + rel_db + '\n') else l
+                        for l in linhas_novas
+                    ).encode('utf-8')
+                    cand = hashlib.sha256(tentativa).hexdigest()
+                    cand_u16 = tuple(ord(c) for c in cand)
+                    if prev_u16 < cand_u16 < next_u16:
+                        modificados[alvo_db] = blob
+                        manifesto_final = tentativa
+                        pin_novo = cand
+                        break
+            finally:
+                p_tmp.unlink(missing_ok=True)
+
+    if manifesto_final is None or pin_novo is None:
+        raise SystemExit('nao foi possivel gerar pin ordenado para classes4.dex')
+
+    dex_novo = _atualizar_dex_com_pin(dex_orig, pin_atual, pin_novo)
+    modificados[PERFIL_MANIFESTO] = manifesto_final
+    modificados['classes4.dex'] = dex_novo
+    dbg('perfil semeado limpo: %d entradas de YouTube/MP3 Streams removidas '
+        '(manifesto %s -> %s)' % (len(excluidos), pin_atual[:12], pin_novo[:12]))
+    return excluidos, modificados
+
+
 def mapa_da_skin():
     """Todos os arquivos da skin Classica, no caminho de cada skin do APK.
 
@@ -510,11 +787,14 @@ def main(argv=None):
         removidos, motivos = addons_sem_entrega(nomes, origem)
         for addon in removidos:
             dbg('addon fora do APK: %s (%s)' % (addon, motivos[addon]))
+        perfil_excluidos, perfil_modificados = preparar_perfil_limpo(origem)
 
         with zipfile.ZipFile(args.saida, 'w', allowZip64=True) as destino:
             vistos = set()
             for item in origem.infolist():
                 if item.is_dir() or SIG.fullmatch(item.filename):
+                    continue
+                if item.filename in perfil_excluidos:
                     continue
                 if any(item.filename.startswith('assets/addons/%s/' % addon)
                        for addon in removidos):
@@ -522,7 +802,19 @@ def main(argv=None):
                 if item.filename in vistos:
                     raise SystemExit('entrada duplicada: %s' % item.filename)
                 vistos.add(item.filename)
-                dados = origem.read(item)
+                dados = perfil_modificados.get(item.filename)
+                if dados is None:
+                    dados = origem.read(item)
+                if item.filename == 'assets/system/addon-manifest.xml':
+                    texto_man = dados.decode('utf-8')
+                    linhas_man = [
+                        ln for ln in texto_man.splitlines(keepends=True)
+                        if not any(('>%s<' % alvo) in ln for alvo in ADDONS_FORA_DO_PERFIL)
+                    ]
+                    novo_man = ''.join(linhas_man).encode('utf-8')
+                    if novo_man != dados:
+                        ET.fromstring(novo_man)
+                        dados = novo_man
                 if item.filename.startswith(SKIN_PREFIX):
                     # A Home inteira vem da skin Classica (home + janelas + media).
                     # O mapa SKIN_ARQUIVOS continua valendo para outros caminhos.

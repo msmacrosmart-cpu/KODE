@@ -703,14 +703,25 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         self._dialogo('Atualizacao indisponível',
                       'Não consegui verificar atualizacoes neste aparelho.')
 
-    def _digitar_codigo(self):
+    def _normalizar_codigo_ui(self, codigo, vip=None):
+        normalizador = getattr(vip, 'normalizar_codigo', None)
+        if callable(normalizador):
+            try:
+                return normalizador(codigo)
+            except Exception:
+                pass
+        texto = re.sub(r'[\u200b-\u200d\ufeff\xa0\r\n\t]+', '',
+                       str(codigo or ''))
+        texto = re.sub(r'[\u2010-\u2015\u2212]+', '-', texto)
+        texto = re.sub(r'\s+', '', texto.strip())
+        return texto.upper()
+
+    def _digitar_codigo(self, vip=None):
         """Abre o teclado do Kodi (o unico compativel com este APK) e devolve o texto.
 
         O controle edit 310 tambem abre o teclado ao ser clicado; esta funcao e
-        usada pelo botao Ativar quando o campo esta vazio. O conteudo atual e a
-        area de transferencia (quando o Kodi expuser getClipboard) entram como
-        valor inicial, para colar um codigo copiado de outro aplicativo sem
-        duplicar caracteres. O texto devolvido e aparado apenas nas pontas.
+        usada pelo botao Ativar quando o campo esta vazio ou ainda contem um
+        codigo recem-recusado sem edicao. Aceita letras maiusculas e minusculas.
         """
         try:
             atual = (self.getControl(310).getText() or '').strip()
@@ -728,7 +739,7 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
             codigo = xbmcgui.Dialog().input('Digite o código de ativação')
         if not codigo:
             return ''
-        codigo = codigo.strip()
+        codigo = self._normalizar_codigo_ui(codigo, vip=vip)
         try:
             self.getControl(310).setText(codigo)
         except Exception:
@@ -755,17 +766,28 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
                           'A ativação por código não está disponível neste aparelho.')
             return
         try:
-            codigo = (self.getControl(310).getText() or '').strip()
+            bruto = (self.getControl(310).getText() or '').strip()
         except Exception:
-            codigo = ''
-        if not codigo:
-            _log('[SMARTEDTV] Campo de codigo vazio, abrindo teclado do Kodi.')
-            codigo = self._digitar_codigo()
-        if not codigo:
-            _log('[SMARTEDTV] Nenhum codigo informado. Cancelado pelo usuario.')
-            self._focar(310)
-            return
-        codigo = codigo.strip()
+            bruto = ''
+        codigo = self._normalizar_codigo_ui(bruto, vip=vip)
+        recusado = getattr(self, '_codigo_recusado', '')
+        if not codigo or (recusado and codigo == recusado):
+            _log('[SMARTEDTV] Campo vazio ou igual ao ultimo recusado; abrindo teclado.')
+            digitado = self._digitar_codigo(vip=vip)
+            if digitado:
+                codigo = digitado
+            elif not codigo:
+                _log('[SMARTEDTV] Nenhum codigo informado. Cancelado pelo usuario.')
+                self._focar(310)
+                return
+            else:
+                # usuario cancelou a edicao de um codigo que ja tinha sido recusado
+                self._focar(310)
+                return
+        try:
+            self.getControl(310).setText(codigo)
+        except Exception:
+            pass
         _log('[SMARTEDTV] Codigo recebido (%s); iniciando validacao.'
              % _mascarar(codigo))
 
@@ -789,7 +811,7 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
                      xbmc.LOGERROR)
                 ok, mensagem = (False,
                                 'Não foi possível validar agora. Tente novamente.')
-            self._concluir_validacao(geracao, ok, mensagem)
+            self._concluir_validacao(geracao, ok, mensagem, codigo=codigo)
 
         def vigia():
             # teto de seguranca: nenhuma tela fica presa em "Validando..."
@@ -823,7 +845,7 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
             vigia_thread.daemon = True
             vigia_thread.start()
 
-    def _concluir_validacao(self, geracao, ok, mensagem):
+    def _concluir_validacao(self, geracao, ok, mensagem, codigo=''):
         """Publica o resultado; ignora resultado de uma tentativa ja vencida."""
         if getattr(self, '_geracao_validacao', 0) != geracao:
             return
@@ -832,6 +854,7 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
         except Exception:
             return
         if ok:
+            self._codigo_recusado = ''
             texto = 'VIP ativado com sucesso!'
             titulo = 'VIP ativado'
             acao = 'Começar a assistir'
@@ -840,6 +863,9 @@ class WelcomeDialog(xbmcgui.WindowXMLDialog):
             # com codigo valido. Sair pela tela sem ativar nao grava a marca.
             marcar_entrada_vista()
         else:
+            if codigo:
+                self._codigo_recusado = codigo
+            self._foco_anterior = 310
             texto = mensagem or 'Este código não é válido. Verifique e tente novamente.'
             titulo = 'Código não ativado'
             acao = 'Tentar novamente'

@@ -76,6 +76,28 @@ def _label(rotulo):
         return ''
 
 
+def extrair_url_proxy(caminho):
+    """Extrai a URL real codificada em ``?url=...`` pelos proxies locais/LAN."""
+    texto = (caminho or '').strip()
+    if '?' not in texto:
+        return ''
+    try:
+        from urllib.parse import parse_qs, unquote, urlparse
+        sem_headers = texto.split('|', 1)[0]
+        parsed = urlparse(sem_headers)
+        valores = parse_qs(parsed.query).get('url') or []
+        if not valores:
+            return ''
+        decodificada = valores[0].strip()
+        if decodificada.lower().startswith(('http%3a', 'https%3a')):
+            decodificada = unquote(decodificada).strip()
+        if decodificada.lower().startswith(('http://', 'https://')):
+            return decodificada
+    except Exception:
+        return ''
+    return ''
+
+
 def eh_ao_vivo(caminho='', canal_pvr=None):
     """O que esta tocando e um canal continuo (ao vivo)?"""
     if canal_pvr is None:
@@ -85,16 +107,24 @@ def eh_ao_vivo(caminho='', canal_pvr=None):
             canal_pvr = False
     if canal_pvr:
         return True
-    endereco = (caminho or '').lower()
-    if not endereco:
+    bruto = (caminho or '').strip()
+    if not bruto:
         return False
-    if MODO_CANAL in endereco:
-        return True
-    if 'channel' in endereco or 'canal' in endereco or 'aovivo' in endereco:
-        return True
-    # tira a query antes de olhar a extensao: ``...?token=abc`` nao engana
-    base = endereco.split('?', 1)[0]
-    return any(base.endswith(ext) for ext in EXTENSOES)
+    url_interna = extrair_url_proxy(bruto)
+    for candidato in (bruto, url_interna):
+        if not candidato:
+            continue
+        endereco = candidato.split('|', 1)[0].lower()
+        if MODO_CANAL in endereco:
+            return True
+        if ('channel' in endereco or 'canal' in endereco
+                or 'aovivo' in endereco or '/live/' in endereco):
+            return True
+        # tira a query antes de olhar a extensao: ``...?token=abc`` nao engana
+        base = endereco.split('?', 1)[0]
+        if any(base.endswith(ext) for ext in EXTENSOES):
+            return True
+    return False
 
 
 def tem_imagem():
@@ -178,8 +208,35 @@ def _tocar_de_novo(caminho):
     """Reabre o canal pelo proprio player (entra no ponto atual da transmissao)."""
     if not caminho:
         return False
+    alvo = caminho
+    # Se o proxy temporario do addon ja fechou, usa a URL real embutida em ?url=
     try:
-        xbmc.executebuiltin('PlayMedia("%s")' % caminho.replace('"', '%22'))
+        sem_pipe = caminho.split('|', 1)[0].strip()
+        from urllib.parse import urlparse
+        import ipaddress
+        import socket
+        parsed = urlparse(sem_pipe)
+        host = (parsed.hostname or '').strip()
+        porta = parsed.port
+        eh_privado = host == 'localhost'
+        if not eh_privado and host:
+            try:
+                ip = ipaddress.ip_address(host)
+                eh_privado = bool(ip.is_loopback or ip.is_private)
+            except ValueError:
+                eh_privado = False
+        if eh_privado and porta:
+            try:
+                with socket.create_connection((host, porta), timeout=0.35):
+                    pass
+            except Exception:
+                real = extrair_url_proxy(caminho)
+                if real:
+                    alvo = real
+    except Exception:
+        pass
+    try:
+        xbmc.executebuiltin('PlayMedia("%s")' % alvo.replace('"', '%22'))
         return True
     except Exception:
         return False

@@ -380,42 +380,80 @@ def limpar_repositorios_de_terceiros(log=None):
     # "prova" de um estado que ja nao e o do aparelho - e o addon citado ali
     # volta a ser instalado pelo Kodi quando o perfil e reaproveitado.
     extras = _pastas_do_perfil_com_addon_de_terceiro()
+    pacotes_dir = os.path.join(base, 'packages')
+    sempre_expurgar = ('plugin.video.youtube', 'plugin.audio.mp3streams')
+    for addon_id in sempre_expurgar:
+        try:
+            jsonrpc('Addons.SetAddonEnabled',
+                    {'addonid': addon_id, 'enabled': False})
+        except Exception:
+            pass
+        if os.path.isdir(pacotes_dir):
+            try:
+                for arq in os.listdir(pacotes_dir):
+                    if arq.startswith(addon_id + '-') or arq == addon_id + '.zip':
+                        try:
+                            os.remove(os.path.join(pacotes_dir, arq))
+                        except Exception:
+                            pass
+            except Exception:
+                pass
     for nome in sorted(os.listdir(base)):
         pasta = os.path.join(base, nome)
         if not os.path.isdir(pasta):
             continue
         if nome in alvos:
+            try:
+                jsonrpc('Addons.SetAddonEnabled',
+                        {'addonid': nome, 'enabled': False})
+            except Exception:
+                pass
             shutil.rmtree(pasta, ignore_errors=True)
             removidos.append(nome)
     removidos.extend(extras)
+    alvos_banco = list(dict.fromkeys(list(removidos) + list(sempre_expurgar)))
     if removidos:
         if log:
             log('addons de terceiros retirados do perfil: %s' % ', '.join(removidos))
-        # O Kodi guarda o id do repositorio no banco de addons; sem tirar de la
-        # ele continua tentando atualizar e o erro volta na proxima abertura.
-        _esquecer_repositorios_no_banco(removidos, log)
-        try:
-            xbmc.executebuiltin('UpdateLocalAddons()')
-        except Exception:
-            pass
+    if alvos_banco:
+        # O Kodi guarda o id do addon/repositorio no banco de addons; sem tirar
+        # tambem de installed/addons/package o item continua aparecendo na UI.
+        mexeu = _esquecer_repositorios_no_banco(alvos_banco, log)
+        if removidos or mexeu:
+            try:
+                xbmc.executebuiltin('UpdateLocalAddons()')
+            except Exception:
+                pass
     return removidos
 
 
 def _esquecer_repositorios_no_banco(removidos, log=None):
-    """Apaga do Addons*.db o vinculo com o repositorio que saiu do perfil."""
-    home = ''
+    """Apaga do Addons*.db registros de addons/repositorios retirados do perfil."""
+    pastas = []
+    for chave in ('special://profile/Database', 'special://home/userdata/Database'):
+        try:
+            traduzido = xbmcvfs.translatePath(chave).rstrip('/\\')
+        except Exception:
+            traduzido = ''
+        if traduzido and traduzido not in pastas:
+            pastas.append(traduzido)
     try:
-        home = xbmcvfs.translatePath('special://home').rstrip('/')
+        home = xbmcvfs.translatePath('special://home').rstrip('/\\')
+        if home:
+            cand = os.path.join(home, 'userdata', 'Database')
+            if cand not in pastas:
+                pastas.append(cand)
     except Exception:
-        return False
-    pastas = [os.path.join(home, 'userdata', 'Database')]
+        pass
     dbs = []
     for pasta in pastas:
         if not os.path.isdir(pasta):
             continue
         for nome in sorted(os.listdir(pasta)):
             if nome.startswith('Addons') and nome.endswith('.db'):
-                dbs.append(os.path.join(pasta, nome))
+                caminho_db = os.path.join(pasta, nome)
+                if caminho_db not in dbs:
+                    dbs.append(caminho_db)
     if not dbs:
         return False
     import sqlite3
@@ -433,11 +471,13 @@ def _esquecer_repositorios_no_banco(removidos, log=None):
                 for comando in (
                         'DELETE FROM repo WHERE addonID = ?',
                         'DELETE FROM addonlinkrepo WHERE addonID = ?',
-                        'DELETE FROM installed WHERE addonID = ? AND '
-                        "origin LIKE '%repository.%'"):
+                        'DELETE FROM installed WHERE addonID = ?',
+                        'DELETE FROM addons WHERE addonID = ?',
+                        'DELETE FROM package WHERE addonID = ?'):
                     try:
-                        conexao.execute(comando, (addon,))
-                        mexeu = True
+                        cur = conexao.execute(comando, (addon,))
+                        if getattr(cur, 'rowcount', 0) > 0:
+                            mexeu = True
                     except Exception:
                         continue
             conexao.commit()

@@ -855,6 +855,7 @@ class MonitorPreRoll(_BasePlayer):
         self.retomada = None
         self._em_vast = False
         self._ate_ignorar_volta_vast = 0.0
+        self._vast_lock = threading.Lock()
 
     def _retomada(self):
         if self.retomada is None:
@@ -874,20 +875,53 @@ class MonitorPreRoll(_BasePlayer):
         except Exception:
             pass
 
-    def _disparar(self, atividade, log):
-        if e_tv():
-            # No caminho VAST da TV, ads_vast.exibir_e_devolver ja guarda e
-            # restaura o conteudo em tela cheia; bloqueia reentrancia dos
-            # eventos do proprio anuncio para nao derrubar o estado nem repetir.
+    def _ciclo_vast(self, atividade, log, caminho_inicial=''):
+        with self._vast_lock:
             self._em_vast = True
+            disparou = False
             try:
                 disparou = abrir_anuncio(atividade, log)
             finally:
+                if disparou:
+                    self._ate_ignorar_volta_vast = time.monotonic() + 10.0
                 self._em_vast = False
             if disparou:
-                self._ate_ignorar_volta_vast = time.monotonic() + 8.0
                 self._garantir_player_tela_cheia()
+                try:
+                    ads_regra.concluir_anuncio()
+                except Exception:
+                    pass
+                alvo_vigia = self._caminho() or caminho_inicial
+                if alvo_vigia:
+                    self._vigiar_imagem(alvo_vigia)
+            else:
+                try:
+                    ads_regra.cancelar_anuncio()
+                except Exception:
+                    pass
+                alvo_vigia = self._caminho() or caminho_inicial
+                if alvo_vigia:
+                    self._vigiar_imagem(alvo_vigia)
             return disparou
+
+    def _disparar(self, atividade, log):
+        if e_tv():
+            caminho_atual = self._caminho() or self.ultimo_caminho or ''
+            # No Android real, roda o VAST numa worker thread para NUNCA travar
+            # o callback C++ onAVStarted do Kodi (o bloqueio do event loop
+            # congelava o 2o anuncio e derrubava canais ao vivo).
+            if android():
+                if self._em_vast:
+                    return False
+                self._em_vast = True
+                threading.Thread(
+                    target=self._ciclo_vast,
+                    args=(atividade, log, caminho_atual),
+                    name='smarted-vast-preroll',
+                    daemon=True,
+                ).start()
+                return True
+            return self._ciclo_vast(atividade, log, caminho_atual)
         # Guarda o ponto ANTES de a tela do anuncio pausar o player. Sem isso,
         # a volta do anuncio recomecaria o filme do zero em qualquer aparelho.
         retomada = self._retomada()
