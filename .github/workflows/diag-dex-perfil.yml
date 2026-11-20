@@ -1,0 +1,48 @@
+name: Diag dex do perfil
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/diag-dex-perfil.yml']
+jobs:
+  ver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patchear e inspecionar o dex com dexdump
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          aviso() { printf '::notice::%s\n' "$(printf '%s' "$*" | tr '\r\n' '  ' | cut -c1-900)"; }
+          TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          ls "$TOOLS" | grep -i dex || true
+          mkdir -p /tmp/apk && cd /tmp/apk
+          gh release download v1.0.141-universal -R msmacrosmart-cpu/KODE -p SMARTEDTV-universal.apk -O a.apk
+          cd "$GITHUB_WORKSPACE"
+          python3 tools/kodi/sanear-perfil-embarcado.py /tmp/apk/a.apk /tmp/apk/b.apk > /tmp/sanea.txt 2>&1 || true
+          tail -4 /tmp/sanea.txt | while read -r l; do aviso "$l"; done
+          python3 - <<'PY'
+          import hashlib, struct, zipfile, zlib
+          for tag, caminho in (('base', '/tmp/apk/a.apk'), ('saneado', '/tmp/apk/b.apk')):
+              with zipfile.ZipFile(caminho) as z:
+                  d = z.read('classes4.dex')
+              print('::notice::%s classes4.dex: %d bytes, magic=%r, file_size=%d, header_size=%d, string_ids_size=%d'
+                    % (tag, len(d), d[:8], struct.unpack('<I', d[32:36])[0],
+                       struct.unpack('<I', d[36:40])[0], struct.unpack('<I', d[56:60])[0]))
+              print('::notice::%s checksum no cabecalho=%08x calculado=%08x | sha1 no cabecalho=%s calculado=%s'
+                    % (tag, struct.unpack('<I', d[8:12])[0], zlib.adler32(d[12:]) & 0xffffffff,
+                       d[12:32].hex(), hashlib.sha1(d[32:]).hexdigest()))
+              open('/tmp/%s-classes4.dex' % tag, 'wb').write(d)
+          PY
+          for tag in base saneado; do
+            echo "=== dexdump $tag"
+            { "$TOOLS/dexdump" -f "/tmp/$tag-classes4.dex" 2>&1 || true; } | head -30 | while read -r l; do aviso "$tag: $l"; done
+            { "$TOOLS/dexdump" -c "/tmp/$tag-classes4.dex" 2>&1 || true; } | head -5 | while read -r l; do aviso "$tag checksum: $l"; done
+          done
+          echo '=== a string do pin nos dois'
+          for tag in base saneado; do
+            aviso "$tag: $(grep -aoE '[0-9a-f]{64}' "/tmp/$tag-classes4.dex" | head -2 | tr '\n' ' ')"
+          done
+          echo '=== diff binario (regioes alteradas)'
+          cmp -l /tmp/base-classes4.dex /tmp/saneado-classes4.dex | head -5 | while read -r l; do aviso "diff: $l"; done
