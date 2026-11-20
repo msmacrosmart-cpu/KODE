@@ -5,7 +5,9 @@ name: Validar saneamento do perfil embarcado
 on:
   workflow_dispatch:
   push:
-    paths: ['.github/workflows/validar-perfil-embarcado.yml']
+    paths:
+      - '.github/workflows/validar-perfil-embarcado.yml'
+      - 'tools/kodi/sanear-perfil-embarcado.py'
 jobs:
   validar:
     runs-on: ubuntu-latest
