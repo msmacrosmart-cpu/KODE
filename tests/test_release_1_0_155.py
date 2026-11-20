@@ -259,13 +259,26 @@ class Release10155Test(unittest.TestCase):
         self.assertTrue(url.endswith('/SMARTEDTV.apk'))
 
     def test_keymaps_tv_stick_e_tv_box_validos(self):
-        voltar = ET.parse(RAIZ / 'kodi' / 'keymaps' / 'smartedtv-voltar.xml').getroot()
-        player = ET.parse(RAIZ / 'kodi' / 'keymaps' / 'smartedtv-player.xml').getroot()
+        import io
+        import zipfile
+        voltar_path = RAIZ / 'kodi' / 'keymaps' / 'smartedtv-voltar.xml'
+        player_path = RAIZ / 'kodi' / 'keymaps' / 'smartedtv-player.xml'
+        voltar = ET.parse(voltar_path).getroot()
+        player = ET.parse(player_path).getroot()
         self.assertEqual([c.tag for c in voltar], ['Home'])
         self.assertIsNotNone(voltar.find('./Home/keyboard/nav_back'))
         self.assertIsNotNone(voltar.find('./Home/gamepad/B'))
         self.assertIsNotNone(player.find('./FullscreenVideo/keyboard/nav_back'))
         self.assertIsNotNone(player.find('./FullscreenLiveTV/keyboard/nav_back'))
+
+        sim_boot = _carregar_modulo('sim_boot_155', RAIZ / 'tools' / 'kodi' / 'simular-boot-tela-entrada.py')
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w') as zf:
+            zf.writestr('assets/system/keymaps/zzy-smartedtv-player.xml', player_path.read_bytes())
+            zf.writestr('assets/system/keymaps/zzz-smartedtv-voltar.xml', voltar_path.read_bytes())
+        buf.seek(0)
+        with zipfile.ZipFile(buf, 'r') as zf:
+            sim_boot.conferir_keymap(zf)
 
 
 if __name__ == '__main__':

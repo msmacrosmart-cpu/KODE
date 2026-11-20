@@ -90,7 +90,7 @@ def conferir_keymap(z):
         raise SystemExit("keymap mexe em janelas alem da Home: %s" % janelas)
     casa = raiz.find("Home")
     acoes = [(e.text or "").strip() for e in casa.iter()
-             if e is not casa and e.tag not in ("keyboard", "remote")]
+             if e is not casa and e.tag not in ("keyboard", "remote", "gamepad")]
     if not acoes:
         raise SystemExit("keymap da Home sem acao")
     for acao in acoes:

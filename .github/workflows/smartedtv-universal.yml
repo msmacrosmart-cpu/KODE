@@ -12,6 +12,7 @@ on:
       # aparelho continuava com o defeito.
       - 'tools/kodi/atualizar-apk-v17.py'
       - 'tools/kodi/ajustar-versao-apk.py'
+      - 'tools/kodi/simular-boot-tela-entrada.py'
       - 'kodi/addons/service.smarted.bootstrap/*.py'
       - 'kodi/addons/script.smartedtv.welcome/**'
       - 'kodi/skin.estilo.personalizado/**'
